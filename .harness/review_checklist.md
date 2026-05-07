@@ -1,21 +1,22 @@
-# 评审清单：V2 文件工具
+# 评审清单：V3 Agent Loop 实现阶段
 
-- [ ] 当前分支是 `feature/v2-file-tools`。
-- [ ] 只修改了 V2 允许文件。
-- [ ] `list_files` 返回普通代码文件。
-- [ ] `list_files` 跳过 `.git`、`__pycache__`、`.venv`、`node_modules` 和隐藏目录。
-- [ ] `list_files` 跳过敏感文件和二进制文件。
-- [ ] `read_file` 可以读取 `repo_path` 内文件。
-- [ ] `read_file` 拒绝 `repo_path` 外路径。
-- [ ] `read_file` 拒绝敏感文件和二进制文件。
-- [ ] `read_file` 限制返回字符数。
-- [ ] `search_code` 返回文件路径、行号和行文本。
-- [ ] `search_code` 限制结果数量。
-- [ ] `search_code` 不返回敏感文件内容。
-- [ ] V2 不把这些工具连接到 `CodeAgent`。
-- [ ] V2 不加入真实 LLM、技能加载器、反思检查、评测或自动修改代码。
-- [ ] `pytest` 通过。
-- [ ] 安装 ruff 后，`ruff check .` 通过。
+- [ ] 当前分支是 `feature/v3-agent-loop`。
+- [ ] 只修改了 V3 实现阶段允许文件。
+- [ ] V3 specs 明确 `/chat` 请求和响应 schema 保持不变。
+- [ ] V3 specs 明确只填充已有 `related_files` 和 `tool_calls` 字段。
+- [ ] V3 specs 明确工具调用链路为 `ChatService -> CodeAgent -> ToolExecutor -> file_tools`。
+- [ ] V3 specs 明确最小实现优先只使用 `search_code`。
+- [ ] V3 specs 明确关键词提取是最小确定性规则。
+- [ ] `CodeAgent` 通过 `ToolExecutor` 调用 `search_code`。
+- [ ] `/chat` 返回真实 `related_files`。
+- [ ] `/chat` 返回 `tool_calls` 工具调用摘要。
+- [ ] 工具逻辑没有堆到 API 层或 `main.py`。
+- [ ] 关键词提取使用最小确定性规则，不做复杂语义理解。
+- [ ] 测试使用唯一关键词，例如 `UNIQUE_BUG_TOKEN`。
+- [ ] 无命中时 API 稳定返回 200。
+- [ ] 不泄露敏感文件内容。
+- [ ] V3 不加入真实 LLM、shell、写文件、多 Agent、RAG、Memory、Reflection 或 eval。
+- [ ] `docs/FEATURE_LIST.json` 的 V3 状态与实现结果一致。
 - [ ] 已更新 `docs/PROGRESS.md`。
 - [ ] 已更新 `HANDOFF_TO_NEXT_CHAT.md`。
-- [ ] 已维护 `docs/FEATURE_LIST.json` 中对应功能的验收状态。
+- [ ] 已运行 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，或说明无法运行的原因。

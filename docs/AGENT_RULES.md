@@ -1,6 +1,6 @@
 # Agent 工作规则
 
-本项目使用 Harness Engineering 思路管理 AI 辅助开发：让 Agent 通过规则、文档、验证和交接机制稳定工作。
+本项目使用 Harness Engineering 思路管理 AI 辅助开发：让 Agent 通过规则、文档、验证和交接机制稳定工作。RepoPilot 的定位是可控 Code Agent Harness，不是替代通用 AI 编程助手；实现时应优先保护工具调用边界、审计字段、验证规则和跨 session 交接质量。
 
 ## 分支规则
 
@@ -62,5 +62,7 @@ Review Agent 必须检查：
 - 是否真的运行了验证命令。
 - 是否存在假实现或过度设计。
 - 是否破坏架构边界。
+- 是否把 Roadmap 能力写成已实现。
+- 是否让工具调用绕过 `ToolExecutor` 或堆到 API 层。
 - 是否更新测试和文档。
 - 是否更新 progress 和 handoff。

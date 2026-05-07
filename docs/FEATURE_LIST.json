@@ -2,7 +2,7 @@
   {
     "id": "v1-chat-api-basic",
     "category": "api",
-    "description": "用户可以通过 POST /chat 发送消息并获得模拟分析结果。",
+    "description": "用户可以通过 POST /chat 发送消息并获得带 trace_id 的 Agent 服务响应结构。",
     "steps": [
       "构造包含 user_id、session_id、message、repo_path 的请求",
       "POST /chat",
@@ -11,11 +11,11 @@
     ],
     "acceptance_criteria": [
       "trace_id 以 trace_ 开头",
-      "related_files 为空列表",
-      "tool_calls 为空列表"
+      "V1 阶段 related_files 为空列表",
+      "V1 阶段 tool_calls 为空列表"
     ],
     "passes": true,
-    "notes": "已由 tests/test_chat_api.py 覆盖。"
+    "notes": "V1 建立 Agent 服务入口和可追踪请求结构；V3 当前会在命中时填充 related_files 和 tool_calls。"
   },
   {
     "id": "v1-trace-id-unique",
@@ -34,7 +34,7 @@
   {
     "id": "v2-safe-list-files",
     "category": "tools",
-    "description": "list_files 只返回仓库内允许访问的普通文本文件。",
+    "description": "list_files 只返回 repo_path 内允许访问的普通文本文件，作为安全只读仓库工具层的一部分。",
     "steps": [
       "创建包含普通文件、敏感文件、隐藏目录、忽略目录和二进制文件的临时仓库",
       "调用 list_files(repo_path)",
@@ -52,7 +52,7 @@
   {
     "id": "v2-safe-read-file",
     "category": "tools",
-    "description": "read_file 只读取 repo_path 内允许访问的文本文件。",
+    "description": "read_file 只读取 repo_path 内允许访问的文本文件，拒绝路径逃逸和敏感文件。",
     "steps": [
       "读取 repo 内普通文件",
       "尝试通过 ../ 读取 repo 外文件",
@@ -71,7 +71,7 @@
   {
     "id": "v2-safe-search-code",
     "category": "tools",
-    "description": "search_code 返回匹配文件、行号和行文本，同时不泄露敏感文件。",
+    "description": "search_code 返回匹配文件、行号和行文本，同时不泄露敏感文件内容。",
     "steps": [
       "在普通文件中写入关键词",
       "在敏感文件中写入同一关键词",
@@ -90,19 +90,22 @@
   {
     "id": "v3-agent-loop-tools",
     "category": "agent",
-    "description": "CodeAgent 通过 ToolExecutor 使用只读文件工具分析仓库。",
+    "description": "CodeAgent 通过 ToolExecutor 统一执行只读 search_code，并让 /chat 返回真实 related_files 和 tool_calls。",
     "steps": [
       "POST /chat 提供 message 和 repo_path",
-      "CodeAgent 调用 search_code 或 read_file",
+      "CodeAgent 使用最小确定性规则提取关键词",
+      "CodeAgent 通过 ToolExecutor 调用 search_code",
       "响应返回 related_files 和 tool_calls"
     ],
     "acceptance_criteria": [
       "不接真实 LLM",
       "不自动修改代码",
-      "tool_calls 记录工具名称和参数摘要",
-      "related_files 包含命中文件"
+      "测试使用唯一关键词，例如 UNIQUE_BUG_TOKEN",
+      "tool_calls 记录工具名称、参数摘要、状态和结果数量",
+      "related_files 包含命中文件",
+      "/chat 能返回真实工具调用结果"
     ],
-    "passes": false,
-    "notes": "V3 实现。"
+    "passes": true,
+    "notes": "已由 tests/test_chat_api.py 覆盖 UNIQUE_BUG_TOKEN 命中、无命中、敏感文件不泄露和错误摘要脱敏。"
   }
 ]

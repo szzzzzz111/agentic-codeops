@@ -1,6 +1,6 @@
 # Agent 入口地图
 
-本文件是给 Codex、OpenCode、Copilot Agent 等工具看的入口地图，不是百科全书。进入本仓库后，先按下面顺序阅读。
+本文件是给 Codex、OpenCode、Copilot Agent 等工具看的入口地图，不是百科全书。RepoPilot 当前定位是面向代码仓库分析任务的可控 Code Agent Harness：重点不是替代通用 AI 编程助手，而是沉淀工具调用边界、审计字段、验证规则和交接机制。进入本仓库后，先按下面顺序阅读。
 
 ## 必读顺序
 
@@ -17,6 +17,7 @@
 
 - 一次只做一个小阶段，不跨阶段扩功能。
 - 先确认当前分支，再修改代码。
+- 优先维护 Harness 边界：工具调用、审计字段、specs、review checklist 和 handoff 必须与代码一致。
 - 优先跑确定性验证：`pytest`、`ruff check .`、`scripts/verify.ps1`。
 - 修改结束后更新 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`。
 - 不要把项目知识只留在聊天窗口里，必须沉淀到仓库文档。
