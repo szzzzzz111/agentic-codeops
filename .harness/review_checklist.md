@@ -1,15 +1,21 @@
-# Review Checklist
+# 评审清单：V2 文件工具
 
-- [ ] Only V1 allowed files were modified.
-- [ ] `main.py` only creates the app and registers routers.
-- [ ] `/chat` accepts `user_id`, `session_id`, `message`, and `repo_path`.
-- [ ] Response includes `trace_id`, `answer`, `related_files`, and `tool_calls`.
-- [ ] `trace_id` is generated for every request.
-- [ ] Two consecutive requests return different `trace_id` values.
-- [ ] Mock answer explains that V1 does not read `repo_path` yet.
-- [ ] V1 does not read `repo_path`.
-- [ ] V1 does not call a real LLM.
-- [ ] V1 does not implement repository tools, Skill Loader, Reflection, or eval.
-- [ ] Pytest covers the `/chat` endpoint.
-- [ ] Ruff is configured and can be run as a quality gate.
-- [ ] README documents startup, tests, current capability, and roadmap.
+- [ ] 当前分支是 `feature/v2-file-tools`。
+- [ ] 只修改了 V2 允许文件。
+- [ ] `list_files` 返回普通代码文件。
+- [ ] `list_files` 跳过 `.git`、`__pycache__`、`.venv`、`node_modules` 和隐藏目录。
+- [ ] `list_files` 跳过敏感文件和二进制文件。
+- [ ] `read_file` 可以读取 `repo_path` 内文件。
+- [ ] `read_file` 拒绝 `repo_path` 外路径。
+- [ ] `read_file` 拒绝敏感文件和二进制文件。
+- [ ] `read_file` 限制返回字符数。
+- [ ] `search_code` 返回文件路径、行号和行文本。
+- [ ] `search_code` 限制结果数量。
+- [ ] `search_code` 不返回敏感文件内容。
+- [ ] V2 不把这些工具连接到 `CodeAgent`。
+- [ ] V2 不加入真实 LLM、技能加载器、反思检查、评测或自动修改代码。
+- [ ] `pytest` 通过。
+- [ ] 安装 ruff 后，`ruff check .` 通过。
+- [ ] 已更新 `docs/PROGRESS.md`。
+- [ ] 已更新 `HANDOFF_TO_NEXT_CHAT.md`。
+- [ ] 已维护 `docs/FEATURE_LIST.json` 中对应功能的验收状态。

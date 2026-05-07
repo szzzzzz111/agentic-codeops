@@ -1,1 +1,1 @@
-# Package marker for API schemas.
+# API schema 包标记。

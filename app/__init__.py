@@ -1,1 +1,1 @@
-# Package marker for the RepoPilot application.
+# RepoPilot 应用包标记。

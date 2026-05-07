@@ -1,24 +1,30 @@
-# Test Commands
+# 测试命令
 
-## Unit And API Tests
+## 单元测试和 API 测试
 
 ```bash
 pytest
 ```
 
-## Lint
+## 一键验证
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+```
+
+## 静态检查
 
 ```bash
 ruff check .
 ```
 
-## Local API Server
+## 本地 API 服务
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-## Manual Chat Request
+## 手动聊天请求
 
 ```bash
 curl -X POST http://127.0.0.1:8000/chat \
@@ -26,7 +32,7 @@ curl -X POST http://127.0.0.1:8000/chat \
   -d '{
     "user_id": "u001",
     "session_id": "s001",
-    "message": "Help me analyze why tests fail",
+    "message": "帮我分析为什么测试失败",
     "repo_path": "./mock_repo"
   }'
 ```

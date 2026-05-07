@@ -1,0 +1,108 @@
+[
+  {
+    "id": "v1-chat-api-basic",
+    "category": "api",
+    "description": "用户可以通过 POST /chat 发送消息并获得模拟分析结果。",
+    "steps": [
+      "构造包含 user_id、session_id、message、repo_path 的请求",
+      "POST /chat",
+      "检查状态码为 200",
+      "检查响应包含 trace_id、answer、related_files、tool_calls"
+    ],
+    "acceptance_criteria": [
+      "trace_id 以 trace_ 开头",
+      "related_files 为空列表",
+      "tool_calls 为空列表"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v1-trace-id-unique",
+    "category": "observability",
+    "description": "连续两次 /chat 请求生成不同 trace_id。",
+    "steps": [
+      "连续请求两次 POST /chat",
+      "比较两次响应中的 trace_id"
+    ],
+    "acceptance_criteria": [
+      "两次 trace_id 不相同"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v2-safe-list-files",
+    "category": "tools",
+    "description": "list_files 只返回仓库内允许访问的普通文本文件。",
+    "steps": [
+      "创建包含普通文件、敏感文件、隐藏目录、忽略目录和二进制文件的临时仓库",
+      "调用 list_files(repo_path)",
+      "检查结果只包含允许访问的普通文件"
+    ],
+    "acceptance_criteria": [
+      "跳过 .git、__pycache__、.venv、node_modules",
+      "跳过隐藏目录",
+      "跳过 .env、密钥和证书文件",
+      "跳过二进制文件"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_file_tools.py 覆盖。"
+  },
+  {
+    "id": "v2-safe-read-file",
+    "category": "tools",
+    "description": "read_file 只读取 repo_path 内允许访问的文本文件。",
+    "steps": [
+      "读取 repo 内普通文件",
+      "尝试通过 ../ 读取 repo 外文件",
+      "尝试读取敏感文件",
+      "检查 max_chars 限制"
+    ],
+    "acceptance_criteria": [
+      "repo 内普通文件可读取",
+      "repo 外路径被拒绝",
+      "敏感文件被拒绝",
+      "返回内容受 max_chars 限制"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_file_tools.py 覆盖。"
+  },
+  {
+    "id": "v2-safe-search-code",
+    "category": "tools",
+    "description": "search_code 返回匹配文件、行号和行文本，同时不泄露敏感文件。",
+    "steps": [
+      "在普通文件中写入关键词",
+      "在敏感文件中写入同一关键词",
+      "调用 search_code(repo_path, keyword)",
+      "检查结果不包含敏感文件内容"
+    ],
+    "acceptance_criteria": [
+      "返回 file_path、line_number、line_text",
+      "找不到关键词时返回空列表",
+      "结果数量受 max_results 限制",
+      "不返回敏感文件内容"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_file_tools.py 覆盖。"
+  },
+  {
+    "id": "v3-agent-loop-tools",
+    "category": "agent",
+    "description": "CodeAgent 通过 ToolExecutor 使用只读文件工具分析仓库。",
+    "steps": [
+      "POST /chat 提供 message 和 repo_path",
+      "CodeAgent 调用 search_code 或 read_file",
+      "响应返回 related_files 和 tool_calls"
+    ],
+    "acceptance_criteria": [
+      "不接真实 LLM",
+      "不自动修改代码",
+      "tool_calls 记录工具名称和参数摘要",
+      "related_files 包含命中文件"
+    ],
+    "passes": false,
+    "notes": "V3 实现。"
+  }
+]

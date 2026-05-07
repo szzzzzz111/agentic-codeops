@@ -1,24 +1,19 @@
-# Allowed Files For V1
+# V2 允许文件
 
-- `app/main.py`
-- `app/__init__.py`
-- `app/api/chat.py`
-- `app/api/__init__.py`
-- `app/schemas/chat.py`
-- `app/schemas/__init__.py`
-- `app/services/chat_service.py`
-- `app/services/__init__.py`
-- `app/agents/code_agent.py`
-- `app/agents/__init__.py`
-- `app/observability/tracing.py`
-- `app/observability/__init__.py`
-- `tests/test_chat_api.py`
-- `specs/001-mvp-code-agent/spec.md`
-- `specs/001-mvp-code-agent/plan.md`
-- `specs/001-mvp-code-agent/tasks.md`
-- `.harness/rules.md`
-- `.harness/allowed_files.md`
-- `.harness/test_commands.md`
-- `.harness/review_checklist.md`
+- `app/tools/__init__.py`
+- `app/tools/file_tools.py`
+- `tests/test_file_tools.py`
+- `specs/002-file-tools/spec.md`
+- `specs/002-file-tools/plan.md`
+- `specs/002-file-tools/tasks.md`
 - `README.md`
-- `pyproject.toml`
+- `.gitignore`
+- `AGENTS.md`
+- `docs/ARCHITECTURE.md`
+- `docs/AGENT_RULES.md`
+- `docs/PROGRESS.md`
+- `docs/FEATURE_LIST.json`
+- `HANDOFF_TO_NEXT_CHAT.md`
+- `scripts/verify.ps1`
+- `.harness/allowed_files.md`
+- `.harness/review_checklist.md`

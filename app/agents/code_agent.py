@@ -12,9 +12,9 @@ class CodeAgent:
     def run(self, message: str, repo_path: str, trace_id: str) -> AgentResult:
         return AgentResult(
             answer=(
-                "Mock analysis result: V1 received your request but does not read "
-                f"{repo_path}. V2 will add list_files/read_file/search_code tools "
-                "for safe repository analysis."
+                "Mock 分析结果：V1 已收到请求，但不会读取 "
+                f"{repo_path}。V2 会加入 list_files/read_file/search_code 工具，"
+                "用于安全的仓库分析。"
             ),
             related_files=[],
             tool_calls=[],

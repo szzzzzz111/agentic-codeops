@@ -1,32 +1,32 @@
-# Tasks: V1 MVP Code Agent
+# 任务：V1 MVP 代码智能体
 
-## Implementation
+## 实现
 
-- [x] Create the project directory structure.
-- [x] Write V1 spec, plan, and task documents.
-- [x] Write lightweight harness rules.
-- [ ] Implement FastAPI app creation.
-- [ ] Add package marker `__init__.py` files under `app/`.
-- [ ] Implement `/chat` router.
-- [ ] Implement chat request and response schemas.
-- [ ] Implement trace ID generation.
-- [ ] Implement mock code agent with an answer that mentions V1 does not read `repo_path`.
-- [ ] Implement chat service orchestration.
-- [ ] Add pytest coverage for `/chat`, including unique `trace_id` values across consecutive requests.
-- [ ] Write README with setup, usage, current scope, and roadmap.
-- [ ] Add `ruff` as a quality gate in `pyproject.toml`.
+- [x] 创建项目目录结构。
+- [x] 编写 V1 spec、plan 和 task 文档。
+- [x] 编写轻量 harness 规则。
+- [ ] 实现 FastAPI 应用创建。
+- [ ] 在 `app/` 下增加包标记 `__init__.py` 文件。
+- [ ] 实现 `/chat` router。
+- [ ] 实现 chat 请求和响应 schema。
+- [ ] 实现 trace ID 生成。
+- [ ] 实现模拟代码智能体，并在回答中说明 V1 不读取 `repo_path`。
+- [ ] 实现聊天 service 编排。
+- [ ] 增加 `/chat` pytest 覆盖，包括连续请求 `trace_id` 不重复。
+- [ ] 编写 README，包含启动、测试、当前范围和路线图。
+- [ ] 在 `pyproject.toml` 中加入 `ruff` 质量闸门。
 
-## Verification
+## 验证
 
-- [ ] Run `pytest`.
-- [ ] Run `ruff check .`.
-- [ ] Confirm `uvicorn app.main:app --reload` is the documented startup command.
+- [ ] 运行 `pytest`。
+- [ ] 运行 `ruff check .`。
+- [ ] 确认 `uvicorn app.main:app --reload` 是文档中的启动命令。
 
-## Deferred
+## 延后
 
-- [ ] Add repository file tools.
-- [ ] Add basic agent loop.
-- [ ] Add Skill Loader.
-- [ ] Add trace persistence.
-- [ ] Add mini eval.
-- [ ] Add Reflection.
+- [ ] 加入仓库文件工具。
+- [ ] 加入基础智能体循环。
+- [ ] 加入技能加载器。
+- [ ] 加入 trace 持久化。
+- [ ] 加入小型评测。
+- [ ] 加入反思检查。

@@ -10,7 +10,7 @@ def valid_payload() -> dict[str, str]:
     return {
         "user_id": "u001",
         "session_id": "s001",
-        "message": "Help me analyze why tests fail",
+        "message": "帮我分析为什么测试失败",
         "repo_path": "./mock_repo",
     }
 
@@ -21,8 +21,8 @@ def test_chat_endpoint_returns_mock_analysis() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["trace_id"].startswith("trace_")
-    assert body["answer"].startswith("Mock analysis result")
-    assert "does not read ./mock_repo" in body["answer"]
+    assert body["answer"].startswith("Mock 分析结果")
+    assert "不会读取 ./mock_repo" in body["answer"]
     assert "list_files/read_file/search_code" in body["answer"]
     assert body["related_files"] == []
     assert body["tool_calls"] == []

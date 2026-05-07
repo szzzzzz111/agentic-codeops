@@ -1,1 +1,1 @@
-# Package marker for application services.
+# 应用 service 包标记。

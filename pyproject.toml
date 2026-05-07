@@ -1,7 +1,7 @@
 [project]
 name = "agentic-codeops"
 version = "0.1.0"
-description = "RepoPilot: an Agentic CodeOps API for repository analysis workflows."
+description = "RepoPilot：面向仓库分析工作流的 Agentic CodeOps API。"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
