@@ -1,0 +1,24 @@
+# Allowed Files For V1
+
+- `app/main.py`
+- `app/__init__.py`
+- `app/api/chat.py`
+- `app/api/__init__.py`
+- `app/schemas/chat.py`
+- `app/schemas/__init__.py`
+- `app/services/chat_service.py`
+- `app/services/__init__.py`
+- `app/agents/code_agent.py`
+- `app/agents/__init__.py`
+- `app/observability/tracing.py`
+- `app/observability/__init__.py`
+- `tests/test_chat_api.py`
+- `specs/001-mvp-code-agent/spec.md`
+- `specs/001-mvp-code-agent/plan.md`
+- `specs/001-mvp-code-agent/tasks.md`
+- `.harness/rules.md`
+- `.harness/allowed_files.md`
+- `.harness/test_commands.md`
+- `.harness/review_checklist.md`
+- `README.md`
+- `pyproject.toml`
