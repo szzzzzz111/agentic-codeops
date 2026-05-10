@@ -13,6 +13,23 @@
 7. `.harness/review_checklist.md`：当前阶段 review 清单。
 8. `HANDOFF_TO_NEXT_CHAT.md`：交接给下一轮 session 的上下文。
 
+## 文档职责
+
+- `AGENTS.md`：入口地图和文档职责说明，不写详细架构或阶段任务。
+- `README.md`：面向人类的项目定位、当前能力、启动方式和路线图。
+- `docs/ARCHITECTURE.md`：当前真实架构、边界和扩展点，不把 Roadmap 写成已实现。
+- `docs/PROGRESS.md`：当前阶段状态、已完成内容、最近验证和下一步建议。
+- `docs/AGENT_RULES.md`：长期协作规则，包括分支、修改、验证、交接和 review。
+- `docs/FEATURE_LIST.json`：可验收功能清单和 `passes` 状态，不写长篇设计解释。
+- `HANDOFF_TO_NEXT_CHAT.md`：下一轮 session 的操作上下文，不替代长期文档。
+- `.harness/rules.md`：本仓库执行约束和 TDD/Harness 纪律。
+- `.harness/allowed_files.md`：当前阶段允许修改的文件，不写设计理由或历史内容。
+- `.harness/review_checklist.md`：当前阶段 review 检查项，不写实现方案。
+- `.harness/test_commands.md`：验证命令集合，不记录测试结果。
+- `specs/00x-*/spec.md`：该阶段要做什么、不做什么和验收标准。
+- `specs/00x-*/plan.md`：该阶段怎么做、改哪些模块和执行顺序。
+- `specs/00x-*/tasks.md`：该阶段 TDD checklist，不写项目定位或长期路线图。
+
 ## 工作原则
 
 - 一次只做一个小阶段，不跨阶段扩功能。
