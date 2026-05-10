@@ -1,22 +1,13 @@
-# 评审清单：V3 Agent Loop 实现阶段
+# 评审清单：V3 收尾文档同步
 
 - [ ] 当前分支是 `feature/v3-agent-loop`。
-- [ ] 只修改了 V3 实现阶段允许文件。
-- [ ] V3 specs 明确 `/chat` 请求和响应 schema 保持不变。
-- [ ] V3 specs 明确只填充已有 `related_files` 和 `tool_calls` 字段。
-- [ ] V3 specs 明确工具调用链路为 `ChatService -> CodeAgent -> ToolExecutor -> file_tools`。
-- [ ] V3 specs 明确最小实现优先只使用 `search_code`。
-- [ ] V3 specs 明确关键词提取是最小确定性规则。
-- [ ] `CodeAgent` 通过 `ToolExecutor` 调用 `search_code`。
-- [ ] `/chat` 返回真实 `related_files`。
-- [ ] `/chat` 返回 `tool_calls` 工具调用摘要。
-- [ ] 工具逻辑没有堆到 API 层或 `main.py`。
-- [ ] 关键词提取使用最小确定性规则，不做复杂语义理解。
-- [ ] 测试使用唯一关键词，例如 `UNIQUE_BUG_TOKEN`。
-- [ ] 无命中时 API 稳定返回 200。
-- [ ] 不泄露敏感文件内容。
-- [ ] V3 不加入真实 LLM、shell、写文件、多 Agent、RAG、Memory、Reflection 或 eval。
-- [ ] `docs/FEATURE_LIST.json` 的 V3 状态与实现结果一致。
-- [ ] 已更新 `docs/PROGRESS.md`。
-- [ ] 已更新 `HANDOFF_TO_NEXT_CHAT.md`。
+- [ ] 只修改了文档同步允许文件。
+- [ ] 未修改 `app/` 运行时代码。
+- [ ] 未修改 `tests/` 测试代码。
+- [ ] V1 tasks 已回填为当前完成状态。
+- [ ] V2 tasks 已回填为当前完成状态，并说明 V3 已接入工具调用。
+- [ ] V3 plan 已从计划叙事同步为完成叙事。
+- [ ] 没有提前实现 V4 Skill Loader 或其他未来功能。
+- [ ] 没有把 Skill Loader、trace audit、PermissionPolicy、ApprovalGate、SandboxRunner、Reflection、eval、RAG 或 Memory 写成已实现。
+- [ ] 已更新 `docs/PROGRESS.md` 或 `HANDOFF_TO_NEXT_CHAT.md` 中必要的交接说明。
 - [ ] 已运行 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，或说明无法运行的原因。

@@ -21,13 +21,13 @@
 
 ## 验证
 
-- [ ] 运行 `pytest`。
-- [ ] 运行 `ruff check .`。
+- [x] 运行 `pytest`。
+- [x] 运行 `ruff check .`。
 
 ## 延后
 
-- [ ] 将工具连接到 `CodeAgent`。
-- [ ] 在 `/chat` 中记录工具调用。
+- [x] 将工具连接到 `CodeAgent`。已在 V3 通过 `ToolExecutor -> search_code` 完成。
+- [x] 在 `/chat` 中记录工具调用。已在 V3 通过 `tool_calls` 摘要完成。
 - [ ] 加入技能加载器。
 - [ ] 加入反思检查。
 - [ ] 加入小型评测。

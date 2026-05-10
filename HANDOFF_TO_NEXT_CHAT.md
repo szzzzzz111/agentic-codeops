@@ -39,11 +39,12 @@ ruff check .: All checks passed
 
 下一轮建议：
 
-1. Review V3 是否符合最小范围和 harness allowed files。
-2. 如继续路线图，进入 V4 前先更新 allowed files。
-3. V4 可考虑基于 markdown 的 Skill Loader，或先进入 V5 trace/tool audit 扩展。
-4. 保持高风险能力统一经过 `ToolExecutor` 增量加入。
-5. 不要把 PermissionPolicy、ApprovalGate、SandboxRunner、eval、Reflection、RAG 或 Memory 写成已实现。
+1. 当前回到 `feature/v3-agent-loop` 做 V3 收尾文档同步，V4 尚未开始实现。
+2. 已回填 V1/V2 tasks，并将 V3 plan 同步为完成叙事。
+3. 如继续 V4，先创建或切换到 `feature/v4-skill-loader`，再将 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 从“文档同步”切换到 V4 实现范围。
+4. V4 可考虑基于 markdown 的 Skill Loader，或先进入 V5 trace/tool audit 扩展。
+5. 保持高风险能力统一经过 `ToolExecutor` 增量加入。
+6. 不要把 PermissionPolicy、ApprovalGate、SandboxRunner、eval、Reflection、RAG 或 Memory 写成已实现。
 
 ## 不要做
 
