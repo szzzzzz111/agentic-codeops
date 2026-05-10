@@ -1,30 +1,55 @@
 # 执行约束规则
 
-## V1 范围
+本文件记录当前仓库通用 Harness 约束，不绑定单一历史版本。阶段级允许文件和 review 项以 `.harness/allowed_files.md`、`.harness/review_checklist.md` 为准。
 
-V1 只做可运行的 FastAPI 骨架和模拟代码智能体。API 为了后续兼容会接收 `repo_path`，但 V1 代码不能读取该路径下的文件。
+## 当前定位
 
-## 分层
+RepoPilot 是面向代码仓库分析任务的可控 Code Agent Harness。项目目标不是替代通用 AI 编程助手，而是让 Agent 的工具调用、安全边界、执行追踪、测试、review 和 handoff 可验证、可审计、可交接。
 
-使用这条边界：
+## 当前已实现边界
+
+当前稳定主链路：
 
 ```text
-API -> Service -> Agent -> Trace
+API -> ChatService(trace_id) -> CodeAgent -> ToolExecutor -> file_tools
 ```
 
-- API 只处理 HTTP。
-- Service 编排请求处理。
-- Agent 负责分析行为。
-- Trace 负责生成 trace ID。
+- API 只处理 HTTP 请求和响应。
+- `ChatService` 创建请求级 `trace_id` 并编排 Agent。
+- `CodeAgent` 做最小确定性决策和结果组织。
+- `ToolExecutor` 统一收口工具调用，当前只包装只读 `search_code`。
+- `file_tools` 提供安全只读仓库工具，不处理 HTTP 或 Agent 决策。
+- Trace 当前是请求级 `trace_id`，不是持久化审计系统。
 
-## V1 禁止项
+## 阶段推进规则
 
-- 真实 LLM 调用。
-- 读取仓库文件。
-- `list_files`、`read_file` 或 `search_code`。
-- 技能加载器。
-- 反思检查。
-- 评测。
-- 复杂智能体循环。
-- 自动修改代码。
-- 硬编码 API key 或密钥。
+- 每次开始新阶段前，先确认当前分支、工作区状态和最近提交。
+- 每次进入新阶段前，先更新 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，再写 specs 或代码。
+- 每次提交前，检查 `git status --short --branch`、`git diff --name-only` 和 `git diff --check`。
+- 每次提交后，如要进入下一阶段，先确认 handoff、progress、specs、harness 是否同步。
+- 不要在一个 commit 中混入上一阶段收尾和下一阶段实现。
+- 如果发现 handoff、progress、specs、harness 任一文件仍指向旧分支或旧阶段，先修文档，再继续实现。
+
+## TDD 与验证规则
+
+- 先写规格、任务和验收标准，再开放实现文件。
+- 实现阶段必须配套测试；不能只靠手动检查或 LLM review。
+- 默认验证命令：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+```
+
+- 验证至少应覆盖 `pytest` 和 `ruff check .`。
+- 如果验证无法运行，最终说明必须写清楚原因。
+
+## 禁止项
+
+- 不接真实 LLM，除非当前阶段明确开放。
+- 不自动修改代码，除非当前阶段明确开放。
+- 不执行 shell 工具，除非当前阶段明确开放并经过新的安全设计。
+- 不绕过 `ToolExecutor` 增加高风险工具。
+- 不把工具逻辑堆到 API 层、`main.py` 或具体 router 中。
+- 不把 Roadmap 能力写成已实现。
+- 不提前实现 PermissionPolicy、ApprovalGate、SandboxRunner、Reflection、eval、RAG、Memory 或复杂多 Agent。
+- 不提交缓存文件、虚拟环境、本地环境变量或临时产物。

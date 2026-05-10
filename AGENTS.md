@@ -17,9 +17,11 @@
 
 - 一次只做一个小阶段，不跨阶段扩功能。
 - 先确认当前分支，再修改代码。
+- 新阶段开始前，先同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 - 优先维护 Harness 边界：工具调用、审计字段、specs、review checklist 和 handoff 必须与代码一致。
 - 优先跑确定性验证：`pytest`、`ruff check .`、`scripts/verify.ps1`。
 - 修改结束后更新 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`。
+- 提交前检查 `git status --short --branch`、`git diff --name-only` 和 `git diff --check`，避免无语义 diff 或阶段混杂。
 - 不要把项目知识只留在聊天窗口里，必须沉淀到仓库文档。
 
 ## 当前默认验证命令

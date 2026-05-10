@@ -13,11 +13,14 @@
 ## 修改规则
 
 - 严格遵守 `.harness/allowed_files.md`。
+- 新阶段开始前必须先更新 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，再修改 specs 或代码。
 - 不要跨阶段实现未来功能。
 - 不要把所有逻辑堆进 `main.py`。
 - 不要提交缓存文件、虚拟环境、本地环境变量或临时产物。
 - 文档、注释和用户可见文案优先使用中文。
 - 函数名、类名、接口字段和命令保持英文工程约定。
+- 不要把上一阶段收尾文档和下一阶段功能实现混在同一个 commit。
+- 如果 handoff、progress、specs 或 harness 仍指向旧分支/旧阶段，先同步文档再继续实现。
 
 ## 验证规则
 
@@ -64,5 +67,7 @@ Review Agent 必须检查：
 - 是否破坏架构边界。
 - 是否把 Roadmap 能力写成已实现。
 - 是否让工具调用绕过 `ToolExecutor` 或堆到 API 层。
+- 是否 handoff、progress、specs、harness 与当前分支和阶段一致。
+- 是否存在无语义 diff，例如只改行尾或无内容变化的文件。
 - 是否更新测试和文档。
 - 是否更新 progress 和 handoff。

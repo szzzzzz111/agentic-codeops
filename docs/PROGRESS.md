@@ -4,10 +4,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前功能分支：`feature/v3-agent-loop`
-- 当前阶段：V3 最小确定性 Agent Loop
+- 当前功能分支：`feature/v4-skill-loader`
+- 当前阶段：V4 Skill Loader 计划阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
+- 当前 V4 状态：尚未实现，只进入 DeepAgents 风格 Skill Metadata Loader 设计阶段
 
 ## 已完成
 
@@ -68,7 +69,9 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 下一步建议
 
-V4 后续建议：
+V4 计划建议：
 
-- 按路线图加入基于 markdown 的技能加载器。
+- 先写 `specs/004-skill-loader/spec.md`、`plan.md` 和 `tasks.md`。
+- V4 只做 Skill Metadata Loader，发现 `.agents/skills/*/SKILL.md` 的 `name`、`description`、`path`。
+- V4 不执行 skill，不读取完整 skill 正文，不做 progressive disclosure，不接入 `/chat` 决策。
 - 继续保持不接真实 LLM、不自动修改代码、不执行 shell。
