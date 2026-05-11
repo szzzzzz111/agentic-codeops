@@ -107,5 +107,27 @@
     ],
     "passes": true,
     "notes": "已由 tests/test_chat_api.py 覆盖 UNIQUE_BUG_TOKEN 命中、无命中、敏感文件不泄露和错误摘要脱敏。"
+  },
+  {
+    "id": "v4-skill-metadata-loader",
+    "category": "tools",
+    "description": "Skill Metadata Loader 发现 .agents/skills/*/SKILL.md，并只返回 name、description 和相对仓库 path。",
+    "steps": [
+      "创建包含 .agents/skills/example/SKILL.md 的临时仓库",
+      "在 SKILL.md YAML frontmatter 中写入 name 和 description",
+      "调用 load_skill_metadata(repo_path)",
+      "检查返回 metadata 不包含完整正文或本机绝对路径"
+    ],
+    "acceptance_criteria": [
+      "返回 name、description、path",
+      "path 为相对仓库路径",
+      "不存在 .agents/skills 时返回空列表",
+      "多个技能返回稳定排序",
+      "不返回完整 skill 正文",
+      "不接入 /chat 决策",
+      "不执行 skill"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_skill_loader.py 覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata 和异常 frontmatter 读取限制。"
   }
 ]

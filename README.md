@@ -2,7 +2,7 @@
 
 RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，目标不是替代通用 AI IDE 或 AI 编程助手，而是围绕 Agent 的工具调用、安全边界、执行追踪、评测和交接机制，构建一个可验证、可审计、可扩展的代码智能体执行框架。当前应用场景包括代码仓库阅读、Bug 定位和修复建议。
 
-当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层和 V3 最小确定性 Agent Loop。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
+当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop 和 V4 Skill Metadata Loader。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
 
 ## 当前能力与定位
 
@@ -17,6 +17,10 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
   - `list_files(repo_path)`
   - `read_file(repo_path, file_path, max_chars=12000)`
   - `search_code(repo_path, keyword, max_results=20)`
+- 提供 Skill Metadata Loader：
+  - `load_skill_metadata(repo_path)`
+  - 发现 `.agents/skills/*/SKILL.md`
+  - 只解析 `name`、`description` 和相对仓库 `path`
 
 V3 当前只做确定性关键词搜索，不做复杂语义理解。
 
@@ -52,6 +56,17 @@ V3 的意义不是让 Agent 变聪明，而是把工具调用收口到 `ToolExec
 - `/chat` 返回 `tool_calls` 摘要
 - `tool_calls` 不包含完整文件内容、完整搜索结果或本机绝对路径
 - 为后续 `PermissionPolicy`、`ApprovalGate`、`SandboxRunner`、trace audit、eval 和 reflection 留出扩展点
+
+### V4：Skill Metadata Loader
+
+V4 的意义不是执行技能，而是建立 DeepAgents 风格的技能发现边界：
+
+- 发现 `.agents/skills/*/SKILL.md`
+- 读取 YAML frontmatter 中的 `name` 和 `description`
+- 返回相对仓库路径 `path`
+- 不读取或返回完整 skill 正文
+- 不接入 `/chat` 决策
+- 不执行 skill
 
 ## Harness Engineering
 
@@ -133,12 +148,13 @@ API -> ChatService(trace_id) -> CodeAgent -> ToolExecutor -> file_tools
 - `app/agents/code_agent.py`：提取关键词、调用工具并组织结果。
 - `app/tools/tool_executor.py`：统一包装只读工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
+- `app/tools/skill_loader.py`：提供 Skill Metadata Loader；当前不接入 `/chat`。
 - `app/observability/tracing.py`：生成请求级 `trace_id`；当前不是完整持久化审计系统。
 
 ## 当前流程暂不包含
 
 - 真实 LLM 接入。
-- 技能加载器。
+- 技能执行或 skill-aware `/chat` 决策。
 - PermissionPolicy、ApprovalGate 或 SandboxRunner 实现。
 - trace 持久化审计。
 - 反思检查。
@@ -181,7 +197,7 @@ ChatService
 
 - V2：加入安全仓库工具：`list_files`、`read_file` 和 `search_code`。
 - V3：加入简单规则型智能体循环和统一 `ToolExecutor`。
-- V4：加入基于 markdown 的技能加载器。
+- V4：加入基于 markdown 的 Skill Metadata Loader。
 - V5：扩展 trace，记录工具调用和检索文件。
 - V6：加入仓库调试小型评测。
 - V7：加入回答完整性反思检查。

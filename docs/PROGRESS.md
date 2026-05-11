@@ -5,10 +5,10 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前功能分支：`feature/v4-skill-loader`
-- 当前阶段：V4 Skill Loader 计划阶段
+- 当前阶段：V4 Skill Metadata Loader 实现阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
-- 当前 V4 状态：尚未实现，只进入 DeepAgents 风格 Skill Metadata Loader 设计阶段
+- 当前 V4 状态：已实现独立 Skill Metadata Loader，尚未接入 `/chat` 决策或 skill 执行
 
 ## 已完成
 
@@ -53,9 +53,20 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 最近验证
 
-- `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
-- `pytest`：16 passed
+- 2026-05-11：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
+- `pytest`：23 passed
 - `ruff check .`：All checks passed
+
+## V4：Skill Metadata Loader
+
+- 新增 `specs/004-skill-loader/spec.md`，定义 V4 只做 DeepAgents 风格 Skill Metadata Loader。
+- 新增 `specs/004-skill-loader/plan.md`，记录 metadata-first、progressive disclosure 延后和实现阶段建议。
+- 新增 `specs/004-skill-loader/tasks.md`，拆分计划阶段、后续实现阶段和延后事项。
+- 新增 `app/tools/skill_loader.py`，发现 `.agents/skills/*/SKILL.md`，解析 `name`、`description` 和相对仓库 `path`。
+- 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata 和异常 frontmatter 读取限制。
+- V4 不执行 skill，不读取完整 skill 正文，不做 progressive disclosure，不接入 `/chat` 决策。
+- V4 当前对坏 `SKILL.md` 采用 fail fast 策略；后续有日志、trace audit 或 skill audit 后，可调整为记录日志并跳过坏 skill。
+- V4 仍不接真实 LLM、不自动修改代码、不执行 shell、不做 RAG、Memory、Reflection、eval 或复杂多 Agent。
 
 ## 当前注意事项
 
@@ -63,15 +74,15 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V3 只做最小确定性关键词提取，测试使用 `UNIQUE_BUG_TOKEN`。
 - V3 当前只调用 `search_code`，不自动读取完整文件内容。
 - 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、RAG、Memory 或复杂多 Agent。
-- PermissionPolicy、ApprovalGate、SandboxRunner、trace audit、Skill Loader、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
+- PermissionPolicy、ApprovalGate、SandboxRunner、trace audit、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
 - 后续接入权限、审批、沙箱时，应通过 `ToolExecutor` 增量加入。
 - 缓存文件已从 git 跟踪中移除，并由 `.gitignore` 忽略。
 
 ## 下一步建议
 
-V4 计划建议：
+下一步建议：
 
-- 先写 `specs/004-skill-loader/spec.md`、`plan.md` 和 `tasks.md`。
-- V4 只做 Skill Metadata Loader，发现 `.agents/skills/*/SKILL.md` 的 `name`、`description`、`path`。
-- V4 不执行 skill，不读取完整 skill 正文，不做 progressive disclosure，不接入 `/chat` 决策。
-- 继续保持不接真实 LLM、不自动修改代码、不执行 shell。
+- 收尾 V4 review，确认只修改当前允许文件。
+- 后续如进入 V5，应先更新 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+- 后续可做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
+- 继续保持不执行 skill、不接入 `/chat` 决策，除非后续阶段明确开放。
