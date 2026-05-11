@@ -12,6 +12,7 @@
 6. `.harness/allowed_files.md`：当前阶段允许修改的文件。
 7. `.harness/review_checklist.md`：当前阶段 review 清单。
 8. `HANDOFF_TO_NEXT_CHAT.md`：交接给下一轮 session 的上下文。
+9. 如本轮涉及新阶段规划，读取 `openspec/README.md` 并按项目级 OpenSpec 流程创建 change artifacts。
 
 ## 文档职责
 
@@ -26,6 +27,9 @@
 - `.harness/allowed_files.md`：当前阶段允许修改的文件，不写设计理由或历史内容。
 - `.harness/review_checklist.md`：当前阶段 review 检查项，不写实现方案。
 - `.harness/test_commands.md`：验证命令集合，不记录测试结果。
+- `openspec/README.md`：本仓库项目级 OpenSpec 使用说明；OpenSpec 是开发流程，不是 RepoPilot runtime 功能。
+- `.codex/skills/`：本仓库内 Codex OpenSpec skills；只在项目内使用，不安装全局 Codex prompts。
+- `.opencode/`：本仓库内 OpenCode OpenSpec commands 和 skills。
 - `specs/00x-*/spec.md`：该阶段要做什么、不做什么和验收标准。
 - `specs/00x-*/plan.md`：该阶段怎么做、改哪些模块和执行顺序。
 - `specs/00x-*/tasks.md`：该阶段 TDD checklist，不写项目定位或长期路线图。
@@ -33,6 +37,7 @@
 ## 工作原则
 
 - 一次只做一个小阶段，不跨阶段扩功能。
+- 新阶段优先使用项目级 OpenSpec 创建 proposal/design/tasks，再同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 - 先确认当前分支，再修改代码。
 - 新阶段开始前，先同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 - 优先维护 Harness 边界：工具调用、审计字段、specs、review checklist 和 handoff 必须与代码一致。
@@ -40,6 +45,8 @@
 - 修改结束后更新 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`。
 - 提交前检查 `git status --short --branch`、`git diff --name-only` 和 `git diff --check`，避免无语义 diff 或阶段混杂。
 - 不要把项目知识只留在聊天窗口里，必须沉淀到仓库文档。
+- OpenSpec、Superpowers、MCP、plugin 等外部范式默认只作为开发流程参考；除非阶段 specs 明确开放，不得写成 RepoPilot 产品运行时能力。
+- 本仓库当前不保留 `.github` OpenSpec prompts/skills；Copilot 对接不通过仓库内 `.github` 生成物维护。
 
 ## 当前默认验证命令
 

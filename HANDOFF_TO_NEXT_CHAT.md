@@ -3,19 +3,21 @@
 ## 分支状态
 
 ```text
-V4 开发分支：feature/v4-skill-loader
-已同步合并到：dev、main
+当前工作分支：feature/openspec-workflow
+V4 已同步合并到：feature/v4-skill-loader、dev、main
 ```
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支是 `feature/v4-skill-loader`，并已向上同步合并到 `dev` 和 `main`。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。当前正在 `feature/openspec-workflow` 接入项目级 OpenSpec 工作流。
 
 V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索，并返回真实 `related_files` 和 `tool_calls`。当前 Trace 是由 `ChatService` 创建的请求级 `trace_id`，随 `/chat` 响应返回；还不是完整持久化审计系统。
 
 当前 V4 已实现独立 Skill Metadata Loader，但尚未接入 `/chat` 决策，也不执行 skill。V4 设计参考 DeepAgents 的 skills 方案，尤其是目录化 `SKILL.md`、YAML frontmatter、metadata-first 和 progressive disclosure 的分层思路。当前能力只发现 `.agents/skills/*/SKILL.md`，解析 `name`、`description` 和相对仓库 `path`。
 
 已将 `.harness/rules.md` 从旧 V1 规则更新为当前通用 Harness 规则，并把本次流程问题沉淀为规则：新阶段先同步 allowed files/checklist，提交前检查状态和 diff，不混合阶段 commit。
+
+当前 OpenSpec 决策：只做项目级接入，不安装 Codex 全局 prompts；保留仓库内 `.codex/skills` 和 `.opencode`；不保留 `.github` OpenSpec prompts/skills。
 
 ## 本轮重点
 
@@ -51,6 +53,16 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
   - 返回相对仓库 `path`
 - 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。
 - 当前坏 `SKILL.md` 策略：缺少必要 metadata、frontmatter 未闭合或格式不合法时直接报错。后续等日志、trace audit 或 skill audit 能力存在后，可改成记录日志并跳过坏 skill。
+- 新增项目级 OpenSpec 工作流接入：
+  - `openspec/README.md`
+  - `openspec/changes/README.md`
+  - `openspec/changes/archive/README.md`
+  - `openspec/specs/README.md`
+  - `.codex/skills/openspec-*`
+  - `.opencode/commands/opsx-*`
+  - `.opencode/skills/openspec-*`
+- Codex 全局 prompts 未安装，且当前决策是不安装全局 prompts，避免影响非 SDD 项目。
+- `.github` OpenSpec 生成物已删除；Copilot 对接不通过仓库内 `.github` 生成物维护。
 
 ## 已验证
 
@@ -58,6 +70,10 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
 2026-05-11: powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 pytest: 24 passed
 ruff check .: All checks passed
+2026-05-11: openspec list
+No active changes found.
+2026-05-11: openspec list --specs
+No specs found.
 ```
 
 ## 下一轮建议
@@ -65,7 +81,7 @@ ruff check .: All checks passed
 下一轮建议：
 
 1. 收尾 V4 review，确认只修改当前允许文件。
-2. 如进入下一阶段，先更新 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+2. Review OpenSpec 项目级接入生成物，确认只作为本仓库开发流程使用。
 3. 后续可以做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
 4. 如果后续要优化坏 skill 处理，优先引入日志或审计字段，再把 fail fast 调整为记录并跳过。
 5. 后续可以拆分为：

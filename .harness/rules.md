@@ -30,6 +30,16 @@ API -> ChatService(trace_id) -> CodeAgent -> ToolExecutor -> file_tools
 - 不要在一个 commit 中混入上一阶段收尾和下一阶段实现。
 - 如果发现 handoff、progress、specs、harness 任一文件仍指向旧分支或旧阶段，先修文档，再继续实现。
 
+## 项目级 OpenSpec 使用原则
+
+- 本仓库可以使用 OpenSpec 作为项目级 SDD 工作流，用于 proposal、design、tasks、spec delta 和 archive。
+- OpenSpec 只约束 RepoPilot 的开发流程，不是 RepoPilot runtime 功能。
+- Codex 仅使用本仓库内 `.codex/skills` 和仓库文档执行 OpenSpec 流程；不要要求安装 `C:\Users\...\ .codex\prompts` 等全局 prompts。
+- OpenCode 可以使用仓库内 `.opencode`。
+- GitHub Copilot 当前不保留仓库内 `.github` OpenSpec 提示文件；如需启用，必须单独说明原因并更新 allowed files。
+- 不要因为接入 OpenSpec 而引入 MCP server、plugin runtime、skill 执行、动态工具注册或 `/chat` 决策变更。
+- Superpowers 只作为 Codex 开发本仓库的项目级能力卡片，不是 RepoPilot 对外暴露的 skill 系统。
+
 ## TDD 与验证规则
 
 - 先写规格、任务和验收标准，再开放实现文件。

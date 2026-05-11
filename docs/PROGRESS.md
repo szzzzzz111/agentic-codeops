@@ -4,11 +4,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- V4 开发分支：`feature/v4-skill-loader`，已同步合并到 `dev` 和 `main`
-- 当前阶段：V4 Skill Metadata Loader 实现阶段
+- 当前工作分支：`feature/openspec-workflow`
+- 当前阶段：项目级 OpenSpec 工作流接入阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4 状态：已实现独立 Skill Metadata Loader，尚未接入 `/chat` 决策或 skill 执行
+- 当前 OpenSpec 状态：已初始化项目内 OpenSpec、OpenCode 和 `.codex/skills`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 已完成
 
@@ -56,6 +57,22 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-11：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
 - `pytest`：24 passed
 - `ruff check .`：All checks passed
+- 2026-05-11：`openspec list`：No active changes found
+- 2026-05-11：`openspec list --specs`：No specs found
+
+## OpenSpec 项目级工作流
+
+- 新增项目内 OpenSpec 目录说明：
+  - `openspec/README.md`
+  - `openspec/changes/README.md`
+  - `openspec/changes/archive/README.md`
+  - `openspec/specs/README.md`
+- 保留项目内 `.codex/skills`，用于 Codex 在本仓库理解 OpenSpec 工作流。
+- 保留项目内 `.opencode`，用于 OpenCode OpenSpec commands 和 skills。
+- 不保留 `.github` OpenSpec prompts/skills；Copilot 对接不通过仓库内 `.github` 生成物维护。
+- 不安装 Codex 全局 prompts，不要求写入 `C:\Users\...\ .codex\prompts`。
+- OpenSpec 只作为本仓库开发流程，不是 RepoPilot runtime 功能。
+- 不因为 OpenSpec 接入而引入 MCP server、plugin runtime、skill 执行、动态工具注册或 `/chat` 决策变更。
 
 ## V4：Skill Metadata Loader
 
@@ -82,7 +99,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 下一步建议：
 
-- 收尾 V4 review，确认只修改当前允许文件。
-- 后续如进入 V5，应先更新 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+- Review OpenSpec 项目级接入生成物，确认不需要 Codex 全局 prompts。
+- 后续新阶段优先使用 OpenSpec 创建 change artifacts，再同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 - 后续可做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
 - 继续保持不执行 skill、不接入 `/chat` 决策，除非后续阶段明确开放。
