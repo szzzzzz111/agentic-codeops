@@ -65,6 +65,7 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
 - `.github` OpenSpec 生成物已删除；Copilot 对接不通过仓库内 `.github` 生成物维护。
 - 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
 - 当前迁移规划只创建 OpenSpec proposal、design、tasks 和 spec deltas，不删除旧 `specs/00x-*`。
+- OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。
 - 迁移目标 capabilities：
   - `chat-api`
   - `safe-repository-file-tools`

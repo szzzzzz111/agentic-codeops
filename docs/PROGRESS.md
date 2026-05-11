@@ -79,6 +79,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
 - 迁移规划目标是把 legacy `specs/00x-*` 的已验收 V1-V4 行为映射为长期 OpenSpec capabilities。
 - 当前只创建 proposal、design、tasks 和 spec deltas，不删除旧 `specs/00x-*`。
+- OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。
 - 新增 capabilities：
   - `chat-api`
   - `safe-repository-file-tools`

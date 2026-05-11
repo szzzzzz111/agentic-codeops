@@ -1,59 +1,59 @@
 ## Context
 
-RepoPilot historically used `specs/00x-*` directories for V1-V4 stage specs. The repository now has project-level OpenSpec support, but `openspec/specs/` is empty, so future agents do not yet have a canonical OpenSpec view of accepted behavior.
+RepoPilot 早期使用 `specs/00x-*` 目录管理 V1-V4 阶段规格。现在仓库已经有项目级 OpenSpec，但 `openspec/specs/` 仍为空，因此后续 Agent 还没有一个长期、能力导向的 OpenSpec 规格视图。
 
-This migration is documentation-only. It translates accepted requirements into OpenSpec capabilities while preserving the legacy specs until the migration is reviewed.
+本迁移只做文档转换：把已验收行为转成 OpenSpec capabilities，同时保留旧 specs，直到迁移经过 review。
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Create OpenSpec capabilities that cover the accepted V1-V4 behavior.
-- Keep the migration reviewable by mapping legacy stage specs into capability-oriented OpenSpec files.
-- Preserve existing runtime behavior and tests.
-- Keep `.harness` as the source of allowed-files, review checklist, verification, and handoff discipline.
+- 创建覆盖 V1-V4 已验收行为的 OpenSpec capability specs。
+- 将历史阶段规格映射为长期能力规格，便于后续 OpenSpec change 引用。
+- 保持运行时代码和测试行为不变。
+- 继续让 `.harness` 负责 allowed files、review checklist、验证和 handoff 纪律。
 
 **Non-Goals:**
 
-- Do not modify `app/` runtime code.
-- Do not modify `tests/` behavior.
-- Do not delete legacy `specs/00x-*` in this planning change.
-- Do not introduce MCP, plugin runtime, skill execution, dynamic tool registration, or `/chat` decision changes.
+- 不修改 `app/` 运行时代码。
+- 不修改 `tests/` 测试行为。
+- 不在本规划 change 中删除旧 `specs/00x-*`。
+- 不引入 MCP、plugin runtime、skill 执行、动态工具注册或 `/chat` 决策变更。
 
 ## Decisions
 
-- Use capability-oriented OpenSpec names instead of legacy stage numbers.
-  - Rationale: OpenSpec specs should describe long-lived behavior, not just historical implementation phases.
-  - Alternative: Mirror `001-*` through `004-*`; rejected because it preserves stage numbering instead of stable capabilities.
+- 使用能力导向的 OpenSpec 名称，而不是沿用旧阶段编号。
+  - 理由：OpenSpec 长期规格应该描述稳定能力，而不是历史实现阶段。
+  - 备选方案：直接镜像 `001-*` 到 `004-*`；放弃，因为这会继续绑定阶段编号。
 
-- Keep legacy `specs/00x-*` until after OpenSpec migration review.
-  - Rationale: The legacy specs are still useful audit history and acceptance context.
-  - Alternative: Delete them in the same change; rejected because it makes review harder and risks losing context.
+- 旧 `specs/00x-*` 暂时保留。
+  - 理由：旧 specs 仍然是历史审计和验收上下文。
+  - 备选方案：同一 change 中删除旧 specs；放弃，因为会增加 review 风险。
 
-- Represent harness workflow as its own OpenSpec capability.
-  - Rationale: RepoPilot's development discipline is part of the controlled Code Agent Harness value, even though it is not runtime code.
-  - Alternative: Keep harness rules only in `.harness`; rejected because future OpenSpec changes need a discoverable process contract.
+- 将 harness workflow 作为独立 capability。
+  - 理由：RepoPilot 的可控开发纪律本身就是 Code Agent Harness 的重要能力。
+  - 备选方案：只保留在 `.harness` 文档中；放弃，因为后续 OpenSpec change 需要可发现的流程契约。
 
 ## Risks / Trade-offs
 
-- Legacy specs and OpenSpec specs can temporarily diverge.
-  - Mitigation: Keep this as a dedicated migration change, review mappings carefully, and only remove/deprecate legacy specs after acceptance.
+- 旧 specs 和 OpenSpec specs 在迁移期间可能暂时并存。
+  - 缓解：保持本 change 独立，review 映射准确性，接受后再决定旧 specs 去留。
 
-- Capability specs may be less chronological than legacy specs.
-  - Mitigation: Preserve historical status in `docs/PROGRESS.md` and `HANDOFF_TO_NEXT_CHAT.md`.
+- OpenSpec specs 不再按时间线组织。
+  - 缓解：历史叙事继续放在 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`。
 
-- OpenSpec does not replace harness review rules.
-  - Mitigation: Keep `.harness/allowed_files.md`, `.harness/review_checklist.md`, verification, and handoff updates mandatory.
+- OpenSpec 不能替代 harness review 规则。
+  - 缓解：继续强制维护 `.harness/allowed_files.md`、`.harness/review_checklist.md`、验证和 handoff。
 
 ## Migration Plan
 
-1. Create OpenSpec capability specs under this change.
-2. Review the OpenSpec specs against legacy `specs/00x-*`, README, progress, and feature list.
-3. Validate the OpenSpec change.
-4. After acceptance, archive the OpenSpec change to populate `openspec/specs/`.
-5. In a later cleanup change, decide whether to delete, archive, or keep legacy `specs/00x-*`.
+1. 在本 change 中创建 OpenSpec capability specs。
+2. 对照旧 `specs/00x-*`、README、progress 和 feature list review 映射。
+3. 运行 `openspec validate migrate-legacy-specs-to-openspec`。
+4. 接受后归档该 OpenSpec change，生成长期 `openspec/specs/`。
+5. 后续单独决定旧 `specs/00x-*` 是删除、移动到归档文档，还是保留为历史阶段记录。
 
 ## Open Questions
 
-- Should legacy `specs/00x-*` be deleted after OpenSpec archive, or retained as historical stage documentation?
-- Should `docs/FEATURE_LIST.json` remain the acceptability index, or should OpenSpec specs become the primary source and `FEATURE_LIST.json` become derived documentation?
+- OpenSpec 归档后，旧 `specs/00x-*` 应删除、归档，还是继续保留？
+- `docs/FEATURE_LIST.json` 是否继续作为验收索引，还是后续改为由 OpenSpec specs 承担主来源？

@@ -1,62 +1,62 @@
 ## ADDED Requirements
 
-### Requirement: List safe repository files
+### Requirement: 列出安全仓库文件
 
-The system SHALL provide a read-only `list_files(repo_path)` tool that returns allowed text-like files relative to `repo_path`.
+系统 SHALL 提供只读 `list_files(repo_path)` 工具，返回 `repo_path` 内允许访问的类文本文件，路径 MUST 相对 `repo_path`。
 
-#### Scenario: Normal files are listed
+#### Scenario: 普通文件被列出
 
-- **WHEN** a repository contains ordinary source files
-- **THEN** `list_files` returns those files as relative paths
+- **WHEN** 仓库包含普通源码文件
+- **THEN** `list_files` 返回这些文件的相对路径
 
-#### Scenario: Unsafe files are skipped
+#### Scenario: 不安全文件被跳过
 
-- **WHEN** a repository contains ignored directories, hidden directories, sensitive files, or binary files
-- **THEN** `list_files` omits those entries
+- **WHEN** 仓库包含忽略目录、隐藏目录、敏感文件或二进制文件
+- **THEN** `list_files` 不返回这些条目
 
-### Requirement: Read safe repository files
+### Requirement: 读取安全仓库文件
 
-The system SHALL provide a read-only `read_file(repo_path, file_path, max_chars)` tool that reads text files inside `repo_path` and limits returned content.
+系统 SHALL 提供只读 `read_file(repo_path, file_path, max_chars)` 工具，只读取 `repo_path` 内文本文件，并限制返回内容长度。
 
-#### Scenario: Repository file is read
+#### Scenario: 仓库内文件被读取
 
-- **WHEN** `read_file` targets an allowed file inside `repo_path`
-- **THEN** it returns UTF-8 text content up to `max_chars`
+- **WHEN** `read_file` 目标是 `repo_path` 内允许访问的文件
+- **THEN** 它返回最多 `max_chars` 个字符的 UTF-8 文本内容
 
-#### Scenario: Repository escape is rejected
+#### Scenario: 路径逃逸被拒绝
 
-- **WHEN** `read_file` targets a path outside `repo_path`
-- **THEN** it rejects the request
+- **WHEN** `read_file` 目标路径位于 `repo_path` 之外
+- **THEN** 工具拒绝该请求
 
-#### Scenario: Sensitive file is rejected
+#### Scenario: 敏感文件被拒绝
 
-- **WHEN** `read_file` targets a sensitive file such as `.env` or key material
-- **THEN** it rejects the request
+- **WHEN** `read_file` 目标是 `.env` 或密钥材料等敏感文件
+- **THEN** 工具拒绝该请求
 
-### Requirement: Search safe repository files
+### Requirement: 搜索安全仓库文件
 
-The system SHALL provide a read-only `search_code(repo_path, keyword, max_results)` tool that searches allowed text files and returns file path, line number, and line text.
+系统 SHALL 提供只读 `search_code(repo_path, keyword, max_results)` 工具，搜索允许访问的文本文件，并返回文件路径、行号和行文本。
 
-#### Scenario: Keyword match returns location
+#### Scenario: 关键词命中返回位置
 
-- **WHEN** an allowed file contains the search keyword
-- **THEN** `search_code` returns a result with `file_path`, `line_number`, and `line_text`
+- **WHEN** 允许访问的文件包含搜索关键词
+- **THEN** `search_code` 返回包含 `file_path`、`line_number` 和 `line_text` 的结果
 
-#### Scenario: Missing keyword returns empty results
+#### Scenario: 关键词未命中返回空结果
 
-- **WHEN** no allowed file contains the keyword
-- **THEN** `search_code` returns an empty list
+- **WHEN** 没有允许访问的文件包含关键词
+- **THEN** `search_code` 返回空列表
 
-#### Scenario: Sensitive content is not returned
+#### Scenario: 敏感内容不返回
 
-- **WHEN** a sensitive file contains the keyword
-- **THEN** `search_code` does not return content from that file
+- **WHEN** 敏感文件包含关键词
+- **THEN** `search_code` 不返回该敏感文件内容
 
-### Requirement: File tools are read-only
+### Requirement: 文件工具保持只读
 
-Repository file tools MUST NOT write files, delete files, or execute shell commands.
+仓库文件工具 MUST NOT 写文件、删文件或执行 shell 命令。
 
-#### Scenario: Tool capability boundary
+#### Scenario: 工具能力边界
 
-- **WHEN** file tools are used
-- **THEN** they only list, read, or search allowed repository text files
+- **WHEN** 文件工具被调用
+- **THEN** 它们只列出、读取或搜索允许访问的仓库文本文件

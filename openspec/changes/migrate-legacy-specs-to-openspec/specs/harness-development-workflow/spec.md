@@ -1,64 +1,64 @@
 ## ADDED Requirements
 
-### Requirement: Repository uses staged development workflow
+### Requirement: 仓库使用阶段化开发流程
 
-The repository SHALL develop one small stage at a time and MUST keep stage scope explicit.
+仓库 SHALL 一次只开发一个小阶段，并且 MUST 保持阶段 scope 明确。
 
-#### Scenario: New stage starts
+#### Scenario: 新阶段开始
 
-- **WHEN** a new stage begins
-- **THEN** the agent confirms the branch, current status, and current phase before modifying files
+- **WHEN** 新阶段开始
+- **THEN** Agent 在修改文件前确认分支、工作区状态和当前阶段
 
-### Requirement: Allowed files define write scope
+### Requirement: allowed files 定义写入范围
 
-The repository SHALL maintain `.harness/allowed_files.md` as the current phase write boundary.
+仓库 SHALL 维护 `.harness/allowed_files.md` 作为当前阶段写入边界。
 
-#### Scenario: Implementation begins
+#### Scenario: 实现开始
 
-- **WHEN** an agent starts implementation
-- **THEN** it only edits files allowed by `.harness/allowed_files.md`
+- **WHEN** Agent 开始实现
+- **THEN** 只编辑 `.harness/allowed_files.md` 允许的文件
 
-### Requirement: Review checklist defines acceptance risks
+### Requirement: review checklist 定义验收风险
 
-The repository SHALL maintain `.harness/review_checklist.md` for current phase review criteria.
+仓库 SHALL 维护 `.harness/review_checklist.md` 作为当前阶段 review 标准。
 
-#### Scenario: Review occurs
+#### Scenario: 进行 review
 
-- **WHEN** a change is reviewed
-- **THEN** the reviewer checks scope, allowed files, tests, docs, architecture boundaries, and Roadmap accuracy
+- **WHEN** 变更被 review
+- **THEN** reviewer 检查 scope、允许文件、测试、文档、架构边界和 Roadmap 准确性
 
-### Requirement: Verification is deterministic
+### Requirement: 验证使用确定性命令
 
-The repository SHALL prefer deterministic verification using `scripts/verify.ps1`, pytest, and ruff.
+仓库 SHALL 优先使用 `scripts/verify.ps1`、pytest 和 ruff 进行确定性验证。
 
-#### Scenario: Change is completed
+#### Scenario: 变更完成
 
-- **WHEN** a change is ready for review or merge
-- **THEN** `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` is run or the inability to run it is documented
+- **WHEN** 变更准备 review 或合并
+- **THEN** 运行 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，或记录无法运行的原因
 
-### Requirement: Handoff and progress stay current
+### Requirement: handoff 和 progress 保持最新
 
-The repository SHALL update `docs/PROGRESS.md` and `HANDOFF_TO_NEXT_CHAT.md` at the end of meaningful work.
+仓库 SHALL 在有意义的工作结束时更新 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`。
 
-#### Scenario: Work session ends
+#### Scenario: 工作 session 结束
 
-- **WHEN** a stage changes state or implementation completes
-- **THEN** progress and handoff documents reflect branch, completed work, validation, unfinished items, and next steps
+- **WHEN** 阶段状态变化或实现完成
+- **THEN** progress 和 handoff 文档记录分支、完成内容、验证、未完成事项和下一步建议
 
-### Requirement: OpenSpec is project-level development workflow
+### Requirement: OpenSpec 是项目级开发流程
 
-The repository SHALL use OpenSpec for project-level proposal, design, tasks, specs, and archive when starting substantial new stages.
+仓库 SHALL 在规划重要新阶段时使用 OpenSpec 管理 proposal、design、tasks、specs 和 archive。
 
-#### Scenario: New substantial stage
+#### Scenario: 规划重要新阶段
 
-- **WHEN** a new substantial stage is planned
-- **THEN** the agent creates or updates an OpenSpec change before implementation
+- **WHEN** 新的重要阶段被规划
+- **THEN** Agent 在实现前创建或更新 OpenSpec change
 
-### Requirement: OpenSpec does not imply runtime capability
+### Requirement: OpenSpec 不等于运行时能力
 
-OpenSpec, Superpowers, MCP, plugin, and external skill concepts MUST NOT be treated as RepoPilot runtime capabilities unless a stage spec explicitly opens that scope.
+OpenSpec、Superpowers、MCP、plugin 和外部 skill 概念 MUST NOT 被视为 RepoPilot 运行时能力，除非阶段 spec 明确开放该 scope。
 
-#### Scenario: OpenSpec workflow exists
+#### Scenario: 存在 OpenSpec 工作流
 
-- **WHEN** OpenSpec files or project-level AI skills are present
-- **THEN** the application runtime behavior remains unchanged unless a dedicated product spec requires otherwise
+- **WHEN** 仓库存在 OpenSpec 文件或项目级 AI skills
+- **THEN** 应用运行时行为不因此改变，除非专门的产品 spec 要求改变

@@ -1,52 +1,52 @@
 ## ADDED Requirements
 
-### Requirement: Agent loop uses deterministic keyword search
+### Requirement: Agent Loop 使用确定性关键词搜索
 
-The system SHALL use a minimal deterministic keyword extraction rule for the current `CodeAgent` behavior and MUST NOT require a real LLM.
+当前 `CodeAgent` 行为 MUST 使用最小确定性关键词提取规则，并且 MUST NOT 依赖真实 LLM。
 
-#### Scenario: Search token in message
+#### Scenario: 消息中包含搜索 token
 
-- **WHEN** a chat message contains an explicit searchable token such as `UNIQUE_BUG_TOKEN`
-- **THEN** the Agent uses that token as the search keyword
+- **WHEN** 聊天消息包含明确可搜索 token，例如 `UNIQUE_BUG_TOKEN`
+- **THEN** Agent 使用该 token 作为搜索关键词
 
-### Requirement: Tool calls go through ToolExecutor
+### Requirement: 工具调用经过 ToolExecutor
 
-The system SHALL route Agent repository search through `ToolExecutor` before calling concrete file tools.
+系统 SHALL 让 Agent 的仓库搜索先经过 `ToolExecutor`，再调用具体文件工具。
 
-#### Scenario: Search tool invocation
+#### Scenario: 搜索工具调用
 
-- **WHEN** `CodeAgent` performs repository search for `/chat`
-- **THEN** it invokes `search_code` through `ToolExecutor`
+- **WHEN** `CodeAgent` 为 `/chat` 执行仓库搜索
+- **THEN** 它通过 `ToolExecutor` 调用 `search_code`
 
-### Requirement: Chat returns related files from real search results
+### Requirement: 聊天响应从真实搜索结果生成 related_files
 
-The system SHALL populate `related_files` from safe search results and keep the response stable when no files match.
+系统 SHALL 从安全搜索结果填充 `related_files`，并在无命中时保持响应稳定。
 
-#### Scenario: Search hit
+#### Scenario: 搜索命中
 
-- **WHEN** safe repository search finds matching files
-- **THEN** `/chat` returns unique relative file paths in `related_files`
+- **WHEN** 安全仓库搜索找到匹配文件
+- **THEN** `/chat` 在 `related_files` 中返回去重后的相对文件路径
 
-#### Scenario: No search hit
+#### Scenario: 搜索无命中
 
-- **WHEN** safe repository search finds no matching files
-- **THEN** `/chat` returns an empty `related_files` list and remains successful
+- **WHEN** 安全仓库搜索没有找到匹配文件
+- **THEN** `/chat` 返回空 `related_files` 列表且响应仍成功
 
-### Requirement: Tool call summaries are safe
+### Requirement: 工具调用摘要安全
 
-The system SHALL return tool call summaries that include tool name, parameter summary, status, and result count without leaking full file content, complete search results, or local absolute paths.
+系统 SHALL 返回包含工具名、参数摘要、状态和结果数量的工具调用摘要，并且 MUST NOT 泄露完整文件内容、完整搜索结果或本机绝对路径。
 
-#### Scenario: Search call summary
+#### Scenario: 搜索调用摘要
 
-- **WHEN** `/chat` invokes repository search
-- **THEN** `tool_calls` includes a `search_code` summary with keyword, status, and result count
-- **AND** it does not include full file content or local absolute paths
+- **WHEN** `/chat` 调用仓库搜索
+- **THEN** `tool_calls` 包含 `search_code` 摘要、关键词、状态和结果数量
+- **AND** 摘要不包含完整文件内容或本机绝对路径
 
-### Requirement: Agent loop excludes future high-risk capabilities
+### Requirement: Agent Loop 不包含未来高风险能力
 
-The current Agent loop MUST NOT modify code, execute shell commands, use RAG, use Memory, perform Reflection, run evals, or use complex multi-Agent orchestration.
+当前 Agent Loop MUST NOT 修改代码、执行 shell 命令、使用 RAG、使用 Memory、执行 Reflection、运行 eval 或使用复杂多 Agent 编排。
 
-#### Scenario: Current chat behavior
+#### Scenario: 当前聊天行为
 
-- **WHEN** a user sends a chat request
-- **THEN** the system performs only the current read-only search behavior
+- **WHEN** 用户发送聊天请求
+- **THEN** 系统只执行当前只读搜索行为

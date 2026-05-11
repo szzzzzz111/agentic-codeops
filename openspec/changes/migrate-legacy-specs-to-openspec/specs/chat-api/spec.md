@@ -1,38 +1,38 @@
 ## ADDED Requirements
 
-### Requirement: Chat endpoint accepts traceable requests
+### Requirement: 聊天接口接收可追踪请求
 
-The system SHALL expose `POST /chat` as the Agent service entrypoint. Requests MUST include `user_id`, `session_id`, `message`, and `repo_path`.
+系统 SHALL 暴露 `POST /chat` 作为 Agent 服务入口。请求 MUST 包含 `user_id`、`session_id`、`message` 和 `repo_path`。
 
-#### Scenario: Valid chat request
+#### Scenario: 有效聊天请求
 
-- **WHEN** a client sends a valid `POST /chat` request with `user_id`, `session_id`, `message`, and `repo_path`
-- **THEN** the system returns a successful response using the stable chat response schema
+- **WHEN** 客户端发送包含 `user_id`、`session_id`、`message` 和 `repo_path` 的有效 `POST /chat` 请求
+- **THEN** 系统使用稳定的聊天响应 schema 返回成功响应
 
-### Requirement: Chat response includes audit fields
+### Requirement: 聊天响应包含审计字段
 
-The system SHALL return `trace_id`, `answer`, `related_files`, and `tool_calls` in every successful chat response.
+系统 SHALL 在每个成功聊天响应中返回 `trace_id`、`answer`、`related_files` 和 `tool_calls`。
 
-#### Scenario: Trace response shape
+#### Scenario: Trace 响应结构
 
-- **WHEN** a chat request completes successfully
-- **THEN** the response includes a `trace_id` beginning with `trace_`
-- **AND** the response includes `answer`, `related_files`, and `tool_calls`
+- **WHEN** 聊天请求成功完成
+- **THEN** 响应包含以 `trace_` 开头的 `trace_id`
+- **AND** 响应包含 `answer`、`related_files` 和 `tool_calls`
 
-### Requirement: Trace identifiers are unique per request
+### Requirement: Trace 标识每次请求唯一
 
-The system SHALL generate a distinct request-level `trace_id` for each chat request.
+系统 SHALL 为每次聊天请求生成不同的请求级 `trace_id`。
 
-#### Scenario: Consecutive requests
+#### Scenario: 连续请求
 
-- **WHEN** two chat requests are sent consecutively
-- **THEN** their `trace_id` values are different
+- **WHEN** 连续发送两次聊天请求
+- **THEN** 两次响应中的 `trace_id` 不相同
 
-### Requirement: API layer stays thin
+### Requirement: API 层保持轻量
 
-The API layer MUST expose HTTP routing and schema handling without directly implementing repository search, tool execution, or Agent decisions.
+API 层 MUST 只负责 HTTP 路由和 schema 处理，不直接实现仓库搜索、工具执行或 Agent 决策。
 
-#### Scenario: Chat orchestration boundary
+#### Scenario: 聊天编排边界
 
-- **WHEN** `/chat` handles a request
-- **THEN** request orchestration goes through the service and Agent layers instead of embedding tool logic in the router
+- **WHEN** `/chat` 处理请求
+- **THEN** 请求编排通过 Service 和 Agent 层完成，而不是把工具逻辑写进 router
