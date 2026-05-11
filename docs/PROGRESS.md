@@ -4,7 +4,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前功能分支：`feature/v4-skill-loader`
+- V4 开发分支：`feature/v4-skill-loader`，已同步合并到 `dev` 和 `main`
 - 当前阶段：V4 Skill Metadata Loader 实现阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
@@ -54,7 +54,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 最近验证
 
 - 2026-05-11：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
-- `pytest`：23 passed
+- `pytest`：24 passed
 - `ruff check .`：All checks passed
 
 ## V4：Skill Metadata Loader
@@ -63,7 +63,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 新增 `specs/004-skill-loader/plan.md`，记录 metadata-first、progressive disclosure 延后和实现阶段建议。
 - 新增 `specs/004-skill-loader/tasks.md`，拆分计划阶段、后续实现阶段和延后事项。
 - 新增 `app/tools/skill_loader.py`，发现 `.agents/skills/*/SKILL.md`，解析 `name`、`description` 和相对仓库 `path`。
-- 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata 和异常 frontmatter 读取限制。
+- 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。
 - V4 不执行 skill，不读取完整 skill 正文，不做 progressive disclosure，不接入 `/chat` 决策。
 - V4 当前对坏 `SKILL.md` 采用 fail fast 策略；后续有日志、trace audit 或 skill audit 后，可调整为记录日志并跳过坏 skill。
 - V4 仍不接真实 LLM、不自动修改代码、不执行 shell、不做 RAG、Memory、Reflection、eval 或复杂多 Agent。

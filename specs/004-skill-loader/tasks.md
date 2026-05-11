@@ -34,6 +34,7 @@
 - [x] 增加多技能稳定排序测试。
 - [x] 增加不返回完整正文测试。
 - [x] 增加不泄露本机绝对路径测试。
+- [x] 增加非法 frontmatter 行 fail fast 测试。
 - [x] 增加异常 frontmatter 读取限制测试。
 - [x] 确认 `/chat` 行为不变。
 - [x] 更新 README、`docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`。

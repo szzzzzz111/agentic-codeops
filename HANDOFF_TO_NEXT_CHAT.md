@@ -1,14 +1,15 @@
 # 交接给下一轮 Chat
 
-## 当前分支
+## 分支状态
 
 ```text
-feature/v4-skill-loader
+V4 开发分支：feature/v4-skill-loader
+已同步合并到：dev、main
 ```
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。当前本地分支是 `feature/v4-skill-loader`，已经快进同步到最新 `main`。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支是 `feature/v4-skill-loader`，并已向上同步合并到 `dev` 和 `main`。
 
 V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索，并返回真实 `related_files` 和 `tool_calls`。当前 Trace 是由 `ChatService` 创建的请求级 `trace_id`，随 `/chat` 响应返回；还不是完整持久化审计系统。
 
@@ -48,14 +49,14 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
   - 发现 `.agents/skills/*/SKILL.md`
   - 逐行读取 YAML frontmatter，解析 `name` 和 `description`
   - 返回相对仓库 `path`
-- 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata 和异常 frontmatter 读取限制。
+- 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。
 - 当前坏 `SKILL.md` 策略：缺少必要 metadata、frontmatter 未闭合或格式不合法时直接报错。后续等日志、trace audit 或 skill audit 能力存在后，可改成记录日志并跳过坏 skill。
 
 ## 已验证
 
 ```text
 2026-05-11: powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
-pytest: 23 passed
+pytest: 24 passed
 ruff check .: All checks passed
 ```
 

@@ -104,6 +104,22 @@ def test_load_skill_metadata_rejects_missing_required_metadata(
         load_skill_metadata(str(tmp_path))
 
 
+def test_load_skill_metadata_rejects_invalid_frontmatter_line(
+    tmp_path: Path,
+) -> None:
+    write_text(
+        tmp_path / ".agents" / "skills" / "broken" / "SKILL.md",
+        "---\n"
+        "name: broken\n"
+        "this line is invalid\n"
+        "description: 包含非法 frontmatter 行。\n"
+        "---\n",
+    )
+
+    with pytest.raises(ValueError, match="格式不合法"):
+        load_skill_metadata(str(tmp_path))
+
+
 def test_load_skill_metadata_limits_unclosed_frontmatter_read(
     tmp_path: Path,
 ) -> None:

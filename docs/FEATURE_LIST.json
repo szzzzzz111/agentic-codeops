@@ -128,6 +128,6 @@
       "不执行 skill"
     ],
     "passes": true,
-    "notes": "已由 tests/test_skill_loader.py 覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata 和异常 frontmatter 读取限制。"
+    "notes": "已由 tests/test_skill_loader.py 覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。"
   }
 ]

@@ -45,8 +45,11 @@ def _read_frontmatter_metadata(skill_file: Path) -> dict[str, str]:
     metadata: dict[str, str] = {}
 
     for line in frontmatter:
-        if ":" not in line:
+        stripped_line = line.strip()
+        if not stripped_line or stripped_line.startswith("#"):
             continue
+        if ":" not in line:
+            raise ValueError(f"SKILL.md frontmatter 格式不合法：{stripped_line}")
         key, value = line.split(":", 1)
         key = key.strip()
         if key in {"name", "description"}:
