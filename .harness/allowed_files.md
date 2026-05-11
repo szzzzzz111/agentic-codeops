@@ -1,5 +1,11 @@
-# Legacy Specs OpenSpec 迁移规划允许文件
+# Legacy Specs OpenSpec 归档允许文件
 
+- `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/**`
+- `openspec/specs/agent-loop-tool-execution/spec.md`
+- `openspec/specs/chat-api/spec.md`
+- `openspec/specs/harness-development-workflow/spec.md`
+- `openspec/specs/safe-repository-file-tools/spec.md`
+- `openspec/specs/skill-metadata-loader/spec.md`
 - `openspec/changes/migrate-legacy-specs-to-openspec/**`
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
@@ -7,6 +13,6 @@
 - `HANDOFF_TO_NEXT_CHAT.md`
 - `AGENTS.md`
 
-本阶段只允许创建旧 `specs/00x-*` 到 OpenSpec 的迁移规划 change，不开放 `app/` 运行时代码、`tests/` 测试代码、旧 `specs/00x-*` 删除或 OpenSpec archive 操作。
+本阶段只允许归档 `migrate-legacy-specs-to-openspec` OpenSpec change，并生成长期 `openspec/specs/`。不开放 `app/` 运行时代码、`tests/` 测试代码或旧 `specs/00x-*` 删除。
 
-迁移规划必须保持文档性：只新增 `openspec/changes/migrate-legacy-specs-to-openspec` 下的 proposal、design、tasks 和 spec delta。是否删除或归档旧 `specs/00x-*` 必须作为后续独立步骤处理。
+旧 `specs/00x-*` 是否删除、移动或保留仍需后续独立 cleanup change 决策。

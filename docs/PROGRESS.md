@@ -4,8 +4,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/migrate-legacy-specs-to-openspec`
-- 当前阶段：Legacy Specs OpenSpec 迁移规划阶段
+- 当前工作分支：`feature/archive-legacy-specs-openspec`
+- 当前阶段：Legacy Specs OpenSpec 归档阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4 状态：已实现独立 Skill Metadata Loader，尚未接入 `/chat` 决策或 skill 执行
@@ -74,11 +74,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - OpenSpec 只作为本仓库开发流程，不是 RepoPilot runtime 功能。
 - 不因为 OpenSpec 接入而引入 MCP server、plugin runtime、skill 执行、动态工具注册或 `/chat` 决策变更。
 
-## Legacy Specs OpenSpec 迁移规划
+## Legacy Specs OpenSpec 迁移与归档
 
 - 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
 - 迁移规划目标是把 legacy `specs/00x-*` 的已验收 V1-V4 行为映射为长期 OpenSpec capabilities。
-- 当前只创建 proposal、design、tasks 和 spec deltas，不删除旧 `specs/00x-*`。
+- 已归档 `migrate-legacy-specs-to-openspec`，并生成长期 `openspec/specs/`。
+- 未删除旧 `specs/00x-*`。
 - OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。
 - 新增 capabilities：
   - `chat-api`
@@ -87,6 +88,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
   - `skill-metadata-loader`
   - `harness-development-workflow`
 - `openspec validate migrate-legacy-specs-to-openspec`：通过。
+- `openspec list`：No active changes found。
+- `openspec list --specs`：显示 5 个 capabilities。
 
 ## V4：Skill Metadata Loader
 
@@ -113,8 +116,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 下一步建议：
 
-- Review `migrate-legacy-specs-to-openspec` 的 OpenSpec capability 映射，确认是否覆盖 legacy `specs/00x-*`。
-- 后续如接受迁移，运行 OpenSpec archive 生成长期 `openspec/specs/`。
-- 是否删除、移动或保留 legacy `specs/00x-*` 应单独决策，不在当前规划 change 中直接处理。
+- Review 归档后的 `openspec/specs/`，确认是否覆盖 legacy `specs/00x-*`。
+- 是否删除、移动或保留 legacy `specs/00x-*` 应单独决策，不在当前归档 change 中直接处理。
 - 后续可做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
 - 继续保持不执行 skill、不接入 `/chat` 决策，除非后续阶段明确开放。
