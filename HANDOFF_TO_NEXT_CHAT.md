@@ -3,13 +3,13 @@
 ## 分支状态
 
 ```text
-当前工作分支：feature/openspec-workflow
+当前工作分支：feature/migrate-legacy-specs-to-openspec
 V4 已同步合并到：feature/v4-skill-loader、dev、main
 ```
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。当前正在 `feature/openspec-workflow` 接入项目级 OpenSpec 工作流。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。项目级 OpenSpec 工作流已接入。当前正在 `feature/migrate-legacy-specs-to-openspec` 规划 legacy `specs/00x-*` 到 OpenSpec 的迁移。
 
 V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索，并返回真实 `related_files` 和 `tool_calls`。当前 Trace 是由 `ChatService` 创建的请求级 `trace_id`，随 `/chat` 响应返回；还不是完整持久化审计系统。
 
@@ -63,6 +63,14 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
   - `.opencode/skills/openspec-*`
 - Codex 全局 prompts 未安装，且当前决策是不安装全局 prompts，避免影响非 SDD 项目。
 - `.github` OpenSpec 生成物已删除；Copilot 对接不通过仓库内 `.github` 生成物维护。
+- 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
+- 当前迁移规划只创建 OpenSpec proposal、design、tasks 和 spec deltas，不删除旧 `specs/00x-*`。
+- 迁移目标 capabilities：
+  - `chat-api`
+  - `safe-repository-file-tools`
+  - `agent-loop-tool-execution`
+  - `skill-metadata-loader`
+  - `harness-development-workflow`
 
 ## 已验证
 
@@ -74,6 +82,8 @@ ruff check .: All checks passed
 No active changes found.
 2026-05-11: openspec list --specs
 No specs found.
+2026-05-11: openspec validate migrate-legacy-specs-to-openspec
+Change 'migrate-legacy-specs-to-openspec' is valid
 ```
 
 ## 下一轮建议
@@ -81,9 +91,9 @@ No specs found.
 下一轮建议：
 
 1. 收尾 V4 review，确认只修改当前允许文件。
-2. Review OpenSpec 项目级接入生成物，确认只作为本仓库开发流程使用。
-3. 后续可以做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
-4. 如果后续要优化坏 skill 处理，优先引入日志或审计字段，再把 fail fast 调整为记录并跳过。
+2. Review `migrate-legacy-specs-to-openspec` 的 capability 映射是否覆盖 legacy `specs/00x-*`。
+3. 如果接受迁移，运行 OpenSpec archive，把 change 合入长期 `openspec/specs/`。
+4. 是否删除、移动或保留 legacy `specs/00x-*` 需要单独决策，不要在当前规划 change 中直接处理。
 5. 后续可以拆分为：
    - V5：Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
    - V6：Skill-aware Agent Loop，基于 skill metadata 选择相关 skill。
