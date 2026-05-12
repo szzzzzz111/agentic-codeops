@@ -61,6 +61,7 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
 - 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
 - `migrate-legacy-specs-to-openspec` 已归档到 `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/`。
 - 长期规格已生成到 `openspec/specs/`。
+- `openspec/specs/<capability>/` 仅保留长期 `spec.md`；不要在长期 specs 下补阶段 `plan.md` / `tasks.md`，阶段执行记录看 `openspec/changes/archive/`。
 - 旧 `specs/00x-*` 已退役并删除，不再作为当前规格入口。
 - `retire-legacy-specs` 已归档到 `openspec/changes/archive/2026-05-12-retire-legacy-specs/`。
 - OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。

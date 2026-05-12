@@ -1,7 +1,8 @@
 # agent-loop-tool-execution Specification
 
 ## Purpose
-TBD - created by archiving change migrate-legacy-specs-to-openspec. Update Purpose after archive.
+
+记录已实现的最小确定性 Agent Loop 和工具执行边界：`CodeAgent` 提取可搜索关键词，通过 `ToolExecutor` 调用只读 `search_code`，从真实搜索结果生成 `related_files` 和安全 `tool_calls` 摘要，不接真实 LLM、不修改代码、不执行 shell、不引入 RAG、Memory、Reflection、eval 或复杂多 Agent。
 ## Requirements
 ### Requirement: Agent Loop 使用确定性关键词搜索
 

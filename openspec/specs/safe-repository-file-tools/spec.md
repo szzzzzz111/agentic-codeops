@@ -1,7 +1,8 @@
 # safe-repository-file-tools Specification
 
 ## Purpose
-TBD - created by archiving change migrate-legacy-specs-to-openspec. Update Purpose after archive.
+
+记录已实现的安全只读仓库文件工具边界：提供 `list_files`、`read_file` 和 `search_code`，所有路径限制在 `repo_path` 内，过滤敏感文件、隐藏/忽略目录和二进制文件，并且不写文件、不删文件、不执行 shell。
 ## Requirements
 ### Requirement: 列出安全仓库文件
 

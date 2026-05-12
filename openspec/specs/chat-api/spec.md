@@ -1,7 +1,8 @@
 # chat-api Specification
 
 ## Purpose
-TBD - created by archiving change migrate-legacy-specs-to-openspec. Update Purpose after archive.
+
+记录已实现的 `/chat` 服务入口边界：接收可追踪聊天请求，返回稳定响应 schema 和审计字段，并保持 API 层只负责 HTTP 路由与 schema 处理，不直接实现仓库搜索、工具执行或 Agent 决策。
 ## Requirements
 ### Requirement: 聊天接口接收可追踪请求
 

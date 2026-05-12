@@ -80,6 +80,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 已归档 `migrate-legacy-specs-to-openspec`，并生成长期 `openspec/specs/`。
 - 旧 `specs/00x-*` 已退役并删除；历史迁移记录保留在 `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/`。
 - 已归档 `retire-legacy-specs` 到 `openspec/changes/archive/2026-05-12-retire-legacy-specs/`，并在 `harness-development-workflow` 记录 `openspec/specs/` 是长期规格入口。
+- `openspec/specs/<capability>/` 作为长期规格入口仅保留当前 capability 的 `spec.md`；阶段执行的 proposal、design、tasks 和历史 spec delta 保留在 `openspec/changes/archive/`。
 - OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。
 - 新增 capabilities：
   - `chat-api`

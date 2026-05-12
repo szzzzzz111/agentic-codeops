@@ -1,7 +1,8 @@
 # skill-metadata-loader Specification
 
 ## Purpose
-TBD - created by archiving change migrate-legacy-specs-to-openspec. Update Purpose after archive.
+
+记录已实现的 Skill Metadata Loader 边界：仅发现 `.agents/skills/*/SKILL.md`，仅解析 frontmatter 中的 `name`、`description` 和相对仓库 `path`，不接入 `/chat`，不读取或返回完整正文，不执行 skill。
 ## Requirements
 ### Requirement: 发现技能元数据文件
 
