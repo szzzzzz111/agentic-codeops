@@ -129,5 +129,29 @@
     ],
     "passes": true,
     "notes": "已由 tests/test_skill_loader.py 覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。"
+  },
+  {
+    "id": "v5-skill-content-loader",
+    "category": "tools",
+    "description": "Skill Content Loader 在 metadata-first 之后，按需读取指定 .agents/skills/*/SKILL.md 的完整内容。",
+    "steps": [
+      "创建包含 .agents/skills/example/SKILL.md 的临时仓库",
+      "先通过 load_skill_metadata(repo_path) 获得相对 path",
+      "调用 content loader 读取该 path 的完整 SKILL.md 内容",
+      "检查路径安全、读取上限和非 /chat 接入边界"
+    ],
+    "acceptance_criteria": [
+      "返回完整 SKILL.md 文本内容，包含 frontmatter 和正文",
+      "返回结构包含 path 和 content 字段，并与 OpenSpec V5 spec 一致",
+      "返回路径为相对 repo_path 的路径，不泄露本机绝对路径",
+      "content loader 不解析 frontmatter，不验证 name 或 description",
+      "拒绝路径逃逸、非 skill 文件、缺失文件和符号链接目录绕过",
+      "内容读取有明确规模上限，超限 fail fast",
+      "load_skill_metadata(repo_path) 仍不返回完整 skill 正文",
+      "不接入 /chat 决策",
+      "不执行 skill"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_skill_loader.py 覆盖读取成功、返回结构、路径不泄露、路径逃逸、非 skill 文件、缺失文件、符号链接目录绕过、内容读取上限和 metadata 行为不变。"
   }
 ]

@@ -3,6 +3,7 @@
 ## 分支状态
 
 ```text
+当前工作分支：feature/v5-skill-content-loader
 当前基线分支：main
 已同步分支：dev、feature/retire-legacy-specs
 V4 已同步合并到：feature/v4-skill-loader、dev、main
@@ -10,101 +11,78 @@ V4 已同步合并到：feature/v4-skill-loader、dev、main
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。项目级 OpenSpec 工作流已接入。legacy `specs/00x-*` 已退役，长期规格入口已切换到 `openspec/specs/`。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3、V4 已合并到 `main`；项目级 OpenSpec 工作流已接入；legacy `specs/00x-*` 已退役，长期规格入口已切换到 `openspec/specs/`。
 
-V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索，并返回真实 `related_files` 和 `tool_calls`。当前 Trace 是由 `ChatService` 创建的请求级 `trace_id`，随 `/chat` 响应返回；还不是完整持久化审计系统。
+V3 已完成统一工具执行边界：`/chat` 通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索，并返回真实 `related_files` 和 `tool_calls`。当前 Trace 是 `ChatService` 创建的请求级 `trace_id`，还不是完整持久化审计系统。
 
-当前 V4 已实现独立 Skill Metadata Loader，但尚未接入 `/chat` 决策，也不执行 skill。V4 设计参考 DeepAgents 的 skills 方案，尤其是目录化 `SKILL.md`、YAML frontmatter、metadata-first 和 progressive disclosure 的分层思路。当前能力只发现 `.agents/skills/*/SKILL.md`，解析 `name`、`description` 和相对仓库 `path`。
+V4 已实现独立 Skill Metadata Loader，但未接入 `/chat` 决策，也不执行 skill。当前能力只发现 `.agents/skills/*/SKILL.md`，解析 `name`、`description` 和相对仓库 `path`，不读取或返回完整正文。
 
-已将 `.harness/rules.md` 从旧 V1 规则更新为当前通用 Harness 规则，并把本次流程问题沉淀为规则：新阶段先同步 allowed files/checklist，提交前检查状态和 diff，不混合阶段 commit。
+当前 V5 已完成并通过当前未提交工作区验证：Skill Content Loader / progressive disclosure，即调用方已经选定某个 skill 后，按相对路径按需读取完整 `SKILL.md`。V5 仍不做 skill-aware agent loop，不接入 `/chat` 决策，不执行 skill，不接真实 LLM，不自动把 skill 内容注入 prompt。
 
-当前 OpenSpec 决策：只做项目级接入，不安装 Codex 全局 prompts；保留仓库内 `.codex/skills` 和 `.opencode`；不保留 `.github` OpenSpec prompts/skills。
+## 本轮完成
 
-## 本轮重点
-
-- V3 已完成并合并：
-  - `feature/v3-agent-loop`
-  - `dev`
-  - `main`
-- V3 legacy specs 已迁移到 `openspec/specs/agent-loop-tool-execution/spec.md`。
-- 更新 V3 实现阶段 harness：
+- 从 `main` 创建工作分支：`feature/v5-skill-content-loader`。
+- 创建 OpenSpec change：`openspec/changes/v5-skill-content-loader/`。
+- 完成 V5 OpenSpec artifacts：
+  - `proposal.md`
+  - `design.md`
+  - `specs/skill-metadata-loader/spec.md`
+  - `tasks.md`
+- 同步 V5 阶段 harness：
   - `.harness/allowed_files.md`
   - `.harness/review_checklist.md`
-- 新增轻量 `ToolExecutor`，当前只包装 `search_code`。
-- 更新 `CodeAgent`，使用最小确定性关键词提取并调用 `ToolExecutor`。
-- 更新 `/chat` 测试，覆盖 `UNIQUE_BUG_TOKEN` 命中、无命中、敏感文件不泄露和错误摘要脱敏。
-- 更新 README、`docs/PROGRESS.md` 和 `docs/FEATURE_LIST.json`。
-- 收尾同步项目定位：RepoPilot 是可控 Code Agent Harness，核心价值是可控、可审计、可验证、可扩展。
-- 更新 `docs/ARCHITECTURE.md`，将当前链路同步为 `API -> ChatService(trace_id) -> CodeAgent -> ToolExecutor -> file_tools`。
-- 回填 V1/V2 tasks，并将 V3 plan 同步为完成叙事。
-- 创建并同步 `feature/v4-skill-loader` 到最新 `main`，并已写 V4 specs。
-- 更新 V4 实现阶段 harness，只开放 Skill Metadata Loader 模块、测试和必要文档。
-- V4 legacy specs 已迁移到 `openspec/specs/skill-metadata-loader/spec.md`。
-- V4 specs 明确当前只做 metadata-first：不执行 skill、不读取完整 skill 正文、不做 progressive disclosure、不接入 `/chat` 决策。
-- 新增 `app/tools/skill_loader.py`：
-  - `load_skill_metadata(repo_path)`
-  - 发现 `.agents/skills/*/SKILL.md`
-  - 逐行读取 YAML frontmatter，解析 `name` 和 `description`
-  - 返回相对仓库 `path`
-- 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。
-- 当前坏 `SKILL.md` 策略：缺少必要 metadata、frontmatter 未闭合或格式不合法时直接报错。后续等日志、trace audit 或 skill audit 能力存在后，可改成记录日志并跳过坏 skill。
-- 新增项目级 OpenSpec 工作流接入：
-  - `openspec/README.md`
-  - `openspec/changes/README.md`
-  - `openspec/changes/archive/README.md`
-  - `openspec/specs/README.md`
-  - `.codex/skills/openspec-*`
-  - `.opencode/commands/opsx-*`
-  - `.opencode/skills/openspec-*`
-- Codex 全局 prompts 未安装，且当前决策是不安装全局 prompts，避免影响非 SDD 项目。
-- `.github` OpenSpec 生成物已删除；Copilot 对接不通过仓库内 `.github` 生成物维护。
-- 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
-- `migrate-legacy-specs-to-openspec` 已归档到 `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/`。
-- 长期规格已生成到 `openspec/specs/`。
-- `openspec/specs/<capability>/` 仅保留长期 `spec.md`；不要在长期 specs 下补阶段 `plan.md` / `tasks.md`，阶段执行记录看 `openspec/changes/archive/`。
-- 旧 `specs/00x-*` 已退役并删除，不再作为当前规格入口。
-- `retire-legacy-specs` 已归档到 `openspec/changes/archive/2026-05-12-retire-legacy-specs/`。
-- OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。
-- 迁移目标 capabilities：
-  - `chat-api`
-  - `safe-repository-file-tools`
-  - `agent-loop-tool-execution`
-  - `skill-metadata-loader`
-  - `harness-development-workflow`
+- 更新长期进度和验收清单：
+  - `README.md`
+  - `docs/PROGRESS.md`
+  - `docs/FEATURE_LIST.json`
+- 同步 README 路线图：V5 改为 Skill Content Loader / progressive disclosure，trace audit、eval、reflection、RAG 后移。
+- 实现 `load_skill_content(repo_path, skill_path)`：
+  - 返回 `{"path": "...", "content": "..."}`
+  - 只允许读取 `.agents/skills/<skill>/SKILL.md`
+  - 拒绝路径逃逸、非 skill 文件、缺失文件和符号链接目录绕过
+  - 设置内容读取上限
+  - 不解析 frontmatter
+- `docs/FEATURE_LIST.json` 已将 `v5-skill-content-loader` 标记为 `passes: true`。
 
-## 已验证
+## 本轮验证
 
-```text
-2026-05-11: powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
-pytest: 24 passed
-ruff check .: All checks passed
-2026-05-11: openspec list
-No active changes found.
-2026-05-11: openspec list --specs
-agent-loop-tool-execution, chat-api, harness-development-workflow, safe-repository-file-tools, skill-metadata-loader
-2026-05-12: openspec validate retire-legacy-specs
-Change 'retire-legacy-specs' is valid
-2026-05-12: powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
-pytest: 24 passed
-ruff check .: All checks passed
-2026-05-12: git diff --check
-通过，仅有 CRLF 换行提示
-```
+- `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过。
+  - `pytest`：30 passed, 1 skipped
+  - `ruff check .`：All checks passed
+- `openspec validate v5-skill-content-loader`：通过。
+- `git diff --check`：通过，仅有 CRLF 换行提示。
+- 上述验证对应 2026-05-12 的当前未提交工作区；如果提交前继续修改实现、测试或文档，需要重新运行验证。
+
+## V5 规划边界
+
+已实现：
+
+- 在 `app/tools/skill_loader.py` 增加按相对路径读取完整 `SKILL.md` 的 content loader。
+- 在 `tests/test_skill_loader.py` 增加读取成功、返回结构、路径安全、读取上限和 metadata 行为不变的测试。
+
+禁止实现：
+
+- 不接入 `/chat`、`CodeAgent` 或 `ToolExecutor` 决策。
+- 不执行 skill。
+- Content Loader 不解析 frontmatter，不验证 `name` / `description`；metadata fail-fast 只属于 `load_skill_metadata(repo_path)`。
+- 不接真实 LLM。
+- 不自动把 skill 内容注入 prompt。
+- 不恢复旧 `specs/00x-*`。
+- 不引入 RAG、Memory、Reflection、eval、PermissionPolicy、ApprovalGate 或 SandboxRunner。
 
 ## 下一轮建议
 
-下一轮建议：
+1. 提交 V5 变更。
+2. 提交后归档 `v5-skill-content-loader`。
+3. 归档前后按需运行：
 
-1. 开始新阶段前，先用 OpenSpec 创建 change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
-2. 不要恢复旧 `specs/00x-*` 作为规格入口。
-3. 推荐下一阶段：V5 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
-4. 另一个可选方向：trace/tool/skill audit，为后续“坏 skill 记录日志并跳过”提供基础。
-5. 后续可以拆分为：
-   - V5：Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
-   - V6：Skill-aware Agent Loop，基于 skill metadata 选择相关 skill。
-   - V7 或以后：trace/tool/skill audit、eval、Reflection、RAG。
-6. 保持高风险能力统一经过 `ToolExecutor` 增量加入。
-7. 不要把 PermissionPolicy、ApprovalGate、SandboxRunner、eval、Reflection、RAG 或 Memory 写成已实现。
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+openspec validate v5-skill-content-loader
+git diff --check
+```
+
+4. 下一阶段建议继续 V6：Skill-aware Agent Loop，基于 skill metadata 选择相关 skill，但仍不执行 skill。
 
 ## 不要做
 
@@ -114,4 +92,4 @@ ruff check .: All checks passed
 - 不加入复杂多 Agent。
 - 不提前做 RAG、Memory、Reflection 或 eval。
 - 不提前实现 PermissionPolicy、ApprovalGate 或 SandboxRunner。
-- V4 不执行 skill，不把 skill 内容塞进 prompt，不做 skill-aware agent loop。
+- V5 不做 skill-aware `/chat` 决策，不执行 skill。

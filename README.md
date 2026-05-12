@@ -2,7 +2,7 @@
 
 RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，目标不是替代通用 AI IDE 或 AI 编程助手，而是围绕 Agent 的工具调用、安全边界、执行追踪、评测和交接机制，构建一个可验证、可审计、可扩展的代码智能体执行框架。当前应用场景包括代码仓库阅读、Bug 定位和修复建议。
 
-当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop 和 V4 Skill Metadata Loader。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
+当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop、V4 Skill Metadata Loader 和 V5 Skill Content Loader。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
 
 ## 当前能力与定位
 
@@ -21,6 +21,11 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
   - `load_skill_metadata(repo_path)`
   - 发现 `.agents/skills/*/SKILL.md`
   - 只解析 `name`、`description` 和相对仓库 `path`
+- 提供 Skill Content Loader：
+  - `load_skill_content(repo_path, skill_path)`
+  - 按相对路径读取 `.agents/skills/<skill>/SKILL.md`
+  - 返回 `path` 和完整 `content`
+  - 不解析 frontmatter、不执行 skill、不接入 `/chat`
 
 V3 当前只做确定性关键词搜索，不做复杂语义理解。
 
@@ -65,6 +70,19 @@ V4 的意义不是执行技能，而是建立 DeepAgents 风格的技能发现�
 - 读取 YAML frontmatter 中的 `name` 和 `description`
 - 返回相对仓库路径 `path`
 - 不读取或返回完整 skill 正文
+- 不接入 `/chat` 决策
+- 不执行 skill
+
+### V5：Skill Content Loader
+
+V5 的意义不是让 Agent 自动使用技能，而是在 metadata-first 之后提供 progressive disclosure 的按需读取层：
+
+- 按相对仓库路径读取 `.agents/skills/<skill>/SKILL.md`
+- 返回 `{"path": "...", "content": "..."}`
+- 限制读取范围在 `.agents/skills/<skill>/SKILL.md`
+- 拒绝路径逃逸、非 skill 文件、缺失文件和符号链接目录绕过
+- 设置完整内容读取上限
+- 不解析 frontmatter
 - 不接入 `/chat` 决策
 - 不执行 skill
 
@@ -199,7 +217,7 @@ ChatService
 - V2：加入安全仓库工具：`list_files`、`read_file` 和 `search_code`。
 - V3：加入简单规则型智能体循环和统一 `ToolExecutor`。
 - V4：加入基于 markdown 的 Skill Metadata Loader。
-- V5：扩展 trace，记录工具调用和检索文件。
-- V6：加入仓库调试小型评测。
-- V7：加入回答完整性反思检查。
-- V8：探索面向大型仓库的 RAG。
+- V5：加入 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
+- V6：探索 Skill-aware Agent Loop，基于 skill metadata 选择相关 skill。
+- V7 或以后：扩展 trace/tool/skill audit、仓库调试小型评测、回答完整性反思检查。
+- V8 或以后：探索面向大型仓库的 RAG。

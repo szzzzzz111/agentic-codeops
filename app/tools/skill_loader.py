@@ -2,6 +2,7 @@ from pathlib import Path
 
 MAX_FRONTMATTER_LINES = 50
 MAX_FRONTMATTER_CHARS = 4096
+MAX_SKILL_CONTENT_CHARS = 20000
 
 
 def load_skill_metadata(repo_path: str) -> list[dict[str, str]]:
@@ -33,11 +34,69 @@ def load_skill_metadata(repo_path: str) -> list[dict[str, str]]:
     return sorted(skills, key=lambda skill: skill["path"])
 
 
+def load_skill_content(repo_path: str, skill_path: str) -> dict[str, str]:
+    repo_root = _resolve_repo_root(repo_path)
+    skill_file = _resolve_skill_content_path(repo_root, skill_path)
+
+    content = _read_limited_text(skill_file, MAX_SKILL_CONTENT_CHARS)
+    return {
+        "path": _relative_path(skill_file, repo_root),
+        "content": content,
+    }
+
+
 def _resolve_repo_root(repo_path: str) -> Path:
     repo_root = Path(repo_path).expanduser().resolve()
     if not repo_root.is_dir():
         raise NotADirectoryError(f"仓库路径不是目录：{repo_path}")
     return repo_root
+
+
+def _resolve_skill_content_path(repo_root: Path, skill_path: str) -> Path:
+    relative_path = Path(skill_path)
+    if relative_path.is_absolute():
+        raise ValueError(f"技能路径不合法：{skill_path}")
+
+    parts = relative_path.parts
+    if (
+        len(parts) != 4
+        or parts[0] != ".agents"
+        or parts[1] != "skills"
+        or parts[3] != "SKILL.md"
+        or parts[2] in {"", ".", ".."}
+    ):
+        raise ValueError(f"技能路径不合法：{skill_path}")
+
+    skill_file = repo_root.joinpath(*parts)
+    if _has_symlink_parent(skill_file, repo_root):
+        raise ValueError(f"技能路径不合法：{skill_path}")
+
+    resolved_skill_file = skill_file.resolve()
+    if not _is_inside_repo(resolved_skill_file, repo_root):
+        raise ValueError(f"技能路径不合法：{skill_path}")
+    if not resolved_skill_file.is_file():
+        raise FileNotFoundError(f"SKILL.md 不存在：{skill_path}")
+
+    return resolved_skill_file
+
+
+def _has_symlink_parent(path: Path, repo_root: Path) -> bool:
+    current = repo_root
+    for part in path.relative_to(repo_root).parts[:-1]:
+        current = current / part
+        if current.is_symlink():
+            return True
+    return False
+
+
+def _read_limited_text(path: Path, max_chars: int) -> str:
+    with path.open("r", encoding="utf-8") as file:
+        content = file.read(max_chars + 1)
+
+    if len(content) > max_chars:
+        raise ValueError("SKILL.md 内容超出读取限制")
+
+    return content
 
 
 def _read_frontmatter_metadata(skill_file: Path) -> dict[str, str]:
