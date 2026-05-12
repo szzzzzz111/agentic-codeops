@@ -3,14 +3,14 @@
 ## 分支状态
 
 ```text
-Legacy Specs 退役变更分支：feature/retire-legacy-specs
-同步目标：dev、main
+当前基线分支：main
+已同步分支：dev、feature/retire-legacy-specs
 V4 已同步合并到：feature/v4-skill-loader、dev、main
 ```
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。项目级 OpenSpec 工作流已接入。当前在 `feature/retire-legacy-specs` 退役 legacy `specs/00x-*`，长期规格入口已切换到 `openspec/specs/`。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。项目级 OpenSpec 工作流已接入。legacy `specs/00x-*` 已退役，长期规格入口已切换到 `openspec/specs/`。
 
 V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索，并返回真实 `related_files` 和 `tool_calls`。当前 Trace 是由 `ChatService` 创建的请求级 `trace_id`，随 `/chat` 响应返回；还不是完整持久化审计系统。
 
@@ -94,10 +94,10 @@ ruff check .: All checks passed
 
 下一轮建议：
 
-1. 收尾 V4 review，确认只修改当前允许文件。
-2. 后续新阶段继续使用 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
-3. 不要恢复旧 `specs/00x-*` 作为规格入口。
-4. 后续可以做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
+1. 开始新阶段前，先用 OpenSpec 创建 change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+2. 不要恢复旧 `specs/00x-*` 作为规格入口。
+3. 推荐下一阶段：V5 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
+4. 另一个可选方向：trace/tool/skill audit，为后续“坏 skill 记录日志并跳过”提供基础。
 5. 后续可以拆分为：
    - V5：Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
    - V6：Skill-aware Agent Loop，基于 skill metadata 选择相关 skill。

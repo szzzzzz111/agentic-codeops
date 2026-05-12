@@ -1,18 +1,11 @@
-# Legacy Specs 退役允许文件
+# 当前 Harness 写入边界
 
-- `openspec/changes/retire-legacy-specs/**`
-- `openspec/changes/archive/*retire-legacy-specs*/**`
-- `specs/001-mvp-code-agent/**`
-- `specs/002-file-tools/**`
-- `specs/003-agent-loop/**`
-- `specs/004-skill-loader/**`
-- `.harness/allowed_files.md`
-- `.harness/review_checklist.md`
-- `AGENTS.md`
-- `README.md`
-- `docs/PROGRESS.md`
-- `HANDOFF_TO_NEXT_CHAT.md`
+当前暂无活跃开发阶段。
 
-本阶段只允许退役已迁移到 OpenSpec 的旧 `specs/00x-*`，并更新入口文档和交接说明。不开放 `app/` 运行时代码、`tests/` 测试代码或长期 `openspec/specs/` 行为修改。
+新阶段开始前，必须先用 OpenSpec 创建 change，并把本文件更新为该阶段允许修改的文件列表。
 
-退役后长期规格以 `openspec/specs/` 为准；历史迁移记录保留在 `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/`。
+默认规则：
+
+- 不恢复旧 `specs/00x-*` 作为规格入口。
+- 不把 OpenSpec、Superpowers、MCP、plugin 或外部 skill 写成 RepoPilot runtime 能力，除非阶段 spec 明确开放。
+- 不修改 `app/`、`tests/` 或长期 `openspec/specs/` 行为，除非新阶段 allowed files 明确允许。

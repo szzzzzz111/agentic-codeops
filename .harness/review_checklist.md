@@ -1,15 +1,12 @@
-# 评审清单：Legacy Specs 退役
+# 当前 Review 清单
 
-- [ ] 当前分支是 `feature/retire-legacy-specs`。
-- [ ] 只修改了 Legacy Specs 退役允许文件。
-- [ ] 未修改 `app/` 运行时代码。
-- [ ] 未修改 `tests/` 测试代码。
-- [ ] 旧 `specs/00x-*` 已删除或退役，不再作为当前规格入口。
-- [ ] `AGENTS.md` 不再要求阅读旧 `specs/00x-*`，并指向 `openspec/specs/`。
-- [ ] README、PROGRESS 和 HANDOFF 已说明长期规格以 `openspec/specs/` 为准。
-- [ ] 历史迁移记录仍保留在 `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/`。
-- [ ] `openspec list` 显示 No active changes found。
-- [ ] `openspec list --specs` 显示 5 个迁移后的 capabilities。
-- [ ] 未修改长期 `openspec/specs/` 的 requirement 行为。
-- [ ] 已运行 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，或说明无法运行的原因。
+当前暂无活跃开发阶段；下一阶段开始前，必须把本文件更新为该阶段 review 清单。
+
+默认检查项：
+
+- [ ] 当前变更有对应 OpenSpec change，或明确说明为什么不需要。
+- [ ] `.harness/allowed_files.md` 已更新为当前阶段写入边界。
+- [ ] 变更没有恢复旧 `specs/00x-*` 作为规格入口。
+- [ ] OpenSpec、Superpowers、MCP、plugin 或外部 skill 没有被误写成 RepoPilot runtime 能力。
+- [ ] 未把 LLM、RAG、Memory、Reflection、PermissionPolicy、ApprovalGate、SandboxRunner 或 eval 写成已实现，除非当前阶段确实实现。
 - [ ] 已运行 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，或说明无法运行的原因。

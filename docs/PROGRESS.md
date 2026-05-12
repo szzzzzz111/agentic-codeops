@@ -4,8 +4,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前变更分支：`feature/retire-legacy-specs`，完成后同步到 `dev` 和 `main`
-- 当前阶段：Legacy Specs 退役归档阶段
+- 当前基线分支：`main`，已同步到 `dev`
+- 当前阶段：V4 与 OpenSpec 迁移/退役已收尾；暂无活跃开发阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4 状态：已实现独立 Skill Metadata Loader，尚未接入 `/chat` 决策或 skill 执行
@@ -56,6 +56,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - `pytest`：24 passed
 - `ruff check .`：All checks passed
 - 2026-05-12：`openspec validate retire-legacy-specs`：通过
+- 2026-05-12：`openspec validate --all`：5 passed
 - 2026-05-12：`git diff --check`：通过，仅有 CRLF 换行提示
 
 ## OpenSpec 项目级工作流
@@ -115,5 +116,6 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 后续可做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
+- 推荐下一阶段：V5 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
+- 也可以先做 trace/tool/skill audit，为后续“坏 skill 记录日志并跳过”提供基础。
 - 继续保持不执行 skill、不接入 `/chat` 决策，除非后续阶段明确开放。

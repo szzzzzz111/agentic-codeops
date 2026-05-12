@@ -33,4 +33,4 @@ $env:OPENSPEC_TELEMETRY = "0"
 - OpenSpec 管理“要做什么、为什么、验收标准和变更归档”。
 - `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 继续管理当前阶段允许修改范围和 review 纪律。
 - `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md` 继续记录长期进度和跨 session 交接。
-- 旧 `specs/00x-*` 暂时保留，不在本阶段迁移；后续如迁移，必须单独建 OpenSpec change。
+- 旧 `specs/00x-*` 已迁移并退役；当前长期规格入口是 `openspec/specs/`。
