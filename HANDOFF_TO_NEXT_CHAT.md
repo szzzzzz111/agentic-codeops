@@ -17,7 +17,7 @@ V3 已完成统一工具执行边界：`/chat` 通过 `CodeAgent -> ToolExecutor
 
 V4 已实现独立 Skill Metadata Loader，但未接入 `/chat` 决策，也不执行 skill。当前能力只发现 `.agents/skills/*/SKILL.md`，解析 `name`、`description` 和相对仓库 `path`，不读取或返回完整正文。
 
-当前 V5 已完成并通过当前未提交工作区验证：Skill Content Loader / progressive disclosure，即调用方已经选定某个 skill 后，按相对路径按需读取完整 `SKILL.md`。V5 仍不做 skill-aware agent loop，不接入 `/chat` 决策，不执行 skill，不接真实 LLM，不自动把 skill 内容注入 prompt。
+当前 V5 已完成并归档：Skill Content Loader / progressive disclosure，即调用方已经选定某个 skill 后，按相对路径按需读取完整 `SKILL.md`。V5 仍不做 skill-aware agent loop，不接入 `/chat` 决策，不执行 skill，不接真实 LLM，不自动把 skill 内容注入 prompt。
 
 ## 本轮完成
 
@@ -43,15 +43,17 @@ V4 已实现独立 Skill Metadata Loader，但未接入 `/chat` 决策，也不�
   - 设置内容读取上限
   - 不解析 frontmatter
 - `docs/FEATURE_LIST.json` 已将 `v5-skill-content-loader` 标记为 `passes: true`。
+- 归档 `v5-skill-content-loader` 到 `openspec/changes/archive/2026-05-12-v5-skill-content-loader/`。
+- OpenSpec 已将 V5 delta 同步到长期规格 `openspec/specs/skill-metadata-loader/spec.md`。
+- `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已恢复为暂无活跃开发阶段。
 
 ## 本轮验证
 
 - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过。
   - `pytest`：30 passed, 1 skipped
   - `ruff check .`：All checks passed
-- `openspec validate v5-skill-content-loader`：通过。
-- `git diff --check`：通过，仅有 CRLF 换行提示。
-- 上述验证对应 2026-05-12 的当前未提交工作区；如果提交前继续修改实现、测试或文档，需要重新运行验证。
+- `openspec validate --all`：通过。
+- `git diff --check`：通过。
 
 ## V5 规划边界
 
@@ -72,16 +74,9 @@ V4 已实现独立 Skill Metadata Loader，但未接入 `/chat` 决策，也不�
 
 ## 下一轮建议
 
-1. 提交 V5 变更。
-2. 提交后归档 `v5-skill-content-loader`。
-3. 归档前后按需运行：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
-openspec validate v5-skill-content-loader
-git diff --check
-```
-
+1. 提交 V5 归档变更。
+2. 合并同步到 `dev` 和 `main`。
+3. 推送 `feature/v5-skill-content-loader`、`dev` 和 `main`。
 4. 下一阶段建议继续 V6：Skill-aware Agent Loop，基于 skill metadata 选择相关 skill，但仍不执行 skill。
 
 ## 不要做

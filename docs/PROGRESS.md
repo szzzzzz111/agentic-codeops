@@ -5,7 +5,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前工作分支：`feature/v5-skill-content-loader`；基线分支 `main` 已同步到 `dev`
-- 当前阶段：V5 Skill Content Loader / progressive disclosure 已完成并通过验证，等待提交后归档
+- 当前阶段：V5 Skill Content Loader / progressive disclosure 已完成并归档；暂无活跃开发阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4 状态：已实现独立 Skill Metadata Loader，尚未接入 `/chat` 决策或 skill 执行
@@ -58,11 +58,10 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-12：`openspec validate retire-legacy-specs`：通过
 - 2026-05-12：`openspec validate --all`：5 passed
 - 2026-05-12：`git diff --check`：通过，仅有 CRLF 换行提示
-- 2026-05-12，V5 当前未提交工作区实现验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
-- 2026-05-12，V5 当前未提交工作区实现验证：`pytest`：30 passed, 1 skipped
-- 2026-05-12，V5 当前未提交工作区实现验证：`ruff check .`：All checks passed
-- 2026-05-12，V5 当前未提交工作区实现验证：`openspec validate v5-skill-content-loader`：通过
-- 若提交前继续修改实现、测试或文档，必须重新运行上述验证。
+- 2026-05-12，V5 实现验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
+- 2026-05-12，V5 实现验证：`pytest`：30 passed, 1 skipped
+- 2026-05-12，V5 实现验证：`ruff check .`：All checks passed
+- 2026-05-12，V5 归档验证：`openspec validate --all`：通过
 
 ## OpenSpec 项目级工作流
 
@@ -119,6 +118,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V5 仍不接入 `/chat` 决策，不执行 skill，不接真实 LLM，不自动把 skill 内容注入 prompt。
 - 已同步本阶段 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 - `docs/FEATURE_LIST.json` 中 V5 条目已标记 `passes: true`。
+- 已归档 `v5-skill-content-loader` 到 `openspec/changes/archive/2026-05-12-v5-skill-content-loader/`，并同步长期规格 `openspec/specs/skill-metadata-loader/spec.md`。
 
 ## 当前注意事项
 
@@ -136,6 +136,6 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：提交 V5 变更后归档 OpenSpec change。
+- 当前建议：提交 V5 归档变更，然后合并同步到 `dev` 和 `main`。
 - 也可以先做 trace/tool/skill audit，为后续“坏 skill 记录日志并跳过”提供基础。
 - 继续保持不执行 skill、不接入 `/chat` 决策，除非后续阶段明确开放。
