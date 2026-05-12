@@ -4,8 +4,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/archive-legacy-specs-openspec`
-- 当前阶段：Legacy Specs OpenSpec 归档阶段
+- 当前变更分支：`feature/retire-legacy-specs`，完成后同步到 `dev` 和 `main`
+- 当前阶段：Legacy Specs 退役归档阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4 状态：已实现独立 Skill Metadata Loader，尚未接入 `/chat` 决策或 skill 执行
@@ -43,9 +43,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ### V3：统一工具执行边界和最小 Agent Loop
 
-- 新增 `specs/003-agent-loop/spec.md`，定义 V3 最小确定性 Agent Loop 范围。
-- 新增 `specs/003-agent-loop/plan.md`，定义实现链路 `ChatService -> CodeAgent -> ToolExecutor -> file_tools`。
-- 新增 `specs/003-agent-loop/tasks.md`，拆分计划阶段和实现阶段任务。
+- V3 legacy specs 已迁移到 `openspec/specs/agent-loop-tool-execution/spec.md`。
 - 新增轻量 `ToolExecutor`，当前只包装 `search_code`。
 - `CodeAgent` 使用最小确定性规则提取关键词，并通过 `ToolExecutor` 调用只读搜索。
 - `/chat` 返回真实 `related_files` 和 `tool_calls` 摘要。
@@ -54,11 +52,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 最近验证
 
-- 2026-05-11：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
+- 2026-05-12：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
 - `pytest`：24 passed
 - `ruff check .`：All checks passed
-- 2026-05-11：`openspec list`：No active changes found
-- 2026-05-11：`openspec list --specs`：No specs found
+- 2026-05-12：`openspec validate retire-legacy-specs`：通过
+- 2026-05-12：`git diff --check`：通过，仅有 CRLF 换行提示
 
 ## OpenSpec 项目级工作流
 
@@ -79,7 +77,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
 - 迁移规划目标是把 legacy `specs/00x-*` 的已验收 V1-V4 行为映射为长期 OpenSpec capabilities。
 - 已归档 `migrate-legacy-specs-to-openspec`，并生成长期 `openspec/specs/`。
-- 未删除旧 `specs/00x-*`。
+- 旧 `specs/00x-*` 已退役并删除；历史迁移记录保留在 `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/`。
+- 已归档 `retire-legacy-specs` 到 `openspec/changes/archive/2026-05-12-retire-legacy-specs/`，并在 `harness-development-workflow` 记录 `openspec/specs/` 是长期规格入口。
 - OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。
 - 新增 capabilities：
   - `chat-api`
@@ -93,9 +92,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## V4：Skill Metadata Loader
 
-- 新增 `specs/004-skill-loader/spec.md`，定义 V4 只做 DeepAgents 风格 Skill Metadata Loader。
-- 新增 `specs/004-skill-loader/plan.md`，记录 metadata-first、progressive disclosure 延后和实现阶段建议。
-- 新增 `specs/004-skill-loader/tasks.md`，拆分计划阶段、后续实现阶段和延后事项。
+- V4 legacy specs 已迁移到 `openspec/specs/skill-metadata-loader/spec.md`。
 - 新增 `app/tools/skill_loader.py`，发现 `.agents/skills/*/SKILL.md`，解析 `name`、`description` 和相对仓库 `path`。
 - 新增 `tests/test_skill_loader.py`，覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。
 - V4 不执行 skill，不读取完整 skill 正文，不做 progressive disclosure，不接入 `/chat` 决策。
@@ -116,7 +113,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 下一步建议：
 
-- Review 归档后的 `openspec/specs/`，确认是否覆盖 legacy `specs/00x-*`。
-- 是否删除、移动或保留 legacy `specs/00x-*` 应单独决策，不在当前归档 change 中直接处理。
+- 长期规格入口已切换为 `openspec/specs/`。
+- 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
 - 后续可做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
 - 继续保持不执行 skill、不接入 `/chat` 决策，除非后续阶段明确开放。

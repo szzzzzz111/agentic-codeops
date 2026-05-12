@@ -3,13 +3,14 @@
 ## 分支状态
 
 ```text
-当前工作分支：feature/archive-legacy-specs-openspec
+Legacy Specs 退役变更分支：feature/retire-legacy-specs
+同步目标：dev、main
 V4 已同步合并到：feature/v4-skill-loader、dev、main
 ```
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。项目级 OpenSpec 工作流已接入。当前正在 `feature/archive-legacy-specs-openspec` 归档 legacy `specs/00x-*` 到 OpenSpec 的迁移结果。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1、V2、V3 已合并到 `main`、`dev` 和 `feature/v3-agent-loop`。V4 开发分支 `feature/v4-skill-loader` 已向上同步合并到 `dev` 和 `main`。项目级 OpenSpec 工作流已接入。当前在 `feature/retire-legacy-specs` 退役 legacy `specs/00x-*`，长期规格入口已切换到 `openspec/specs/`。
 
 V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索，并返回真实 `related_files` 和 `tool_calls`。当前 Trace 是由 `ChatService` 创建的请求级 `trace_id`，随 `/chat` 响应返回；还不是完整持久化审计系统。
 
@@ -25,10 +26,7 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
   - `feature/v3-agent-loop`
   - `dev`
   - `main`
-- 新增 V3 Agent Loop specs：
-  - `specs/003-agent-loop/spec.md`
-  - `specs/003-agent-loop/plan.md`
-  - `specs/003-agent-loop/tasks.md`
+- V3 legacy specs 已迁移到 `openspec/specs/agent-loop-tool-execution/spec.md`。
 - 更新 V3 实现阶段 harness：
   - `.harness/allowed_files.md`
   - `.harness/review_checklist.md`
@@ -41,10 +39,7 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
 - 回填 V1/V2 tasks，并将 V3 plan 同步为完成叙事。
 - 创建并同步 `feature/v4-skill-loader` 到最新 `main`，并已写 V4 specs。
 - 更新 V4 实现阶段 harness，只开放 Skill Metadata Loader 模块、测试和必要文档。
-- 新增 V4 Skill Metadata Loader specs：
-  - `specs/004-skill-loader/spec.md`
-  - `specs/004-skill-loader/plan.md`
-  - `specs/004-skill-loader/tasks.md`
+- V4 legacy specs 已迁移到 `openspec/specs/skill-metadata-loader/spec.md`。
 - V4 specs 明确当前只做 metadata-first：不执行 skill、不读取完整 skill 正文、不做 progressive disclosure、不接入 `/chat` 决策。
 - 新增 `app/tools/skill_loader.py`：
   - `load_skill_metadata(repo_path)`
@@ -66,7 +61,8 @@ V3 已完成统一工具执行边界：`/chat` 现在会通过 `CodeAgent -> Too
 - 新增 OpenSpec change：`migrate-legacy-specs-to-openspec`。
 - `migrate-legacy-specs-to-openspec` 已归档到 `openspec/changes/archive/2026-05-11-migrate-legacy-specs-to-openspec/`。
 - 长期规格已生成到 `openspec/specs/`。
-- 旧 `specs/00x-*` 暂未删除。
+- 旧 `specs/00x-*` 已退役并删除，不再作为当前规格入口。
+- `retire-legacy-specs` 已归档到 `openspec/changes/archive/2026-05-12-retire-legacy-specs/`。
 - OpenSpec 正文优先使用中文；capability 目录名、命令、函数名和字段名保持英文工程约定；规范句保留 `SHALL` / `MUST` / `MUST NOT` 关键词以通过 OpenSpec 校验。
 - 迁移目标 capabilities：
   - `chat-api`
@@ -85,8 +81,13 @@ ruff check .: All checks passed
 No active changes found.
 2026-05-11: openspec list --specs
 agent-loop-tool-execution, chat-api, harness-development-workflow, safe-repository-file-tools, skill-metadata-loader
-2026-05-11: openspec validate migrate-legacy-specs-to-openspec
-Change 'migrate-legacy-specs-to-openspec' is valid
+2026-05-12: openspec validate retire-legacy-specs
+Change 'retire-legacy-specs' is valid
+2026-05-12: powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+pytest: 24 passed
+ruff check .: All checks passed
+2026-05-12: git diff --check
+通过，仅有 CRLF 换行提示
 ```
 
 ## 下一轮建议
@@ -94,8 +95,8 @@ Change 'migrate-legacy-specs-to-openspec' is valid
 下一轮建议：
 
 1. 收尾 V4 review，确认只修改当前允许文件。
-2. Review 归档后的 `openspec/specs/` 是否覆盖 legacy `specs/00x-*`。
-3. 是否删除、移动或保留 legacy `specs/00x-*` 需要单独决策，不要在当前归档 change 中直接处理。
+2. 后续新阶段继续使用 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+3. 不要恢复旧 `specs/00x-*` 作为规格入口。
 4. 后续可以做 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
 5. 后续可以拆分为：
    - V5：Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。

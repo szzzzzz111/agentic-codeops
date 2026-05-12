@@ -12,7 +12,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
 - `CodeAgent` 当前使用最小确定性关键词提取，不接真实 LLM。
 - `ToolExecutor` 统一收口只读工具调用，当前包装 `search_code`。
 - `related_files` 和 `tool_calls` 返回真实只读搜索结果。
-- 使用 specs、harness rules、review checklist、pytest 和 handoff 约束开发过程。
+- 使用 OpenSpec specs、harness rules、review checklist、pytest 和 handoff 约束开发过程。
 - 提供安全只读仓库文件工具：
   - `list_files(repo_path)`
   - `read_file(repo_path, file_path, max_chars=12000)`
@@ -73,6 +73,7 @@ V4 的意义不是执行技能，而是建立 DeepAgents 风格的技能发现�
 本仓库包含一套轻量 Harness V0，用来让 Agent 开发过程可控、可验证、可交接：
 
 - `AGENTS.md`：Agent 入口地图。
+- `openspec/specs/`：长期能力规格入口。
 - `docs/ARCHITECTURE.md`：架构边界。
 - `docs/AGENT_RULES.md`：Agent 工作规则。
 - `docs/PROGRESS.md`：项目长期进度记忆。

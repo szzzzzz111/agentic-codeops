@@ -28,11 +28,11 @@
 - `.harness/review_checklist.md`：当前阶段 review 检查项，不写实现方案。
 - `.harness/test_commands.md`：验证命令集合，不记录测试结果。
 - `openspec/README.md`：本仓库项目级 OpenSpec 使用说明；OpenSpec 是开发流程，不是 RepoPilot runtime 功能。
+- `openspec/specs/`：长期能力规格入口，承接已迁移的 V1-V4 legacy specs。
+- `openspec/changes/archive/`：已归档 OpenSpec changes 和历史迁移记录。
 - `.codex/skills/`：本仓库内 Codex OpenSpec skills；只在项目内使用，不安装全局 Codex prompts。
 - `.opencode/`：本仓库内 OpenCode OpenSpec commands 和 skills。
-- `specs/00x-*/spec.md`：该阶段要做什么、不做什么和验收标准。
-- `specs/00x-*/plan.md`：该阶段怎么做、改哪些模块和执行顺序。
-- `specs/00x-*/tasks.md`：该阶段 TDD checklist，不写项目定位或长期路线图。
+- 旧 `specs/00x-*`：已迁移并退役，不再作为当前规格入口。
 
 ## 工作原则
 

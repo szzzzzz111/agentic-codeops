@@ -1,7 +1,8 @@
 # harness-development-workflow Specification
 
 ## Purpose
-TBD - created by archiving change migrate-legacy-specs-to-openspec. Update Purpose after archive.
+
+记录 RepoPilot 仓库的阶段化开发、OpenSpec 规格入口、Harness 写入边界、验证和交接规则。
 ## Requirements
 ### Requirement: 仓库使用阶段化开发流程
 
@@ -66,3 +67,16 @@ OpenSpec、Superpowers、MCP、plugin 和外部 skill 概念 MUST NOT 被视为 
 - **WHEN** 仓库存在 OpenSpec 文件或项目级 AI skills
 - **THEN** 应用运行时行为不因此改变，除非专门的产品 spec 要求改变
 
+### Requirement: OpenSpec specs 是长期规格入口
+
+仓库 SHALL 使用 `openspec/specs/` 作为长期规格入口。旧 `specs/00x-*` 迁移完成后 MUST NOT 继续作为当前规格入口维护。
+
+#### Scenario: Agent 查找长期规格
+
+- **WHEN** Agent 需要查看当前已验收能力规格
+- **THEN** Agent 读取 `openspec/specs/` 中的 capability specs
+
+#### Scenario: 旧 specs 已退役
+
+- **WHEN** Agent 看到历史迁移记录
+- **THEN** Agent 将旧 `specs/00x-*` 视为已迁移来源，而不是当前可编辑规格入口
