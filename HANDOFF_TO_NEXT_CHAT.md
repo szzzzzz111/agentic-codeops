@@ -5,7 +5,7 @@
 ```text
 当前工作分支：feature/v6-agent-harness-kernel
 当前基线分支：main
-当前活跃 OpenSpec change：v6-agent-harness-kernel
+当前活跃 OpenSpec change：无
 ```
 
 ## 当前项目状态
@@ -26,7 +26,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> ToolEx
 
 ## 本轮完成
 
-注意：当前 V6 已通过用户验收，但尚未提交、尚未归档。
+注意：当前 V6 已通过用户验收，已提交并归档；下一轮不应继续修改 V6，除非用户明确要求修复或返工。
 
 - 从 `main` 创建过历史 draft 分支：`feature/v6-skill-aware-agent-loop`；该路线现在降级为历史偏差记录。
 - 切换到当前工作分支：`feature/v6-agent-harness-kernel`。
@@ -42,6 +42,9 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> ToolEx
 - 明确 `ProviderAdapter`、`ContextBuilder`、`SkillRegistry` 和 `SessionStore` 不在 V6 写运行时代码。
 - 记录两次流程偏差：状态理解后提前实现、V6 重做后再次提前写代码。
 - 按用户确认保留并改造 `app/harness/`、`tests/test_agent_harness_kernel.py` 和 `CodeAgent` 接入草稿，移除旧 Provider/Context/Skill/SessionStore runtime 方向。
+- 提交 V6：`b1d6b03 Add V6 agent harness kernel`。
+- 手动同步 V6 delta 到长期 specs，并归档到 `openspec/changes/archive/2026-05-18-v6-agent-harness-kernel/`。
+- 清理历史 `v6-skill-aware-agent-loop` 空 active change 目录，避免 OpenSpec 继续误报活跃 change。
 
 ## V6 边界
 
@@ -96,6 +99,7 @@ V12 Personal Assistant Gateway
   - `pytest`：39 passed, 1 skipped。
   - `ruff check .`：All checks passed。
 - `git diff --check`：通过，仅有 CRLF 换行提示。
+- `openspec validate --all`：5 passed。
 - 历史 `v6-skill-aware-agent-loop` draft 验证记录：`openspec validate v6-skill-aware-agent-loop`：通过。
 - 历史 `v6-skill-aware-agent-loop` draft 验证记录：`pytest tests/test_chat_api.py`：8 passed。
 - 历史 `v6-skill-aware-agent-loop` draft 验证记录：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过。
@@ -105,6 +109,6 @@ V12 Personal Assistant Gateway
 
 ## 下一轮建议
 
-1. 提交当前 `feature/v6-agent-harness-kernel` 变更。
-2. 提交后由用户决定是否归档 `v6-agent-harness-kernel`。
-3. 归档后再进入 V7：Permission + Approval Gate。
+1. 若要继续开发，先规划 V7：Permission + Approval Gate。
+2. V7 开始前同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+3. 不要把 Provider、RAG、Memory、Skill execution 或 SessionStore 提前塞进 V7，除非新 plan 明确改路线。

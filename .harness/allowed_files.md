@@ -1,36 +1,15 @@
 # 当前 Harness 写入边界
 
-当前活跃开发阶段：V6 Agent Harness Kernel + Router Kernel。
+当前暂无活跃开发阶段；下一阶段开始前，必须先更新本文件和 `.harness/review_checklist.md`。
 
-OpenSpec change：
+默认允许修改：
 
-- `openspec/changes/v6-agent-harness-kernel/`
+- 文档错别字或状态修正可修改对应文档文件。
+- 新阶段规划必须先创建或更新 `openspec/changes/<change-name>/`。
 
-本阶段允许修改：
+默认禁止：
 
-- `.harness/allowed_files.md`
-- `.harness/review_checklist.md`
-- `openspec/changes/v6-agent-harness-kernel/proposal.md`
-- `openspec/changes/v6-agent-harness-kernel/design.md`
-- `openspec/changes/v6-agent-harness-kernel/tasks.md`
-- `openspec/changes/v6-agent-harness-kernel/specs/agent-loop-tool-execution/spec.md`
-- `openspec/changes/v6-agent-harness-kernel/specs/harness-development-workflow/spec.md`
-- `app/agents/code_agent.py`
-- `app/harness/__init__.py`
-- `app/harness/kernel.py`
-- `tests/test_agent_harness_kernel.py`
-- `README.md`
-- `docs/PROGRESS.md`
-- `docs/FEATURE_LIST.json`
-- `HANDOFF_TO_NEXT_CHAT.md`
-
-本阶段禁止修改或实现：
-
+- 不在无活跃阶段时修改运行时代码或测试。
 - 不恢复旧 `specs/00x-*` 作为规格入口。
-- 不修改 API schema，不新增 `/chat` 响应顶层字段。
-- 不接入真实 LLM、RAG、Memory、Reflection、eval 或复杂多 Agent。
-- 不实现 ProviderAdapter、ContextBuilder、SkillRegistry 或 SessionStore 的运行时代码。
-- 不执行 skill，不把 skill 内容返回给用户，不自动把完整 skill 内容注入回答。
-- 不新增写文件、删文件、shell 执行、PermissionPolicy、ApprovalGate 或 SandboxRunner。
-- 不引入 PostgreSQL、Milvus、Elasticsearch、Kafka 等重依赖。
-- 不绕过 `ToolExecutor` 增加运行时工具调用。
+- 不把 OpenSpec、Superpowers、MCP、plugin 或外部 skill 误写成 RepoPilot runtime 能力。
+- 不提前实现 LLM、RAG、Memory、Reflection、PermissionPolicy、ApprovalGate、SandboxRunner、eval 或复杂多 Agent。
