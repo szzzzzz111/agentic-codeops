@@ -1,10 +1,6 @@
-# agent-loop-tool-execution Specification
+# agent-loop-tool-execution Delta
 
-## Purpose
-
-记录已实现的轻量 Agent Harness Kernel、确定性 Agent Loop 和工具执行边界：`CodeAgent` 通过 `AgentLoop` 编排 `RequestRouter`、`ToolRegistry`、`ToolExecutor.search_code` 和内存级 `TraceEvent`，从真实搜索结果生成 `related_files` 和安全 `tool_calls` 摘要，不接真实 LLM、不修改代码、不执行 shell、不引入 RAG、Memory、Reflection、eval 或复杂多 Agent。
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Agent Loop 由轻量 Harness Kernel 编排
 
@@ -28,9 +24,9 @@ Kernel MUST 定义最小可测试 contract：`AgentLoopRequest(message, repo_pat
 
 ### Requirement: 工具调用经过 ToolRegistry 和 ToolExecutor
 
-系统 SHALL 使用 `ToolRegistry` 记录工具规格元数据，并且当前仓库搜索 MUST 继续通过 `ToolExecutor.search_code` 执行。`ToolRegistry` 在当前阶段 MUST NOT 负责实际 dispatch。
+系统 SHALL 使用 `ToolRegistry` 记录工具规格元数据，并且当前仓库搜索 MUST 继续通过 `ToolExecutor.search_code` 执行。`ToolRegistry` 在 V6 MUST NOT 负责实际 dispatch。
 
-`AgentLoop` 调用工具前 MUST 先通过 `ToolRegistry` 校验工具存在、工具为只读、风险等级在当前阶段允许范围内；校验失败时 MUST NOT 调用 `ToolExecutor.search_code`。
+`AgentLoop` 调用工具前 MUST 先通过 `ToolRegistry` 校验工具存在、工具为只读、风险等级在 V6 允许范围内；校验失败时 MUST NOT 调用 `ToolExecutor.search_code`。
 
 #### Scenario: 注册 search_code 工具
 
@@ -51,30 +47,6 @@ Kernel MUST 定义最小可测试 contract：`AgentLoopRequest(message, repo_pat
 - **THEN** Kernel 不调用 `ToolExecutor.search_code`
 - **AND** Kernel 记录工具拒绝 trace event
 - **AND** trace summary 记录稳定拒绝原因：`not_registered`、`not_read_only` 或 `risk_not_allowed`
-
-### Requirement: 聊天响应从真实搜索结果生成 related_files
-
-系统 SHALL 从安全搜索结果填充 `related_files`，并在无命中时保持响应稳定。
-
-#### Scenario: 搜索命中
-
-- **WHEN** 安全仓库搜索找到匹配文件
-- **THEN** `/chat` 在 `related_files` 中返回去重后的相对文件路径
-
-#### Scenario: 搜索无命中
-
-- **WHEN** 安全仓库搜索没有找到匹配文件
-- **THEN** `/chat` 返回空 `related_files` 列表且响应仍成功
-
-### Requirement: 工具调用摘要安全
-
-系统 SHALL 返回包含工具名、参数摘要、状态和结果数量的工具调用摘要，并且 MUST NOT 泄露完整文件内容、完整搜索结果或本机绝对路径。
-
-#### Scenario: 搜索调用摘要
-
-- **WHEN** `/chat` 调用仓库搜索
-- **THEN** `tool_calls` 包含 `search_code` 摘要、关键词、状态和结果数量
-- **AND** 摘要不包含完整文件内容或本机绝对路径
 
 ### Requirement: Kernel 记录轻量 trace events
 

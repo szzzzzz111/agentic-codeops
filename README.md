@@ -2,15 +2,18 @@
 
 RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，目标不是替代通用 AI IDE 或 AI 编程助手，而是围绕 Agent 的工具调用、安全边界、执行追踪、评测和交接机制，构建一个可验证、可审计、可扩展的代码智能体执行框架。当前应用场景包括代码仓库阅读、Bug 定位和修复建议。
 
-当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop、V4 Skill Metadata Loader 和 V5 Skill Content Loader。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
+当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop、V4 Skill Metadata Loader、V5 Skill Content Loader 和 V6 Agent Harness Kernel + Router Kernel。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
 
 ## 当前能力与定位
 
 - 提供 FastAPI 应用和 `POST /chat`，作为 Agent 服务入口。
 - 请求字段包含 `user_id`、`session_id`、`message` 和 `repo_path`。
 - 每次请求生成唯一 `trace_id`，响应保留 `related_files` 和 `tool_calls` 审计字段。
-- `CodeAgent` 当前使用最小确定性关键词提取，不接真实 LLM。
+- `CodeAgent` 当前通过轻量 `AgentLoop` 执行最小确定性仓库搜索，不接真实 LLM。
+- `RequestRouter` 将请求路由到 `repo_search` 或 `chat_only`。
+- `ToolRegistry` 记录只读低风险工具元数据，并在工具调用前做 registry gate。
 - `ToolExecutor` 统一收口只读工具调用，当前包装 `search_code`。
+- `TraceEvent` 在 Kernel 内部记录路由、工具调用、工具结果和拒绝事件；当前不作为 `/chat` 顶层字段返回。
 - `related_files` 和 `tool_calls` 返回真实只读搜索结果。
 - 使用 OpenSpec specs、harness rules、review checklist、pytest 和 handoff 约束开发过程。
 - 提供安全只读仓库文件工具：
@@ -25,7 +28,8 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
   - `load_skill_content(repo_path, skill_path)`
   - 按相对路径读取 `.agents/skills/<skill>/SKILL.md`
   - 返回 `path` 和完整 `content`
-  - 不解析 frontmatter、不执行 skill、不接入 `/chat`
+  - 不解析 frontmatter、不执行 skill
+- V6 不执行 skill，不把 skill loader 接入 `/chat` 决策；Skill-aware Agent Loop 已降级为历史 draft 和后续 skill 子能力参考。
 
 V3 当前只做确定性关键词搜索，不做复杂语义理解。
 
@@ -86,6 +90,18 @@ V5 的意义不是让 Agent 自动使用技能，而是在 metadata-first 之后
 - 不接入 `/chat` 决策
 - 不执行 skill
 
+### V6：Agent Harness Kernel + Router Kernel
+
+V6 的意义不是扩展 skill-aware 行为，而是把现有搜索链路包进一个可演进的轻量 Harness Kernel：
+
+- `AgentLoopRequest(message, repo_path, trace_id)` 作为 Kernel 输入 contract。
+- `RequestRouter` 返回 `RouteDecision(route, keyword, reason)`，当前只支持 `repo_search` 和 `chat_only`。
+- `ToolRegistry` 返回 `ToolSpec(name, description, read_only, risk)`，当前默认只允许只读低风险 `search_code`。
+- `AgentLoop` 执行最小闭环：route -> registry gate -> `ToolExecutor.search_code` -> response。
+- `TraceEvent` 在内部记录 `request_routed`、`tool_call`、`tool_result` 和 `tool_rejected`。
+- `/chat` 顶层响应仍只返回 `answer`、`related_files`、`tool_calls`，不新增 trace 字段。
+- 不实现 `ProviderAdapter`、`ContextBuilder`、`SkillRegistry` 或 `SessionStore` 运行时代码。
+
 ## Harness Engineering
 
 本仓库包含一套轻量 Harness V0，用来让 Agent 开发过程可控、可验证、可交接：
@@ -98,6 +114,22 @@ V5 的意义不是让 Agent 自动使用技能，而是在 metadata-first 之后
 - `docs/FEATURE_LIST.json`：可验收功能清单。
 - `HANDOFF_TO_NEXT_CHAT.md`：跨 session 交接文档。
 - `scripts/verify.ps1`：本地验证入口。
+
+## 工程化取向
+
+RepoPilot 后续路线要体现工程化味道，但不追求重型企业平台。由于当前主要由个人配合 AI 开发，工程化优先体现在：
+
+- 清晰边界：Provider、Router、AgentLoop、ToolRegistry、ToolExecutor、Memory、RAG、Skill、Trace 分层明确。
+- 可审计：每次 model/tool/skill/memory 调用都有结构化摘要，敏感内容默认不外泄。
+- 可验证：每个阶段都有最小可验收测试和 `scripts/verify.ps1` 入口。
+- 可替换：RAG、Memory、Model Provider、向量库和存储都先做接口，默认实现保持轻量。
+- 可交接：OpenSpec、harness、PROGRESS 和 HANDOFF 必须同步，不把关键项目知识只留在聊天里。
+
+暂不追求：
+
+- 一开始就引入复杂微服务、Kafka、Milvus、Elasticsearch、PostgreSQL 等重依赖。
+- 一次性做完整企业级权限、观测、队列、分布式任务系统。
+- 为了“看起来工程化”而增加个人维护不起的代码量。
 
 ## 启动接口
 
@@ -157,23 +189,24 @@ ruff check .
 ## 当前架构
 
 ```text
-API -> ChatService(trace_id) -> CodeAgent -> ToolExecutor -> file_tools
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> ToolExecutor -> file_tools
 ```
 
 - `app/main.py`：创建 FastAPI 应用并注册路由。
 - `app/api/chat.py`：暴露聊天接口。
 - `app/schemas/chat.py`：定义请求和响应模型。
 - `app/services/chat_service.py`：创建请求级 `trace_id` 并编排智能体调用。
-- `app/agents/code_agent.py`：提取关键词、调用工具并组织结果。
-- `app/tools/tool_executor.py`：统一包装只读工具调用。
+- `app/agents/code_agent.py`：调用轻量 AgentLoop 并适配 `/chat` 响应结构。
+- `app/harness/kernel.py`：提供 RequestRouter、ToolRegistry、AgentLoop 和 TraceEvent 最小 Kernel。
+- `app/tools/tool_executor.py`：统一包装只读代码搜索和 skill loader 工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
-- `app/tools/skill_loader.py`：提供 Skill Metadata Loader；当前不接入 `/chat`。
+- `app/tools/skill_loader.py`：提供 Skill Metadata Loader 和 Skill Content Loader。
 - `app/observability/tracing.py`：生成请求级 `trace_id`；当前不是完整持久化审计系统。
 
 ## 当前流程暂不包含
 
 - 真实 LLM 接入。
-- 技能执行或 skill-aware `/chat` 决策。
+- 技能执行。
 - PermissionPolicy、ApprovalGate 或 SandboxRunner 实现。
 - trace 持久化审计。
 - 反思检查。
@@ -218,6 +251,10 @@ ChatService
 - V3：加入简单规则型智能体循环和统一 `ToolExecutor`。
 - V4：加入基于 markdown 的 Skill Metadata Loader。
 - V5：加入 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
-- V6：探索 Skill-aware Agent Loop，基于 skill metadata 选择相关 skill。
-- V7 或以后：扩展 trace/tool/skill audit、仓库调试小型评测、回答完整性反思检查。
-- V8 或以后：探索面向大型仓库的 RAG。
+- V6：Agent Harness Kernel + Router Kernel，已建立 RequestRouter、ToolRegistry、AgentLoop、TraceEvent 和最小数据 contract；Provider/Context/Skill/Session runtime 后移。
+- V7：Permission + Approval Gate，把工具风险等级、允许/拒绝/询问策略和审计摘要接入统一执行层。
+- V8：Repo RAG Engineering，做 repo-local 文档解析、chunk、hybrid search、query rewrite、rerank 和 citation，不先做企业多源平台。
+- V9：Three-layer Memory，区分 STM 短期记忆、LTM 长期语义记忆和 PREF 用户偏好，并加入 memory audit。
+- V10：ReAct / Long Task Agent，支持计划、任务状态、pause/resume、compact、scratch space 和长 trace。
+- V11：Subagents + Worktree，加入 explorer/worker/reviewer、隔离工作区和结构化 handoff。
+- V12：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。
