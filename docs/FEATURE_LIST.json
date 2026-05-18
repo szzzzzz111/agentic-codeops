@@ -153,5 +153,29 @@
     ],
     "passes": true,
     "notes": "已由 tests/test_skill_loader.py 覆盖读取成功、返回结构、路径不泄露、路径逃逸、非 skill 文件、缺失文件、符号链接目录绕过、内容读取上限和 metadata 行为不变。"
+  },
+  {
+    "id": "v6-agent-harness-kernel",
+    "category": "agent",
+    "description": "CodeAgent 通过轻量 Agent Harness Kernel 执行现有只读仓库搜索闭环，并保留 /chat 响应结构。",
+    "steps": [
+      "构造包含可搜索 token 的 /chat 请求",
+      "RequestRouter 生成 repo_search RouteDecision",
+      "AgentLoop 通过 ToolRegistry 校验 search_code 为只读低风险工具",
+      "AgentLoop 通过 ToolExecutor.search_code 执行只读搜索",
+      "检查 /chat 响应仍只包含原有顶层字段"
+    ],
+    "acceptance_criteria": [
+      "AgentLoopRequest 包含 message、repo_path、trace_id",
+      "RouteDecision 包含 route、keyword、reason",
+      "ToolSpec 包含 name、description、read_only、risk",
+      "ToolRegistry 不负责 dispatch，只做元数据登记和调用前校验",
+      "未注册、非只读或高风险工具不会调用 ToolExecutor.search_code，并记录稳定拒绝原因",
+      "TraceEvent 内部记录路由、工具调用、工具结果和拒绝事件",
+      "/chat 不新增顶层 trace 字段",
+      "不实现 ProviderAdapter、ContextBuilder、SkillRegistry 或 SessionStore 运行时代码"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_agent_harness_kernel.py 覆盖 Kernel contract、registry gate 和 trace events；tests/test_chat_api.py 覆盖 /chat 回归。"
   }
 ]

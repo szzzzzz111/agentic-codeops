@@ -4,12 +4,44 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/v5-skill-content-loader`；基线分支 `main` 已同步到 `dev`
-- 当前阶段：V5 Skill Content Loader / progressive disclosure 已完成并归档；暂无活跃开发阶段
-- 当前主流程：`/chat` 已通过 `CodeAgent -> ToolExecutor -> search_code` 使用只读仓库搜索
+- 当前工作分支：`feature/v6-agent-harness-kernel`；基线分支 `main`
+- 当前阶段：V6 `v6-agent-harness-kernel` 已完成实现、验证和用户验收；当前变更尚未提交、尚未归档
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> ToolRegistry -> ToolExecutor -> search_code` 使用只读仓库搜索；`/chat` 顶层响应结构保持不变
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
-- 当前 V4 状态：已实现独立 Skill Metadata Loader，尚未接入 `/chat` 决策或 skill 执行
+- 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
 - 当前 OpenSpec 状态：已初始化项目内 OpenSpec、OpenCode 和 `.codex/skills`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+
+## 流程偏差记录
+
+- 2026-05-17，用户要求“先进行一个项目的状态理解，然后再进行 v6 的阶段开发”。本轮应先输出项目状态理解、提出 V6 阶段规划和边界，并等待用户确认后再进入实现。
+- 实际执行中，Codex 直接从状态理解推进到 V6 OpenSpec、测试、代码实现、文档更新和验证，越过了用户确认门。
+- 历史 V6 skill-aware 变更未提交，应视为 draft；当前 V6 Kernel 变更已在用户 review 后保留并改造。
+- 后续同类请求中，如果用户要求“先理解状态”或“先规划”，Codex 必须停在总结/方案确认点，不得自动进入实现。
+- 2026-05-17，用户确认“V6 得重新开发”后，Codex 再次把该确认理解为可直接写代码，已创建 `v6-agent-harness-kernel` OpenSpec、harness 边界、测试和部分运行时代码。这再次越过了“先给 plan 审查，再实现”的确认门。
+- 二次偏差处理：用户已在 review plan 后确认“没问题就进行开发，按计划来”，当前 `v6-agent-harness-kernel` 草稿改为保留并按计划改造。后续硬规则仍保留：凡是阶段重做/重新开发请求，Codex 只能先产出阶段 plan、OpenSpec/harness 边界和审查摘要；除非用户明确说“开始实现/写代码/按这个计划开发”，不得修改运行时代码或测试。
+
+## 路线重定向：加速但保持轻量工程化
+
+用户希望 RepoPilot 后续不只是玩具项目，而是更偏工程化的 Agent Harness；同时由于主要由个人使用 AI 开发，不能走重型企业平台路线。后续工程化应优先体现在边界、审计、验证、可替换接口和交接文档，而不是堆中间件或堆代码量。
+
+原则：
+
+- 工程化但轻量：先用内存、JSON、SQLite 或简单文件存储打通接口，只有在阶段需要时才引入 PostgreSQL、Milvus、Elasticsearch、Kafka 等外部依赖。
+- 纵向切片优先：每个阶段都交付一条可运行闭环，而不是只堆抽象层。
+- Harness 边界优先：Provider、Router、AgentLoop、ToolRegistry、ToolExecutor、Memory、RAG、Skill、Trace 分层明确。
+- 可审计优先：model/tool/skill/memory 调用都要有结构化摘要和脱敏策略。
+- 可验证优先：每个阶段都要有最小测试和默认验证命令。
+- 可进化 Skill：skill 不是一次性 prompt 文件，后续应逐步支持 metadata、content、selection、tool limits、version、review 和演进记录。
+
+建议后续路线：
+
+- V6：Agent Harness Kernel + Router Kernel。当前只建立 `RequestRouter`、`ToolRegistry` 元数据、`AgentLoop` 和 `TraceEvent` 四个最小运行时骨架；`ProviderAdapter`、`ContextBuilder`、`SkillRegistry` 和 `SessionStore` 留到后续阶段，不在 V6 写运行时代码。当前 `v6-skill-aware-agent-loop` draft 只作为历史偏差和 skill 子能力参考。
+- V7：Permission + Approval Gate。引入工具风险等级、allow/deny/ask 策略和高风险动作确认。
+- V8：Repo RAG Engineering。吸收 ragent 和 Agentic RAG for Dummies 的工程化链路，先做 repo-local 文档解析、chunk、hybrid search、query rewrite、rerank 和 citation。
+- V9：Three-layer Memory。吸收 mem0 和 AGI-assistant 思路，区分 STM、LTM 和 PREF，并记录 memory audit。
+- V10：ReAct / Long Task Agent。加入计划、任务状态、pause/resume、compact、scratch space 和长 trace。
+- V11：Subagents + Worktree。加入 explorer/worker/reviewer、隔离工作区、结果 handoff 和冲突检测。
+- V12：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
 
 ## 已完成
 
@@ -62,6 +94,18 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-12，V5 实现验证：`pytest`：30 passed, 1 skipped
 - 2026-05-12，V5 实现验证：`ruff check .`：All checks passed
 - 2026-05-12，V5 归档验证：`openspec validate --all`：通过
+- 2026-05-17，V6 规格验证：`openspec validate v6-skill-aware-agent-loop`：通过
+- 2026-05-17，V6 实现验证：`pytest tests/test_chat_api.py`：8 passed
+- 2026-05-17，V6 全量验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
+- 2026-05-17，V6 全量验证：`pytest`：32 passed, 1 skipped
+- 2026-05-17，V6 全量验证：`ruff check .`：All checks passed
+- 2026-05-17，V6 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示
+- 2026-05-18，V6 Kernel plan 验证：`openspec validate v6-agent-harness-kernel`：通过
+- 2026-05-18，V6 Kernel 小切片验证：`pytest tests/test_agent_harness_kernel.py`：9 passed
+- 2026-05-18，V6 `/chat` 回归验证：`pytest tests/test_chat_api.py`：6 passed
+- 2026-05-18，V6 局部 lint：`ruff check app/harness app/agents/code_agent.py tests/test_agent_harness_kernel.py`：All checks passed
+- 2026-05-18，V6 全量验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 39 passed, 1 skipped；`ruff check .` All checks passed
+- 2026-05-18，V6 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示
 
 ## OpenSpec 项目级工作流
 
@@ -120,11 +164,27 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - `docs/FEATURE_LIST.json` 中 V5 条目已标记 `passes: true`。
 - 已归档 `v5-skill-content-loader` 到 `openspec/changes/archive/2026-05-12-v5-skill-content-loader/`，并同步长期规格 `openspec/specs/skill-metadata-loader/spec.md`。
 
+## V6：Agent Harness Kernel + Router Kernel（已验收，待提交/归档）
+
+- 当前分支：`feature/v6-agent-harness-kernel`。
+- 当前活跃 OpenSpec change：`openspec/changes/v6-agent-harness-kernel/`。
+- 用户已接受当前 V6 阶段实现；当前状态是未提交、未归档。
+- 当前 V6 主线已从 `v6-skill-aware-agent-loop` 切换为 Agent Harness Kernel + Router Kernel。
+- `v6-skill-aware-agent-loop` 是历史 draft/流程偏差记录，不作为当前阶段主线，不应继续作为实现入口。
+- 当前小切片已建立四个最小运行时骨架：
+  - `RequestRouter`：对输入请求做确定性路由，先只支持现有仓库搜索路径。
+  - `ToolRegistry`：登记只读低风险工具元数据，并在调用前校验工具存在、只读和风险等级；不负责 dispatch。
+  - `AgentLoop`：包装现有确定性搜索闭环，不引入真实 LLM 或复杂规划。
+  - `TraceEvent`：记录最小结构化事件，支撑后续审计。
+- 已固化最小 contract：`AgentLoopRequest`、`RouteDecision`、`ToolSpec`、`TraceEvent`、内部 `AgentLoopResult`。
+- V6 不实现 `ProviderAdapter`、`ContextBuilder`、`SkillRegistry`、`SessionStore` 运行时代码；这些只作为后续阶段扩展方向。
+- V6 不接 RAG、Memory、Reflection、eval、PermissionPolicy、ApprovalGate、SandboxRunner、subagents、长期任务或真实 LLM。
+
 ## 当前注意事项
 
 - V2 工具只读，不写文件、不删文件、不执行 shell。
 - V3 只做最小确定性关键词提取，测试使用 `UNIQUE_BUG_TOKEN`。
-- V3 当前只调用 `search_code`，不自动读取完整文件内容。
+- 当前链路只调用只读 `search_code`，不自动读取普通代码文件完整内容；V6 Kernel 继续保留 `ToolExecutor` 作为实际工具调用边界。
 - 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、RAG、Memory 或复杂多 Agent。
 - PermissionPolicy、ApprovalGate、SandboxRunner、trace audit、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
 - 后续接入权限、审批、沙箱时，应通过 `ToolExecutor` 增量加入。
@@ -136,6 +196,6 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：提交 V5 归档变更，然后合并同步到 `dev` 和 `main`。
-- 也可以先做 trace/tool/skill audit，为后续“坏 skill 记录日志并跳过”提供基础。
-- 继续保持不执行 skill、不接入 `/chat` 决策，除非后续阶段明确开放。
+- 当前建议：先提交 V6；提交后由用户决定是否归档 `v6-agent-harness-kernel`，再进入 V7。
+- 后续可做 trace/tool/skill audit，为“坏 skill 记录日志并跳过”和更完整的审计记录提供基础。
+- 继续保持不执行 skill，除非后续阶段明确开放。
