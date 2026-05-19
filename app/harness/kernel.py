@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import PurePosixPath, PureWindowsPath
 import re
 
 from app.tools.tool_executor import ToolExecutor
@@ -6,6 +7,8 @@ from app.tools.tool_executor import ToolExecutor
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
 ALLOWED_TOOL_RISK = "low"
+DENY_ANSWER = "仓库工具未通过权限策略校验，因此本次没有执行仓库工具。"
+ASK_ANSWER = "工具调用需要人工审批，因此本次没有执行仓库工具。"
 
 
 @dataclass(frozen=True)
@@ -28,6 +31,14 @@ class ToolSpec:
     description: str
     read_only: bool
     risk: str
+    requires_approval: bool = False
+
+
+@dataclass(frozen=True)
+class PermissionDecision:
+    tool_name: str
+    status: str
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -89,18 +100,47 @@ class ToolRegistry:
     def get(self, name: str) -> ToolSpec | None:
         return self._specs.get(name)
 
-    def is_allowed(self, name: str) -> bool:
-        return self.rejection_reason(name) is None
 
-    def rejection_reason(self, name: str) -> str | None:
-        spec = self.get(name)
-        if spec is None:
-            return "not_registered"
-        if not spec.read_only:
-            return "not_read_only"
-        if spec.risk != ALLOWED_TOOL_RISK:
-            return "risk_not_allowed"
-        return None
+class PermissionPolicy:
+    def decide(
+        self,
+        tool_spec: ToolSpec | None,
+        tool_name: str = "search_code",
+    ) -> PermissionDecision:
+        if tool_spec is None:
+            return PermissionDecision(
+                tool_name=tool_name,
+                status="deny",
+                reason="not_registered",
+            )
+        if not tool_spec.read_only:
+            return PermissionDecision(
+                tool_name=tool_spec.name,
+                status="deny",
+                reason="not_read_only",
+            )
+        if tool_spec.risk != ALLOWED_TOOL_RISK:
+            return PermissionDecision(
+                tool_name=tool_spec.name,
+                status="deny",
+                reason="risk_not_allowed",
+            )
+        if tool_spec.requires_approval:
+            return PermissionDecision(
+                tool_name=tool_spec.name,
+                status="ask",
+                reason="approval_required",
+            )
+        return PermissionDecision(
+            tool_name=tool_spec.name,
+            status="allow",
+            reason="allowed",
+        )
+
+
+class ApprovalGate:
+    def evaluate(self, decision: PermissionDecision) -> bool:
+        return decision.status == "allow"
 
 
 class AgentLoop:
@@ -110,10 +150,14 @@ class AgentLoop:
         router: RequestRouter | None = None,
         tool_registry: ToolRegistry | None = None,
         tool_executor: ToolExecutor | None = None,
+        permission_policy: PermissionPolicy | None = None,
+        approval_gate: ApprovalGate | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
         self.tool_executor = tool_executor or ToolExecutor()
+        self.permission_policy = permission_policy or PermissionPolicy()
+        self.approval_gate = approval_gate or ApprovalGate()
 
     def run(self, request: AgentLoopRequest) -> AgentLoopResult:
         decision = self.router.route(request.message)
@@ -131,10 +175,27 @@ class AgentLoop:
                 trace_events_internal=trace_events,
             )
 
-        rejection_reason = self.tool_registry.rejection_reason("search_code")
-        if rejection_reason:
+        tool_spec = self.tool_registry.get("search_code")
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name="search_code",
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name="search_code",
+                status="ok" if permission_decision.status == "allow" else "error",
+                summary=(
+                    "tool=search_code; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            )
+        )
+
+        if permission_decision.status == "deny":
             return AgentLoopResult(
-                answer="仓库搜索工具未通过 registry 校验，因此没有调用仓库工具。",
+                answer=DENY_ANSWER,
                 trace_events_internal=[
                     *trace_events,
                     TraceEvent(
@@ -142,9 +203,23 @@ class AgentLoop:
                         tool_name="search_code",
                         status="error",
                         summary=(
-                            "tool=search_code rejected by registry gate; "
-                            f"reason={rejection_reason}"
+                            "tool=search_code rejected by permission policy; "
+                            f"reason={permission_decision.reason}"
                         ),
+                    ),
+                ],
+            )
+
+        if not self.approval_gate.evaluate(permission_decision):
+            return AgentLoopResult(
+                answer=ASK_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="approval_required",
+                        tool_name="search_code",
+                        status="ok",
+                        summary="tool=search_code requires approval",
                     ),
                 ],
             )
@@ -202,9 +277,17 @@ def _unique_related_files(results: list[dict[str, str | int]]) -> list[str]:
         file_path = result.get("file_path")
         if not isinstance(file_path, str):
             continue
+        if _is_absolute_path(file_path):
+            continue
         if file_path in seen:
             continue
         related_files.append(file_path)
         seen.add(file_path)
 
     return related_files
+
+
+def _is_absolute_path(file_path: str) -> bool:
+    return PureWindowsPath(file_path).is_absolute() or PurePosixPath(
+        file_path
+    ).is_absolute()

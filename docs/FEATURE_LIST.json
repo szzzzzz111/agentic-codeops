@@ -177,5 +177,31 @@
     ],
     "passes": true,
     "notes": "已由 tests/test_agent_harness_kernel.py 覆盖 Kernel contract、registry gate 和 trace events；tests/test_chat_api.py 覆盖 /chat 回归。"
+  },
+  {
+    "id": "v7-permission-approval-gate",
+    "category": "agent",
+    "description": "AgentLoop 在调用工具前通过 PermissionPolicy 和 ApprovalGate 做确定性的 allow/deny/ask 决策。",
+    "steps": [
+      "构造包含可搜索 token 的 AgentLoopRequest",
+      "通过 ToolRegistry 获取 search_code 的 ToolSpec",
+      "通过 PermissionPolicy 产出 allow、deny 或 ask",
+      "通过 ApprovalGate 阻止 ask 分支执行工具",
+      "检查 /chat 顶层响应仍不暴露内部 trace"
+    ],
+    "acceptance_criteria": [
+      "默认 search_code 为只读、low 风险且 requires_approval=false",
+      "ToolRegistry 只登记和读取 ToolSpec，不保留独立 allow/deny gate",
+      "低风险只读工具走 allow 并继续调用 ToolExecutor.search_code",
+      "未注册、非只读或非 low 风险工具走 deny 且不调用 executor",
+      "risk!=low 优先于 requires_approval=true，结果必须为 deny",
+      "低风险只读且 requires_approval=true 的工具走 ask，返回固定审批回答、空 related_files 和空 tool_calls",
+      "related_files 只返回相对仓库路径，不返回本机绝对路径",
+      "chat_only 不进入 permission/approval 链路，不记录 permission_checked",
+      "权限和审批审计仅保留在内部 trace_events_internal，不作为 /chat 顶层字段返回",
+      "不实现真实审批 UI、审批持久化、写文件工具、shell 工具或 SandboxRunner"
+    ],
+    "passes": true,
+    "notes": "已由 tests/test_agent_harness_kernel.py 覆盖 allow、deny、ask、chat_only 路径和 trace 顺序；tests/test_chat_api.py 覆盖 /chat contract 回归。"
   }
 ]

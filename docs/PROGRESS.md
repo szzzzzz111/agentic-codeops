@@ -4,9 +4,9 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/v6-agent-harness-kernel`；基线分支 `main`
-- 当前阶段：V6 `v6-agent-harness-kernel` 已完成实现、验证、用户验收、提交和 OpenSpec 归档；暂无活跃开发阶段
-- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> ToolRegistry -> ToolExecutor -> search_code` 使用只读仓库搜索；`/chat` 顶层响应结构保持不变
+- 当前工作分支：`feature/v7-permission-approval-gate`；基线分支 `main`
+- 当前阶段：V7 `v7-permission-approval-gate` 已完成实现并通过验证；待提交和后续归档
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor -> search_code` 使用只读仓库搜索；`/chat` 顶层响应结构保持不变
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
 - 当前 OpenSpec 状态：已初始化项目内 OpenSpec、OpenCode 和 `.codex/skills`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
@@ -36,7 +36,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 建议后续路线：
 
 - V6：Agent Harness Kernel + Router Kernel。已建立 `RequestRouter`、`ToolRegistry`、`AgentLoop` 和 `TraceEvent` 四个最小运行时骨架；`ProviderAdapter`、`ContextBuilder`、`SkillRegistry` 和 `SessionStore` 留到后续阶段，不在 V6 写运行时代码。历史 `v6-skill-aware-agent-loop` draft 只作为流程偏差记录和 skill 子能力参考。
-- V7：Permission + Approval Gate。引入工具风险等级、allow/deny/ask 策略和高风险动作确认。
+- V7：Permission + Approval Gate。已引入确定性 allow/deny/ask 策略和最小审批占位；高风险动作真实确认仍留到后续阶段。
 - V8：Repo RAG Engineering。吸收 ragent 和 Agentic RAG for Dummies 的工程化链路，先做 repo-local 文档解析、chunk、hybrid search、query rewrite、rerank 和 citation。
 - V9：Three-layer Memory。吸收 mem0 和 AGI-assistant 思路，区分 STM、LTM 和 PREF，并记录 memory audit。
 - V10：ReAct / Long Task Agent。加入计划、任务状态、pause/resume、compact、scratch space 和长 trace。
@@ -108,6 +108,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-18，V6 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示
 - 2026-05-18，V6 最终全量验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 42 passed, 1 skipped；`ruff check .` All checks passed
 - 2026-05-18，V6 归档验证：`openspec validate --all`：5 passed
+- 2026-05-19，V7 规格验证：`openspec validate v7-permission-approval-gate`：通过
+- 2026-05-19，V7 Kernel 验证：`pytest tests/test_agent_harness_kernel.py`：16 passed
+- 2026-05-19，V7 `/chat` 回归验证：`pytest tests/test_chat_api.py`：6 passed
+- 2026-05-19，V7 全量验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 46 passed, 1 skipped；`ruff check .` All checks passed
+- 2026-05-19，V7 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示
 
 ## OpenSpec 项目级工作流
 
@@ -183,14 +188,34 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V6 不实现 `ProviderAdapter`、`ContextBuilder`、`SkillRegistry`、`SessionStore` 运行时代码；这些只作为后续阶段扩展方向。
 - V6 不接 RAG、Memory、Reflection、eval、PermissionPolicy、ApprovalGate、SandboxRunner、subagents、长期任务或真实 LLM。
 
+## V7：Permission + Approval Gate（当前阶段）
+
+- 当前分支：`feature/v7-permission-approval-gate`。
+- 当前 OpenSpec change：`openspec/changes/v7-permission-approval-gate/`。
+- 已同步 V7 阶段 harness：
+  - `.harness/allowed_files.md`
+  - `.harness/review_checklist.md`
+- 已实现最小运行时边界：
+  - `ToolSpec.requires_approval`：标记低风险只读工具是否需要审批。
+  - `PermissionDecision`：记录工具名、权限状态和稳定原因。
+  - `PermissionPolicy`：唯一产出 `allow`、`deny`、`ask` 的权限状态。
+  - `ApprovalGate`：消费权限结果；遇到 `ask` 阻止工具执行，不做真实交互审批。
+- `ToolRegistry` 在 V7 只登记和读取 `ToolSpec`，不保留独立 allow/deny gate；权限状态和拒绝原因统一由 `PermissionPolicy` 产出。
+- 权限优先级固定为：未注册、非只读或非 `low` 风险 -> `deny`；否则 `requires_approval=True` -> `ask`；否则 -> `allow`。
+- `deny` 和 `ask` 分支不调用 executor，`related_files=[]` 且 `tool_calls=[]`。
+- `related_files` 只返回相对仓库路径；若上游异常返回本机绝对路径，Kernel 会跳过该路径。
+- 权限和审批审计仅记录在内部 `trace_events_internal`，不通过 `/chat` 暴露。
+- `chat_only` 不进入 permission/approval 链路，不记录 `permission_checked`。
+- V7 不实现真实审批 UI、审批持久化、写文件工具、shell 工具、SandboxRunner、LLM、RAG、Memory、Reflection、skill execution、eval 或复杂多 Agent。
+
 ## 当前注意事项
 
 - V2 工具只读，不写文件、不删文件、不执行 shell。
 - V3 只做最小确定性关键词提取，测试使用 `UNIQUE_BUG_TOKEN`。
-- 当前链路只调用只读 `search_code`，不自动读取普通代码文件完整内容；V6 Kernel 继续保留 `ToolExecutor` 作为实际工具调用边界。
+- 当前链路只调用只读 `search_code`，不自动读取普通代码文件完整内容；V7 Kernel 继续保留 `ToolExecutor` 作为实际工具调用边界。
 - 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、RAG、Memory 或复杂多 Agent。
-- PermissionPolicy、ApprovalGate、SandboxRunner、trace audit、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
-- 后续接入权限、审批、沙箱时，应通过 `ToolExecutor` 增量加入。
+- `PermissionPolicy` 和最小 `ApprovalGate` 已实现；真实审批流程、SandboxRunner、trace 持久化审计、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
+- 后续接入真实审批、沙箱或高风险工具时，应通过当前权限/审批边界和 `ToolExecutor` 增量加入。
 - 缓存文件已从 git 跟踪中移除，并由 `.gitignore` 忽略。
 
 ## 下一步建议
@@ -199,6 +224,6 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：下一步先规划 V7 Permission + Approval Gate；规划前同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
-- 后续可做 trace/tool/skill audit，为“坏 skill 记录日志并跳过”和更完整的审计记录提供基础。
+- 当前建议：先提交 V7 分支；用户验收后归档 `v7-permission-approval-gate` OpenSpec change。
+- 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
