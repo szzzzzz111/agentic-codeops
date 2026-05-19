@@ -4,8 +4,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/v7-permission-approval-gate`；基线分支 `main`
-- 当前阶段：V7 `v7-permission-approval-gate` 已完成实现并通过验证；待提交和后续归档
+- 当前工作分支：`main`
+- 当前阶段：V7 `v7-permission-approval-gate` 已完成实现、验证、提交、合并和 OpenSpec 归档；暂无活跃开发阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor -> search_code` 使用只读仓库搜索；`/chat` 顶层响应结构保持不变
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
@@ -113,6 +113,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-19，V7 `/chat` 回归验证：`pytest tests/test_chat_api.py`：6 passed
 - 2026-05-19，V7 全量验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 46 passed, 1 skipped；`ruff check .` All checks passed
 - 2026-05-19，V7 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示
+- 2026-05-19，V7 归档验证：`openspec validate --all`：通过
 
 ## OpenSpec 项目级工作流
 
@@ -188,10 +189,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V6 不实现 `ProviderAdapter`、`ContextBuilder`、`SkillRegistry`、`SessionStore` 运行时代码；这些只作为后续阶段扩展方向。
 - V6 不接 RAG、Memory、Reflection、eval、PermissionPolicy、ApprovalGate、SandboxRunner、subagents、长期任务或真实 LLM。
 
-## V7：Permission + Approval Gate（当前阶段）
+## V7：Permission + Approval Gate（已提交并归档）
 
-- 当前分支：`feature/v7-permission-approval-gate`。
-- 当前 OpenSpec change：`openspec/changes/v7-permission-approval-gate/`。
+- 已提交：`7f1fc86 Add V7 permission approval gate`。
+- 已合并到 `main`：`Merge V7 permission approval gate`。
+- 已归档 OpenSpec change：`openspec/changes/archive/2026-05-19-v7-permission-approval-gate/`。
 - 已同步 V7 阶段 harness：
   - `.harness/allowed_files.md`
   - `.harness/review_checklist.md`
@@ -224,6 +226,6 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：先提交 V7 分支；用户验收后归档 `v7-permission-approval-gate` OpenSpec change。
+- 当前建议：下一阶段可规划 V8 Repo RAG Engineering；开始前同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。

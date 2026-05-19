@@ -3,14 +3,14 @@
 ## 分支状态
 
 ```text
-当前工作分支：feature/v7-permission-approval-gate
+当前工作分支：main
 当前基线分支：main
-当前活跃 OpenSpec change：v7-permission-approval-gate
+当前活跃 OpenSpec change：无
 ```
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V6 已完成并进入长期规格/归档历史；当前 V7 主线是 Permission + Approval Gate。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V7 已完成并进入长期规格/归档历史；当前暂无活跃开发阶段。
 
 当前主链路：
 
@@ -22,49 +22,27 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> Permis
 
 ## 本轮完成
 
-- 创建 V7 分支：`feature/v7-permission-approval-gate`。
-- 创建当前 OpenSpec change：`openspec/changes/v7-permission-approval-gate/`。
-- 同步当前 V7 阶段 harness：
+- 创建并实现 V7：`v7-permission-approval-gate`。
+- 提交 V7：`7f1fc86 Add V7 permission approval gate`。
+- 合并到 `main`：`Merge V7 permission approval gate`。
+- 同步长期 spec：`openspec/specs/agent-loop-tool-execution/spec.md`。
+- 归档 OpenSpec change：`openspec/changes/archive/2026-05-19-v7-permission-approval-gate/`。
+- 恢复无活跃阶段 harness：
   - `.harness/allowed_files.md`
   - `.harness/review_checklist.md`
-- 新增 V7 运行时边界：
-  - `ToolSpec.requires_approval`
-  - `PermissionDecision`
-  - `PermissionPolicy`
-  - `ApprovalGate`
-- 收敛职责边界：`ToolRegistry` 只登记和读取 `ToolSpec`，不再保留独立 allow/deny gate；权限状态和拒绝原因由 `PermissionPolicy` 统一产出。
-- 将 `AgentLoop` 工具调用前链路调整为：
-  - route
-  - registry lookup
-  - permission policy
-  - approval gate
-  - executor
-- 固化分支行为：
-  - `allow`：继续调用 `ToolExecutor.search_code`。
-  - `deny`：不调用 executor，返回固定权限拒绝回答，`related_files=[]`，`tool_calls=[]`。
-  - `ask`：不调用 executor，返回固定审批回答，`related_files=[]`，`tool_calls=[]`。
-  - `chat_only`：不进入 permission/approval 链路，不记录 `permission_checked`。
-- 更新文档和功能清单：
-  - `README.md`
-  - `docs/ARCHITECTURE.md`
-  - `docs/PROGRESS.md`
-  - `docs/FEATURE_LIST.json`
-  - `HANDOFF_TO_NEXT_CHAT.md`
 
 ## V7 边界
 
 已实现：
 
-- 确定性 `allow`、`deny`、`ask` 权限状态。
+- `ToolSpec.requires_approval`
+- `PermissionDecision`
+- `PermissionPolicy`
+- 最小 `ApprovalGate`
 - 权限优先级：未注册、非只读或非 `low` 风险 -> `deny`；否则 `requires_approval=True` -> `ask`；否则 -> `allow`。
-- 最小 `ApprovalGate`：只消费权限决策，遇到 `ask` 阻止工具执行。
+- `ToolRegistry` 只登记和读取 `ToolSpec`，不保留独立 allow/deny gate。
 - `AgentLoop` 负责记录 `permission_checked`、`tool_rejected` 和 `approval_required` trace event。
 - `related_files` 只返回相对仓库路径，不返回本机绝对路径。
-- 内部 trace 顺序：
-  - `allow`：`request_routed -> permission_checked -> tool_call -> tool_result`
-  - `deny`：`request_routed -> permission_checked -> tool_rejected`
-  - `ask`：`request_routed -> permission_checked -> approval_required`
-  - `chat_only`：仅 `request_routed`
 
 V7 不做：
 
@@ -86,9 +64,10 @@ V7 不做：
   - `pytest`：46 passed, 1 skipped。
   - `ruff check .`：All checks passed。
 - `git diff --check`：通过，仅有 CRLF 换行提示。
+- `openspec validate --all`：通过。
 
 ## 下一轮建议
 
-1. 进行 review 并按反馈修正。
-2. 提交 V7 分支。
-3. 用户验收后归档 `v7-permission-approval-gate`。
+1. 若继续开发，先规划 V8：Repo RAG Engineering。
+2. 新阶段开始前同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+3. 继续避免把真实审批流程、SandboxRunner、RAG、Memory、skill execution 或复杂多 Agent 提前塞进非对应阶段。
