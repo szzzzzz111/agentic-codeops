@@ -2,7 +2,7 @@
 
 RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，目标不是替代通用 AI IDE 或 AI 编程助手，而是围绕 Agent 的工具调用、安全边界、执行追踪、评测和交接机制，构建一个可验证、可审计、可扩展的代码智能体执行框架。当前应用场景包括代码仓库阅读、Bug 定位和修复建议。
 
-当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop、V4 Skill Metadata Loader、V5 Skill Content Loader 和 V6 Agent Harness Kernel + Router Kernel。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
+当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop、V4 Skill Metadata Loader、V5 Skill Content Loader、V6 Agent Harness Kernel + Router Kernel 和 V7 Permission + Approval Gate。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
 
 ## 当前能力与定位
 
@@ -11,9 +11,9 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
 - 每次请求生成唯一 `trace_id`，响应保留 `related_files` 和 `tool_calls` 审计字段。
 - `CodeAgent` 当前通过轻量 `AgentLoop` 执行最小确定性仓库搜索，不接真实 LLM。
 - `RequestRouter` 将请求路由到 `repo_search` 或 `chat_only`。
-- `ToolRegistry` 记录只读低风险工具元数据，并在工具调用前做 registry gate。
+- `ToolRegistry` 记录只读低风险工具元数据；`PermissionPolicy` 和 `ApprovalGate` 在工具调用前做 allow/deny/ask 决策。
 - `ToolExecutor` 统一收口只读工具调用，当前包装 `search_code`。
-- `TraceEvent` 在 Kernel 内部记录路由、工具调用、工具结果和拒绝事件；当前不作为 `/chat` 顶层字段返回。
+- `TraceEvent` 在 Kernel 内部记录路由、权限、审批、工具调用、工具结果和拒绝事件；当前不作为 `/chat` 顶层字段返回。
 - `related_files` 和 `tool_calls` 返回真实只读搜索结果。
 - 使用 OpenSpec specs、harness rules、review checklist、pytest 和 handoff 约束开发过程。
 - 提供安全只读仓库文件工具：
@@ -64,7 +64,7 @@ V3 的意义不是让 Agent 变聪明，而是把工具调用收口到 `ToolExec
 - `/chat` 返回真实 `related_files`
 - `/chat` 返回 `tool_calls` 摘要
 - `tool_calls` 不包含完整文件内容、完整搜索结果或本机绝对路径
-- 为后续 `PermissionPolicy`、`ApprovalGate`、`SandboxRunner`、trace audit、eval 和 reflection 留出扩展点
+- 为后续 `SandboxRunner`、trace audit、eval 和 reflection 留出扩展点；`PermissionPolicy` 和最小 `ApprovalGate` 已在 V7 接入
 
 ### V4：Skill Metadata Loader
 
@@ -101,6 +101,17 @@ V6 的意义不是扩展 skill-aware 行为，而是把现有搜索链路包进�
 - `TraceEvent` 在内部记录 `request_routed`、`tool_call`、`tool_result` 和 `tool_rejected`。
 - `/chat` 顶层响应仍只返回 `answer`、`related_files`、`tool_calls`，不新增 trace 字段。
 - 不实现 `ProviderAdapter`、`ContextBuilder`、`SkillRegistry` 或 `SessionStore` 运行时代码。
+
+### V7：Permission + Approval Gate
+
+V7 的意义不是开放高风险工具，而是在统一执行层加入确定性的权限和审批边界：
+
+- `ToolSpec` 新增 `requires_approval`，默认 `search_code` 仍为只读、低风险且不需要审批。
+- `PermissionPolicy` 产出 `allow`、`deny` 或 `ask`，优先级固定为 deny > ask > allow。
+- `ApprovalGate` 只消费权限决策；V7 不实现真实审批 UI 或审批持久化。
+- `deny` 和 `ask` 分支不调用 executor，`related_files` 和 `tool_calls` 均为空。
+- 权限和审批审计仅记录在内部 `trace_events_internal`，不通过 `/chat` 暴露。
+- `/chat` 顶层响应仍只返回 `answer`、`related_files`、`tool_calls`，不新增 trace 字段。
 
 ## Harness Engineering
 
@@ -189,7 +200,7 @@ ruff check .
 ## 当前架构
 
 ```text
-API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> ToolExecutor -> file_tools
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor -> file_tools
 ```
 
 - `app/main.py`：创建 FastAPI 应用并注册路由。
@@ -197,7 +208,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> ToolEx
 - `app/schemas/chat.py`：定义请求和响应模型。
 - `app/services/chat_service.py`：创建请求级 `trace_id` 并编排智能体调用。
 - `app/agents/code_agent.py`：调用轻量 AgentLoop 并适配 `/chat` 响应结构。
-- `app/harness/kernel.py`：提供 RequestRouter、ToolRegistry、AgentLoop 和 TraceEvent 最小 Kernel。
+- `app/harness/kernel.py`：提供 RequestRouter、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
 - `app/tools/tool_executor.py`：统一包装只读代码搜索和 skill loader 工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
 - `app/tools/skill_loader.py`：提供 Skill Metadata Loader 和 Skill Content Loader。
@@ -207,7 +218,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> ToolEx
 
 - 真实 LLM 接入。
 - 技能执行。
-- PermissionPolicy、ApprovalGate 或 SandboxRunner 实现。
+- SandboxRunner 实现。
 - trace 持久化审计。
 - 反思检查。
 - 评测。
@@ -225,24 +236,28 @@ V2 文件工具是只读工具，不执行 shell 命令。它们会把访问限�
 
 V2 提供的是工具级安全边界，不是完整的权限系统、沙箱系统或人工审批流。这是有意为之，因为当前工具只读；V3 已经通过 `ToolExecutor` 把 `search_code` 接入 `/chat`，后续高风险能力仍必须继续经过统一执行层扩展。
 
-未来高风险能力应统一放到 `ToolExecutor` 层之后：
+未来高风险能力应沿用当前 Kernel 链路，在进入实际 executor 前经过权限和审批边界：
 
 ```text
 ChatService
   -> CodeAgent
+  -> AgentLoop
+  -> ToolRegistry
+  -> PermissionPolicy
+  -> ApprovalGate
   -> ToolExecutor
-  -> PermissionPolicy / ApprovalGate / SandboxRunner
+  -> SandboxRunner（仅未来命令类工具）
   -> 具体工具
 ```
 
-这样可以把后续安全能力做成增量扩展，而不是重写现有代码。权限检查、人工介入审批、工具调用审计和沙箱命令执行都应该围绕 `ToolExecutor` 实现，不应该散落在 `main.py`、API handler 或具体工具函数里。
+这样可以把后续安全能力做成增量扩展，而不是重写现有代码。权限检查、人工介入审批、工具调用审计和沙箱命令执行都应该围绕 `AgentLoop` / `ToolExecutor` 边界实现，不应该散落在 `main.py`、API handler 或具体工具函数里。
 
 已实现和建议演进：
 
 - V3 已实现：让 `CodeAgent` 通过轻量 `ToolExecutor` 调用只读 `search_code`。
 - 后续：为每次工具调用增加 trace 和审计记录。
-- 后续：增加 `PermissionPolicy`，支持用户、仓库和工具级允许规则。
-- 后续：在写文件、运行命令、提交代码或创建 PR 等高风险动作前增加 `ApprovalGate`。
+- V7 已实现轻量 `PermissionPolicy` 和最小 `ApprovalGate`，当前只做确定性 allow/deny/ask 边界。
+- 后续：在写文件、运行命令、提交代码或创建 PR 等高风险动作前接入真实审批流程。
 - 后续：仅为执行命令类工具增加 `SandboxRunner`，例如测试运行器。
 
 ## 路线图
@@ -252,7 +267,7 @@ ChatService
 - V4：加入基于 markdown 的 Skill Metadata Loader。
 - V5：加入 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
 - V6：Agent Harness Kernel + Router Kernel，已建立 RequestRouter、ToolRegistry、AgentLoop、TraceEvent 和最小数据 contract；Provider/Context/Skill/Session runtime 后移。
-- V7：Permission + Approval Gate，把工具风险等级、允许/拒绝/询问策略和审计摘要接入统一执行层。
+- V7：Permission + Approval Gate，已把工具风险等级、允许/拒绝/询问策略和内部审计事件接入统一执行层；不在 `/chat` 暴露 trace。
 - V8：Repo RAG Engineering，做 repo-local 文档解析、chunk、hybrid search、query rewrite、rerank 和 citation，不先做企业多源平台。
 - V9：Three-layer Memory，区分 STM 短期记忆、LTM 长期语义记忆和 PREF 用户偏好，并加入 memory audit。
 - V10：ReAct / Long Task Agent，支持计划、任务状态、pause/resume、compact、scratch space 和长 trace。

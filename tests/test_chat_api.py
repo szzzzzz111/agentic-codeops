@@ -34,6 +34,7 @@ def test_chat_endpoint_returns_tool_results_for_unique_keyword(
 
     assert response.status_code == 200
     body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
     assert body["trace_id"].startswith("trace_")
     assert "UNIQUE_BUG_TOKEN" in body["answer"]
     assert body["related_files"] == ["app/service.py"]

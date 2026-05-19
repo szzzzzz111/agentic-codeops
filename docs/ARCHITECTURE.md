@@ -5,7 +5,7 @@ RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE
 ## 当前主链路
 
 ```text
-API -> ChatService(trace_id) -> CodeAgent -> ToolExecutor -> file_tools
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor -> file_tools
 ```
 
 - API 层只接收请求并返回响应。
@@ -52,19 +52,23 @@ app/tools/tool_executor.py
 
 ## 后续工具执行边界
 
-未来高风险工具调用应继续集中经过 `ToolExecutor`：
+未来高风险工具调用应继续沿用当前 Kernel 链路，在进入实际 executor 前经过权限和审批边界：
 
 ```text
 ChatService
   -> CodeAgent
+  -> AgentLoop
+  -> ToolRegistry
+  -> PermissionPolicy
+  -> ApprovalGate
   -> ToolExecutor
-  -> PermissionPolicy / ApprovalGate / SandboxRunner
+  -> SandboxRunner（仅未来命令类工具）
   -> 具体工具
 ```
 
-这样权限管理、人工审批、工具调用审计和沙箱执行都可以增量加入，不需要推倒当前 API、Service、Agent 分层。
+这样权限管理、人工审批、工具调用审计和沙箱执行都可以增量加入，不需要推倒当前 API、Service、Agent 分层。V7 当前只实现确定性 `PermissionPolicy` 和最小 `ApprovalGate`，真实审批流程和 `SandboxRunner` 仍留到后续阶段。
 
-`PermissionPolicy`、`ApprovalGate` 和 `SandboxRunner` 仍是 Roadmap，不是当前已实现能力。
+`PermissionPolicy` 和最小 `ApprovalGate` 已在 V7 中作为确定性运行时边界实现；`ApprovalGate` 当前不做真实交互审批或持久化。`SandboxRunner` 仍是 Roadmap，不是当前已实现能力。
 
 ## 架构约束
 
@@ -74,6 +78,8 @@ ChatService
 - Agent 层负责决策和组织工具调用。
 - Tools 层只提供可调用能力，不处理 HTTP。
 - `ToolExecutor` 负责统一执行入口和工具调用摘要，不承载复杂业务推理。
+- `PermissionPolicy` 负责在工具调用前产出 `allow`、`deny` 或 `ask` 决策。
+- `ApprovalGate` 当前只消费权限决策并阻止 `ask` 分支执行工具，不实现真实审批 UI。
 - 高风险能力以后必须经过 `ToolExecutor`，不能散落在各模块里。
 
 ## 暂不引入
@@ -85,5 +91,6 @@ ChatService
 - 多 Agent。
 - 自动修改代码。
 - 沙箱执行命令。
-- PermissionPolicy、ApprovalGate、SandboxRunner 的实际实现。
+- SandboxRunner 的实际实现。
+- 真实审批 UI 或审批持久化。
 - trace 持久化审计。
