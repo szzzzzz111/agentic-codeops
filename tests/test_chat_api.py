@@ -43,7 +43,7 @@ def test_chat_endpoint_returns_tool_results_for_unique_keyword(
             "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
             "question_type": "implementation_explanation",
-            "retrieval_mode": "lexical",
+            "retrieval_mode": "hybrid",
             "status": "success",
             "result_count": "1",
         }
@@ -65,7 +65,7 @@ def test_chat_endpoint_returns_empty_related_files_when_keyword_is_missing(
             "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
             "question_type": "implementation_explanation",
-            "retrieval_mode": "lexical",
+            "retrieval_mode": "hybrid",
             "status": "success",
             "result_count": "0",
         }
@@ -91,7 +91,7 @@ def test_chat_endpoint_does_not_return_sensitive_file_content(
             "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
             "question_type": "implementation_explanation",
-            "retrieval_mode": "lexical",
+            "retrieval_mode": "hybrid",
             "status": "success",
             "result_count": "1",
         }
@@ -111,7 +111,7 @@ def test_chat_endpoint_sanitizes_tool_errors(tmp_path: Path) -> None:
             "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
             "question_type": "implementation_explanation",
-            "retrieval_mode": "lexical",
+            "retrieval_mode": "hybrid",
             "status": "error",
             "result_count": "0",
             "error": "NotADirectoryError",

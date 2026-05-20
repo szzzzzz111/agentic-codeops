@@ -16,7 +16,7 @@ def test_query_understanding_extracts_file_symbol_and_question_type() -> None:
     assert "search_code" in plan.symbols
     assert "app/harness/kernel.py" in plan.path_hints
     assert plan.max_results == 8
-    assert plan.retrieval_mode == "lexical"
+    assert plan.retrieval_mode == "hybrid"
 
 
 def test_query_understanding_classifies_location_and_error_questions() -> None:
@@ -38,6 +38,6 @@ def test_query_understanding_classifies_test_questions_without_vector_mode() -> 
 
     assert plan.question_type == QUESTION_TEST_OR_VALIDATION
     assert "PermissionPolicy" in plan.symbols
-    assert plan.retrieval_mode == "lexical"
+    assert plan.retrieval_mode == "hybrid"
     assert "embedding" not in plan.keywords
     assert "vector" not in plan.keywords

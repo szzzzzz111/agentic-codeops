@@ -163,5 +163,29 @@
     ],
     "passes": true,
     "notes": "由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v9-embedding-hybrid-search",
+    "category": "rag",
+    "description": "AgentLoop 在只读权限边界通过后执行轻量 embedding retrieval 和 hybrid repo RAG，同时保留 lexical retrieval 作为一等通道。",
+    "steps": [
+      "构造包含文件名、路径片段、函数名或语义相近文本的 /chat 请求",
+      "QueryUnderstanding 生成 retrieval_mode=hybrid 的 SearchPlan",
+      "LexicalRepoRetriever 和 EmbeddingRepoRetriever 分别检索 repo chunk",
+      "HybridRepoRetriever 对 lexical 和 embedding 结果做 deterministic fusion",
+      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
+    ],
+    "acceptance_criteria": [
+      "默认 embedding provider 固定维度、稳定输出，且不调用网络、密钥、模型下载或外部服务",
+      "embedding retrieval citation 只使用相对 repo 路径和 1-based 行号",
+      "hybrid fusion 合并重复 chunk 并保持稳定排序",
+      "hybrid fusion 默认使用 min_fused_score=0.5 过滤弱相关结果",
+      "内部 trace 记录 lexical、embedding、fused 结果数和 min_fused_score",
+      "路径、文件名、符号和 exact token 命中不被 embedding 相似度淹没",
+      "V9 不默认接入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务、LLM rewrite、rerank 或 memory",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

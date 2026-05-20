@@ -368,7 +368,7 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
             "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
             "question_type": "implementation_explanation",
-            "retrieval_mode": "lexical",
+            "retrieval_mode": "hybrid",
             "status": "success",
             "result_count": "1",
         }
@@ -378,6 +378,7 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
         "permission_checked",
         "tool_call",
         "tool_result",
+        "retrieval_channels_summarized",
     ]
 
 
@@ -489,8 +490,7 @@ def test_agent_loop_does_not_claim_vector_infrastructure_is_implemented(
         )
     )
 
-    assert "未实现" in result.answer
-    assert "lexical" in result.answer
+    assert "未默认接入" in result.answer
     assert "已实现 embedding" not in result.answer
     assert "已实现 Milvus" not in result.answer
     assert "已实现 ES" not in result.answer
@@ -511,8 +511,7 @@ def test_agent_loop_answers_lowercase_vector_status_questions(
         )
     )
 
-    assert "未实现" in result.answer
-    assert "lexical" in result.answer
+    assert "未默认接入" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 
@@ -533,7 +532,7 @@ def test_capability_status_question_does_not_require_search_tool_registration(
         )
     )
 
-    assert "未实现" in result.answer
+    assert "未默认接入" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
     assert [event.event_type for event in result.trace_events_internal] == [
@@ -583,8 +582,37 @@ def test_agent_loop_tool_call_records_v8_search_plan_metadata(
             "tool_name": "repo_rag",
             "keyword": "AgentLoop",
             "question_type": "implementation_explanation",
-            "retrieval_mode": "lexical",
+            "retrieval_mode": "hybrid",
             "status": "success",
             "result_count": "1",
         }
     ]
+
+
+def test_agent_loop_records_hybrid_channel_audit_summary(tmp_path: Path) -> None:
+    write_text(
+        tmp_path / "app" / "service.py",
+        "class PaymentService:\n"
+        "    def capture_invoice(self):\n"
+        "        return 'invoice captured'\n",
+    )
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="PaymentService 在 app/service.py 怎么 capture_invoice?",
+            repo_path=str(tmp_path),
+            trace_id="trace_hybrid_audit",
+        )
+    )
+
+    assert any(
+        event.event_type == "retrieval_channels_summarized"
+        and event.tool_name == "repo_rag"
+        and "mode=hybrid" in event.summary
+        and "lexical_results=" in event.summary
+        and "embedding_results=" in event.summary
+        and "fused_results=" in event.summary
+        and "min_fused_score=0.5" in event.summary
+        for event in result.trace_events_internal
+    )

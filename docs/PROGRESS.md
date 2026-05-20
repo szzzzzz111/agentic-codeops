@@ -4,10 +4,10 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`main`
-- 当前阶段：V8 `v8-query-understanding-repo-rag` 已实现、合并到 `main` 并完成 OpenSpec 归档；暂无活跃开发阶段
-- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> LexicalRepoRetriever` 使用只读 lexical repo RAG；`/chat` 顶层响应结构保持不变
-- 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> LexicalRepoRetriever` 复用安全文件工具读取 repo 文本 chunk
+- 当前工作分支：`codex/v9-embedding-hybrid-search`
+- 当前阶段：V9 `v9-embedding-hybrid-search` 已实现运行时代码，正在进行最终验证与文档收口
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever` 使用只读 hybrid repo RAG；`/chat` 顶层响应结构保持不变
+- 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
 - 当前 OpenSpec 状态：已初始化项目内 OpenSpec、OpenCode 和 `.codex/skills`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
@@ -39,10 +39,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V7：Permission + Approval Gate。已引入确定性 allow/deny/ask 策略和最小审批占位；高风险动作真实确认仍留到后续阶段。
 - V8：Query Understanding + Lexical Repo RAG。已将旧“大 Repo RAG Engineering”收窄为 deterministic 检索前理解、repo-local chunk、lexical scoring 和 citation。
 - V9：Embedding Retrieval + Hybrid Search。补 embedding provider、可替换检索接口和 hybrid fusion；Milvus/ES 暂不默认引入。
-- V10：Query Rewrite / Rerank / Grounded Answer / Context Budget。引入 LLM query rewrite、rerank、证据约束回答和上下文预算。
-- V11：Memory。吸收 mem0 和 AGI-assistant 思路，区分 STM、LTM 和 PREF，并记录 memory audit。
-- V12：Long Task / ReAct / Subagents。加入计划、任务状态、pause/resume、scratch space、subagents、worktree handoff 和冲突检测。
-- V13：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
+- V10：Evidence Pack + Context Budget。先把检索结果整理为可审计证据包和上下文预算边界，不做回答生成。
+- V11：Grounded Answer / Model Provider Boundary。引入回答生成边界和证据约束策略。
+- V12：Query Rewrite + Rerank。再引入 query rewrite、rerank 和相关 provider 边界。
+- V13：Memory。吸收 mem0 和 AGI-assistant 思路，区分 STM、LTM 和 PREF，并记录 memory audit。
+- V14：Long Task / ReAct / Subagents。加入计划、任务状态、pause/resume、scratch space、subagents、worktree handoff 和冲突检测。
+- V15：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
 
 ## 已完成
 
@@ -215,8 +217,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - V2 工具只读，不写文件、不删文件、不执行 shell。
 - V3 只做最小确定性关键词提取，测试使用 `UNIQUE_BUG_TOKEN`。
-- 当前链路通过 `ToolExecutor(repo_rag)` 调用只读 lexical repo RAG；V8 会读取安全文件工具允许访问的仓库文本文件小段 chunk，但不返回完整文件内容。
-- 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、embedding/vector RAG、Memory 或复杂多 Agent。
+- 当前链路通过 `ToolExecutor(repo_rag)` 调用只读 hybrid repo RAG；V9 会读取安全文件工具允许访问的仓库文本文件小段 chunk，但不返回完整文件内容。
+- 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、真实外部 embedding 服务、外部向量库、Memory 或复杂多 Agent。
 - `PermissionPolicy` 和最小 `ApprovalGate` 已实现；真实审批流程、SandboxRunner、trace 持久化审计、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
 - 后续接入真实审批、沙箱或高风险工具时，应通过当前权限/审批边界和 `ToolExecutor` 增量加入。
 - 缓存文件已从 git 跟踪中移除，并由 `.gitignore` 忽略。
@@ -227,7 +229,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：下一阶段可规划 V9 Embedding Retrieval + Hybrid Search；开始前同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+- 当前建议：完成 V9 全量验证、review 和归档准备。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
@@ -244,4 +246,32 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 参考项目已写入 V8 design，只作为后续规划资料，不作为 RepoPilot runtime dependency：`ragent`、`agentic-rag-for-dummies`、`mem0`、`AGI-assistant`、`openai-cs-agents-demo`、`learn-claude-code`、`build-your-own-openclaw`、`agents-from-scratch`、`DeepAgents`、`DeerFlow`、`Clawd-Code`。
 
-路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Query Rewrite / Rerank / Grounded Answer / Context Budget；V11 为 Memory；V12 为 Long Task / ReAct / Subagents；V13 为 Personal Assistant Gateway。
+## V9：Embedding Retrieval + Hybrid Search（已实现，验证中）
+
+- 当前分支：`codex/v9-embedding-hybrid-search`
+- OpenSpec change：`openspec/changes/v9-embedding-hybrid-search/`
+- 已创建：
+  - `proposal.md`
+  - `design.md`
+  - `specs/repo-query-understanding-rag/spec.md`
+  - `tasks.md`
+- 已同步 V9 阶段 harness：
+  - `.harness/allowed_files.md`
+  - `.harness/review_checklist.md`
+- 已验证：`openspec validate v9-embedding-hybrid-search` 通过。
+- 已实现：
+  - `DeterministicEmbeddingProvider`：本地确定性 embedding provider，固定维度、稳定向量格式，不调用外部服务。
+  - `EmbeddingRepoRetriever`：复用安全 repo chunk 和 citation 约束执行 embedding retrieval。
+  - `HybridRepoRetriever` / `hybrid_fuse`：合并 lexical 与 embedding retrieval，保留路径、文件名、符号和 exact token 命中的优势。
+  - `ToolExecutor(repo_rag)` 和 `AgentLoop` 默认使用 `retrieval_mode=hybrid`，但 `/chat` 顶层 contract 不变。
+- 局部验证：
+  - `pytest tests/test_repo_rag.py`：7 passed
+  - `pytest tests/test_query_understanding.py tests/test_agent_harness_kernel.py tests/test_chat_api.py`：33 passed
+- 全量验证：
+  - `openspec validate v9-embedding-hybrid-search`：通过
+  - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 66 passed, 1 skipped；`ruff check .` All checks passed
+  - `git diff --check`：通过，仅有 CRLF 换行提示
+
+V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical repo RAG 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
+
+路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Evidence Pack + Context Budget；V11 为 Grounded Answer / Model Provider Boundary；V12 为 Query Rewrite + Rerank；V13 为 Memory；V14 为 Long Task / ReAct / Subagents；V15 为 Personal Assistant Gateway。

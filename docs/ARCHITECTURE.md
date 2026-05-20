@@ -8,7 +8,8 @@ RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> QueryUnderstanding/SearchPlan
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> LexicalRepoRetriever -> file_tools
+  -> ToolExecutor(repo_rag) -> HybridRepoRetriever
+     -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
 - API 层只接收请求并返回响应。
@@ -17,6 +18,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code` 和 `repo_rag`。
 - `LexicalRepoRetriever` 负责 repo-local chunk、lexical scoring、dedup 和 citation。
+- `EmbeddingRepoRetriever` 使用本地确定性 embedding provider 对 repo chunk 做轻量 embedding retrieval。
+- `HybridRepoRetriever` 负责合并 lexical 与 embedding retrieval 结果。
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；后续可扩展工具调用审计。
 
@@ -91,7 +94,7 @@ ChatService
 
 - 真实 LLM。
 - LangGraph。
-- embedding、向量库、LLM query rewrite、rerank 或 context compression。
+- 真实外部 embedding 服务、向量库、LLM query rewrite、rerank 或 context compression。
 - Memory。
 - 多 Agent。
 - 自动修改代码。
@@ -100,9 +103,9 @@ ChatService
 - 真实审批 UI 或审批持久化。
 - trace 持久化审计。
 
-## V8 架构补充：Query Understanding + Lexical Repo RAG
+## V8 历史架构补充：Query Understanding + Lexical Repo RAG
 
-V8 在 V7 权限/审批边界之后接入非向量化 repo-local RAG。当前执行链路为：
+V8 在 V7 权限/审批边界之后接入非向量化 repo-local RAG。该阶段已归档；以下链路描述 V8 历史实现，不是当前 V9 主链路：
 
 ```text
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
@@ -120,4 +123,31 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - citation 只包含相对 repo 路径和 1-based 行号，不包含本机绝对路径。
 - `/chat` 不新增顶层字段；内部 trace 可记录 query understanding 和 retrieval 摘要。
 
-V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank、memory、SandboxRunner 或多 agent orchestration。
+V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank、memory、SandboxRunner 或多 agent orchestration。当前 V9 主链路已在此基础上升级为 hybrid retrieval，见下一节。
+
+## 后续路线调整
+
+V9 规划为 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
+
+V10 收窄为 Evidence Pack + Context Budget；V11 再处理 Grounded Answer / Model Provider Boundary；V12 再处理 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+
+## V9 架构补充：Embedding Retrieval + Hybrid Search
+
+V9 在 V8 lexical RAG 之上加入轻量 embedding retrieval，并保持只读、安全、repo-local 和 `/chat` contract 边界。当前执行链路为：
+
+```text
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
+  -> QueryUnderstanding/SearchPlan
+  -> ToolRegistry -> PermissionPolicy -> ApprovalGate
+  -> ToolExecutor(repo_rag) -> HybridRepoRetriever
+     -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
+```
+
+边界约束：
+
+- `DeterministicEmbeddingProvider` 是本地确定性实现，不调用网络、密钥、模型下载或外部服务。
+- `EmbeddingRepoRetriever` 复用安全文件工具允许访问的 repo 文本 chunk，并输出相对路径 citation。
+- `HybridRepoRetriever` 对 lexical 和 embedding 结果做 deterministic fusion，保留路径、文件名、符号和 exact token 命中的优势。
+- 内部 trace 记录 hybrid channel audit summary，包括 lexical、embedding、fused 结果数和 `min_fused_score`；该摘要不作为 `/chat` 顶层字段暴露。
+- V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或持久化向量索引。
+- V9 不实现 LLM query rewrite、LLM rerank、grounded answer、model provider、memory 或 context compression。

@@ -3,7 +3,7 @@ from pathlib import PurePosixPath, PureWindowsPath
 import re
 
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
-from app.rag.repo_rag import LexicalRepoRetriever
+from app.rag.repo_rag import HybridRepoRetriever
 from app.tools.tool_executor import ToolExecutor
 
 
@@ -163,7 +163,7 @@ class AgentLoop:
         permission_policy: PermissionPolicy | None = None,
         approval_gate: ApprovalGate | None = None,
         query_understanding: QueryUnderstanding | None = None,
-        repo_retriever: LexicalRepoRetriever | None = None,
+        repo_retriever: HybridRepoRetriever | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
@@ -205,8 +205,9 @@ class AgentLoop:
         if _asks_about_unimplemented_vector_stack(request.message):
             return AgentLoopResult(
                 answer=(
-                    "当前未实现 embedding、Milvus、Elasticsearch、PgVector 或 memory；"
-                    "V8 只提供 lexical repo RAG，也就是关键词、符号和路径级检索。"
+                    "V9 规划提供轻量 embedding retrieval 和 hybrid search；"
+                    "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant、"
+                    "真实外部 embedding 服务或 memory。"
                 ),
                 trace_events_internal=trace_events,
             )
@@ -282,17 +283,26 @@ class AgentLoop:
                 summary=f"result_count={len(tool_result.results)}",
             )
         )
+        if tool_result.audit_summary:
+            trace_events.append(
+                TraceEvent(
+                    event_type="retrieval_channels_summarized",
+                    tool_name=tool_result.tool_name,
+                    status="ok",
+                    summary=_format_audit_summary(tool_result.audit_summary),
+                )
+            )
 
         if tool_result.error:
-            answer = f"已尝试使用 lexical repo RAG 检索 `{decision.keyword}`，但工具调用失败。"
+            answer = f"已尝试使用 hybrid repo RAG 检索 `{decision.keyword}`，但工具调用失败。"
         elif related_files:
             citations = _format_citations(tool_result.results)
             answer = (
-                f"已基于 lexical repo RAG 检索 `{decision.keyword}`，"
+                f"已基于 hybrid repo RAG 检索 `{decision.keyword}`，"
                 f"找到相关证据：{citations}。"
             )
         else:
-            answer = f"已基于 lexical repo RAG 检索 `{decision.keyword}`，没有找到相关证据。"
+            answer = f"已基于 hybrid repo RAG 检索 `{decision.keyword}`，没有找到相关证据。"
 
         return AgentLoopResult(
             answer=answer,
@@ -401,6 +411,10 @@ def _format_citations(results: list[dict[str, str | int]]) -> str:
             continue
         citations.append(f"{file_path}:{start_line}-{end_line}")
     return ", ".join(citations)
+
+
+def _format_audit_summary(audit_summary: dict[str, str | int | float]) -> str:
+    return "; ".join(f"{key}={value}" for key, value in audit_summary.items())
 
 
 def _is_absolute_path(file_path: str) -> bool:

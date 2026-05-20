@@ -6,12 +6,12 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V8 已实现，最新阶段是 V8 Query Understanding + Lexical Repo RAG。
+- 当前主线能力：V1-V9 已实现，最新阶段是 V9 Embedding Retrieval + Hybrid Search。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
-- 当前检索方式：deterministic query understanding + repo-local lexical RAG。
+- 当前检索方式：deterministic query understanding + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
 - 当前不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill。
-- 当前不包含 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、memory 或 context compression。
+- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、memory 或 context compression。
 
 ## 当前能力
 
@@ -22,12 +22,14 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 每次请求生成唯一 `trace_id`。
 - `related_files` 和 `tool_calls` 返回真实只读检索结果摘要。
 
-### Query Understanding + Lexical Repo RAG
+### Query Understanding + Hybrid Repo RAG
 
 - `QueryUnderstanding` 生成 deterministic `SearchPlan`。
-- `SearchPlan` 包含 `question_type`、`keywords`、`symbols`、`path_hints`、`max_results` 和 `retrieval_mode=lexical`。
-- `ToolExecutor.search_repo_rag(...)` 是 V8 的 `repo_rag` 审计入口。
+- `SearchPlan` 包含 `question_type`、`keywords`、`symbols`、`path_hints`、`max_results` 和 `retrieval_mode=hybrid`。
+- `ToolExecutor.search_repo_rag(...)` 是 `repo_rag` 审计入口。
 - `LexicalRepoRetriever` 负责 repo 文本 chunk、lexical scoring、dedup 和 citation。
+- `DeterministicEmbeddingProvider` 与 `EmbeddingRepoRetriever` 提供本地确定性 embedding retrieval，不依赖网络、密钥、模型下载或外部服务。
+- `HybridRepoRetriever` 通过 deterministic fusion 合并 lexical 与 embedding 结果，并保留路径、文件名、符号和 exact token 命中的优势。
 - citation 使用相对 repo 路径和 1-based 行号；`related_files` 来自 citation 文件路径。
 
 ### Safe Repository Tools
@@ -105,14 +107,14 @@ curl -X POST http://127.0.0.1:8000/chat \
 ```json
 {
   "trace_id": "trace_xxx",
-  "answer": "已基于 lexical repo RAG 检索 `UNIQUE_BUG_TOKEN`，找到相关证据：app/example.py:1-3。",
+  "answer": "已基于 hybrid repo RAG 检索 `UNIQUE_BUG_TOKEN`，找到相关证据：app/example.py:1-3。",
   "related_files": ["app/example.py"],
   "tool_calls": [
     {
       "tool_name": "repo_rag",
       "keyword": "UNIQUE_BUG_TOKEN",
       "question_type": "code_location",
-      "retrieval_mode": "lexical",
+      "retrieval_mode": "hybrid",
       "status": "success",
       "result_count": "1"
     }
@@ -126,7 +128,8 @@ curl -X POST http://127.0.0.1:8000/chat \
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> QueryUnderstanding/SearchPlan
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> LexicalRepoRetriever -> file_tools
+  -> ToolExecutor(repo_rag) -> HybridRepoRetriever
+     -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
 主要模块：
@@ -138,8 +141,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/agents/code_agent.py`：调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
 - `app/harness/kernel.py`：提供 RequestRouter、QueryUnderstanding 接入、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
-- `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、dedup 和 citation。
-- `app/tools/tool_executor.py`：统一包装只读代码搜索、lexical repo RAG 和 skill loader 工具调用。
+- `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
+- `app/tools/tool_executor.py`：统一包装只读代码搜索、hybrid repo RAG 和 skill loader 工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
 - `app/tools/skill_loader.py`：提供 Skill Metadata Loader 和 Skill Content Loader。
 - `app/observability/tracing.py`：生成请求级 `trace_id`；当前不是完整持久化审计系统。
@@ -185,7 +188,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - SandboxRunner 实现。
 - trace 持久化审计。
 - 反思检查和 eval。
-- embedding、Milvus、Elasticsearch、PgVector、Qdrant。
+- 真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant。
 - LLM query rewrite、rerank、grounded answer 和 context budget。
 - Memory。
 - 自动修改代码。
@@ -245,7 +248,9 @@ ChatService
 ## 路线图
 
 - V9：Embedding Retrieval + Hybrid Search，补 embedding provider、可替换检索接口和 hybrid fusion；Milvus/ES 暂不默认引入。
-- V10：Query Rewrite / Rerank / Grounded Answer / Context Budget，引入 LLM query rewrite、rerank、证据约束回答和上下文预算。
-- V11：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。
-- V12：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。
-- V13：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。
+- V10：Evidence Pack + Context Budget，先把检索结果整理为可审计证据包和上下文预算边界，不做回答生成。
+- V11：Grounded Answer / Model Provider Boundary，引入回答生成边界和证据约束策略。
+- V12：Query Rewrite + Rerank，再引入 query rewrite、rerank 和相关 provider 边界。
+- V13：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。
+- V14：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。
+- V15：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。

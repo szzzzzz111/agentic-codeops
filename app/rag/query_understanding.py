@@ -11,6 +11,7 @@ QUESTION_UNKNOWN = "unknown"
 
 DEFAULT_MAX_RESULTS = 8
 RETRIEVAL_LEXICAL = "lexical"
+RETRIEVAL_HYBRID = "hybrid"
 
 PATH_PATTERN = re.compile(
     r"(?:[A-Za-z0-9_\-]+[\\/])+[A-Za-z0-9_\-.]+\.[A-Za-z0-9]+|"
@@ -48,7 +49,7 @@ class SearchPlan:
     symbols: list[str] = field(default_factory=list)
     path_hints: list[str] = field(default_factory=list)
     max_results: int = DEFAULT_MAX_RESULTS
-    retrieval_mode: str = RETRIEVAL_LEXICAL
+    retrieval_mode: str = RETRIEVAL_HYBRID
 
     def terms(self) -> list[str]:
         return _unique([*self.path_hints, *self.symbols, *self.keywords])

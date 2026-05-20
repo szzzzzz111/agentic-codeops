@@ -1,9 +1,13 @@
 from dataclasses import dataclass
+import hashlib
+import math
 from pathlib import PurePosixPath
 import re
 
 from app.rag.query_understanding import SearchPlan
 from app.tools.file_tools import list_files, read_file
+
+DEFAULT_MIN_FUSED_SCORE = 0.5
 
 
 @dataclass(frozen=True)
@@ -32,6 +36,28 @@ class RetrievalResult:
     score: int
 
 
+class DeterministicEmbeddingProvider:
+    requires_external_service = False
+
+    def __init__(self, *, dimensions: int = 32) -> None:
+        if dimensions <= 0:
+            raise ValueError("dimensions must be positive")
+        self.dimensions = dimensions
+
+    def embed(self, text: str) -> list[float]:
+        vector = [0.0 for _ in range(self.dimensions)]
+        for token in _tokenize_embedding_text(text):
+            digest = hashlib.sha256(token.encode("utf-8")).digest()
+            index = int.from_bytes(digest[:4], "big") % self.dimensions
+            sign = 1.0 if digest[4] % 2 == 0 else -1.0
+            vector[index] += sign
+
+        norm = math.sqrt(sum(value * value for value in vector))
+        if norm == 0:
+            return vector
+        return [value / norm for value in vector]
+
+
 class LexicalRepoRetriever:
     def __init__(self, *, chunk_size: int = 8) -> None:
         self.chunk_size = chunk_size
@@ -56,6 +82,107 @@ class LexicalRepoRetriever:
 
         scored.sort(key=lambda item: (-item.score, item.citation.file_path))
         return _deduplicate(scored)[: plan.max_results]
+
+
+class EmbeddingRepoRetriever:
+    def __init__(
+        self,
+        *,
+        embedding_provider: DeterministicEmbeddingProvider | None = None,
+        chunk_size: int = 8,
+    ) -> None:
+        self.embedding_provider = embedding_provider or DeterministicEmbeddingProvider()
+        self.chunk_size = chunk_size
+
+    def retrieve(self, repo_path: str, plan: SearchPlan) -> list[RetrievalResult]:
+        query_vector = self.embedding_provider.embed(" ".join(plan.terms()) or plan.original_query)
+        scored: list[RetrievalResult] = []
+        for chunk in chunk_repository(repo_path, max_lines=self.chunk_size):
+            score = _embedding_score(query_vector, self.embedding_provider.embed(_embedding_text(chunk)))
+            if score <= 0:
+                continue
+            scored.append(
+                RetrievalResult(
+                    chunk=chunk,
+                    citation=Citation(
+                        file_path=chunk.file_path,
+                        start_line=chunk.start_line,
+                        end_line=chunk.end_line,
+                    ),
+                    score=score,
+                )
+            )
+
+        scored.sort(key=lambda item: (-item.score, item.citation.file_path, item.citation.start_line))
+        return _deduplicate(scored)[: plan.max_results]
+
+
+class HybridRepoRetriever:
+    def __init__(
+        self,
+        *,
+        lexical_retriever: LexicalRepoRetriever | None = None,
+        embedding_retriever: EmbeddingRepoRetriever | None = None,
+    ) -> None:
+        self.lexical_retriever = lexical_retriever or LexicalRepoRetriever()
+        self.embedding_retriever = embedding_retriever or EmbeddingRepoRetriever()
+        self.last_channel_summary: dict[str, str | int | float] = {}
+
+    def retrieve(self, repo_path: str, plan: SearchPlan) -> list[RetrievalResult]:
+        lexical_results = self.lexical_retriever.retrieve(repo_path, plan)
+        embedding_results = self.embedding_retriever.retrieve(repo_path, plan)
+        fused_results = hybrid_fuse(
+            lexical_results,
+            embedding_results,
+            max_results=plan.max_results,
+        )
+        self.last_channel_summary = {
+            "mode": "hybrid",
+            "lexical_results": len(lexical_results),
+            "embedding_results": len(embedding_results),
+            "fused_results": len(fused_results),
+            "min_fused_score": DEFAULT_MIN_FUSED_SCORE,
+        }
+        return fused_results
+
+
+def hybrid_fuse(
+    lexical_results: list[RetrievalResult],
+    embedding_results: list[RetrievalResult],
+    *,
+    max_results: int,
+    lexical_weight: float = 0.65,
+    embedding_weight: float = 0.35,
+    min_fused_score: float = DEFAULT_MIN_FUSED_SCORE,
+) -> list[RetrievalResult]:
+    lexical_max = max((result.score for result in lexical_results), default=0)
+    embedding_max = max((result.score for result in embedding_results), default=0)
+    fused: dict[tuple[str, int, int], tuple[RetrievalResult, float]] = {}
+
+    for result in lexical_results:
+        key = _citation_key(result.citation)
+        fused[key] = (result, _normalized(result.score, lexical_max) * lexical_weight)
+
+    for result in embedding_results:
+        key = _citation_key(result.citation)
+        existing = fused.get(key)
+        score = _normalized(result.score, embedding_max) * embedding_weight
+        if existing:
+            fused[key] = (existing[0], existing[1] + score)
+        else:
+            fused[key] = (result, score)
+
+    results = [
+        RetrievalResult(
+            chunk=result.chunk,
+            citation=result.citation,
+            score=int(round(score * 1000)),
+        )
+        for result, score in (item for item in fused.values())
+        if score >= min_fused_score
+    ]
+    results.sort(key=lambda item: (-item.score, item.citation.file_path, item.citation.start_line))
+    return results[:max_results]
 
 
 def chunk_repository(repo_path: str, *, max_lines: int = 8) -> list[RepoChunk]:
@@ -115,6 +242,29 @@ def score_chunk(chunk: RepoChunk, plan: SearchPlan) -> int:
 
 def _contains_exact_token(text: str, token: str) -> bool:
     return re.search(rf"(?<![A-Za-z0-9_]){re.escape(token)}(?![A-Za-z0-9_])", text) is not None
+
+
+def _tokenize_embedding_text(text: str) -> list[str]:
+    return [token.lower() for token in re.findall(r"[A-Za-z0-9_]{2,}", text)]
+
+
+def _embedding_text(chunk: RepoChunk) -> str:
+    return f"{chunk.file_path}\n{chunk.text}"
+
+
+def _embedding_score(left: list[float], right: list[float]) -> int:
+    similarity = sum(left_value * right_value for left_value, right_value in zip(left, right))
+    return int(round(max(0.0, similarity) * 100))
+
+
+def _normalized(score: int, max_score: int) -> float:
+    if max_score <= 0:
+        return 0.0
+    return score / max_score
+
+
+def _citation_key(citation: Citation) -> tuple[str, int, int]:
+    return (citation.file_path, citation.start_line, citation.end_line)
 
 
 def _deduplicate(results: list[RetrievalResult]) -> list[RetrievalResult]:

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from app.rag.query_understanding import SearchPlan
-from app.rag.repo_rag import LexicalRepoRetriever
+from app.rag.repo_rag import HybridRepoRetriever
 from app.tools.file_tools import search_code
 
 
@@ -11,6 +11,7 @@ class ToolExecutionResult:
     parameters: dict[str, str]
     results: list[dict[str, str | int]] = field(default_factory=list)
     error: str | None = None
+    audit_summary: dict[str, str | int | float] = field(default_factory=dict)
 
     def call_summary(self) -> dict[str, str]:
         summary = {
@@ -25,8 +26,8 @@ class ToolExecutionResult:
 
 
 class ToolExecutor:
-    def __init__(self, repo_retriever: LexicalRepoRetriever | None = None) -> None:
-        self.repo_retriever = repo_retriever or LexicalRepoRetriever()
+    def __init__(self, repo_retriever: HybridRepoRetriever | None = None) -> None:
+        self.repo_retriever = repo_retriever or HybridRepoRetriever()
 
     def search_code(
         self,
@@ -87,4 +88,5 @@ class ToolExecutor:
             tool_name="repo_rag",
             parameters=parameters,
             results=results,
+            audit_summary=self.repo_retriever.last_channel_summary,
         )
