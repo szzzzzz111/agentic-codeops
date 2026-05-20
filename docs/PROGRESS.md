@@ -4,9 +4,9 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`main`
-- 当前阶段：V7 `v7-permission-approval-gate` 已完成实现、验证、提交、合并和 OpenSpec 归档；暂无活跃开发阶段
-- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor -> search_code` 使用只读仓库搜索；`/chat` 顶层响应结构保持不变
+- 当前工作分支：`codex/v8-query-understanding-repo-rag`
+- 当前阶段：V8 `v8-query-understanding-repo-rag` 已实现，正在进行最终 review、验证和收口；V7 已完成提交、合并和 OpenSpec 归档
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> LexicalRepoRetriever` 使用只读 lexical repo RAG；`/chat` 顶层响应结构保持不变
 - 当前工具层：`list_files`、`read_file`、`search_code` 已实现
 - 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
 - 当前 OpenSpec 状态：已初始化项目内 OpenSpec、OpenCode 和 `.codex/skills`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
@@ -37,11 +37,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - V6：Agent Harness Kernel + Router Kernel。已建立 `RequestRouter`、`ToolRegistry`、`AgentLoop` 和 `TraceEvent` 四个最小运行时骨架；`ProviderAdapter`、`ContextBuilder`、`SkillRegistry` 和 `SessionStore` 留到后续阶段，不在 V6 写运行时代码。历史 `v6-skill-aware-agent-loop` draft 只作为流程偏差记录和 skill 子能力参考。
 - V7：Permission + Approval Gate。已引入确定性 allow/deny/ask 策略和最小审批占位；高风险动作真实确认仍留到后续阶段。
-- V8：Repo RAG Engineering。吸收 ragent 和 Agentic RAG for Dummies 的工程化链路，先做 repo-local 文档解析、chunk、hybrid search、query rewrite、rerank 和 citation。
-- V9：Three-layer Memory。吸收 mem0 和 AGI-assistant 思路，区分 STM、LTM 和 PREF，并记录 memory audit。
-- V10：ReAct / Long Task Agent。加入计划、任务状态、pause/resume、compact、scratch space 和长 trace。
-- V11：Subagents + Worktree。加入 explorer/worker/reviewer、隔离工作区、结果 handoff 和冲突检测。
-- V12：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
+- V8：Query Understanding + Lexical Repo RAG。已将旧“大 Repo RAG Engineering”收窄为 deterministic 检索前理解、repo-local chunk、lexical scoring 和 citation。
+- V9：Embedding Retrieval + Hybrid Search。补 embedding provider、可替换检索接口和 hybrid fusion；Milvus/ES 暂不默认引入。
+- V10：Query Rewrite / Rerank / Grounded Answer / Context Budget。引入 LLM query rewrite、rerank、证据约束回答和上下文预算。
+- V11：Memory。吸收 mem0 和 AGI-assistant 思路，区分 STM、LTM 和 PREF，并记录 memory audit。
+- V12：Long Task / ReAct / Subagents。加入计划、任务状态、pause/resume、scratch space、subagents、worktree handoff 和冲突检测。
+- V13：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
 
 ## 已完成
 
@@ -214,8 +215,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - V2 工具只读，不写文件、不删文件、不执行 shell。
 - V3 只做最小确定性关键词提取，测试使用 `UNIQUE_BUG_TOKEN`。
-- 当前链路只调用只读 `search_code`，不自动读取普通代码文件完整内容；V7 Kernel 继续保留 `ToolExecutor` 作为实际工具调用边界。
-- 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、RAG、Memory 或复杂多 Agent。
+- 当前链路通过 `ToolExecutor(repo_rag)` 调用只读 lexical repo RAG；V8 会读取安全文件工具允许访问的仓库文本文件小段 chunk，但不返回完整文件内容。
+- 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、embedding/vector RAG、Memory 或复杂多 Agent。
 - `PermissionPolicy` 和最小 `ApprovalGate` 已实现；真实审批流程、SandboxRunner、trace 持久化审计、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
 - 后续接入真实审批、沙箱或高风险工具时，应通过当前权限/审批边界和 `ToolExecutor` 增量加入。
 - 缓存文件已从 git 跟踪中移除，并由 `.gitignore` 忽略。
@@ -226,6 +227,21 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：下一阶段可规划 V8 Repo RAG Engineering；开始前同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+- 当前建议：完成 V8 最终 review、验证、提交和归档；之后再规划 V9 Embedding Retrieval + Hybrid Search。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
+
+## V8：Query Understanding + Lexical Repo RAG（已实现）
+
+- 当前分支：`codex/v8-query-understanding-repo-rag`
+- OpenSpec change：`v8-query-understanding-repo-rag`
+- V8 将旧路线里的“大 Repo RAG Engineering”收窄为 deterministic query understanding + 非向量化 lexical repo RAG。
+- 已新增 `app/rag/query_understanding.py`，生成 `SearchPlan`，识别代码定位、实现解释、调用关系、测试/验证、文件摘要和未知泛问。
+- 已新增 `app/rag/repo_rag.py`，提供 repo chunk、lexical scorer、dedup 和 citation。
+- `AgentLoop` 已接入 query understanding 和 lexical repo RAG，并继续保留 V7 的 ToolRegistry、PermissionPolicy、ApprovalGate 边界。
+- `/chat` contract 保持不变：`trace_id`、`answer`、`related_files`、`tool_calls`。
+- V8 明确不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank、memory 或 context compression。
+
+参考项目已写入 V8 design，只作为后续规划资料，不作为 RepoPilot runtime dependency：`ragent`、`agentic-rag-for-dummies`、`mem0`、`AGI-assistant`、`openai-cs-agents-demo`、`learn-claude-code`、`build-your-own-openclaw`、`agents-from-scratch`、`DeepAgents`、`DeerFlow`、`Clawd-Code`。
+
+路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Query Rewrite / Rerank / Grounded Answer / Context Budget；V11 为 Memory；V12 为 Long Task / ReAct / Subagents；V13 为 Personal Assistant Gateway。

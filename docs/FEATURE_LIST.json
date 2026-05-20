@@ -11,11 +11,10 @@
     ],
     "acceptance_criteria": [
       "trace_id 以 trace_ 开头",
-      "V1 阶段 related_files 为空列表",
-      "V1 阶段 tool_calls 为空列表"
+      "响应字段保持稳定"
     ],
     "passes": true,
-    "notes": "V1 建立 Agent 服务入口和可追踪请求结构；V3 当前会在命中时填充 related_files 和 tool_calls。"
+    "notes": "由 tests/test_chat_api.py 覆盖。"
   },
   {
     "id": "v1-trace-id-unique",
@@ -29,63 +28,24 @@
       "两次 trace_id 不相同"
     ],
     "passes": true,
-    "notes": "已由 tests/test_chat_api.py 覆盖。"
+    "notes": "由 tests/test_chat_api.py 覆盖。"
   },
   {
-    "id": "v2-safe-list-files",
+    "id": "v2-safe-repository-file-tools",
     "category": "tools",
-    "description": "list_files 只返回 repo_path 内允许访问的普通文本文件，作为安全只读仓库工具层的一部分。",
+    "description": "只读仓库文件工具提供 list_files、read_file、search_code，并限制访问 repo_path 内允许读取的普通文本文件。",
     "steps": [
       "创建包含普通文件、敏感文件、隐藏目录、忽略目录和二进制文件的临时仓库",
-      "调用 list_files(repo_path)",
-      "检查结果只包含允许访问的普通文件"
+      "调用 list_files、read_file、search_code",
+      "检查结果只包含允许访问的文本文件"
     ],
     "acceptance_criteria": [
-      "跳过 .git、__pycache__、.venv、node_modules",
-      "跳过隐藏目录",
-      "跳过 .env、密钥和证书文件",
-      "跳过二进制文件"
+      "拒绝路径逃逸",
+      "跳过敏感文件、隐藏目录、忽略目录和二进制文件",
+      "读取和搜索结果不泄露本机绝对路径"
     ],
     "passes": true,
-    "notes": "已由 tests/test_file_tools.py 覆盖。"
-  },
-  {
-    "id": "v2-safe-read-file",
-    "category": "tools",
-    "description": "read_file 只读取 repo_path 内允许访问的文本文件，拒绝路径逃逸和敏感文件。",
-    "steps": [
-      "读取 repo 内普通文件",
-      "尝试通过 ../ 读取 repo 外文件",
-      "尝试读取敏感文件",
-      "检查 max_chars 限制"
-    ],
-    "acceptance_criteria": [
-      "repo 内普通文件可读取",
-      "repo 外路径被拒绝",
-      "敏感文件被拒绝",
-      "返回内容受 max_chars 限制"
-    ],
-    "passes": true,
-    "notes": "已由 tests/test_file_tools.py 覆盖。"
-  },
-  {
-    "id": "v2-safe-search-code",
-    "category": "tools",
-    "description": "search_code 返回匹配文件、行号和行文本，同时不泄露敏感文件内容。",
-    "steps": [
-      "在普通文件中写入关键词",
-      "在敏感文件中写入同一关键词",
-      "调用 search_code(repo_path, keyword)",
-      "检查结果不包含敏感文件内容"
-    ],
-    "acceptance_criteria": [
-      "返回 file_path、line_number、line_text",
-      "找不到关键词时返回空列表",
-      "结果数量受 max_results 限制",
-      "不返回敏感文件内容"
-    ],
-    "passes": true,
-    "notes": "已由 tests/test_file_tools.py 覆盖。"
+    "notes": "由 tests/test_file_tools.py 覆盖。"
   },
   {
     "id": "v3-agent-loop-tools",
@@ -93,20 +53,18 @@
     "description": "CodeAgent 通过 ToolExecutor 统一执行只读 search_code，并让 /chat 返回真实 related_files 和 tool_calls。",
     "steps": [
       "POST /chat 提供 message 和 repo_path",
-      "CodeAgent 使用最小确定性规则提取关键词",
-      "CodeAgent 通过 ToolExecutor 调用 search_code",
+      "AgentLoop 生成 repo_search 路由",
+      "AgentLoop 通过 ToolExecutor 执行只读搜索",
       "响应返回 related_files 和 tool_calls"
     ],
     "acceptance_criteria": [
       "不接真实 LLM",
       "不自动修改代码",
-      "测试使用唯一关键词，例如 UNIQUE_BUG_TOKEN",
       "tool_calls 记录工具名称、参数摘要、状态和结果数量",
-      "related_files 包含命中文件",
-      "/chat 能返回真实工具调用结果"
+      "related_files 只包含相对仓库路径"
     ],
     "passes": true,
-    "notes": "已由 tests/test_chat_api.py 覆盖 UNIQUE_BUG_TOKEN 命中、无命中、敏感文件不泄露和错误摘要脱敏。"
+    "notes": "由 tests/test_chat_api.py 和 tests/test_agent_harness_kernel.py 覆盖。"
   },
   {
     "id": "v4-skill-metadata-loader",
@@ -120,88 +78,90 @@
     ],
     "acceptance_criteria": [
       "返回 name、description、path",
-      "path 为相对仓库路径",
       "不存在 .agents/skills 时返回空列表",
-      "多个技能返回稳定排序",
       "不返回完整 skill 正文",
       "不接入 /chat 决策",
       "不执行 skill"
     ],
     "passes": true,
-    "notes": "已由 tests/test_skill_loader.py 覆盖 metadata 命中、无 skills 目录、多技能稳定排序、不返回完整正文、不泄露本机绝对路径、缺失 metadata、非法 frontmatter 行和异常 frontmatter 读取限制。"
+    "notes": "由 tests/test_skill_loader.py 覆盖。"
   },
   {
     "id": "v5-skill-content-loader",
     "category": "tools",
     "description": "Skill Content Loader 在 metadata-first 之后，按需读取指定 .agents/skills/*/SKILL.md 的完整内容。",
     "steps": [
-      "创建包含 .agents/skills/example/SKILL.md 的临时仓库",
       "先通过 load_skill_metadata(repo_path) 获得相对 path",
       "调用 content loader 读取该 path 的完整 SKILL.md 内容",
       "检查路径安全、读取上限和非 /chat 接入边界"
     ],
     "acceptance_criteria": [
-      "返回完整 SKILL.md 文本内容，包含 frontmatter 和正文",
-      "返回结构包含 path 和 content 字段，并与 OpenSpec V5 spec 一致",
-      "返回路径为相对 repo_path 的路径，不泄露本机绝对路径",
-      "content loader 不解析 frontmatter，不验证 name 或 description",
+      "返回 path 和 content",
       "拒绝路径逃逸、非 skill 文件、缺失文件和符号链接目录绕过",
-      "内容读取有明确规模上限，超限 fail fast",
-      "load_skill_metadata(repo_path) 仍不返回完整 skill 正文",
+      "内容读取有明确上限",
       "不接入 /chat 决策",
       "不执行 skill"
     ],
     "passes": true,
-    "notes": "已由 tests/test_skill_loader.py 覆盖读取成功、返回结构、路径不泄露、路径逃逸、非 skill 文件、缺失文件、符号链接目录绕过、内容读取上限和 metadata 行为不变。"
+    "notes": "由 tests/test_skill_loader.py 覆盖。"
   },
   {
     "id": "v6-agent-harness-kernel",
     "category": "agent",
-    "description": "CodeAgent 通过轻量 Agent Harness Kernel 执行现有只读仓库搜索闭环，并保留 /chat 响应结构。",
+    "description": "CodeAgent 通过轻量 Agent Harness Kernel 执行只读仓库搜索闭环，并保留 /chat 响应结构。",
     "steps": [
       "构造包含可搜索 token 的 /chat 请求",
       "RequestRouter 生成 repo_search RouteDecision",
-      "AgentLoop 通过 ToolRegistry 校验 search_code 为只读低风险工具",
-      "AgentLoop 通过 ToolExecutor.search_code 执行只读搜索",
+      "AgentLoop 通过 ToolRegistry、ToolExecutor 和 TraceEvent 组织执行",
       "检查 /chat 响应仍只包含原有顶层字段"
     ],
     "acceptance_criteria": [
       "AgentLoopRequest 包含 message、repo_path、trace_id",
       "RouteDecision 包含 route、keyword、reason",
-      "ToolSpec 包含 name、description、read_only、risk",
-      "ToolRegistry 不负责 dispatch，只做元数据登记和调用前校验",
-      "未注册、非只读或高风险工具不会调用 ToolExecutor.search_code，并记录稳定拒绝原因",
       "TraceEvent 内部记录路由、工具调用、工具结果和拒绝事件",
-      "/chat 不新增顶层 trace 字段",
-      "不实现 ProviderAdapter、ContextBuilder、SkillRegistry 或 SessionStore 运行时代码"
+      "不实现 ProviderAdapter、ContextBuilder、SkillRegistry 或 SessionStore runtime"
     ],
     "passes": true,
-    "notes": "已由 tests/test_agent_harness_kernel.py 覆盖 Kernel contract、registry gate 和 trace events；tests/test_chat_api.py 覆盖 /chat 回归。"
+    "notes": "由 tests/test_agent_harness_kernel.py 覆盖。"
   },
   {
     "id": "v7-permission-approval-gate",
     "category": "agent",
     "description": "AgentLoop 在调用工具前通过 PermissionPolicy 和 ApprovalGate 做确定性的 allow/deny/ask 决策。",
     "steps": [
-      "构造包含可搜索 token 的 AgentLoopRequest",
       "通过 ToolRegistry 获取 search_code 的 ToolSpec",
-      "通过 PermissionPolicy 产出 allow、deny 或 ask",
+      "通过 PermissionPolicy 产生 allow、deny 或 ask",
       "通过 ApprovalGate 阻止 ask 分支执行工具",
-      "检查 /chat 顶层响应仍不暴露内部 trace"
+      "检查 /chat 响应不暴露内部 trace"
     ],
     "acceptance_criteria": [
       "默认 search_code 为只读、low 风险且 requires_approval=false",
-      "ToolRegistry 只登记和读取 ToolSpec，不保留独立 allow/deny gate",
-      "低风险只读工具走 allow 并继续调用 ToolExecutor.search_code",
       "未注册、非只读或非 low 风险工具走 deny 且不调用 executor",
-      "risk!=low 优先于 requires_approval=true，结果必须为 deny",
-      "低风险只读且 requires_approval=true 的工具走 ask，返回固定审批回答、空 related_files 和空 tool_calls",
-      "related_files 只返回相对仓库路径，不返回本机绝对路径",
-      "chat_only 不进入 permission/approval 链路，不记录 permission_checked",
-      "权限和审批审计仅保留在内部 trace_events_internal，不作为 /chat 顶层字段返回",
-      "不实现真实审批 UI、审批持久化、写文件工具、shell 工具或 SandboxRunner"
+      "requires_approval=true 的低风险只读工具走 ask 且不调用 executor",
+      "权限和审批审计只保留在 trace_events_internal"
     ],
     "passes": true,
-    "notes": "已由 tests/test_agent_harness_kernel.py 覆盖 allow、deny、ask、chat_only 路径和 trace 顺序；tests/test_chat_api.py 覆盖 /chat contract 回归。"
+    "notes": "由 tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v8-query-understanding-repo-rag",
+    "category": "rag",
+    "description": "AgentLoop 在只读权限边界通过后执行 deterministic Query Understanding 和非向量化 lexical repo RAG。",
+    "steps": [
+      "构造包含文件名、路径片段、函数名或错误词的 /chat 请求",
+      "QueryUnderstanding 生成 SearchPlan",
+      "LexicalRepoRetriever 对 repo 文本 chunk 打分并返回 citation",
+      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
+    ],
+    "acceptance_criteria": [
+      "SearchPlan 包含 question_type、keywords、symbols、path_hints、max_results 和 retrieval_mode=lexical",
+      "chunk 包含 chunk_id、file_path、start_line、end_line、text",
+      "citation 只使用相对 repo 路径和 1-based 行号",
+      "related_files 来自 citation 文件路径",
+      "V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank 或 memory",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

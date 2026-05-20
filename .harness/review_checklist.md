@@ -1,12 +1,13 @@
 # 当前 Review 清单
 
-当前暂无活跃开发阶段；下一阶段开始前，必须把本文件更新为该阶段 review 清单。
+当前活跃阶段：V8 `v8-query-understanding-repo-rag`。
 
-默认检查项：
-
-- [ ] 当前变更有对应 OpenSpec change，或明确说明为什么不需要。
-- [ ] `.harness/allowed_files.md` 已更新为当前阶段写入边界。
-- [ ] 变更没有恢复旧 `specs/00x-*` 作为规格入口。
-- [ ] OpenSpec、Superpowers、MCP、plugin 或外部 skill 没有被误写成 RepoPilot runtime 能力。
-- [ ] 未把 LLM、RAG、Memory、Reflection、真实审批流程、SandboxRunner 或 eval 写成已实现，除非当前阶段确实实现。
-- [ ] 已运行 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，或说明无法运行的原因。
+- [ ] OpenSpec change 存在并通过 `openspec validate v8-query-understanding-repo-rag`。
+- [ ] `.harness/allowed_files.md` 已限定 V8 写入边界。
+- [ ] V8 明确是非向量化 lexical repo RAG，不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant。
+- [ ] Query Understanding 是 deterministic 实现，不调用 LLM rewrite 或 LLM intent classifier。
+- [ ] Lexical retrieval 返回 citation，且 citation 只包含相对 repo 路径和行号。
+- [ ] `/chat` 顶层响应字段仍为 `trace_id`、`answer`、`related_files`、`tool_calls`。
+- [ ] 参考项目只写成规划资料，没有写成当前 runtime dependency 或已实现能力。
+- [ ] 现有 V7 权限/审批边界仍在 repo 检索前生效。
+- [ ] 已运行 `pytest`、`ruff check .`、`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`、`openspec validate --all` 和 `git diff --check`，或说明无法运行的原因。

@@ -2,7 +2,7 @@
 
 RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，目标不是替代通用 AI IDE 或 AI 编程助手，而是围绕 Agent 的工具调用、安全边界、执行追踪、评测和交接机制，构建一个可验证、可审计、可扩展的代码智能体执行框架。当前应用场景包括代码仓库阅读、Bug 定位和修复建议。
 
-当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop、V4 Skill Metadata Loader、V5 Skill Content Loader、V6 Agent Harness Kernel + Router Kernel 和 V7 Permission + Approval Gate。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
+当前实现包含 V1 Agent 服务入口、V2 安全只读仓库工具层、V3 最小确定性 Agent Loop、V4 Skill Metadata Loader、V5 Skill Content Loader、V6 Agent Harness Kernel + Router Kernel、V7 Permission + Approval Gate 和 V8 Query Understanding + Lexical Repo RAG。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
 
 ## 当前能力与定位
 
@@ -12,9 +12,9 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
 - `CodeAgent` 当前通过轻量 `AgentLoop` 执行最小确定性仓库搜索，不接真实 LLM。
 - `RequestRouter` 将请求路由到 `repo_search` 或 `chat_only`。
 - `ToolRegistry` 记录只读低风险工具元数据；`PermissionPolicy` 和 `ApprovalGate` 在工具调用前做 allow/deny/ask 决策。
-- `ToolExecutor` 统一收口只读工具调用，当前包装 `search_code`。
+- `QueryUnderstanding` 生成 deterministic `SearchPlan`，`ToolExecutor` 统一收口只读工具调用，当前包装 `search_code` 和 `repo_rag`。
 - `TraceEvent` 在 Kernel 内部记录路由、权限、审批、工具调用、工具结果和拒绝事件；当前不作为 `/chat` 顶层字段返回。
-- `related_files` 和 `tool_calls` 返回真实只读搜索结果。
+- `related_files` 和 `tool_calls` 返回真实只读 lexical repo RAG 检索结果。
 - 使用 OpenSpec specs、harness rules、review checklist、pytest 和 handoff 约束开发过程。
 - 提供安全只读仓库文件工具：
   - `list_files(repo_path)`
@@ -31,7 +31,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
   - 不解析 frontmatter、不执行 skill
 - V6 不执行 skill，不把 skill loader 接入 `/chat` 决策；Skill-aware Agent Loop 已降级为历史 draft 和后续 skill 子能力参考。
 
-V3 当前只做确定性关键词搜索，不做复杂语义理解。
+V8 当前只做 deterministic query understanding 和非向量化 lexical repo RAG，不做 embedding、向量库、LLM query rewrite、rerank 或 memory。
 
 ## 阶段说明
 
@@ -172,12 +172,14 @@ curl -X POST http://127.0.0.1:8000/chat \
 ```json
 {
   "trace_id": "trace_xxx",
-  "answer": "已使用只读仓库工具搜索 `UNIQUE_BUG_TOKEN`，找到相关文件。",
+  "answer": "已基于 lexical repo RAG 检索 `UNIQUE_BUG_TOKEN`，找到相关证据：app/example.py:1-3。",
   "related_files": ["app/example.py"],
   "tool_calls": [
     {
-      "tool_name": "search_code",
+      "tool_name": "repo_rag",
       "keyword": "UNIQUE_BUG_TOKEN",
+      "question_type": "code_location",
+      "retrieval_mode": "lexical",
       "status": "success",
       "result_count": "1"
     }
@@ -200,7 +202,10 @@ ruff check .
 ## 当前架构
 
 ```text
-API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor -> file_tools
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
+  -> QueryUnderstanding/SearchPlan
+  -> ToolRegistry -> PermissionPolicy -> ApprovalGate
+  -> ToolExecutor(repo_rag) -> LexicalRepoRetriever -> file_tools
 ```
 
 - `app/main.py`：创建 FastAPI 应用并注册路由。
@@ -208,8 +213,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> Permis
 - `app/schemas/chat.py`：定义请求和响应模型。
 - `app/services/chat_service.py`：创建请求级 `trace_id` 并编排智能体调用。
 - `app/agents/code_agent.py`：调用轻量 AgentLoop 并适配 `/chat` 响应结构。
-- `app/harness/kernel.py`：提供 RequestRouter、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
-- `app/tools/tool_executor.py`：统一包装只读代码搜索和 skill loader 工具调用。
+- `app/harness/kernel.py`：提供 RequestRouter、QueryUnderstanding 接入、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
+- `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
+- `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、dedup 和 citation。
+- `app/tools/tool_executor.py`：统一包装只读代码搜索、lexical repo RAG 和 skill loader 工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
 - `app/tools/skill_loader.py`：提供 Skill Metadata Loader 和 Skill Content Loader。
 - `app/observability/tracing.py`：生成请求级 `trace_id`；当前不是完整持久化审计系统。
@@ -222,11 +229,11 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> Permis
 - trace 持久化审计。
 - 反思检查。
 - 评测。
-- RAG。
+- embedding、向量库、LLM query rewrite、rerank 或 context compression。
 - Memory。
 - 自动修改代码。
 - shell 执行。
-- 复杂智能体循环和复杂语义理解。
+- 复杂智能体循环、LLM 驱动语义理解和多步规划。
 
 ## 文件工具安全边界
 
@@ -268,8 +275,32 @@ ChatService
 - V5：加入 Skill Content Loader / progressive disclosure，按需读取完整 `SKILL.md`。
 - V6：Agent Harness Kernel + Router Kernel，已建立 RequestRouter、ToolRegistry、AgentLoop、TraceEvent 和最小数据 contract；Provider/Context/Skill/Session runtime 后移。
 - V7：Permission + Approval Gate，已把工具风险等级、允许/拒绝/询问策略和内部审计事件接入统一执行层；不在 `/chat` 暴露 trace。
-- V8：Repo RAG Engineering，做 repo-local 文档解析、chunk、hybrid search、query rewrite、rerank 和 citation，不先做企业多源平台。
-- V9：Three-layer Memory，区分 STM 短期记忆、LTM 长期语义记忆和 PREF 用户偏好，并加入 memory audit。
-- V10：ReAct / Long Task Agent，支持计划、任务状态、pause/resume、compact、scratch space 和长 trace。
-- V11：Subagents + Worktree，加入 explorer/worker/reviewer、隔离工作区和结构化 handoff。
-- V12：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。
+- V8：Query Understanding + Lexical Repo RAG，已实现 deterministic 检索前理解、repo-local chunk、lexical scoring 和 citation。
+- V9：Embedding Retrieval + Hybrid Search，补 embedding provider、可替换检索接口和 hybrid fusion；Milvus/ES 暂不默认引入。
+- V10：Query Rewrite / Rerank / Grounded Answer / Context Budget，引入 LLM query rewrite、rerank、证据约束回答和上下文预算。
+- V11：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。
+- V12：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。
+- V13：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。
+
+## V8 Update: Query Understanding + Lexical Repo RAG
+
+V8 已将旧路线里的“大 Repo RAG Engineering”收窄为可落地的非向量化 repo-local RAG 骨架。当前主链路为：
+
+```text
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
+  -> QueryUnderstanding/SearchPlan
+  -> ToolRegistry -> PermissionPolicy -> ApprovalGate
+  -> ToolExecutor(repo_rag) -> LexicalRepoRetriever -> file_tools
+```
+
+V8 当前实现：
+
+- deterministic `QueryUnderstanding`，生成 `SearchPlan`，包含 `question_type`、`keywords`、`symbols`、`path_hints`、`max_results` 和 `retrieval_mode=lexical`。
+- repo 文本 chunk，chunk 包含 `chunk_id`、`file_path`、`start_line`、`end_line` 和 `text`。
+- lexical scorer，按 keyword、symbol、path、filename 和 exact token bonus 排序。
+- citation 输出，`related_files` 来自 citation 文件路径。
+- `/chat` 顶层响应字段仍为 `trace_id`、`answer`、`related_files`、`tool_calls`。
+
+V8 仍不包含 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、memory、context compression、真实 LLM、shell、写文件工具、SandboxRunner、skill execution 或多 agent orchestration。
+
+路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Query Rewrite / Rerank / Grounded Answer / Context Budget；V11 为 Memory；V12 为 Long Task / ReAct / Subagents；V13 为 Personal Assistant Gateway。

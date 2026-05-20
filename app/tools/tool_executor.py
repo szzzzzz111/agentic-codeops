@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from app.rag.query_understanding import SearchPlan
+from app.rag.repo_rag import LexicalRepoRetriever
 from app.tools.file_tools import search_code
 
 
@@ -23,6 +25,9 @@ class ToolExecutionResult:
 
 
 class ToolExecutor:
+    def __init__(self, repo_retriever: LexicalRepoRetriever | None = None) -> None:
+        self.repo_retriever = repo_retriever or LexicalRepoRetriever()
+
     def search_code(
         self,
         repo_path: str,
@@ -45,5 +50,41 @@ class ToolExecutor:
         return ToolExecutionResult(
             tool_name="search_code",
             parameters={"keyword": keyword},
+            results=results,
+        )
+
+    def search_repo_rag(
+        self,
+        repo_path: str,
+        keyword: str,
+        search_plan: SearchPlan,
+    ) -> ToolExecutionResult:
+        parameters = {
+            "keyword": keyword,
+            "question_type": search_plan.question_type,
+            "retrieval_mode": search_plan.retrieval_mode,
+        }
+        try:
+            results = [
+                {
+                    "file_path": result.citation.file_path,
+                    "line_number": result.citation.start_line,
+                    "line_text": result.chunk.text.strip(),
+                    "start_line": result.citation.start_line,
+                    "end_line": result.citation.end_line,
+                    "score": result.score,
+                }
+                for result in self.repo_retriever.retrieve(repo_path, search_plan)
+            ]
+        except (NotADirectoryError, OSError, ValueError) as exc:
+            return ToolExecutionResult(
+                tool_name="repo_rag",
+                parameters=parameters,
+                error=type(exc).__name__,
+            )
+
+        return ToolExecutionResult(
+            tool_name="repo_rag",
+            parameters=parameters,
             results=results,
         )

@@ -18,6 +18,9 @@ class FailingSearchExecutor:
     def search_code(self, repo_path: str, keyword: str) -> None:
         raise AssertionError("search_code must not be called when policy blocks")
 
+    def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
+        raise AssertionError("search_repo_rag must not be called when policy blocks")
+
 
 def write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -279,6 +282,52 @@ class AbsolutePathSearchExecutor:
             ],
         )
 
+    def search_repo_rag(
+        self,
+        repo_path: str,
+        keyword: str,
+        search_plan,
+    ) -> ToolExecutionResult:
+        return ToolExecutionResult(
+            tool_name="repo_rag",
+            parameters={
+                "keyword": keyword,
+                "question_type": search_plan.question_type,
+                "retrieval_mode": search_plan.retrieval_mode,
+            },
+            results=[
+                {
+                    "file_path": "C:/outside/project/app.py",
+                    "line_number": 1,
+                    "line_text": keyword,
+                    "start_line": 1,
+                    "end_line": 1,
+                }
+            ],
+        )
+
+
+class RecordingRepoRagExecutor:
+    def __init__(self) -> None:
+        self.called = False
+
+    def search_repo_rag(
+        self,
+        repo_path: str,
+        keyword: str,
+        search_plan,
+    ) -> ToolExecutionResult:
+        self.called = True
+        return ToolExecutionResult(
+            tool_name="repo_rag",
+            parameters={
+                "keyword": keyword,
+                "question_type": search_plan.question_type,
+                "retrieval_mode": search_plan.retrieval_mode,
+            },
+            results=[],
+        )
+
 
 def test_agent_loop_trace_summary_does_not_include_absolute_result_paths(
     tmp_path: Path,
@@ -316,8 +365,10 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
     assert result.related_files == ["app/service.py"]
     assert result.tool_calls == [
         {
-            "tool_name": "search_code",
+            "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "lexical",
             "status": "success",
             "result_count": "1",
         }
@@ -328,6 +379,21 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
         "tool_call",
         "tool_result",
     ]
+
+
+def test_agent_loop_uses_tool_executor_for_v8_repo_rag(tmp_path: Path) -> None:
+    executor = RecordingRepoRagExecutor()
+    loop = AgentLoop(tool_executor=executor)
+
+    loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(tmp_path),
+            trace_id="trace_executor_boundary",
+        )
+    )
+
+    assert executor.called is True
 
 
 def test_agent_loop_chat_only_does_not_call_tools(tmp_path: Path) -> None:
@@ -379,3 +445,146 @@ def test_v6_kernel_does_not_expose_future_runtime_components() -> None:
     assert not hasattr(loop, "context_builder")
     assert not hasattr(loop, "skill_registry")
     assert not hasattr(loop, "session_store")
+
+
+def test_agent_loop_records_query_understanding_before_repo_retrieval(
+    tmp_path: Path,
+) -> None:
+    write_text(
+        tmp_path / "app" / "harness" / "kernel.py",
+        "class AgentLoop:\n"
+        "    def run(self):\n"
+        "        return search_code('UNIQUE_BUG_TOKEN')\n",
+    )
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="AgentLoop 在 app/harness/kernel.py 怎么调用 search_code?",
+            repo_path=str(tmp_path),
+            trace_id="trace_v8_rag",
+        )
+    )
+
+    assert result.related_files == ["app/harness/kernel.py"]
+    assert any(
+        event.event_type == "query_understood"
+        and "implementation_explanation" in event.summary
+        for event in result.trace_events_internal
+    )
+    assert "app/harness/kernel.py:1-" in result.answer
+
+
+def test_agent_loop_does_not_claim_vector_infrastructure_is_implemented(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "README.md", "RepoPilot V8 uses lexical repo RAG.\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="现在实现 embedding、Milvus、ES、memory 了吗?",
+            repo_path=str(tmp_path),
+            trace_id="trace_vector_question",
+        )
+    )
+
+    assert "未实现" in result.answer
+    assert "lexical" in result.answer
+    assert "已实现 embedding" not in result.answer
+    assert "已实现 Milvus" not in result.answer
+    assert "已实现 ES" not in result.answer
+    assert "已实现 memory" not in result.answer
+
+
+def test_agent_loop_answers_lowercase_vector_status_questions(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "README.md", "RepoPilot V8 uses lexical repo RAG.\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="embedding 和 memory 实现了吗?",
+            repo_path=str(tmp_path),
+            trace_id="trace_lower_vector_question",
+        )
+    )
+
+    assert "未实现" in result.answer
+    assert "lexical" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+
+
+def test_capability_status_question_does_not_require_search_tool_registration(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(
+        tool_registry=ToolRegistry(),
+        tool_executor=FailingSearchExecutor(),
+    )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="embedding 和 Milvus 实现了吗?",
+            repo_path=str(tmp_path),
+            trace_id="trace_capability_without_tool",
+        )
+    )
+
+    assert "未实现" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "request_routed",
+    ]
+
+
+def test_agent_loop_searches_repo_for_memory_symbol_location(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "memory_store.py", "class MemoryStore:\n    pass\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="MemoryStore 在哪里实现?",
+            repo_path=str(tmp_path),
+            trace_id="trace_memory_symbol",
+        )
+    )
+
+    assert result.related_files == ["memory_store.py"]
+    assert "未实现 embedding" not in result.answer
+
+
+def test_agent_loop_tool_call_records_v8_search_plan_metadata(
+    tmp_path: Path,
+) -> None:
+    write_text(
+        tmp_path / "app" / "harness" / "kernel.py",
+        "class AgentLoop:\n"
+        "    def run(self):\n"
+        "        return search_code('UNIQUE_BUG_TOKEN')\n",
+    )
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="AgentLoop 在 app/harness/kernel.py 怎么调用 search_code?",
+            repo_path=str(tmp_path),
+            trace_id="trace_tool_call_metadata",
+        )
+    )
+
+    assert result.tool_calls == [
+        {
+            "tool_name": "repo_rag",
+            "keyword": "AgentLoop",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "lexical",
+            "status": "success",
+            "result_count": "1",
+        }
+    ]

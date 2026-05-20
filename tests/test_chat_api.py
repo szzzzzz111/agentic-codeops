@@ -40,8 +40,10 @@ def test_chat_endpoint_returns_tool_results_for_unique_keyword(
     assert body["related_files"] == ["app/service.py"]
     assert body["tool_calls"] == [
         {
-            "tool_name": "search_code",
+            "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "lexical",
             "status": "success",
             "result_count": "1",
         }
@@ -60,8 +62,10 @@ def test_chat_endpoint_returns_empty_related_files_when_keyword_is_missing(
     assert body["related_files"] == []
     assert body["tool_calls"] == [
         {
-            "tool_name": "search_code",
+            "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "lexical",
             "status": "success",
             "result_count": "0",
         }
@@ -84,8 +88,10 @@ def test_chat_endpoint_does_not_return_sensitive_file_content(
     assert body["related_files"] == ["app.py"]
     assert body["tool_calls"] == [
         {
-            "tool_name": "search_code",
+            "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "lexical",
             "status": "success",
             "result_count": "1",
         }
@@ -102,8 +108,10 @@ def test_chat_endpoint_sanitizes_tool_errors(tmp_path: Path) -> None:
     assert str(missing_repo) not in body_text
     assert response.json()["tool_calls"] == [
         {
-            "tool_name": "search_code",
+            "tool_name": "repo_rag",
             "keyword": "UNIQUE_BUG_TOKEN",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "lexical",
             "status": "error",
             "result_count": "0",
             "error": "NotADirectoryError",
@@ -132,3 +140,26 @@ def test_chat_endpoint_generates_unique_trace_ids(tmp_path: Path) -> None:
     assert first_response.status_code == 200
     assert second_response.status_code == 200
     assert first_response.json()["trace_id"] != second_response.json()["trace_id"]
+
+
+def test_chat_endpoint_keeps_contract_for_v8_repo_rag(tmp_path: Path) -> None:
+    write_text(
+        tmp_path / "app" / "harness" / "kernel.py",
+        "class AgentLoop:\n"
+        "    def run(self):\n"
+        "        return search_code('UNIQUE_BUG_TOKEN')\n",
+    )
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(
+            tmp_path,
+            "AgentLoop 在 app/harness/kernel.py 怎么调用 search_code?",
+        ),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert body["related_files"] == ["app/harness/kernel.py"]
+    assert "app/harness/kernel.py:1-" in body["answer"]
