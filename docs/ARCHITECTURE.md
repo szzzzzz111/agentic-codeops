@@ -5,17 +5,22 @@ RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE
 ## 当前主链路
 
 ```text
-API -> ChatService(trace_id) -> CodeAgent -> AgentLoop -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor -> file_tools
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
+  -> QueryUnderstanding/SearchPlan
+  -> ToolRegistry -> PermissionPolicy -> ApprovalGate
+  -> ToolExecutor(repo_rag) -> LexicalRepoRetriever -> file_tools
 ```
 
 - API 层只接收请求并返回响应。
 - `ChatService` 负责编排请求、生成 `trace_id`、调用智能体。
-- `CodeAgent` 负责最小确定性关键词提取、组织工具调用和返回结果。
-- `ToolExecutor` 统一收口工具执行，当前只包装只读 `search_code`。
+- `CodeAgent` 负责调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
+- `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
+- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code` 和 `repo_rag`。
+- `LexicalRepoRetriever` 负责 repo-local chunk、lexical scoring、dedup 和 citation。
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；后续可扩展工具调用审计。
 
-V3 当前已经让 `/chat` 返回真实 `related_files` 和 `tool_calls`，但仍不接真实 LLM、不自动修改代码、不执行 shell。
+V8 当前已经让 `/chat` 返回带 citation 的 repo-local lexical RAG 结果，但仍不接真实 LLM、不自动修改代码、不执行 shell。
 
 ## V2 工具层：安全只读仓库能力
 
@@ -44,6 +49,7 @@ app/tools/tool_executor.py
 当前职责：
 
 - 调用 `search_code`。
+- 调用 `repo_rag`，执行非向量化 lexical repo RAG。
 - 捕获工具错误并返回结构化摘要。
 - 生成 `tool_calls` 所需的工具名称、关键词、状态和结果数量。
 - 不返回完整文件内容、完整搜索结果或本机绝对路径。
@@ -86,7 +92,7 @@ ChatService
 
 - 真实 LLM。
 - LangGraph。
-- RAG。
+- embedding、向量库、LLM query rewrite、rerank 或 context compression。
 - Memory。
 - 多 Agent。
 - 自动修改代码。
@@ -94,3 +100,24 @@ ChatService
 - SandboxRunner 的实际实现。
 - 真实审批 UI 或审批持久化。
 - trace 持久化审计。
+
+## V8 架构补充：Query Understanding + Lexical Repo RAG
+
+V8 在 V7 权限/审批边界之后接入非向量化 repo-local RAG。当前执行链路为：
+
+```text
+API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
+  -> QueryUnderstanding/SearchPlan
+  -> ToolRegistry -> PermissionPolicy -> ApprovalGate
+  -> ToolExecutor(repo_rag) -> LexicalRepoRetriever -> file_tools
+```
+
+边界约束：
+
+- `QueryUnderstanding` 是 deterministic 实现，不调用 LLM、embedding provider、向量库或外部服务。
+- `SearchPlan` 只描述检索计划，不做权限决策。
+- `LexicalRepoRetriever` 通过安全文件工具读取允许访问的 repo 文本文件，并输出 citation。
+- citation 只包含相对 repo 路径和 1-based 行号，不包含本机绝对路径。
+- `/chat` 不新增顶层字段；内部 trace 可记录 query understanding 和 retrieval 摘要。
+
+V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank、memory、SandboxRunner 或多 agent orchestration。

@@ -1,15 +1,28 @@
 # 当前 Harness 写入边界
 
-当前暂无活跃开发阶段；下一阶段开始前，必须先更新本文件和 `.harness/review_checklist.md`。
+当前活跃阶段：V8 `v8-query-understanding-repo-rag`。
 
-默认允许修改：
+允许修改：
 
-- 文档错别字或状态修正可修改对应文档文件。
-- 新阶段规划必须先创建或更新 `openspec/changes/<change-name>/`。
+- `openspec/changes/v8-query-understanding-repo-rag/**`
+- `.harness/allowed_files.md`
+- `.harness/review_checklist.md`
+- `app/harness/kernel.py`
+- `app/rag/**`
+- `app/tools/tool_executor.py`
+- `tests/test_query_understanding.py`
+- `tests/test_repo_rag.py`
+- `tests/test_agent_harness_kernel.py`
+- `tests/test_chat_api.py`
+- `README.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PROGRESS.md`
+- `docs/FEATURE_LIST.json`
+- `HANDOFF_TO_NEXT_CHAT.md`
 
-默认禁止：
+禁止修改：
 
-- 不在无活跃阶段时修改运行时代码或测试。
 - 不恢复旧 `specs/00x-*` 作为规格入口。
-- 不把 OpenSpec、Superpowers、MCP、plugin 或外部 skill 误写成 RepoPilot runtime 能力。
-- 不提前实现 LLM、RAG、Memory、Reflection、真实审批流程、SandboxRunner、eval 或复杂多 Agent。
+- 不把参考项目写成 RepoPilot runtime dependency 或当前能力。
+- 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank、memory、SandboxRunner、skill execution 或多 agent orchestration。
+- 不新增 `/chat` 必需顶层字段。

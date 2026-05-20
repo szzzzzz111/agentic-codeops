@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath, PureWindowsPath
 import re
 
+from app.rag.query_understanding import QueryUnderstanding, SearchPlan
+from app.rag.repo_rag import LexicalRepoRetriever
 from app.tools.tool_executor import ToolExecutor
 
 
@@ -9,6 +11,8 @@ TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
 ALLOWED_TOOL_RISK = "low"
 DENY_ANSWER = "仓库工具未通过权限策略校验，因此本次没有执行仓库工具。"
 ASK_ANSWER = "工具调用需要人工审批，因此本次没有执行仓库工具。"
+NO_TOOL_ANSWER = "未提取到可搜索关键词，因此没有调用仓库工具。"
+CAPABILITY_STATUS_KEYWORD = "capability_status"
 
 
 @dataclass(frozen=True)
@@ -66,6 +70,12 @@ class AgentLoopResult:
 
 class RequestRouter:
     def route(self, message: str) -> RouteDecision:
+        if _asks_about_unimplemented_vector_stack(message):
+            return RouteDecision(
+                route="repo_search",
+                keyword=CAPABILITY_STATUS_KEYWORD,
+                reason="capability_status_question",
+            )
         keyword = _extract_search_keyword(message)
         if keyword:
             return RouteDecision(
@@ -152,12 +162,15 @@ class AgentLoop:
         tool_executor: ToolExecutor | None = None,
         permission_policy: PermissionPolicy | None = None,
         approval_gate: ApprovalGate | None = None,
+        query_understanding: QueryUnderstanding | None = None,
+        repo_retriever: LexicalRepoRetriever | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
-        self.tool_executor = tool_executor or ToolExecutor()
+        self.tool_executor = tool_executor or ToolExecutor(repo_retriever=repo_retriever)
         self.permission_policy = permission_policy or PermissionPolicy()
         self.approval_gate = approval_gate or ApprovalGate()
+        self.query_understanding = query_understanding or QueryUnderstanding()
 
     def run(self, request: AgentLoopRequest) -> AgentLoopResult:
         decision = self.router.route(request.message)
@@ -171,7 +184,30 @@ class AgentLoop:
 
         if decision.route != "repo_search" or not decision.keyword:
             return AgentLoopResult(
-                answer="未提取到可搜索关键词，因此没有调用仓库工具。",
+                answer=NO_TOOL_ANSWER,
+                trace_events_internal=trace_events,
+            )
+
+        search_plan = self.query_understanding.build_search_plan(request.message)
+        if _should_record_query_understanding(search_plan):
+            trace_events.append(
+                TraceEvent(
+                    event_type="query_understood",
+                    status="ok",
+                    summary=(
+                        f"question_type={search_plan.question_type}; "
+                        f"mode={search_plan.retrieval_mode}; "
+                        f"terms={len(search_plan.terms())}"
+                    ),
+                )
+            )
+
+        if _asks_about_unimplemented_vector_stack(request.message):
+            return AgentLoopResult(
+                answer=(
+                    "当前未实现 embedding、Milvus、Elasticsearch、PgVector 或 memory；"
+                    "V8 只提供 lexical repo RAG，也就是关键词、符号和路径级检索。"
+                ),
                 trace_events_internal=trace_events,
             )
 
@@ -227,31 +263,36 @@ class AgentLoop:
         trace_events.append(
             TraceEvent(
                 event_type="tool_call",
-                tool_name="search_code",
+                tool_name="repo_rag",
                 status="ok",
-                summary=f"tool=search_code; keyword={decision.keyword}",
+                summary=f"tool=repo_rag; keyword={decision.keyword}",
             )
         )
-        tool_result = self.tool_executor.search_code(
+        tool_result = self._run_repo_rag(
             repo_path=request.repo_path,
             keyword=decision.keyword,
+            search_plan=search_plan,
         )
         related_files = _unique_related_files(tool_result.results)
         trace_events.append(
             TraceEvent(
                 event_type="tool_result",
-                tool_name="search_code",
+                tool_name=tool_result.tool_name,
                 status="error" if tool_result.error else "ok",
                 summary=f"result_count={len(tool_result.results)}",
             )
         )
 
         if tool_result.error:
-            answer = f"已尝试使用只读仓库工具搜索 `{decision.keyword}`，但工具调用失败。"
+            answer = f"已尝试使用 lexical repo RAG 检索 `{decision.keyword}`，但工具调用失败。"
         elif related_files:
-            answer = f"已使用只读仓库工具搜索 `{decision.keyword}`，找到相关文件。"
+            citations = _format_citations(tool_result.results)
+            answer = (
+                f"已基于 lexical repo RAG 检索 `{decision.keyword}`，"
+                f"找到相关证据：{citations}。"
+            )
         else:
-            answer = f"已使用只读仓库工具搜索 `{decision.keyword}`，没有找到相关文件。"
+            answer = f"已基于 lexical repo RAG 检索 `{decision.keyword}`，没有找到相关证据。"
 
         return AgentLoopResult(
             answer=answer,
@@ -260,13 +301,76 @@ class AgentLoop:
             trace_events_internal=trace_events,
         )
 
+    def _run_repo_rag(
+        self,
+        *,
+        repo_path: str,
+        keyword: str,
+        search_plan: SearchPlan,
+    ):
+        return self.tool_executor.search_repo_rag(
+            repo_path=repo_path,
+            keyword=keyword,
+            search_plan=search_plan,
+        )
+
 
 def _extract_search_keyword(message: str) -> str | None:
     tokens = TOKEN_PATTERN.findall(message)
     for token in tokens:
-        if "_" in token or "." in token or token.endswith("Error"):
+        if (
+            "_" in token
+            or "." in token
+            or token.endswith("Error")
+            or token[:1].isupper()
+        ):
             return token
     return None
+
+
+def _should_record_query_understanding(search_plan: SearchPlan) -> bool:
+    return bool(search_plan.path_hints or len(search_plan.symbols) > 1)
+
+
+def _asks_about_unimplemented_vector_stack(message: str) -> bool:
+    lower = message.lower()
+    has_capability_term = any(
+        term in lower
+        for term in (
+            "embedding",
+            "milvus",
+            "elasticsearch",
+            "pgvector",
+            "qdrant",
+            "memory",
+            "vector",
+        )
+    )
+    if not has_capability_term:
+        return False
+    if any(term in message for term in ("哪里", "在哪", "哪个文件", "定位")) or any(
+        term in lower for term in ("where", "locate", "find")
+    ):
+        return False
+    return any(
+        term in message
+        for term in (
+            "实现了吗",
+            "实现了么",
+            "有没有",
+            "是否",
+            "当前",
+            "支持",
+            "接入",
+            "上了",
+            "弄了吗",
+            "弄了么",
+            "做了吗",
+            "做了么",
+            "了吗",
+            "了么",
+        )
+    )
 
 
 def _unique_related_files(results: list[dict[str, str | int]]) -> list[str]:
@@ -285,6 +389,18 @@ def _unique_related_files(results: list[dict[str, str | int]]) -> list[str]:
         seen.add(file_path)
 
     return related_files
+
+
+def _format_citations(results: list[dict[str, str | int]]) -> str:
+    citations: list[str] = []
+    for result in results:
+        file_path = result.get("file_path")
+        start_line = result.get("start_line", result.get("line_number"))
+        end_line = result.get("end_line", start_line)
+        if not isinstance(file_path, str):
+            continue
+        citations.append(f"{file_path}:{start_line}-{end_line}")
+    return ", ".join(citations)
 
 
 def _is_absolute_path(file_path: str) -> bool:
