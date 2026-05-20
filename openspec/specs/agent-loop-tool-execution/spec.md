@@ -2,7 +2,7 @@
 
 ## Purpose
 
-记录已实现的轻量 Agent Harness Kernel、确定性 Agent Loop 和工具执行边界：`CodeAgent` 通过 `AgentLoop` 编排 `RequestRouter`、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolExecutor.search_code` 和内存级 `TraceEvent`，从真实搜索结果生成 `related_files` 和安全 `tool_calls` 摘要，不接真实 LLM、不修改代码、不执行 shell、不引入 RAG、Memory、Reflection、eval、SandboxRunner 或复杂多 Agent。
+记录已实现的轻量 Agent Harness Kernel、确定性 Agent Loop 和工具执行边界：`CodeAgent` 通过 `AgentLoop` 编排 `RequestRouter`、`QueryUnderstanding`、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolExecutor` 和内存级 `TraceEvent`，从 repo-local lexical RAG 结果生成 `related_files` 和安全 `tool_calls` 摘要，不接真实 LLM、不修改代码、不执行 shell、不引入 embedding/vector RAG、Memory、Reflection、eval、SandboxRunner 或复杂多 Agent。
 
 ## Requirements
 
@@ -28,11 +28,13 @@ Kernel MUST 定义最小可测试 contract：`AgentLoopRequest(message, repo_pat
 
 ### Requirement: 工具调用经过 ToolRegistry、PermissionPolicy、ApprovalGate 和 ToolExecutor
 
-系统 SHALL 使用 `ToolRegistry` 记录工具规格元数据，并且当前仓库搜索 MUST 继续通过 `ToolExecutor.search_code` 执行。`ToolRegistry` MUST NOT 负责实际 dispatch。
+系统 SHALL 使用 `ToolRegistry` 记录工具规格元数据，并且 repo-local 检索 MUST 继续通过统一 `ToolExecutor` 边界执行。`ToolRegistry` MUST NOT 负责实际 dispatch。
 
-`AgentLoop` 调用工具前 MUST 先通过 `ToolRegistry` 读取工具规格，再通过 `PermissionPolicy` 产出权限决策，并通过 `ApprovalGate` 判断是否允许继续执行。`ToolRegistry` MUST NOT 提供独立 allow/deny gate；权限状态和拒绝原因 MUST 由 `PermissionPolicy` 统一产出。校验、拒绝或审批等待失败时 MUST NOT 调用 `ToolExecutor.search_code`。
+`AgentLoop` 调用工具前 MUST 先通过 `ToolRegistry` 读取工具规格，再通过 `PermissionPolicy` 产出权限决策，并通过 `ApprovalGate` 判断是否允许继续执行。`ToolRegistry` MUST NOT 提供独立 allow/deny gate；权限状态和拒绝原因 MUST 由 `PermissionPolicy` 统一产出。校验、拒绝或审批等待失败时 MUST NOT 执行 repo 检索。
 
 `ToolSpec` MUST 包含 `requires_approval` 字段。默认 `search_code` MUST 是只读、低风险且不需要审批。
+
+`AgentLoop` 在允许执行后 SHALL 使用 Query Understanding 产生的 `SearchPlan` 执行 repo-local lexical RAG。repo-local lexical RAG 的 `tool_calls[].tool_name` MUST 为 `repo_rag`，并且 `tool_calls` MUST 继续返回结构化审计摘要，但 MUST NOT 包含完整文件内容、本机绝对路径或新的 `/chat` 顶层 trace 字段。
 
 #### Scenario: 注册 search_code 工具
 
@@ -46,15 +48,16 @@ Kernel MUST 定义最小可测试 contract：`AgentLoopRequest(message, repo_pat
 
 - **WHEN** `search_code` 已注册、只读、风险等级为 `low` 且 `requires_approval` 为 `False`
 - **THEN** `PermissionPolicy` 返回 `allow`
-- **AND** `AgentLoop` 调用 `ToolExecutor.search_code`
+- **AND** `AgentLoop` 执行 query understanding 和 lexical repo RAG
 - **AND** trace events 顺序为 `request_routed`、`permission_checked`、`tool_call`、`tool_result`
 - **AND** `related_files` 只包含相对仓库路径
+- **AND** `tool_calls` 中的 lexical repo RAG 审计条目使用 `tool_name=repo_rag`
 
 #### Scenario: 不安全工具被拒绝
 
 - **WHEN** 工具未注册、不是只读、或风险等级不是 `low`
 - **THEN** `PermissionPolicy` 返回 `deny`
-- **THEN** Kernel 不调用 `ToolExecutor.search_code`
+- **THEN** Kernel 不执行 repo 检索
 - **AND** `answer` 为 `仓库工具未通过权限策略校验，因此本次没有执行仓库工具。`
 - **AND** `related_files` 为空列表
 - **AND** `tool_calls` 为空列表
@@ -65,7 +68,7 @@ Kernel MUST 定义最小可测试 contract：`AgentLoopRequest(message, repo_pat
 - **WHEN** 工具已注册、只读、风险等级为 `low` 且 `requires_approval` 为 `True`
 - **THEN** `PermissionPolicy` 返回 `ask`
 - **AND** `ApprovalGate` 阻止工具执行
-- **AND** `AgentLoop` 不调用 `ToolExecutor.search_code`
+- **AND** `AgentLoop` 不执行 repo 检索
 - **AND** `answer` 为 `工具调用需要人工审批，因此本次没有执行仓库工具。`
 - **AND** `related_files` 为空列表
 - **AND** `tool_calls` 为空列表
@@ -95,10 +98,10 @@ Kernel MUST 定义最小可测试 contract：`AgentLoopRequest(message, repo_pat
 
 系统 SHALL 返回包含工具名、参数摘要、状态和结果数量的工具调用摘要，并且 MUST NOT 泄露完整文件内容、完整搜索结果或本机绝对路径。
 
-#### Scenario: 搜索调用摘要
+#### Scenario: repo-local lexical RAG 调用摘要
 
 - **WHEN** `/chat` 调用仓库搜索
-- **THEN** `tool_calls` 包含 `search_code` 摘要、关键词、状态和结果数量
+- **THEN** `tool_calls` 包含 `repo_rag` 摘要、关键词、问题类型、检索模式、状态和结果数量
 - **AND** 摘要不包含完整文件内容或本机绝对路径
 
 ### Requirement: Kernel 记录轻量 trace events
@@ -125,7 +128,7 @@ V7 的权限和审批审计事件仅记录在内部 `trace_events_internal`，MU
 
 ### Requirement: Agent Loop 不包含未来高风险能力
 
-当前 Agent Loop MUST NOT 修改代码、执行 shell 命令、执行 skill、使用真实 LLM、使用 RAG、使用 Memory、实现 SessionStore、执行 Reflection、运行 eval、使用复杂多 Agent 编排或实现 SandboxRunner。
+当前 Agent Loop MUST NOT 修改代码、执行 shell 命令、执行 skill、使用真实 LLM、使用 embedding/vector RAG、使用 Memory、实现 SessionStore、执行 Reflection、运行 eval、使用复杂多 Agent 编排或实现 SandboxRunner。
 
 #### Scenario: 当前聊天行为
 

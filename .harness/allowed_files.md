@@ -1,28 +1,15 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：V8 `v8-query-understanding-repo-rag`。
+当前活跃阶段：无。V8 `v8-query-understanding-repo-rag` 已归档。
 
 允许修改：
 
-- `openspec/changes/v8-query-understanding-repo-rag/**`
-- `.harness/allowed_files.md`
-- `.harness/review_checklist.md`
-- `app/harness/kernel.py`
-- `app/rag/**`
-- `app/tools/tool_executor.py`
-- `tests/test_query_understanding.py`
-- `tests/test_repo_rag.py`
-- `tests/test_agent_harness_kernel.py`
-- `tests/test_chat_api.py`
-- `README.md`
-- `docs/ARCHITECTURE.md`
-- `docs/PROGRESS.md`
-- `docs/FEATURE_LIST.json`
-- `HANDOFF_TO_NEXT_CHAT.md`
+- 归档、交接或文档状态修正所需的最小文件。
+- 新阶段开始前，先创建 OpenSpec change，并同步本文件和 `.harness/review_checklist.md`。
 
 禁止修改：
 
 - 不恢复旧 `specs/00x-*` 作为规格入口。
-- 不把参考项目写成 RepoPilot runtime dependency 或当前能力。
-- 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank、memory、SandboxRunner、skill execution 或多 agent orchestration。
+- 不把参考项目写成 RepoPilot runtime dependency 或当前能力，除非新阶段 spec 明确开放。
+- 不实现新 runtime 能力，除非新阶段 spec 明确开放。
 - 不新增 `/chat` 必需顶层字段。
