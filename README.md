@@ -9,7 +9,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
 - 提供 FastAPI 应用和 `POST /chat`，作为 Agent 服务入口。
 - 请求字段包含 `user_id`、`session_id`、`message` 和 `repo_path`。
 - 每次请求生成唯一 `trace_id`，响应保留 `related_files` 和 `tool_calls` 审计字段。
-- `CodeAgent` 当前通过轻量 `AgentLoop` 执行最小确定性仓库搜索，不接真实 LLM。
+- `CodeAgent` 当前通过轻量 `AgentLoop` 执行 deterministic query understanding 和 repo-local lexical RAG，不接真实 LLM。
 - `RequestRouter` 将请求路由到 `repo_search` 或 `chat_only`。
 - `ToolRegistry` 记录只读低风险工具元数据；`PermissionPolicy` 和 `ApprovalGate` 在工具调用前做 allow/deny/ask 决策。
 - `QueryUnderstanding` 生成 deterministic `SearchPlan`，`ToolExecutor` 统一收口只读工具调用，当前包装 `search_code` 和 `repo_rag`。
@@ -20,6 +20,9 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness，
   - `list_files(repo_path)`
   - `read_file(repo_path, file_path, max_chars=12000)`
   - `search_code(repo_path, keyword, max_results=20)`
+- 提供 V8 repo-local lexical RAG 检索链路：
+  - `ToolExecutor.search_repo_rag(...)` 作为 `repo_rag` 审计入口
+  - `LexicalRepoRetriever` 负责 chunk、lexical scoring、dedup 和 citation
 - 提供 Skill Metadata Loader：
   - `load_skill_metadata(repo_path)`
   - 发现 `.agents/skills/*/SKILL.md`

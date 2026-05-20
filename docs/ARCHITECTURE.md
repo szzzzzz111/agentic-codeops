@@ -46,10 +46,9 @@ V3 新增：
 app/tools/tool_executor.py
 ```
 
-当前职责：
+V3 职责：
 
 - 调用 `search_code`。
-- 调用 `repo_rag`，执行非向量化 lexical repo RAG。
 - 捕获工具错误并返回结构化摘要。
 - 生成 `tool_calls` 所需的工具名称、关键词、状态和结果数量。
 - 不返回完整文件内容、完整搜索结果或本机绝对路径。
@@ -116,6 +115,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 - `QueryUnderstanding` 是 deterministic 实现，不调用 LLM、embedding provider、向量库或外部服务。
 - `SearchPlan` 只描述检索计划，不做权限决策。
+- `ToolExecutor.search_repo_rag` 是 V8 的 `repo_rag` 审计入口，不属于 V3 原始 `search_code` 能力。
 - `LexicalRepoRetriever` 通过安全文件工具读取允许访问的 repo 文本文件，并输出 citation。
 - citation 只包含相对 repo 路径和 1-based 行号，不包含本机绝对路径。
 - `/chat` 不新增顶层字段；内部 trace 可记录 query understanding 和 retrieval 摘要。

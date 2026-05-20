@@ -3,14 +3,14 @@
 ## 分支状态
 
 ```text
-当前工作分支：codex/v8-query-understanding-repo-rag
+当前工作分支：main
 当前基线分支：main
 当前活跃 OpenSpec change：v8-query-understanding-repo-rag
 ```
 
 ## 当前项目状态
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V7 已完成并进入长期规格/归档历史；V8 已在当前工作分支实现，正在进行最终 review、验证和收口。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V7 已完成并进入长期规格/归档历史；V8 已实现、合并并推送到 `main`，当前 OpenSpec change 仍待归档。
 
 当前主链路：
 
@@ -82,13 +82,13 @@ V7 不做：
 
 ## 下一轮建议
 
-1. 先完成 V8 最终人工审查、提交和 OpenSpec 归档。
-2. V8 收口后再规划 V9：Embedding Retrieval + Hybrid Search。
+1. 先完成 V8 OpenSpec 归档。
+2. V8 归档后再规划 V9：Embedding Retrieval + Hybrid Search。
 3. 继续避免把真实审批流程、SandboxRunner、embedding/vector RAG、Memory、skill execution 或复杂多 Agent 提前塞进非对应阶段。
 
 ## V8 Handoff Update
 
-当前工作分支：`codex/v8-query-understanding-repo-rag`
+当前工作分支：`main`（V8 已由 `codex/v8-query-understanding-repo-rag` 合并进入）
 
 当前活跃 OpenSpec change：`v8-query-understanding-repo-rag`
 

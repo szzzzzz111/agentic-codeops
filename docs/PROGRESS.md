@@ -4,10 +4,10 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`codex/v8-query-understanding-repo-rag`
-- 当前阶段：V8 `v8-query-understanding-repo-rag` 已实现，正在进行最终 review、验证和收口；V7 已完成提交、合并和 OpenSpec 归档
+- 当前工作分支：`main`
+- 当前阶段：V8 `v8-query-understanding-repo-rag` 已实现并合并到 `main`；OpenSpec change 仍待归档；V7 已完成提交、合并和 OpenSpec 归档
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> LexicalRepoRetriever` 使用只读 lexical repo RAG；`/chat` 顶层响应结构保持不变
-- 当前工具层：`list_files`、`read_file`、`search_code` 已实现
+- 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> LexicalRepoRetriever` 复用安全文件工具读取 repo 文本 chunk
 - 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
 - 当前 OpenSpec 状态：已初始化项目内 OpenSpec、OpenCode 和 `.codex/skills`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
@@ -227,13 +227,13 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：完成 V8 最终 review、验证、提交和归档；之后再规划 V9 Embedding Retrieval + Hybrid Search。
+- 当前建议：完成 V8 OpenSpec 归档；之后再规划 V9 Embedding Retrieval + Hybrid Search。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
 ## V8：Query Understanding + Lexical Repo RAG（已实现）
 
-- 当前分支：`codex/v8-query-understanding-repo-rag`
+- 当前分支：`main`（V8 已由 `codex/v8-query-understanding-repo-rag` 合并进入）
 - OpenSpec change：`v8-query-understanding-repo-rag`
 - V8 将旧路线里的“大 Repo RAG Engineering”收窄为 deterministic query understanding + 非向量化 lexical repo RAG。
 - 已新增 `app/rag/query_understanding.py`，生成 `SearchPlan`，识别代码定位、实现解释、调用关系、测试/验证、文件摘要和未知泛问。
