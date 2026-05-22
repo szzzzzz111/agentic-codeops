@@ -5,16 +5,22 @@
 ```text
 当前工作分支：codex/v9-embedding-hybrid-search
 当前基线分支：main
-当前活跃 OpenSpec change：v9-embedding-hybrid-search
-最近完成阶段：V8 Query Understanding + Lexical Repo RAG
+当前活跃 OpenSpec change：无
+最近完成阶段：V9 Embedding Retrieval + Hybrid Search
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V8 已完成并进入长期规格/归档历史；当前 V9 `v9-embedding-hybrid-search` 已实现运行时代码，正在进行最终验证与收口。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V9 已完成并进入长期规格/归档历史；当前暂无活跃 OpenSpec change。
 
 V8 已归档到：
 
 ```text
 openspec/changes/archive/2026-05-20-v8-query-understanding-repo-rag/
+```
+
+V9 已归档到：
+
+```text
+openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/
 ```
 
 ## 当前主链路
@@ -56,19 +62,20 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- `.harness/allowed_files.md` 已切换到 V9 允许修改范围。
-- `.harness/review_checklist.md` 已切换到 V9 review 清单。
-- `openspec/changes/v9-embedding-hybrid-search/` 已创建 proposal、design、spec delta 和 tasks。
-- `openspec validate v9-embedding-hybrid-search` 已通过。
-- 当前已实现 V9 运行时代码，并完成全量验证；尚需归档前 review 和 OpenSpec archive。
+- `.harness/allowed_files.md` 已切回无活跃阶段。
+- `.harness/review_checklist.md` 已切回无活跃阶段。
+- `openspec/changes/v9-embedding-hybrid-search/` 已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`。
+- `openspec/specs/repo-query-understanding-rag/spec.md` 已同步 V9 长期规格。
+- 当前已实现 V9 运行时代码，并完成全量验证和 OpenSpec archive。
 - V9 验证结果：
-  - `openspec validate v9-embedding-hybrid-search`：通过
-  - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 66 passed, 1 skipped；`ruff check .` All checks passed
+  - `openspec validate --all`：6 passed, 0 failed
+  - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
   - `git diff --check`：通过，仅有 CRLF 换行提示
 
 ## 下一轮建议
 
-1. 做归档前 review，确认没有把 Milvus / Elasticsearch / PgVector / Qdrant、query rewrite、rerank、grounded answer、model provider、memory、long task 或 subagents 提前塞进 V9。
-2. 如 review 通过，归档 `v9-embedding-hybrid-search` 并同步长期 spec。
+1. 规划 V10：Evidence Pack + Context Budget。
+2. 新阶段开始前创建新的 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+3. 不要把 grounded answer、model provider、query rewrite、rerank、memory、long task 或 subagents 提前塞进 V10。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。

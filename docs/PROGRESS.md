@@ -5,7 +5,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前工作分支：`codex/v9-embedding-hybrid-search`
-- 当前阶段：V9 `v9-embedding-hybrid-search` 已实现运行时代码，正在进行最终验证与文档收口
+- 当前阶段：V9 `v9-embedding-hybrid-search` 已实现、提交并完成 OpenSpec 归档；暂无活跃开发阶段
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever` 使用只读 hybrid repo RAG；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
@@ -229,7 +229,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：完成 V9 全量验证、review 和归档准备。
+- 当前建议：V9 已完成；下一阶段开始前创建新的 OpenSpec change，并同步 harness 边界和 review 清单。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
@@ -246,10 +246,15 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 参考项目已写入 V8 design，只作为后续规划资料，不作为 RepoPilot runtime dependency：`ragent`、`agentic-rag-for-dummies`、`mem0`、`AGI-assistant`、`openai-cs-agents-demo`、`learn-claude-code`、`build-your-own-openclaw`、`agents-from-scratch`、`DeepAgents`、`DeerFlow`、`Clawd-Code`。
 
-## V9：Embedding Retrieval + Hybrid Search（已实现，验证中）
+## V9：Embedding Retrieval + Hybrid Search（已提交并归档）
 
 - 当前分支：`codex/v9-embedding-hybrid-search`
-- OpenSpec change：`openspec/changes/v9-embedding-hybrid-search/`
+- OpenSpec change：已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`
+- 已提交：
+  - `61a7963 Add V9 embedding hybrid search`
+  - `24d4d6e Fix V9 review follow-ups`
+  - `d31e83e Document V9 implementation review recovery`
+  - `9479a0c Address final V9 review findings`
 - 已创建：
   - `proposal.md`
   - `design.md`
@@ -258,7 +263,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 已同步 V9 阶段 harness：
   - `.harness/allowed_files.md`
   - `.harness/review_checklist.md`
-- 已验证：`openspec validate v9-embedding-hybrid-search` 通过。
+- 已同步长期 spec：`openspec/specs/repo-query-understanding-rag/spec.md`
+- 已验证：归档后 `openspec validate --all` 通过。
 - 已实现：
   - `DeterministicEmbeddingProvider`：本地确定性 embedding provider，固定维度、稳定向量格式，不调用外部服务。
   - `EmbeddingRepoRetriever`：复用安全 repo chunk 和 citation 约束执行 embedding retrieval。
@@ -268,8 +274,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
   - `pytest tests/test_repo_rag.py`：7 passed
   - `pytest tests/test_query_understanding.py tests/test_agent_harness_kernel.py tests/test_chat_api.py`：33 passed
 - 全量验证：
-  - `openspec validate v9-embedding-hybrid-search`：通过
-  - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 66 passed, 1 skipped；`ruff check .` All checks passed
+  - `openspec validate --all`：6 passed, 0 failed
+  - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
   - `git diff --check`：通过，仅有 CRLF 换行提示
 
 V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical repo RAG 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
