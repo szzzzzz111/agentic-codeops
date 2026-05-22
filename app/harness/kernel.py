@@ -205,7 +205,7 @@ class AgentLoop:
         if _asks_about_unimplemented_vector_stack(request.message):
             return AgentLoopResult(
                 answer=(
-                    "V9 规划提供轻量 embedding retrieval 和 hybrid search；"
+                    "V9 提供轻量 embedding retrieval 和 hybrid search；"
                     "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant、"
                     "真实外部 embedding 服务或 memory。"
                 ),

@@ -88,5 +88,5 @@ class ToolExecutor:
             tool_name="repo_rag",
             parameters=parameters,
             results=results,
-            audit_summary=self.repo_retriever.last_channel_summary,
+            audit_summary=getattr(self.repo_retriever, "last_channel_summary", {}),
         )

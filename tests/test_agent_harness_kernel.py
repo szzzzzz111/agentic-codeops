@@ -11,6 +11,7 @@ from app.harness.kernel import (
     ToolSpec,
     ToolRegistry,
 )
+from app.rag.repo_rag import LexicalRepoRetriever
 from app.tools.tool_executor import ToolExecutionResult
 
 
@@ -382,6 +383,27 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
     ]
 
 
+def test_agent_loop_allows_retrievers_without_channel_summary(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app" / "service.py", "UNIQUE_BUG_TOKEN = True\n")
+    loop = AgentLoop(repo_retriever=LexicalRepoRetriever())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(tmp_path),
+            trace_id="trace_lexical_fallback",
+        )
+    )
+
+    assert result.related_files == ["app/service.py"]
+    assert all(
+        event.event_type != "retrieval_channels_summarized"
+        for event in result.trace_events_internal
+    )
+
+
 def test_agent_loop_uses_tool_executor_for_v8_repo_rag(tmp_path: Path) -> None:
     executor = RecordingRepoRagExecutor()
     loop = AgentLoop(tool_executor=executor)
@@ -490,6 +512,8 @@ def test_agent_loop_does_not_claim_vector_infrastructure_is_implemented(
         )
     )
 
+    assert "V9 提供轻量 embedding retrieval 和 hybrid search" in result.answer
+    assert "规划提供" not in result.answer
     assert "未默认接入" in result.answer
     assert "已实现 embedding" not in result.answer
     assert "已实现 Milvus" not in result.answer
