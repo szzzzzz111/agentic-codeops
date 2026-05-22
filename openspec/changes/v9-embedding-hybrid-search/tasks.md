@@ -31,3 +31,10 @@
 - [x] 5.1 Run `openspec validate v9-embedding-hybrid-search`.
 - [x] 5.2 Run `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`.
 - [x] 5.3 Run `git diff --check`.
+
+## 6. Implementation Review Capture
+
+- [x] 6.1 Document the final code-to-OpenSpec implementation mapping in `design.md`.
+- [x] 6.2 Document post-implementation review follow-ups for retriever audit summary fallback and capability-status wording.
+- [x] 6.3 Re-validate the active OpenSpec change after capturing implementation evidence.
+- [x] 6.4 Document the process deviation that V9 implementation began before final plan approval, plus the review-and-recovery rule for future stages.
