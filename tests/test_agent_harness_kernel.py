@@ -519,6 +519,8 @@ def test_agent_loop_does_not_claim_vector_infrastructure_is_implemented(
     assert "已实现 Milvus" not in result.answer
     assert "已实现 ES" not in result.answer
     assert "已实现 memory" not in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
 
 
 def test_agent_loop_answers_lowercase_vector_status_questions(

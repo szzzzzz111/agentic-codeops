@@ -136,6 +136,8 @@ class HybridRepoRetriever:
             embedding_results,
             max_results=plan.max_results,
         )
+        # Keep the audit value tied to the fusion default until threshold tuning
+        # becomes an explicit retriever parameter in a later stage.
         self.last_channel_summary = {
             "mode": "hybrid",
             "lexical_results": len(lexical_results),
