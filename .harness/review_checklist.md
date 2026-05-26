@@ -1,23 +1,17 @@
 # 当前 Review 清单
 
-当前活跃阶段：V10 `v10-evidence-pack-context-budget`（implementation）。
+当前活跃阶段：无。V10 `v10-evidence-pack-context-budget` 已实现、提交并归档。
 
-## Plan / OpenSpec Review
+## Archive Review
 
-- [ ] OpenSpec proposal、design、tasks 和 spec delta 均已创建在 `openspec/changes/v10-evidence-pack-context-budget/`。
-- [ ] `openspec validate v10-evidence-pack-context-budget` 通过。
-- [ ] Proposal 的 capability 列表与 spec delta 路径一致。
-- [ ] Design 明确 V10 只做 Evidence Pack + Context Budget，不做 grounded answer、model provider、query rewrite、rerank、memory 或 context compression。
-- [ ] Spec delta 使用 `SHALL` / `MUST`，每个 requirement 至少有一个 `#### Scenario`。
-- [ ] Tasks 保留 plan/review 停止点记录；本轮实现已由用户明确 `PLEASE IMPLEMENT THIS PLAN` 放行。
-- [ ] `.harness/allowed_files.md` 与本阶段范围一致。
-- [ ] README、ARCHITECTURE、PROGRESS、FEATURE_LIST 和 HANDOFF 不再遗漏 V9 已完成能力或把 V9 写成未来阶段。
-- [ ] 长期 specs 不得与当前 V9/V10 主链路冲突；`agent-loop-tool-execution` 允许 repo-local deterministic hybrid RAG，但仍禁止真实外部 embedding 服务、外部向量库和 LLM rerank。
-- [ ] `docs/PROGRESS.md`、`docs/FEATURE_LIST.json` 和 `HANDOFF_TO_NEXT_CHAT.md` 反映 V10 当前为 implementation review；`passes` 只在确定性验证通过后标记为 `true`。
+- [ ] V10 active change 已移动到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`。
+- [ ] `openspec/specs/repo-query-understanding-rag/spec.md` 已同步 V10 Evidence Pack + Context Budget requirements。
+- [ ] 长期 specs 与当前 V9/V10 主链路一致；`min_fused_score` 使用当前代码默认值 `0.35`。
+- [ ] `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md` 反映 V10 已归档，且不再把 active change 写成仍在 `openspec/changes/v10-evidence-pack-context-budget/`。
+- [ ] `.harness/allowed_files.md` 与归档收尾范围一致。
 
-## Implementation Review
+## Completed V10 Contract
 
-- [ ] 先写失败测试，再写实现。
 - [ ] Evidence Pack item shape 明确包含稳定 `evidence_id`、相对 `file_path`、1-based 行号、score、snippet 和 source summary。
 - [ ] Evidence Pack item shape 明确包含 `included` 和 `truncated`。
 - [ ] Context Budget 使用 deterministic character budget，并记录 included / omitted / truncated / budget used 字段。
@@ -32,8 +26,8 @@
 
 ## Verification
 
-- [ ] `openspec validate v10-evidence-pack-context-budget` 通过。
+- [ ] `openspec validate --all` 通过。
 - [ ] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，或说明无法运行的原因。
 - [ ] `git diff --check` 通过。
-- [ ] `git status --short --branch` 和 `git diff --name-only` 未显示阶段外文件。
-- [ ] 内部 self-review 已完成；外部/user review 未完成前不得声明 archive-ready。
+- [ ] `git status --short --branch` 和 `git diff --name-only` 未显示归档收尾外文件。
+- [ ] 内部 self-review、外部 review、提交和 archive 均已完成后，才能把 V10 视为阶段完成。

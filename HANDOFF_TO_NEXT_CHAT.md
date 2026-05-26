@@ -5,11 +5,11 @@
 ```text
 当前工作分支：codex/v10-evidence-pack-context-budget
 当前基线分支：main
-当前活跃 OpenSpec change：v10-evidence-pack-context-budget
-最近完成阶段：V10 Evidence Pack + Context Budget（实现完成，review 已通过，待提交/archive）
+当前活跃 OpenSpec change：无
+最近完成阶段：V10 Evidence Pack + Context Budget（已提交并归档）
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V10 已完成；V10 实现已落地，内部 self-review 和外部 review 均无阻塞发现，等待提交和后续 archive。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V10 已完成；V10 实现已落地，内部 self-review 和外部 review 均无阻塞发现，已提交并归档。
 
 V8 已归档到：
 
@@ -81,8 +81,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 - `.harness/review_checklist.md` 已同步为 V10 implementation review 和 verification 清单，并保留 plan/review 停止点记录。
 - `openspec/changes/v10-evidence-pack-context-budget/` 已创建 proposal、design、tasks 和 `specs/repo-query-understanding-rag/spec.md`。
 - `openspec/changes/v9-embedding-hybrid-search/` 已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`。
-- `openspec/specs/repo-query-understanding-rag/spec.md` 已同步 V9 长期规格；V10 当前仍以 active change delta 承载，待 archive 后再同步长期规格。
-- 当前已实现 V10 运行时代码，内部 self-review 和外部 review 均无阻塞发现，等待提交和后续 OpenSpec archive。
+- `openspec/changes/v10-evidence-pack-context-budget/` 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`。
+- `openspec/specs/repo-query-understanding-rag/spec.md` 已同步 V10 长期规格，包括 Evidence Pack、Context Budget 和 `min_fused_score=0.35` 口径。
+- 当前已实现 V10 运行时代码，内部 self-review 和外部 review 均无阻塞发现，已提交并归档。
 - V9 验证结果：
   - `openspec validate --all`：6 passed, 0 failed
   - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
@@ -111,6 +112,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
   - 内部 self-review 未发现 P0/P1 阻塞；发现的 P2 历史文档措辞债已修正。
   - 外部 review：用户反馈外部 review 显示没问题，无阻塞发现。
   - 外部 review 后 full verify：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1` 通过；`pytest` 81 passed, 1 skipped；`ruff check .` All checks passed。
+  - 实现提交：`c5ec1ff Add V10 evidence pack context budget`。
+  - Archive：已移动到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，并同步长期 `repo-query-understanding-rag` spec。
+  - Archive 后验证：`openspec validate --all` 6 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1` 通过，`pytest` 81 passed, 1 skipped，`ruff check .` All checks passed；`git diff --check` 通过，仅有 CRLF 提示。
 - V10 review follow-up：
   - 已修正长期 `agent-loop-tool-execution` spec，允许 repo-local deterministic hybrid RAG，不再禁止 V9 的本地 deterministic embedding retrieval。
   - 已把 `docs/FEATURE_LIST.json` 的 V8 条目标注为历史 lexical 验收口径，并指向当前 V9/V10 hybrid 口径。
@@ -144,9 +148,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 先提交 V10 implementation diff；不要在未提交工作区直接 archive。
-2. 提交后再 archive V10，并把 active delta 同步进长期 specs。
-3. archive 前确认最新验证结果：`openspec validate v10-evidence-pack-context-budget`、`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`、`git diff --check`。
+1. 开始 V11 前先创建 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
+2. V11 目标应保持为 Grounded Answer / Model Provider Boundary，不要把 V12 的 Query Rewrite + Rerank 或 V13 Memory 提前塞入。
+3. 新阶段进入实现前先做 plan/review；阶段结束前继续执行 Stage Debt Sweep。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
-旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和 active V10 OpenSpec 为准。
+旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

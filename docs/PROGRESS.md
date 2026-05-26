@@ -5,11 +5,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前工作分支：`codex/v10-evidence-pack-context-budget`
-- 当前阶段：V10 `v10-evidence-pack-context-budget` 已完成实现，内部 self-review 和外部 review 均无阻塞发现，等待提交和后续 archive
+- 当前阶段：V10 `v10-evidence-pack-context-budget` 已完成实现、提交并归档
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget` 使用只读 hybrid repo RAG 和内部证据预算层；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`，active change delta 保留于 `openspec/changes/v10-evidence-pack-context-budget/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`，V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -108,6 +108,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-26，V10 implementation self-review：未发现 P0/P1 阻塞；P2 文档历史措辞债已修正。
 - 2026-05-26，V10 外部 review：用户反馈外部 review 显示没问题，无阻塞发现。
 - 2026-05-26，V10 外部 review 后 full verify：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 81 passed, 1 skipped；`ruff check .` All checks passed。
+- 2026-05-26，V10 archive 前长期 spec 同步验证：`openspec validate --all`：7 passed, 0 failed。
+- 2026-05-26，V10 archive 后验证：`openspec validate --all`：6 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 81 passed, 1 skipped；`ruff check .` All checks passed；`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-12：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
 - `pytest`：24 passed
 - `ruff check .`：All checks passed
@@ -257,7 +259,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V10 已完成实现，内部 self-review 和外部 review 均无阻塞发现；先提交 V10 实现，再进行 OpenSpec archive。
+- 当前建议：V10 已完成实现、提交并归档；下一阶段开始前先创建 V11 OpenSpec proposal/design/tasks/spec delta，并同步 harness 边界。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
@@ -313,10 +315,11 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
 
 说明：V8 archive 中保留的是当时路线记录；后续已由 V9/V10 路线重排 supersede，当前长期 docs/specs 以 V10 Evidence Pack + Context Budget、V11 Grounded Answer / Model Provider Boundary、V12 Query Rewrite + Rerank 为准。
 
-## V10：Evidence Pack + Context Budget（已实现，待提交/archive）
+## V10：Evidence Pack + Context Budget（已提交并归档）
 
 - 当前分支：`codex/v10-evidence-pack-context-budget`
-- OpenSpec change：`openspec/changes/v10-evidence-pack-context-budget/`
+- OpenSpec change：已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`
+- 已提交：`c5ec1ff Add V10 evidence pack context budget`
 - 已创建：
   - `proposal.md`
   - `design.md`
@@ -332,5 +335,6 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
   - `AgentLoop`：把 Evidence Pack audit summary 记录为内部 trace，不改变 `/chat` contract。
   - tests 覆盖 evidence item shape、预算裁剪、错误/空结果、contract boundary 和路线图旧口径扫描。
 - 当前非目标：不实现 grounded answer、model provider、LLM prompt assembly、query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
-- 当前状态：实现已完成，内部 self-review 和外部 review 均无阻塞发现；等待提交后再 archive。
+- 当前状态：实现已完成、内部 self-review 和外部 review 均无阻塞发现，并已提交归档。
+- 已同步长期 `openspec/specs/repo-query-understanding-rag/spec.md`：补入 V10 Evidence Pack / Context Budget requirements，并修正 `min_fused_score=0.35` 长期规格口径。
 - 文档同步补充：已补齐 README 的 V9 阶段历史和路线图状态，修正 ARCHITECTURE 中 V8 当前态措辞，并在 HANDOFF 中补充 V9 完整摘要。
