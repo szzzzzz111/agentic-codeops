@@ -21,3 +21,14 @@
 - [ ] V12 必须继承 grep-first, RAG-assisted 检索立场：rewrite/rerank 服务于 lexical/path/symbol baseline，不默认切换到向量库优先。
 - [ ] V12 开工前同步 `.harness/allowed_files.md` 和本 checklist，明确允许修改的代码、测试、docs 和 OpenSpec artifacts。
 - [ ] V12 plan review 通过前，不修改运行时代码或测试。
+
+## Reusable Archive Closeout Gate
+
+- [ ] 使用 `.harness/templates/stage_closeout.md` 更新 PROGRESS、HANDOFF 和 harness 状态。
+- [ ] `openspec list` 显示 no active changes，或明确记录仍有 active change 的原因。
+- [ ] `openspec validate --all` 通过。
+- [ ] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过。
+- [ ] `git diff --check` 通过。
+- [ ] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1` 通过。
+- [ ] `README.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 不再把已归档阶段描述为 active。
+- [ ] 下一阶段只写成 planned / next，不写成 implemented。

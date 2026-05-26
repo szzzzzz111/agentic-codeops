@@ -13,6 +13,10 @@
 - `HANDOFF_TO_NEXT_CHAT.md`
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
+- `.harness/templates/**`
+- `scripts/check_stage_docs.ps1`
+- `scripts/verify.ps1`
+- `.harness/test_commands.md`
 - `openspec/specs/**`
 - `openspec/changes/archive/**`
 - 后续新阶段 OpenSpec planning artifacts：`openspec/changes/<new-change>/**`

@@ -12,6 +12,12 @@ pytest
 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
+## 阶段文档漂移扫描
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1
+```
+
 ## 静态检查
 
 ```bash

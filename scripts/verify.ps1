@@ -26,4 +26,11 @@ if ($ruffCommand) {
 }
 
 Write-Host ""
+Write-Host "== 运行 stage docs drift scan =="
+powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+Write-Host ""
 Write-Host "== RepoPilot 验证完成 =="

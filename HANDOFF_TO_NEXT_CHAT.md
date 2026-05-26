@@ -180,9 +180,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 将 V11 archive 后文档更新提交到当前 feature 分支。
-2. 如要收口 V11 分支，按项目流程合并/推送到 `main`。
-3. 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
+1. Harness 流程已在 V12 前瘦身：`scripts/check_stage_docs.ps1` 可扫描阶段文档漂移，`.harness/templates/stage_closeout.md` 提供 closeout 模板，`scripts/verify.ps1` 已接入 drift scan。
+2. 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
+3. V12 plan 必须继承 grep-first, RAG-assisted：rewrite/rerank 服务 lexical/path/symbol baseline，不默认切换到向量库优先。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。
