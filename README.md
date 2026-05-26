@@ -6,12 +6,12 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V9 已实现，最新阶段是 V9 Embedding Retrieval + Hybrid Search。
+- 当前主线能力：V1-V10 已实现，最新阶段是 V10 Evidence Pack + Context Budget。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
-- 当前检索方式：deterministic query understanding + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）。
+- 当前检索方式：deterministic query understanding + repo-local hybrid RAG（lexical + 轻量 deterministic embedding），并在内部生成 Evidence Pack 与字符级 Context Budget 摘要。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
 - 当前不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill。
-- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、memory 或 context compression。
+- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、grounded answer、model provider、memory 或 context compression。
 
 ## 当前能力
 
@@ -31,6 +31,8 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - `DeterministicEmbeddingProvider` 与 `EmbeddingRepoRetriever` 提供本地确定性 embedding retrieval，不依赖网络、密钥、模型下载或外部服务。
 - `HybridRepoRetriever` 通过 deterministic fusion 合并 lexical 与 embedding 结果，并保留路径、文件名、符号和 exact token 命中的优势。
 - citation 使用相对 repo 路径和 1-based 行号；`related_files` 来自 citation 文件路径。
+- `EvidencePack` 将 retrieval results 整理为内部 evidence items，每条 item 包含稳定 `evidence_id`、相对 `file_path`、1-based 行号、`score`、`snippet`、`source_summary`、`included` 和 `truncated`。
+- Context Budget 默认 `max_context_chars=4000`，按 retrieval 既有排序纳入 evidence，必要时裁剪最后一条，并只把摘要写入内部 trace/audit。
 
 ### Safe Repository Tools
 
@@ -128,7 +130,7 @@ curl -X POST http://127.0.0.1:8000/chat \
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> QueryUnderstanding/SearchPlan
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> HybridRepoRetriever
+  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
@@ -142,6 +144,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/harness/kernel.py`：提供 RequestRouter、QueryUnderstanding 接入、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
+- `app/rag/evidence.py`：提供内部 Evidence Pack 和 deterministic character Context Budget 结构。
 - `app/tools/tool_executor.py`：统一包装只读代码搜索、hybrid repo RAG 和 skill loader 工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
 - `app/tools/skill_loader.py`：提供 Skill Metadata Loader 和 Skill Content Loader。
@@ -181,6 +184,18 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 将旧路线里的“大 Repo RAG Engineering”收窄为可落地的非向量化 repo-local RAG 骨架：deterministic query understanding、repo chunk、lexical scoring、citation 和稳定 `/chat` contract。
 
+### V9：Embedding Retrieval + Hybrid Search
+
+在 V8 lexical repo RAG 之上加入轻量 embedding retrieval，并保持只读、安全、repo-local 和 `/chat` contract 边界。V9 提供 `DeterministicEmbeddingProvider`、`EmbeddingRepoRetriever`、`HybridRepoRetriever` 和 deterministic `hybrid_fuse`，默认使用本地固定维度向量，不调用网络、密钥、模型下载或外部服务。
+
+V9 保留 lexical retrieval 作为一等通道，通过 hybrid fusion 合并 lexical 与 embedding 结果，并让路径、文件名、符号和 exact token 命中的优势不被 embedding 相似度淹没。内部 trace 可记录 lexical、embedding、fused 结果数和 `min_fused_score`；这些审计摘要不作为 `/chat` 顶层字段暴露。
+
+### V10：Evidence Pack + Context Budget
+
+在 V9 hybrid repo RAG 之后加入内部 Evidence Pack 和 deterministic character Context Budget。`ToolExecutionResult.evidence_pack` 只作为内部字段持有，不进入 `call_summary()`、`/chat.tool_calls` 或 `/chat` 顶层响应。
+
+V10 的 trace/audit 只记录 Evidence Pack 摘要：`evidence_items`、`included_count`、`omitted_count`、`truncated_count`、`budget_used_chars` 和 `max_context_chars`。V10 不实现 grounded answer、model provider、prompt assembly、query rewrite、rerank、memory 或 context compression。
+
 ## 当前非目标
 
 - 真实 LLM 接入。
@@ -189,7 +204,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - trace 持久化审计。
 - 反思检查和 eval。
 - 真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant。
-- LLM query rewrite、rerank、grounded answer 和 context budget。
+- LLM query rewrite、rerank、grounded answer、model provider 和 context compression。
 - Memory。
 - 自动修改代码。
 - shell 执行。
@@ -247,8 +262,8 @@ ChatService
 
 ## 路线图
 
-- V9：Embedding Retrieval + Hybrid Search，补 embedding provider、可替换检索接口和 hybrid fusion；Milvus/ES 暂不默认引入。
-- V10：Evidence Pack + Context Budget，先把检索结果整理为可审计证据包和上下文预算边界，不做回答生成。
+已完成至 V10：Evidence Pack + Context Budget。后续路线：
+
 - V11：Grounded Answer / Model Provider Boundary，引入回答生成边界和证据约束策略。
 - V12：Query Rewrite + Rerank，再引入 query rewrite、rerank 和相关 provider 边界。
 - V13：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。

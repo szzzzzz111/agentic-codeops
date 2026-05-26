@@ -9,10 +9,35 @@ from app.tools.tool_executor import ToolExecutor
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
 ALLOWED_TOOL_RISK = "low"
+REPO_RAG_TOOL = "repo_rag"
+_ROUTING_STOPWORDS = {
+    "hello",
+    "hi",
+    "hey",
+    "can",
+    "could",
+    "would",
+    "should",
+    "please",
+    "thanks",
+    "thank",
+    "does",
+    "do",
+    "is",
+    "are",
+    "what",
+    "why",
+    "how",
+}
 DENY_ANSWER = "仓库工具未通过权限策略校验，因此本次没有执行仓库工具。"
 ASK_ANSWER = "工具调用需要人工审批，因此本次没有执行仓库工具。"
 NO_TOOL_ANSWER = "未提取到可搜索关键词，因此没有调用仓库工具。"
 CAPABILITY_STATUS_KEYWORD = "capability_status"
+V10_CAPABILITY_STATUS_ANSWER = (
+    "V10 提供 Evidence Pack 和 Context Budget 边界；"
+    "当前未实现 grounded answer、model provider、query rewrite、rerank、"
+    "memory 或 context compression。"
+)
 
 
 @dataclass(frozen=True)
@@ -72,7 +97,7 @@ class RequestRouter:
     def route(self, message: str) -> RouteDecision:
         if _asks_about_unimplemented_vector_stack(message):
             return RouteDecision(
-                route="repo_search",
+                route="capability_status",
                 keyword=CAPABILITY_STATUS_KEYWORD,
                 reason="capability_status_question",
             )
@@ -99,8 +124,8 @@ class ToolRegistry:
         return cls(
             [
                 ToolSpec(
-                    name="search_code",
-                    description="Search code in a repository using a read-only tool.",
+                    name=REPO_RAG_TOOL,
+                    description="Search a repository using read-only repo-local RAG.",
                     read_only=True,
                     risk=ALLOWED_TOOL_RISK,
                 )
@@ -115,7 +140,7 @@ class PermissionPolicy:
     def decide(
         self,
         tool_spec: ToolSpec | None,
-        tool_name: str = "search_code",
+        tool_name: str = REPO_RAG_TOOL,
     ) -> PermissionDecision:
         if tool_spec is None:
             return PermissionDecision(
@@ -182,6 +207,12 @@ class AgentLoop:
             )
         ]
 
+        if decision.route == "capability_status":
+            return AgentLoopResult(
+                answer=_capability_status_answer(request.message),
+                trace_events_internal=trace_events,
+            )
+
         if decision.route != "repo_search" or not decision.keyword:
             return AgentLoopResult(
                 answer=NO_TOOL_ANSWER,
@@ -202,28 +233,18 @@ class AgentLoop:
                 )
             )
 
-        if _asks_about_unimplemented_vector_stack(request.message):
-            return AgentLoopResult(
-                answer=(
-                    "V9 提供轻量 embedding retrieval 和 hybrid search；"
-                    "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant、"
-                    "真实外部 embedding 服务或 memory。"
-                ),
-                trace_events_internal=trace_events,
-            )
-
-        tool_spec = self.tool_registry.get("search_code")
+        tool_spec = self.tool_registry.get(REPO_RAG_TOOL)
         permission_decision = self.permission_policy.decide(
             tool_spec,
-            tool_name="search_code",
+            tool_name=REPO_RAG_TOOL,
         )
         trace_events.append(
             TraceEvent(
                 event_type="permission_checked",
-                tool_name="search_code",
+                tool_name=REPO_RAG_TOOL,
                 status="ok" if permission_decision.status == "allow" else "error",
                 summary=(
-                    "tool=search_code; "
+                    f"tool={REPO_RAG_TOOL}; "
                     f"decision={permission_decision.status}; "
                     f"reason={permission_decision.reason}"
                 ),
@@ -237,10 +258,10 @@ class AgentLoop:
                     *trace_events,
                     TraceEvent(
                         event_type="tool_rejected",
-                        tool_name="search_code",
+                        tool_name=REPO_RAG_TOOL,
                         status="error",
                         summary=(
-                            "tool=search_code rejected by permission policy; "
+                            f"tool={REPO_RAG_TOOL} rejected by permission policy; "
                             f"reason={permission_decision.reason}"
                         ),
                     ),
@@ -254,9 +275,9 @@ class AgentLoop:
                     *trace_events,
                     TraceEvent(
                         event_type="approval_required",
-                        tool_name="search_code",
+                        tool_name=REPO_RAG_TOOL,
                         status="ok",
-                        summary="tool=search_code requires approval",
+                        summary=f"tool={REPO_RAG_TOOL} requires approval",
                     ),
                 ],
             )
@@ -283,13 +304,25 @@ class AgentLoop:
                 summary=f"result_count={len(tool_result.results)}",
             )
         )
-        if tool_result.audit_summary:
+        channel_summary = _channel_audit_summary(tool_result.audit_summary)
+        if channel_summary:
             trace_events.append(
                 TraceEvent(
                     event_type="retrieval_channels_summarized",
                     tool_name=tool_result.tool_name,
                     status="ok",
-                    summary=_format_audit_summary(tool_result.audit_summary),
+                    summary=_format_audit_summary(channel_summary),
+                )
+            )
+        if tool_result.evidence_pack is not None:
+            trace_events.append(
+                TraceEvent(
+                    event_type="evidence_pack_summarized",
+                    tool_name=tool_result.tool_name,
+                    status="ok",
+                    summary=_format_audit_summary(
+                        tool_result.evidence_pack.audit_summary()
+                    ),
                 )
             )
 
@@ -328,6 +361,8 @@ class AgentLoop:
 def _extract_search_keyword(message: str) -> str | None:
     tokens = TOKEN_PATTERN.findall(message)
     for token in tokens:
+        if token.lower() in _ROUTING_STOPWORDS:
+            continue
         if (
             "_" in token
             or "." in token
@@ -354,6 +389,11 @@ def _asks_about_unimplemented_vector_stack(message: str) -> bool:
             "qdrant",
             "memory",
             "vector",
+            "grounded answer",
+            "model provider",
+            "rerank",
+            "context compression",
+            "query rewrite",
         )
     )
     if not has_capability_term:
@@ -379,7 +419,44 @@ def _asks_about_unimplemented_vector_stack(message: str) -> bool:
             "做了么",
             "了吗",
             "了么",
+            "support",
+            "supports",
+            "supported",
+            "implemented",
+            "available",
+            "enabled",
+            "current",
+            "does",
+            "do",
+            "is",
+            "are",
+            "have",
+            "has",
         )
+    )
+
+
+def _asks_about_unimplemented_v10_stack(message: str) -> bool:
+    lower = message.lower()
+    return any(
+        term in lower
+        for term in (
+            "grounded answer",
+            "model provider",
+            "rerank",
+            "context compression",
+            "query rewrite",
+        )
+    )
+
+
+def _capability_status_answer(message: str) -> str:
+    if _asks_about_unimplemented_v10_stack(message):
+        return V10_CAPABILITY_STATUS_ANSWER
+    return (
+        "V9 提供轻量 embedding retrieval 和 hybrid search；"
+        "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant、"
+        "真实外部 embedding 服务或 memory。"
     )
 
 
@@ -409,12 +486,30 @@ def _format_citations(results: list[dict[str, str | int]]) -> str:
         end_line = result.get("end_line", start_line)
         if not isinstance(file_path, str):
             continue
+        if _is_absolute_path(file_path):
+            continue
         citations.append(f"{file_path}:{start_line}-{end_line}")
     return ", ".join(citations)
 
 
 def _format_audit_summary(audit_summary: dict[str, str | int | float]) -> str:
     return "; ".join(f"{key}={value}" for key, value in audit_summary.items())
+
+
+def _channel_audit_summary(
+    audit_summary: dict[str, str | int | float],
+) -> dict[str, str | int | float]:
+    evidence_keys = {
+        "evidence_items",
+        "included_count",
+        "omitted_count",
+        "truncated_count",
+        "budget_used_chars",
+        "max_context_chars",
+    }
+    return {
+        key: value for key, value in audit_summary.items() if key not in evidence_keys
+    }
 
 
 def _is_absolute_path(file_path: str) -> bool:

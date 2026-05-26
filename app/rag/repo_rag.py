@@ -7,7 +7,7 @@ import re
 from app.rag.query_understanding import SearchPlan
 from app.tools.file_tools import list_files, read_file
 
-DEFAULT_MIN_FUSED_SCORE = 0.5
+DEFAULT_MIN_FUSED_SCORE = 0.35
 
 
 @dataclass(frozen=True)

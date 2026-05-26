@@ -4,18 +4,18 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`codex/v9-embedding-hybrid-search`
-- 当前阶段：V9 `v9-embedding-hybrid-search` 已实现、提交并完成 OpenSpec 归档；暂无活跃开发阶段
-- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever` 使用只读 hybrid repo RAG；`/chat` 顶层响应结构保持不变
+- 当前工作分支：`codex/v10-evidence-pack-context-budget`
+- 当前阶段：V10 `v10-evidence-pack-context-budget` 已完成实现，内部 self-review 和外部 review 均无阻塞发现，等待提交和后续 archive
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget` 使用只读 hybrid repo RAG 和内部证据预算层；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
-- 当前 V4/V5 状态：已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前 V6 主线；仍不执行 skill
-- 当前 OpenSpec 状态：已初始化项目内 OpenSpec、OpenCode 和 `.codex/skills`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`，active change delta 保留于 `openspec/changes/v10-evidence-pack-context-budget/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
 - 2026-05-17，用户要求“先进行一个项目的状态理解，然后再进行 v6 的阶段开发”。本轮应先输出项目状态理解、提出 V6 阶段规划和边界，并等待用户确认后再进入实现。
 - 实际执行中，Codex 直接从状态理解推进到 V6 OpenSpec、测试、代码实现、文档更新和验证，越过了用户确认门。
-- 历史 V6 skill-aware 空 draft 已清理；当前 V6 Kernel 变更已在用户 review 后保留、改造、提交并归档。
+- 历史 V6 skill-aware 空 draft 已清理；V6 Kernel 变更已在用户 review 后保留、改造、提交并归档。
 - 后续同类请求中，如果用户要求“先理解状态”或“先规划”，Codex 必须停在总结/方案确认点，不得自动进入实现。
 - 2026-05-17，用户确认“V6 得重新开发”后，Codex 再次把该确认理解为可直接写代码，已创建 `v6-agent-harness-kernel` OpenSpec、harness 边界、测试和部分运行时代码。这再次越过了“先给 plan 审查，再实现”的确认门。
 - 二次偏差处理：用户已在 review plan 后确认“没问题就进行开发，按计划来”，当前 `v6-agent-harness-kernel` 草稿改为保留并按计划改造。后续硬规则仍保留：凡是阶段重做/重新开发请求，Codex 只能先产出阶段 plan、OpenSpec/harness 边界和审查摘要；除非用户明确说“开始实现/写代码/按这个计划开发”，不得修改运行时代码或测试。
@@ -87,6 +87,27 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 最近验证
 
+- 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`openspec validate v10-evidence-pack-context-budget`：通过。
+- 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`pytest tests\test_evidence_pack.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：40 passed。
+- 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 75 passed, 1 skipped；`ruff check .` All checks passed。
+- 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-25，V10 review follow-up 验证：`pytest tests\test_chat_api.py`：9 passed。
+- 2026-05-25，V10 review follow-up 验证：`openspec validate --all`：7 passed, 0 failed。
+- 2026-05-25，V10 review follow-up 验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 76 passed, 1 skipped；`ruff check .` All checks passed。
+- 2026-05-25，V10 review follow-up 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-25，V10 计划债务扫描修复验证：`pytest tests\test_agent_harness_kernel.py tests\test_chat_api.py tests\test_evidence_pack.py`：42 passed。
+- 2026-05-25，V10 计划债务扫描修复验证：`openspec validate v10-evidence-pack-context-budget`：通过。
+- 2026-05-25，V10 计划债务扫描修复验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 77 passed, 1 skipped；`ruff check .` All checks passed。
+- 2026-05-25，V10 计划债务扫描修复验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-25，非 V10 历史代码债修复验证：`pytest tests\test_repo_rag.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：50 passed。
+- 2026-05-25，非 V10 历史代码债修复验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 81 passed, 1 skipped；`ruff check .` All checks passed。
+- 2026-05-25，非 V10 历史代码债修复验证：`openspec validate --all`：7 passed, 0 failed；`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-25，V9 文档漂移修正 / V10 plan 当前未提交工作区验证：`openspec validate --all`：7 passed, 0 failed
+- 2026-05-25，V9 文档漂移修正 / V10 plan 当前未提交工作区验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
+- 2026-05-25，V9 文档漂移修正 / V10 plan 当前未提交工作区验证：`git diff --check`：通过，仅有 CRLF 换行提示
+- 2026-05-26，V10 implementation self-review：未发现 P0/P1 阻塞；P2 文档历史措辞债已修正。
+- 2026-05-26，V10 外部 review：用户反馈外部 review 显示没问题，无阻塞发现。
+- 2026-05-26，V10 外部 review 后 full verify：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 81 passed, 1 skipped；`ruff check .` All checks passed。
 - 2026-05-12：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过
 - `pytest`：24 passed
 - `ruff check .`：All checks passed
@@ -162,7 +183,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## V5：Skill Content Loader / progressive disclosure
 
-- 当前分支：`feature/v5-skill-content-loader`。
+- V5 开发分支：`feature/v5-skill-content-loader`。
 - 已创建 OpenSpec change：`openspec/changes/v5-skill-content-loader/`。
 - 已完成 OpenSpec artifacts：`proposal.md`、`design.md`、`specs/skill-metadata-loader/spec.md`、`tasks.md`。
 - 已实现 `load_skill_content(repo_path, skill_path)`，在 metadata-first 之后按需读取完整 `SKILL.md`。
@@ -177,11 +198,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## V6：Agent Harness Kernel + Router Kernel（已提交并归档）
 
-- 当前分支：`feature/v6-agent-harness-kernel`。
+- V6 开发分支：`feature/v6-agent-harness-kernel`。
 - 已提交：`b1d6b03 Add V6 agent harness kernel`。
 - 已归档 OpenSpec change：`openspec/changes/archive/2026-05-18-v6-agent-harness-kernel/`。
-- 用户已接受当前 V6 阶段实现；当前暂无活跃 OpenSpec change。
-- 当前 V6 主线已从 `v6-skill-aware-agent-loop` 切换为 Agent Harness Kernel + Router Kernel。
+- 用户当时已接受 V6 阶段实现；V6 阶段结束时暂无活跃 OpenSpec change。
+- V6 阶段主线已从 `v6-skill-aware-agent-loop` 切换为 Agent Harness Kernel + Router Kernel。
 - `v6-skill-aware-agent-loop` 是历史 draft/流程偏差记录，不作为当前阶段主线，不应继续作为实现入口；其空 active change 目录已清理。
 - 当前小切片已建立四个最小运行时骨架：
   - `RequestRouter`：对输入请求做确定性路由，先只支持现有仓库搜索路径。
@@ -223,19 +244,26 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 后续接入真实审批、沙箱或高风险工具时，应通过当前权限/审批边界和 `ToolExecutor` 增量加入。
 - 缓存文件已从 git 跟踪中移除，并由 `.gitignore` 忽略。
 
+## 已知剩余代码债
+
+- `app/rag/evidence.py`：空 `snippet` 当前会被计为 `included=True` 且预算消耗为 `0`。真实 retriever 通常不会产空 chunk，但后续可改为空 snippet 直接 omitted 或跳过，以让 audit summary 更清晰。
+- `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
+- `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前已允许强 embedding-only 命中进入结果，后续如需调参或审计更严格，应把权重/阈值显式参数化。
+- tests：仍有少量历史阶段命名测试保留，用于表达旧阶段边界；后续做测试命名清理时可统一改成阶段无关的 repo_rag / hybrid_repo_rag 命名。
+
 ## 下一步建议
 
 下一步建议：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V9 已完成；下一阶段开始前创建新的 OpenSpec change，并同步 harness 边界和 review 清单。
+- 当前建议：V10 已完成实现，内部 self-review 和外部 review 均无阻塞发现；先提交 V10 实现，再进行 OpenSpec archive。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
 ## V8：Query Understanding + Lexical Repo RAG（已实现）
 
-- 当前分支：`main`（V8 已由 `codex/v8-query-understanding-repo-rag` 合并进入）
+- V8 合并后基线：`main`（V8 已由 `codex/v8-query-understanding-repo-rag` 合并进入）
 - OpenSpec change：已归档到 `openspec/changes/archive/2026-05-20-v8-query-understanding-repo-rag/`
 - V8 将旧路线里的“大 Repo RAG Engineering”收窄为 deterministic query understanding + 非向量化 lexical repo RAG。
 - 已新增 `app/rag/query_understanding.py`，生成 `SearchPlan`，识别代码定位、实现解释、调用关系、测试/验证、文件摘要和未知泛问。
@@ -248,13 +276,14 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## V9：Embedding Retrieval + Hybrid Search（已提交并归档）
 
-- 当前分支：`codex/v9-embedding-hybrid-search`
+- V9 开发分支：`codex/v9-embedding-hybrid-search`
 - OpenSpec change：已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`
 - 已提交：
   - `61a7963 Add V9 embedding hybrid search`
   - `24d4d6e Fix V9 review follow-ups`
   - `d31e83e Document V9 implementation review recovery`
   - `9479a0c Address final V9 review findings`
+  - `e5e5fa0 Archive V9 embedding hybrid search`
 - 已创建：
   - `proposal.md`
   - `design.md`
@@ -281,3 +310,27 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical repo RAG 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
 路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Evidence Pack + Context Budget；V11 为 Grounded Answer / Model Provider Boundary；V12 为 Query Rewrite + Rerank；V13 为 Memory；V14 为 Long Task / ReAct / Subagents；V15 为 Personal Assistant Gateway。
+
+说明：V8 archive 中保留的是当时路线记录；后续已由 V9/V10 路线重排 supersede，当前长期 docs/specs 以 V10 Evidence Pack + Context Budget、V11 Grounded Answer / Model Provider Boundary、V12 Query Rewrite + Rerank 为准。
+
+## V10：Evidence Pack + Context Budget（已实现，待提交/archive）
+
+- 当前分支：`codex/v10-evidence-pack-context-budget`
+- OpenSpec change：`openspec/changes/v10-evidence-pack-context-budget/`
+- 已创建：
+  - `proposal.md`
+  - `design.md`
+  - `specs/repo-query-understanding-rag/spec.md`
+  - `tasks.md`
+- 已同步 V10 implementation harness：
+  - `.harness/allowed_files.md`
+  - `.harness/review_checklist.md`
+- 已实现：
+  - `app/rag/evidence.py`：Evidence Pack、Evidence item 和 Context Budget 结构。
+  - `ToolExecutionResult.evidence_pack`：仅内部持有，不进入 `call_summary()`。
+  - `ToolExecutor.search_repo_rag`：在 successful hybrid retrieval 后生成 Evidence Pack。
+  - `AgentLoop`：把 Evidence Pack audit summary 记录为内部 trace，不改变 `/chat` contract。
+  - tests 覆盖 evidence item shape、预算裁剪、错误/空结果、contract boundary 和路线图旧口径扫描。
+- 当前非目标：不实现 grounded answer、model provider、LLM prompt assembly、query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
+- 当前状态：实现已完成，内部 self-review 和外部 review 均无阻塞发现；等待提交后再 archive。
+- 文档同步补充：已补齐 README 的 V9 阶段历史和路线图状态，修正 ARCHITECTURE 中 V8 当前态措辞，并在 HANDOFF 中补充 V9 完整摘要。

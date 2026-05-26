@@ -135,7 +135,7 @@
       "检查 /chat 响应不暴露内部 trace"
     ],
     "acceptance_criteria": [
-      "默认 search_code 为只读、low 风险且 requires_approval=false",
+      "默认 repo_rag 为只读、low 风险且 requires_approval=false",
       "未注册、非只读或非 low 风险工具走 deny 且不调用 executor",
       "requires_approval=true 的低风险只读工具走 ask 且不调用 executor",
       "权限和审批审计只保留在 trace_events_internal"
@@ -154,7 +154,7 @@
       "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
     ],
     "acceptance_criteria": [
-      "SearchPlan 包含 question_type、keywords、symbols、path_hints、max_results 和 retrieval_mode=lexical",
+      "V8 阶段验收时 SearchPlan 包含 question_type、keywords、symbols、path_hints、max_results 和 retrieval_mode=lexical；当前默认检索模式已由 V9 升级为 hybrid，LexicalRepoRetriever 保留为一等通道",
       "chunk 包含 chunk_id、file_path、start_line、end_line、text",
       "citation 只使用相对 repo 路径和 1-based 行号",
       "related_files 来自 citation 文件路径",
@@ -162,7 +162,7 @@
       "/chat 不新增必需顶层字段"
     ],
     "passes": true,
-    "notes": "由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "V8 历史验收由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖；当前默认 hybrid 口径见 V9/V10 条目。"
   },
   {
     "id": "v9-embedding-hybrid-search",
@@ -179,7 +179,7 @@
       "默认 embedding provider 固定维度、稳定输出，且不调用网络、密钥、模型下载或外部服务",
       "embedding retrieval citation 只使用相对 repo 路径和 1-based 行号",
       "hybrid fusion 合并重复 chunk 并保持稳定排序",
-      "hybrid fusion 默认使用 min_fused_score=0.5 过滤弱相关结果",
+      "hybrid fusion 默认使用 min_fused_score=0.35，保留强 embedding-only 命中并过滤弱相关结果",
       "内部 trace 记录 lexical、embedding、fused 结果数和 min_fused_score",
       "路径、文件名、符号和 exact token 命中不被 embedding 相似度淹没",
       "V9 不默认接入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务、LLM rewrite、rerank 或 memory",
@@ -187,5 +187,29 @@
     ],
     "passes": true,
     "notes": "由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v10-evidence-pack-context-budget",
+    "category": "rag",
+    "description": "AgentLoop 在 repo retrieval 后构建可审计 Evidence Pack，并用确定性字符预算限制可进入后续上下文的证据 snippets。",
+    "steps": [
+      "构造触发 repo_search 的 /chat 请求",
+      "HybridRepoRetriever 返回带 citation 的 retrieval results",
+      "Evidence Pack builder 生成 evidence items 和 context budget 摘要",
+      "AgentLoop 内部 trace/audit 记录 Evidence Pack 摘要",
+      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
+    ],
+    "acceptance_criteria": [
+      "Evidence item 包含稳定 evidence_id、相对 file_path、1-based start_line/end_line、score、snippet、source_summary、included 和 truncated",
+      "Evidence Pack 不包含本机绝对路径或完整文件内容",
+      "Context Budget 使用 deterministic character budget，并记录 included、omitted、truncated 和 budget used 字段",
+      "Context Budget 不执行 LLM rerank、query rewrite、semantic merge 或 context compression",
+      "内部 trace/audit 摘要固定包含 evidence_items、included_count、omitted_count、truncated_count、budget_used_chars 和 max_context_chars",
+      "ToolExecutionResult.evidence_pack 不进入 call_summary()、/chat.tool_calls 或 /chat 顶层响应",
+      "V10 不实现 grounded answer、model provider、prompt assembly、memory、SandboxRunner、skill execution 或多 agent orchestration",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_evidence_pack.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

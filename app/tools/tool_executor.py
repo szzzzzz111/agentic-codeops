@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from app.rag.evidence import EvidencePack, build_evidence_pack
 from app.rag.query_understanding import SearchPlan
 from app.rag.repo_rag import HybridRepoRetriever
 from app.tools.file_tools import search_code
@@ -12,6 +13,7 @@ class ToolExecutionResult:
     results: list[dict[str, str | int]] = field(default_factory=list)
     error: str | None = None
     audit_summary: dict[str, str | int | float] = field(default_factory=dict)
+    evidence_pack: EvidencePack | None = None
 
     def call_summary(self) -> dict[str, str]:
         summary = {
@@ -84,9 +86,21 @@ class ToolExecutor:
                 error=type(exc).__name__,
             )
 
+        evidence_pack = build_evidence_pack(
+            results,
+            original_query=search_plan.original_query,
+            question_type=search_plan.question_type,
+            retrieval_mode=search_plan.retrieval_mode,
+        )
+        audit_summary = {
+            **getattr(self.repo_retriever, "last_channel_summary", {}),
+            **evidence_pack.audit_summary(),
+        }
+
         return ToolExecutionResult(
             tool_name="repo_rag",
             parameters=parameters,
             results=results,
-            audit_summary=getattr(self.repo_retriever, "last_channel_summary", {}),
+            audit_summary=audit_summary,
+            evidence_pack=evidence_pack,
         )

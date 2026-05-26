@@ -1,17 +1,40 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：无。V9 `v9-embedding-hybrid-search` 已实现、提交并归档。
+当前活跃阶段：V10 `v10-evidence-pack-context-budget`（implementation）。
 
-允许修改：
+本阶段目标：在 V9 hybrid repo RAG 之上增加内部 Evidence Pack 和 deterministic character Context Budget 边界。用户已确认按 V10 plan 进入实现。
 
-- 无活跃阶段默认不修改运行时代码、测试或长期文档。
-- 新阶段开始前必须先创建 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+## 当前允许修改
 
-禁止修改：
+- `openspec/changes/v10-evidence-pack-context-budget/proposal.md`
+- `openspec/changes/v10-evidence-pack-context-budget/design.md`
+- `openspec/changes/v10-evidence-pack-context-budget/tasks.md`
+- `openspec/changes/v10-evidence-pack-context-budget/specs/repo-query-understanding-rag/spec.md`
+- `openspec/specs/agent-loop-tool-execution/spec.md`
+- `openspec/specs/README.md`
+- `openspec/changes/README.md`
+- `.harness/allowed_files.md`
+- `.harness/review_checklist.md`
+- `README.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PROGRESS.md`
+- `docs/FEATURE_LIST.json`
+- `HANDOFF_TO_NEXT_CHAT.md`
+- `app/rag/repo_rag.py`
+- `app/rag/evidence.py`
+- `app/rag/__init__.py`
+- `app/tools/tool_executor.py`
+- `app/harness/kernel.py`
+- `tests/test_repo_rag.py`
+- `tests/test_evidence_pack.py`
+- `tests/test_agent_harness_kernel.py`
+- `tests/test_chat_api.py`
+
+## 禁止修改
 
 - 不恢复旧 `specs/00x-*` 作为规格入口。
-- 不把参考项目写成 RepoPilot runtime dependency 或当前能力，除非新阶段 spec 明确开放。
-- 不实现未进入 active OpenSpec change 的新 runtime 能力。
-- 不新增 `/chat` 必需顶层字段，除非新阶段 spec 明确要求。
-- 不默认接入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载，除非新阶段 spec 明确要求。
-- 不实现 LLM query rewrite、LLM rerank、grounded answer、model provider、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration，除非新阶段 spec 明确要求。
+- 不把 OpenSpec、Superpowers、MCP、plugin 或参考项目写成 RepoPilot runtime 能力。
+- 不新增 `/chat` 必需顶层字段；V10 Evidence Pack 只进入内部结构和 audit/trace 摘要。
+- 不绕过 `ToolExecutor(repo_rag)`、`PermissionPolicy`、`ApprovalGate` 或安全文件工具边界。
+- 不默认接入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务、模型下载、tokenizer 依赖或持久化向量索引。
+- 不实现 grounded answer、model provider、LLM prompt assembly、query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。

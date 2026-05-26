@@ -48,12 +48,12 @@ def test_request_router_routes_plain_chat_without_tools() -> None:
     )
 
 
-def test_default_tool_registry_marks_search_code_as_read_only_low_risk() -> None:
+def test_default_tool_registry_marks_repo_rag_as_read_only_low_risk() -> None:
     registry = ToolRegistry.with_default_tools()
 
-    assert registry.get("search_code") == ToolSpec(
-        name="search_code",
-        description="Search code in a repository using a read-only tool.",
+    assert registry.get("repo_rag") == ToolSpec(
+        name="repo_rag",
+        description="Search a repository using read-only repo-local RAG.",
         read_only=True,
         risk="low",
         requires_approval=False,
@@ -72,7 +72,7 @@ def test_tool_registry_only_stores_metadata_and_does_not_decide_policy() -> None
         ]
     )
 
-    assert registry.get("search_code") is None
+    assert registry.get("repo_rag") is None
     assert registry.get("write_file") == ToolSpec(
         name="write_file",
         description="Write a file.",
@@ -87,7 +87,7 @@ def test_tool_registry_only_stores_metadata_and_does_not_decide_policy() -> None
 def test_permission_policy_allows_low_risk_read_only_tool() -> None:
     decision = PermissionPolicy().decide(
         ToolSpec(
-            name="search_code",
+            name="repo_rag",
             description="Search code in a repository.",
             read_only=True,
             risk="low",
@@ -95,7 +95,7 @@ def test_permission_policy_allows_low_risk_read_only_tool() -> None:
     )
 
     assert decision == PermissionDecision(
-        tool_name="search_code",
+        tool_name="repo_rag",
         status="allow",
         reason="allowed",
     )
@@ -105,7 +105,7 @@ def test_permission_policy_denies_non_read_only_or_high_risk_tools() -> None:
     policy = PermissionPolicy()
 
     assert policy.decide(None) == PermissionDecision(
-        tool_name="search_code",
+        tool_name="repo_rag",
         status="deny",
         reason="not_registered",
     )
@@ -123,14 +123,14 @@ def test_permission_policy_denies_non_read_only_or_high_risk_tools() -> None:
     )
     assert policy.decide(
         ToolSpec(
-            name="search_code",
+            name="repo_rag",
             description="Search code in a repository.",
             read_only=True,
             risk="high",
             requires_approval=True,
         )
     ) == PermissionDecision(
-        tool_name="search_code",
+        tool_name="repo_rag",
         status="deny",
         reason="risk_not_allowed",
     )
@@ -139,7 +139,7 @@ def test_permission_policy_denies_non_read_only_or_high_risk_tools() -> None:
 def test_permission_policy_asks_for_approval_for_low_risk_approval_tool() -> None:
     decision = PermissionPolicy().decide(
         ToolSpec(
-            name="search_code",
+            name="repo_rag",
             description="Search code in a repository.",
             read_only=True,
             risk="low",
@@ -148,7 +148,7 @@ def test_permission_policy_asks_for_approval_for_low_risk_approval_tool() -> Non
     )
 
     assert decision == PermissionDecision(
-        tool_name="search_code",
+        tool_name="repo_rag",
         status="ask",
         reason="approval_required",
     )
@@ -186,7 +186,7 @@ def test_agent_loop_rejects_search_when_tool_is_not_read_only(tmp_path: Path) ->
         tool_registry=ToolRegistry(
             [
                 ToolSpec(
-                    name="search_code",
+                    name="repo_rag",
                     description="Search code in a repository.",
                     read_only=False,
                     risk="low",
@@ -214,7 +214,7 @@ def test_agent_loop_rejects_search_when_tool_risk_is_not_allowed(
         tool_registry=ToolRegistry(
             [
                 ToolSpec(
-                    name="search_code",
+                    name="repo_rag",
                     description="Search code in a repository.",
                     read_only=True,
                     risk="high",
@@ -240,7 +240,7 @@ def test_agent_loop_asks_for_approval_without_calling_tool(tmp_path: Path) -> No
         tool_registry=ToolRegistry(
             [
                 ToolSpec(
-                    name="search_code",
+                    name="repo_rag",
                     description="Search code in a repository.",
                     read_only=True,
                     risk="low",
@@ -311,6 +311,7 @@ class AbsolutePathSearchExecutor:
 class RecordingRepoRagExecutor:
     def __init__(self) -> None:
         self.called = False
+        self.search_plan = None
 
     def search_repo_rag(
         self,
@@ -319,6 +320,7 @@ class RecordingRepoRagExecutor:
         search_plan,
     ) -> ToolExecutionResult:
         self.called = True
+        self.search_plan = search_plan
         return ToolExecutionResult(
             tool_name="repo_rag",
             parameters={
@@ -327,6 +329,42 @@ class RecordingRepoRagExecutor:
                 "retrieval_mode": search_plan.retrieval_mode,
             },
             results=[],
+        )
+
+
+class MixedPathSearchExecutor:
+    def search_code(self, repo_path: str, keyword: str) -> ToolExecutionResult:
+        raise AssertionError("search_code should not be called")
+
+    def search_repo_rag(
+        self,
+        repo_path: str,
+        keyword: str,
+        search_plan,
+    ) -> ToolExecutionResult:
+        return ToolExecutionResult(
+            tool_name="repo_rag",
+            parameters={
+                "keyword": keyword,
+                "question_type": search_plan.question_type,
+                "retrieval_mode": search_plan.retrieval_mode,
+            },
+            results=[
+                {
+                    "file_path": "app/service.py",
+                    "line_number": 1,
+                    "line_text": keyword,
+                    "start_line": 1,
+                    "end_line": 1,
+                },
+                {
+                    "file_path": "C:/outside/project/secret.py",
+                    "line_number": 2,
+                    "line_text": keyword,
+                    "start_line": 2,
+                    "end_line": 2,
+                },
+            ],
         )
 
 
@@ -380,6 +418,7 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
         "tool_call",
         "tool_result",
         "retrieval_channels_summarized",
+        "evidence_pack_summarized",
     ]
 
 
@@ -404,7 +443,27 @@ def test_agent_loop_allows_retrievers_without_channel_summary(
     )
 
 
-def test_agent_loop_uses_tool_executor_for_v8_repo_rag(tmp_path: Path) -> None:
+def test_request_router_routes_plain_english_chat_without_tools() -> None:
+    route = RequestRouter().route("Hello, can you explain this project?")
+
+    assert route == RouteDecision(
+        route="chat_only",
+        keyword=None,
+        reason="no_searchable_token",
+    )
+
+
+def test_request_router_routes_capability_status_separately() -> None:
+    route = RequestRouter().route("Does RepoPilot support grounded answer?")
+
+    assert route == RouteDecision(
+        route="capability_status",
+        keyword="capability_status",
+        reason="capability_status_question",
+    )
+
+
+def test_agent_loop_uses_tool_executor_for_repo_rag(tmp_path: Path) -> None:
     executor = RecordingRepoRagExecutor()
     loop = AgentLoop(tool_executor=executor)
 
@@ -417,6 +476,7 @@ def test_agent_loop_uses_tool_executor_for_v8_repo_rag(tmp_path: Path) -> None:
     )
 
     assert executor.called is True
+    assert executor.search_plan.original_query == "帮我分析 UNIQUE_BUG_TOKEN"
 
 
 def test_agent_loop_chat_only_does_not_call_tools(tmp_path: Path) -> None:
@@ -485,7 +545,7 @@ def test_agent_loop_records_query_understanding_before_repo_retrieval(
         AgentLoopRequest(
             message="AgentLoop 在 app/harness/kernel.py 怎么调用 search_code?",
             repo_path=str(tmp_path),
-            trace_id="trace_v8_rag",
+            trace_id="trace_repo_rag",
         )
     )
 
@@ -501,7 +561,7 @@ def test_agent_loop_records_query_understanding_before_repo_retrieval(
 def test_agent_loop_does_not_claim_vector_infrastructure_is_implemented(
     tmp_path: Path,
 ) -> None:
-    write_text(tmp_path / "README.md", "RepoPilot V8 uses lexical repo RAG.\n")
+    write_text(tmp_path / "README.md", "RepoPilot uses repo RAG.\n")
     loop = AgentLoop()
 
     result = loop.run(
@@ -526,7 +586,7 @@ def test_agent_loop_does_not_claim_vector_infrastructure_is_implemented(
 def test_agent_loop_answers_lowercase_vector_status_questions(
     tmp_path: Path,
 ) -> None:
-    write_text(tmp_path / "README.md", "RepoPilot V8 uses lexical repo RAG.\n")
+    write_text(tmp_path / "README.md", "RepoPilot uses repo RAG.\n")
     loop = AgentLoop()
 
     result = loop.run(
@@ -538,6 +598,50 @@ def test_agent_loop_answers_lowercase_vector_status_questions(
     )
 
     assert "未默认接入" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+
+
+def test_agent_loop_answers_english_capability_status_without_repo_search(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(
+        tool_registry=ToolRegistry(),
+        tool_executor=FailingSearchExecutor(),
+    )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="Does RepoPilot support grounded answer or model provider?",
+            repo_path=str(tmp_path),
+            trace_id="trace_english_capability",
+        )
+    )
+
+    assert "V10 提供 Evidence Pack 和 Context Budget 边界" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "request_routed",
+    ]
+
+
+def test_agent_loop_does_not_claim_grounded_answer_is_implemented(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "README.md", "RepoPilot V10 has evidence pack.\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="grounded answer、model provider、rerank、memory、context compression 实现了吗?",
+            repo_path=str(tmp_path),
+            trace_id="trace_v10_status",
+        )
+    )
+
+    assert "V10 提供 Evidence Pack 和 Context Budget 边界" in result.answer
+    assert "未实现 grounded answer" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 
@@ -584,7 +688,7 @@ def test_agent_loop_searches_repo_for_memory_symbol_location(
     assert "未实现 embedding" not in result.answer
 
 
-def test_agent_loop_tool_call_records_v8_search_plan_metadata(
+def test_agent_loop_tool_call_records_hybrid_search_plan_metadata(
     tmp_path: Path,
 ) -> None:
     write_text(
@@ -615,6 +719,24 @@ def test_agent_loop_tool_call_records_v8_search_plan_metadata(
     ]
 
 
+def test_agent_loop_answer_filters_absolute_paths_from_citations(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=MixedPathSearchExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(tmp_path),
+            trace_id="trace_mixed_paths",
+        )
+    )
+
+    assert result.related_files == ["app/service.py"]
+    assert "app/service.py:1-1" in result.answer
+    assert "C:/outside/project/secret.py" not in result.answer
+
+
 def test_agent_loop_records_hybrid_channel_audit_summary(tmp_path: Path) -> None:
     write_text(
         tmp_path / "app" / "service.py",
@@ -639,6 +761,62 @@ def test_agent_loop_records_hybrid_channel_audit_summary(tmp_path: Path) -> None
         and "lexical_results=" in event.summary
         and "embedding_results=" in event.summary
         and "fused_results=" in event.summary
-        and "min_fused_score=0.5" in event.summary
+        and "min_fused_score=0.35" in event.summary
+        for event in result.trace_events_internal
+    )
+
+
+def test_agent_loop_records_evidence_pack_summary_without_public_tool_leak(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app" / "service.py", "UNIQUE_BUG_TOKEN = True\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(tmp_path),
+            trace_id="trace_evidence_pack",
+        )
+    )
+
+    assert result.tool_calls == [
+        {
+            "tool_name": "repo_rag",
+            "keyword": "UNIQUE_BUG_TOKEN",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "hybrid",
+            "status": "success",
+            "result_count": "1",
+        }
+    ]
+    assert any(
+        event.event_type == "evidence_pack_summarized"
+        and "evidence_items=1" in event.summary
+        and "included_count=1" in event.summary
+        and "omitted_count=0" in event.summary
+        and "truncated_count=0" in event.summary
+        and "budget_used_chars=" in event.summary
+        and "max_context_chars=4000" in event.summary
+        for event in result.trace_events_internal
+    )
+
+
+def test_agent_loop_does_not_create_evidence_pack_on_tool_error(
+    tmp_path: Path,
+) -> None:
+    missing_repo = tmp_path / "missing"
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(missing_repo),
+            trace_id="trace_evidence_error",
+        )
+    )
+
+    assert all(
+        event.event_type != "evidence_pack_summarized"
         for event in result.trace_events_internal
     )

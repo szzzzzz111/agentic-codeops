@@ -193,3 +193,25 @@ def test_hybrid_fusion_filters_results_below_minimum_score() -> None:
     results = hybrid_fuse([], embedding, max_results=4, min_fused_score=0.5)
 
     assert results == []
+
+
+def test_hybrid_fusion_keeps_embedding_only_results_by_default() -> None:
+    semantic_chunk = RepoChunk(
+        chunk_id="docs/semantic.md:1-1",
+        file_path="docs/semantic.md",
+        start_line=1,
+        end_line=1,
+        text="Semantic match without lexical overlap",
+    )
+    embedding = [
+        RetrievalResult(
+            chunk=semantic_chunk,
+            citation=Citation("docs/semantic.md", 1, 1),
+            score=100,
+        )
+    ]
+
+    results = hybrid_fuse([], embedding, max_results=4)
+
+    assert [result.citation.file_path for result in results] == ["docs/semantic.md"]
+    assert results[0].score == 350

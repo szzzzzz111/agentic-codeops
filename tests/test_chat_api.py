@@ -161,5 +161,35 @@ def test_chat_endpoint_keeps_contract_for_v8_repo_rag(tmp_path: Path) -> None:
     assert response.status_code == 200
     body = response.json()
     assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "evidence_pack" not in body
+    assert all("evidence_pack" not in tool_call for tool_call in body["tool_calls"])
     assert body["related_files"] == ["app/harness/kernel.py"]
     assert "app/harness/kernel.py:1-" in body["answer"]
+
+
+def test_docs_keep_v10_route_map_consistent() -> None:
+    docs = [
+        Path("README.md"),
+        Path("docs/PROGRESS.md"),
+        Path("docs/ARCHITECTURE.md"),
+        Path("HANDOFF_TO_NEXT_CHAT.md"),
+    ]
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in docs)
+
+    assert "V10：Evidence Pack + Context Budget" in combined
+    assert "V11：Grounded Answer / Model Provider Boundary" in combined
+    assert "V12：Query Rewrite + Rerank" in combined
+    assert "V10：Query Rewrite / Rerank / Context Budget" not in combined
+    assert "V10 = Query Rewrite / Rerank / Context Budget" not in combined
+
+
+def test_long_term_specs_allow_repo_local_hybrid_rag() -> None:
+    agent_loop_spec = Path(
+        "openspec/specs/agent-loop-tool-execution/spec.md"
+    ).read_text(encoding="utf-8")
+    feature_list = Path("docs/FEATURE_LIST.json").read_text(encoding="utf-8")
+
+    assert "repo-local hybrid RAG" in agent_loop_spec
+    assert "不引入 embedding/vector RAG" not in agent_loop_spec
+    assert "使用 embedding/vector RAG" not in agent_loop_spec
+    assert "当前默认检索模式已由 V9 升级为 hybrid" in feature_list
