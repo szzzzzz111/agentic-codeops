@@ -5,8 +5,8 @@
 ```text
 当前工作分支：feature/v11-grounded-answer-model-provider-boundary
 当前基线分支：main
-当前活跃 OpenSpec change：v11-grounded-answer-model-provider-boundary
-最近完成阶段：V11 Grounded Answer / Model Provider Boundary（已实现，待最终 review、提交和归档）
+当前活跃 OpenSpec change：无
+最近完成阶段：V11 Grounded Answer / Model Provider Boundary（已实现、review、提交并归档）
 ```
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V11 已完成实现；V11 已把 V10 Evidence Pack / Context Budget 接入 grounded answer 和 Model Provider Boundary，默认 fake provider 保持离线可验证，OpenAI-compatible provider 通过环境变量显式启用。
@@ -23,6 +23,12 @@ V9 已归档到：
 
 ```text
 openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/
+```
+
+V11 已归档到：
+
+```text
+openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/
 ```
 
 ## 当前主链路
@@ -54,6 +60,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   - `openspec validate --all`：8 passed, 0 failed。
   - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed。
   - `git diff --check`：通过，仅有 CRLF 换行提示。
+- Archive：`openspec archive v11-grounded-answer-model-provider-boundary --skip-specs -y` 已完成；长期 specs 已在 archive 前同步。
+- Archive 后验证：`openspec validate --all`：7 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed；`git diff --check`：通过，仅有 CRLF 换行提示。
 - 外部 review follow-up：
   - 已确认 `httpx>=0.27.0` 位于 `[project].dependencies`，并在 PROGRESS 中补充运行时依赖变更记录。
   - 已修正 citation 校验 allowed 集合，使其只接受实际传给 provider 的 included 且非空 snippet evidence。
@@ -172,9 +180,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 完成 V11 最终验证：`openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`、`git diff --check`。
-2. 完成 V11 self-review / 外部 review 后提交并归档 change。
-3. 归档后开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
+1. 将 V11 archive 后文档更新提交到当前 feature 分支。
+2. 如要收口 V11 分支，按项目流程合并/推送到 `main`。
+3. 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

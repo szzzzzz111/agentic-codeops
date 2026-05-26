@@ -279,9 +279,8 @@ ChatService
 
 ## 路线图
 
-已完成至 V10：Evidence Pack + Context Budget。后续路线：
+已完成至 V11：Grounded Answer / Model Provider Boundary。后续路线：
 
-- V11：Grounded Answer / Model Provider Boundary，引入回答生成边界和证据约束策略。
 - V12：Query Rewrite + Rerank，再引入 query rewrite、rerank 和相关 provider 边界。
 - V13：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。
 - V14：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。

@@ -5,11 +5,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前工作分支：`feature/v11-grounded-answer-model-provider-boundary`
-- 当前阶段：V11 `v11-grounded-answer-model-provider-boundary` 已完成实现，待最终 review、验证、提交和归档
+- 当前阶段：V11 `v11-grounded-answer-model-provider-boundary` 已完成实现、review、提交和归档；下一阶段应先规划 V12 Query Rewrite + Rerank
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用只读 hybrid repo RAG、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`，V11 active change 位于 `openspec/changes/v11-grounded-answer-model-provider-boundary/`；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -97,6 +97,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-26，V11 外部 review follow-up 验证：`openspec validate --all`：8 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed；`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-26，V11 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-26，V11 review 前新增设计观察：RepoPilot 采用 grep-first, RAG-assisted 检索立场；V11 Grounded Answer 应优先基于可审计的 deterministic lexical/path/symbol evidence，V12 Query Rewrite / Rerank 应服务于该基线，不默认转向重型向量库或 embedding cache。
+- 2026-05-26，V11 archive：`openspec archive v11-grounded-answer-model-provider-boundary --skip-specs -y` 已完成，归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`；长期 specs 已在 archive 前同步。
+- 2026-05-26，V11 archive 后验证：`openspec validate --all`：7 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed；`git diff --check`：通过，仅有 CRLF 换行提示。
 
 - 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`openspec validate v10-evidence-pack-context-budget`：通过。
 - 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`pytest tests\test_evidence_pack.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：40 passed。
@@ -270,7 +272,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V10 已完成实现、提交并归档；下一阶段开始前先创建 V11 OpenSpec proposal/design/tasks/spec delta，并同步 harness 边界。
+- 当前建议：V11 已完成实现、提交并归档；下一阶段开始前先创建 V12 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 harness 边界。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
