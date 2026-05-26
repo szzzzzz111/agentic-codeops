@@ -11,6 +11,7 @@ from app.harness.kernel import (
     ToolSpec,
     ToolRegistry,
 )
+from app.providers.model_provider import ModelProviderResponse
 from app.rag.repo_rag import LexicalRepoRetriever
 from app.tools.tool_executor import ToolExecutionResult
 
@@ -21,6 +22,18 @@ class FailingSearchExecutor:
 
     def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
         raise AssertionError("search_repo_rag must not be called when policy blocks")
+
+
+class NoCitationProvider:
+    def generate(self, request):
+        return ModelProviderResponse(
+            answer="这是一个没有 citation 的回答。",
+            audit_summary={
+                "provider": "no_citation",
+                "model": "test",
+                "status": "success",
+            },
+        )
 
 
 def write_text(path: Path, content: str) -> None:
@@ -419,6 +432,7 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
         "tool_result",
         "retrieval_channels_summarized",
         "evidence_pack_summarized",
+        "model_provider_summarized",
     ]
 
 
@@ -618,7 +632,8 @@ def test_agent_loop_answers_english_capability_status_without_repo_search(
         )
     )
 
-    assert "V10 提供 Evidence Pack 和 Context Budget 边界" in result.answer
+    assert "V11 提供 Grounded Answer 和 Model Provider Boundary" in result.answer
+    assert "默认 fake provider" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
     assert [event.event_type for event in result.trace_events_internal] == [
@@ -626,7 +641,7 @@ def test_agent_loop_answers_english_capability_status_without_repo_search(
     ]
 
 
-def test_agent_loop_does_not_claim_grounded_answer_is_implemented(
+def test_agent_loop_reports_v11_capability_status_without_repo_search(
     tmp_path: Path,
 ) -> None:
     write_text(tmp_path / "README.md", "RepoPilot V10 has evidence pack.\n")
@@ -640,8 +655,9 @@ def test_agent_loop_does_not_claim_grounded_answer_is_implemented(
         )
     )
 
-    assert "V10 提供 Evidence Pack 和 Context Budget 边界" in result.answer
-    assert "未实现 grounded answer" in result.answer
+    assert "V11 提供 Grounded Answer 和 Model Provider Boundary" in result.answer
+    assert "未实现 query rewrite、rerank、memory 或 context compression" in result.answer
+    assert "未实现 grounded answer" not in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 
@@ -798,6 +814,53 @@ def test_agent_loop_records_evidence_pack_summary_without_public_tool_leak(
         and "truncated_count=0" in event.summary
         and "budget_used_chars=" in event.summary
         and "max_context_chars=4000" in event.summary
+        for event in result.trace_events_internal
+    )
+
+
+def test_agent_loop_generates_grounded_answer_from_evidence_pack(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app" / "service.py", "UNIQUE_BUG_TOKEN = True\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(tmp_path),
+            trace_id="trace_grounded_answer",
+        )
+    )
+
+    assert "基于仓库证据" in result.answer
+    assert "app/service.py:1-1" in result.answer
+    assert any(
+        event.event_type == "model_provider_summarized"
+        and "provider=fake" in event.summary
+        and "status=success" in event.summary
+        for event in result.trace_events_internal
+    )
+    assert all("provider" not in tool_call for tool_call in result.tool_calls)
+
+
+def test_agent_loop_falls_back_when_provider_answer_has_no_valid_citation(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app" / "service.py", "UNIQUE_BUG_TOKEN = True\n")
+    loop = AgentLoop(model_provider=NoCitationProvider())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(tmp_path),
+            trace_id="trace_grounded_fallback",
+        )
+    )
+
+    assert result.answer == "无法基于当前仓库证据生成可靠回答。"
+    assert any(
+        event.event_type == "model_provider_summarized"
+        and "fallback_reason=missing_citation" in event.summary
         for event in result.trace_events_internal
     )
 

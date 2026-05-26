@@ -211,5 +211,29 @@
     ],
     "passes": true,
     "notes": "由 tests/test_evidence_pack.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v11-grounded-answer-model-provider-boundary",
+    "category": "answering",
+    "description": "AgentLoop 在 Evidence Pack / Context Budget 后生成受证据约束的 grounded answer，并通过 Model Provider 边界支持默认 fake provider 和可选 OpenAI-compatible provider。",
+    "steps": [
+      "构造触发 repo_search 的 /chat 请求",
+      "HybridRepoRetriever 返回证据并构建 Evidence Pack",
+      "GroundedAnswerGenerator 只消费 included evidence snippets",
+      "ModelProvider 生成带合法 citation 的回答",
+      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
+    ],
+    "acceptance_criteria": [
+      "默认 provider 为 deterministic fake provider，默认验证不依赖网络、密钥或真实模型输出",
+      "OpenAI-compatible provider 只能通过环境变量显式启用",
+      "ModelProvider 输入只包含 original query、question type、included evidence snippets 和 citation metadata",
+      "provider 输出 citation 必须匹配 provided evidence，格式为 relative/path.py:start-end",
+      "无证据、无合法 citation、越界 citation、provider error、timeout 或 invalid response 均返回保守 fallback",
+      "provider audit 不进入 /chat 顶层字段或 /chat.tool_calls，且不记录完整 prompt、完整模型输出、完整 Evidence Pack 或 API key",
+      "V11 不实现 query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_model_provider.py、tests/test_grounded_answer.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

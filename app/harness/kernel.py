@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath, PureWindowsPath
 import re
 
+from app.answering.grounded_answer import GroundedAnswerGenerator
+from app.providers.model_provider import ModelProvider, load_model_provider_from_env
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
 from app.rag.repo_rag import HybridRepoRetriever
 from app.tools.tool_executor import ToolExecutor
@@ -33,10 +35,10 @@ DENY_ANSWER = "仓库工具未通过权限策略校验，因此本次没有执�
 ASK_ANSWER = "工具调用需要人工审批，因此本次没有执行仓库工具。"
 NO_TOOL_ANSWER = "未提取到可搜索关键词，因此没有调用仓库工具。"
 CAPABILITY_STATUS_KEYWORD = "capability_status"
-V10_CAPABILITY_STATUS_ANSWER = (
-    "V10 提供 Evidence Pack 和 Context Budget 边界；"
-    "当前未实现 grounded answer、model provider、query rewrite、rerank、"
-    "memory 或 context compression。"
+V11_CAPABILITY_STATUS_ANSWER = (
+    "V11 提供 Grounded Answer 和 Model Provider Boundary；"
+    "默认 fake provider 保持离线可验证，显式配置后可使用 OpenAI-compatible provider；"
+    "当前未实现 query rewrite、rerank、memory 或 context compression。"
 )
 
 
@@ -189,6 +191,7 @@ class AgentLoop:
         approval_gate: ApprovalGate | None = None,
         query_understanding: QueryUnderstanding | None = None,
         repo_retriever: HybridRepoRetriever | None = None,
+        model_provider: ModelProvider | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
@@ -196,6 +199,9 @@ class AgentLoop:
         self.permission_policy = permission_policy or PermissionPolicy()
         self.approval_gate = approval_gate or ApprovalGate()
         self.query_understanding = query_understanding or QueryUnderstanding()
+        self.grounded_answer = GroundedAnswerGenerator(
+            provider=model_provider or load_model_provider_from_env()
+        )
 
     def run(self, request: AgentLoopRequest) -> AgentLoopResult:
         decision = self.router.route(request.message)
@@ -328,6 +334,18 @@ class AgentLoop:
 
         if tool_result.error:
             answer = f"已尝试使用 hybrid repo RAG 检索 `{decision.keyword}`，但工具调用失败。"
+        elif tool_result.evidence_pack is not None:
+            grounded_result = self.grounded_answer.generate(tool_result.evidence_pack)
+            trace_events.append(
+                TraceEvent(
+                    event_type="model_provider_summarized",
+                    status="ok"
+                    if grounded_result.audit_summary.get("status") == "success"
+                    else "error",
+                    summary=_format_audit_summary(grounded_result.audit_summary),
+                )
+            )
+            answer = grounded_result.answer
         elif related_files:
             citations = _format_citations(tool_result.results)
             answer = (
@@ -452,7 +470,7 @@ def _asks_about_unimplemented_v10_stack(message: str) -> bool:
 
 def _capability_status_answer(message: str) -> str:
     if _asks_about_unimplemented_v10_stack(message):
-        return V10_CAPABILITY_STATUS_ANSWER
+        return V11_CAPABILITY_STATUS_ANSWER
     return (
         "V9 提供轻量 embedding retrieval 和 hybrid search；"
         "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant、"

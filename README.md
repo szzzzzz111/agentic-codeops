@@ -6,12 +6,12 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V10 已实现，最新阶段是 V10 Evidence Pack + Context Budget。
+- 当前主线能力：V1-V11 已实现，最新阶段是 V11 Grounded Answer / Model Provider Boundary。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
-- 当前检索方式：deterministic query understanding + repo-local hybrid RAG（lexical + 轻量 deterministic embedding），并在内部生成 Evidence Pack 与字符级 Context Budget 摘要。
+- 当前检索与回答方式：deterministic query understanding + repo-local hybrid RAG（lexical + 轻量 deterministic embedding），内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
-- 当前不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill。
-- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、grounded answer、model provider、memory 或 context compression。
+- 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
+- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、memory 或 context compression。
 
 ## 当前能力
 
@@ -33,6 +33,14 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - citation 使用相对 repo 路径和 1-based 行号；`related_files` 来自 citation 文件路径。
 - `EvidencePack` 将 retrieval results 整理为内部 evidence items，每条 item 包含稳定 `evidence_id`、相对 `file_path`、1-based 行号、`score`、`snippet`、`source_summary`、`included` 和 `truncated`。
 - Context Budget 默认 `max_context_chars=4000`，按 retrieval 既有排序纳入 evidence，必要时裁剪最后一条，并只把摘要写入内部 trace/audit。
+
+### Grounded Answer + Model Provider
+
+- `GroundedAnswerGenerator` 只消费预算内 included evidence snippets 和 citation metadata。
+- 默认 `FakeModelProvider` 是本地 deterministic provider，默认验证不依赖网络、密钥或真实模型输出。
+- 可选 `OpenAICompatibleModelProvider` 通过环境变量启用：`REPOPILOT_MODEL_PROVIDER=openai_compatible`、`REPOPILOT_MODEL_BASE_URL`、`REPOPILOT_MODEL_API_KEY`、`REPOPILOT_MODEL_NAME`。
+- provider 输出必须包含合法 citation，格式为 `relative/path.py:start-end`；无证据、无合法 citation、越界 citation 或 provider 失败时返回保守 fallback。
+- provider audit 只保留在内部 trace，且不记录完整 prompt、完整模型输出、完整 Evidence Pack 或 API key。
 
 ### Safe Repository Tools
 
@@ -109,7 +117,7 @@ curl -X POST http://127.0.0.1:8000/chat \
 ```json
 {
   "trace_id": "trace_xxx",
-  "answer": "已基于 hybrid repo RAG 检索 `UNIQUE_BUG_TOKEN`，找到相关证据：app/example.py:1-3。",
+  "answer": "基于仓库证据，问题 `帮我分析 UNIQUE_BUG_TOKEN` 的相关实现位于 app/example.py:1-3。",
   "related_files": ["app/example.py"],
   "tool_calls": [
     {
@@ -131,6 +139,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> QueryUnderstanding/SearchPlan
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget
+     -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
@@ -145,6 +154,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
 - `app/rag/evidence.py`：提供内部 Evidence Pack 和 deterministic character Context Budget 结构。
+- `app/answering/grounded_answer.py`：提供 grounded answer、citation 校验、fallback 和 provider audit 整理。
+- `app/providers/model_provider.py`：提供 Model Provider 边界、fake provider、OpenAI-compatible provider 和环境变量配置。
 - `app/tools/tool_executor.py`：统一包装只读代码搜索、hybrid repo RAG 和 skill loader 工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
 - `app/tools/skill_loader.py`：提供 Skill Metadata Loader 和 Skill Content Loader。
@@ -196,15 +207,21 @@ V9 保留 lexical retrieval 作为一等通道，通过 hybrid fusion 合并 lex
 
 V10 的 trace/audit 只记录 Evidence Pack 摘要：`evidence_items`、`included_count`、`omitted_count`、`truncated_count`、`budget_used_chars` 和 `max_context_chars`。V10 不实现 grounded answer、model provider、prompt assembly、query rewrite、rerank、memory 或 context compression。
 
+### V11：Grounded Answer / Model Provider Boundary
+
+在 V10 Evidence Pack / Context Budget 之后加入 grounded answer 和 Model Provider Boundary。默认使用本地 deterministic fake provider；显式配置后可使用 OpenAI-compatible provider。模型只消费预算内 included evidence，不参与检索规划、工具调用、query rewrite、rerank、memory 或多步 agent 决策。
+
+V11 保持 `/chat` 顶层响应 contract 不变，grounded answer 写入现有 `answer` 字段。Provider audit 只保留在内部 trace，不进入 `/chat.tool_calls` 或顶层响应。
+
 ## 当前非目标
 
-- 真实 LLM 接入。
+- 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
 - 技能执行。
 - SandboxRunner 实现。
 - trace 持久化审计。
 - 反思检查和 eval。
 - 真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant。
-- LLM query rewrite、rerank、grounded answer、model provider 和 context compression。
+- LLM query rewrite、rerank 和 context compression。
 - Memory。
 - 自动修改代码。
 - shell 执行。

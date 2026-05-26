@@ -36,7 +36,8 @@ def test_chat_endpoint_returns_tool_results_for_unique_keyword(
     body = response.json()
     assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
     assert body["trace_id"].startswith("trace_")
-    assert "UNIQUE_BUG_TOKEN" in body["answer"]
+    assert "基于仓库证据" in body["answer"]
+    assert "app/service.py:1-1" in body["answer"]
     assert body["related_files"] == ["app/service.py"]
     assert body["tool_calls"] == [
         {
@@ -162,7 +163,10 @@ def test_chat_endpoint_keeps_contract_for_v8_repo_rag(tmp_path: Path) -> None:
     body = response.json()
     assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
     assert "evidence_pack" not in body
+    assert "provider_audit" not in body
     assert all("evidence_pack" not in tool_call for tool_call in body["tool_calls"])
+    assert all("prompt" not in tool_call for tool_call in body["tool_calls"])
+    assert all("provider" not in tool_call for tool_call in body["tool_calls"])
     assert body["related_files"] == ["app/harness/kernel.py"]
     assert "app/harness/kernel.py:1-" in body["answer"]
 
@@ -181,6 +185,8 @@ def test_docs_keep_v10_route_map_consistent() -> None:
     assert "V12：Query Rewrite + Rerank" in combined
     assert "V10：Query Rewrite / Rerank / Context Budget" not in combined
     assert "V10 = Query Rewrite / Rerank / Context Budget" not in combined
+    assert "V11 已完成 Grounded Answer / Model Provider Boundary" in combined
+    assert "V11 不实现 query rewrite、rerank、memory" in combined
 
 
 def test_long_term_specs_allow_repo_local_hybrid_rag() -> None:

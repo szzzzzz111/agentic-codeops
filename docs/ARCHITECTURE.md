@@ -9,6 +9,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> QueryUnderstanding/SearchPlan
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget
+     -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
@@ -21,10 +22,12 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `EmbeddingRepoRetriever` 使用本地确定性 embedding provider 对 repo chunk 做轻量 embedding retrieval。
 - `HybridRepoRetriever` 负责合并 lexical 与 embedding retrieval 结果。
 - `EvidencePack` / `ContextBudget` 在 retrieval 后生成内部证据输入层和字符级预算摘要。
+- `GroundedAnswerGenerator` 只消费预算内 included evidence，并负责 provider 调用、citation 校验、fallback 和脱敏 audit 摘要。
+- `ModelProvider` 默认使用本地 deterministic fake provider；显式配置后可调用 OpenAI-compatible provider。
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
-- Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary 和 Evidence Pack audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
+- Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 返回带 citation 的只读检索结果，但仍不接真实 LLM、不自动修改代码、不执行 shell。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答；默认不接真实 LLM、不自动修改代码、不执行 shell。显式配置后可通过 OpenAI-compatible provider 生成 grounded answer。
 
 ## V2 工具层：安全只读仓库能力
 
@@ -93,9 +96,9 @@ ChatService
 
 ## 暂不引入
 
-- 真实 LLM。
+- 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
 - LangGraph。
-- 真实外部 embedding 服务、向量库、LLM query rewrite、rerank、grounded answer、model provider 或 context compression。
+- 真实外部 embedding 服务、向量库、LLM query rewrite、rerank 或 context compression。
 - Memory。
 - 多 Agent。
 - 自动修改代码。
@@ -130,7 +133,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 再处理 Grounded Answer / Model Provider Boundary；V12 再处理 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 再处理 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -173,3 +176,26 @@ ToolExecutor(repo_rag)
 - 内部 audit summary 固定包含 `evidence_items`、`included_count`、`omitted_count`、`truncated_count`、`budget_used_chars` 和 `max_context_chars`。
 - `ToolExecutionResult.evidence_pack` 只在内部持有，不进入 `call_summary()`、`/chat.tool_calls` 或 `/chat` 顶层响应。
 - V10 不实现 grounded answer、model provider、prompt assembly、query rewrite、rerank、memory 或 context compression。
+
+## V11 架构补充：Grounded Answer + Model Provider Boundary
+
+V11 在 V10 Evidence Pack / Context Budget 之后增加回答生成边界。当前执行链路为：
+
+```text
+AgentLoop
+  -> ToolExecutor(repo_rag)
+  -> EvidencePack / ContextBudget
+  -> GroundedAnswerGenerator
+  -> ModelProvider(fake by default, openai_compatible when configured)
+  -> citation validation / fallback
+```
+
+边界约束：
+
+- `GroundedAnswerGenerator` 只消费预算内 included evidence snippets 和 citation metadata，不直接读仓库、不执行工具、不修改代码。
+- 默认 `FakeModelProvider` 是本地 deterministic provider；默认验证不需要网络、API key 或真实模型输出。
+- `OpenAICompatibleModelProvider` 只在显式环境变量配置后启用，使用 `httpx` 调用 chat completions 兼容接口。
+- provider 输出必须引用 provided evidence citation，格式为 `relative/path.py:start-end`；无 citation、越界 citation、provider error 或 timeout 均返回保守 fallback。
+- provider audit 只记录 provider name、model、status、error class 或 fallback reason，不记录完整 prompt、完整模型输出、完整 Evidence Pack、API key 或本机绝对路径。
+- `/chat` 顶层响应仍只要求 `trace_id`、`answer`、`related_files` 和 `tool_calls`；provider audit 不进入 `tool_calls`。
+- V11 不实现 query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。

@@ -3,13 +3,13 @@
 ## 当前状态
 
 ```text
-当前工作分支：codex/v10-evidence-pack-context-budget
+当前工作分支：feature/v11-grounded-answer-model-provider-boundary
 当前基线分支：main
-当前活跃 OpenSpec change：无
-最近完成阶段：V10 Evidence Pack + Context Budget（已提交并归档）
+当前活跃 OpenSpec change：v11-grounded-answer-model-provider-boundary
+最近完成阶段：V11 Grounded Answer / Model Provider Boundary（已实现，待最终 review、提交和归档）
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V10 已完成；V10 实现已落地，内部 self-review 和外部 review 均无阻塞发现，已提交并归档。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V11 已完成实现；V11 已把 V10 Evidence Pack / Context Budget 接入 grounded answer 和 Model Provider Boundary，默认 fake provider 保持离线可验证，OpenAI-compatible provider 通过环境变量显式启用。
 
 V8 已归档到：
 
@@ -30,10 +30,28 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> QueryUnderstanding/SearchPlan
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget
+     -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
-`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary 只保留在内部 `trace_events_internal`，不作为 `/chat` 顶层字段暴露。
+`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary 只保留在内部 `trace_events_internal`，不作为 `/chat` 顶层字段暴露。
+
+## V11 实现摘要
+
+- 新增 `app/providers/model_provider.py`，提供 `ModelProvider` 边界、deterministic `FakeModelProvider`、`OpenAICompatibleModelProvider` 和环境变量 provider factory。
+- 新增 `app/answering/grounded_answer.py`，提供 grounded answer、citation validation、fallback 和 provider audit 汇总。
+- `AgentLoop` 在 successful `repo_rag` 且存在 Evidence Pack 后调用 `GroundedAnswerGenerator`；工具错误仍沿用原有失败回答。
+- citation 格式为 `relative/path.py:start-end`；无合法 citation、越界 citation、provider error、timeout 或 invalid response 均降级为保守 fallback。
+- 默认 provider 为 fake，默认验证不需要网络、API key 或真实模型输出。
+- OpenAI-compatible provider 使用运行时依赖 `httpx`，通过 `REPOPILOT_MODEL_PROVIDER=openai_compatible`、`REPOPILOT_MODEL_BASE_URL`、`REPOPILOT_MODEL_API_KEY`、`REPOPILOT_MODEL_NAME` 显式启用。
+- provider audit 不进入 `/chat` 顶层字段或 `tool_calls`，且不记录完整 prompt、完整模型输出、完整 Evidence Pack 或 API key。
+- V11 仍不实现 query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
+- 当前验证：
+  - `openspec validate v11-grounded-answer-model-provider-boundary`：通过。
+  - `pytest tests\test_model_provider.py tests\test_grounded_answer.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：54 passed。
+  - `openspec validate --all`：8 passed, 0 failed。
+  - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 96 passed, 1 skipped；`ruff check .` All checks passed。
+  - `git diff --check`：通过，仅有 CRLF 换行提示。
 
 ## 已完成阶段摘要
 
@@ -148,9 +166,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 开始 V11 前先创建 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
-2. V11 目标应保持为 Grounded Answer / Model Provider Boundary，不要把 V12 的 Query Rewrite + Rerank 或 V13 Memory 提前塞入。
-3. 新阶段进入实现前先做 plan/review；阶段结束前继续执行 Stage Debt Sweep。
+1. 完成 V11 最终验证：`openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`、`git diff --check`。
+2. 完成 V11 self-review / 外部 review 后提交并归档 change。
+3. 归档后开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。
