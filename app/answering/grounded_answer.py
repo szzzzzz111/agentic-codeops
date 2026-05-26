@@ -83,7 +83,7 @@ def validate_answer_citations(
     allowed = {
         f"{item.file_path}:{item.start_line}-{item.end_line}"
         for item in evidence_pack.items
-        if item.included
+        if item.included and item.snippet
     }
     citations: list[str] = []
     invalid_seen = False

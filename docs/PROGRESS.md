@@ -89,8 +89,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 2026-05-26，V11 OpenSpec 计划验证：`openspec validate v11-grounded-answer-model-provider-boundary`：通过。
 - 2026-05-26，V11 provider / grounded answer 小切片验证：`pytest tests\test_model_provider.py tests\test_grounded_answer.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：54 passed。
+- 2026-05-26，V11 dependency 变更：`httpx>=0.27.0` 已从 dev dependency 提升为 `[project].dependencies` 运行时依赖，用于可选 OpenAI-compatible provider；默认验证仍不调用真实网络。
 - 2026-05-26，V11 全量 OpenSpec 验证：`openspec validate --all`：8 passed, 0 failed。
 - 2026-05-26，V11 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 96 passed, 1 skipped；`ruff check .` All checks passed。
+- 2026-05-26，V11 外部 review follow-up：确认 `httpx>=0.27.0` 已在 `[project].dependencies`，并补充 PROGRESS 依赖记录；修正 citation 校验 allowed 集合，使其只接受实际传给 provider 的 included 且非空 snippet evidence；`pytest tests\test_grounded_answer.py`：9 passed。
+- 2026-05-26，V11 外部 review follow-up 验证：`openspec validate --all`：8 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed；`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-26，V11 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
 
 - 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`openspec validate v10-evidence-pack-context-budget`：通过。

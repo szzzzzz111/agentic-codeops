@@ -50,8 +50,12 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   - `openspec validate v11-grounded-answer-model-provider-boundary`：通过。
   - `pytest tests\test_model_provider.py tests\test_grounded_answer.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：54 passed。
   - `openspec validate --all`：8 passed, 0 failed。
-  - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 96 passed, 1 skipped；`ruff check .` All checks passed。
+  - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed。
   - `git diff --check`：通过，仅有 CRLF 换行提示。
+- 外部 review follow-up：
+  - 已确认 `httpx>=0.27.0` 位于 `[project].dependencies`，并在 PROGRESS 中补充运行时依赖变更记录。
+  - 已修正 citation 校验 allowed 集合，使其只接受实际传给 provider 的 included 且非空 snippet evidence。
+  - `pytest tests\test_grounded_answer.py`：9 passed。
 
 ## 已完成阶段摘要
 

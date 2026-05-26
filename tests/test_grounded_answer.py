@@ -96,6 +96,28 @@ def test_validate_answer_citations_rejects_absolute_or_unprovided_paths() -> Non
     assert wrong_line_result.reason == "invalid_citation"
 
 
+def test_validate_answer_citations_rejects_included_item_without_provider_snippet() -> None:
+    pack = build_evidence_pack(
+        [
+            {
+                "file_path": "app/empty.py",
+                "start_line": 1,
+                "end_line": 1,
+                "line_text": "",
+                "score": 1,
+            }
+        ],
+        original_query="empty evidence?",
+        question_type="implementation_explanation",
+        retrieval_mode="hybrid",
+    )
+
+    result = validate_answer_citations("答案来自 app/empty.py:1-1", pack)
+
+    assert not result.valid
+    assert result.reason == "invalid_citation"
+
+
 def test_grounded_answer_uses_provider_output_when_citations_are_valid() -> None:
     provider = StaticProvider("PaymentService 实现了 capture_invoice。 app/service.py:10-12")
     generator = GroundedAnswerGenerator(provider=provider)
