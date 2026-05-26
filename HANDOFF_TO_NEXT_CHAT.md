@@ -121,7 +121,7 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
   - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
   - `git diff --check`：通过，仅有 CRLF 换行提示
 - V9 文档漂移修正：
-  - 已补齐 README 的 V9 阶段历史；当前路线图已更新为“已完成至 V10，后续从 V11 开始”。
+  - 已补齐 README 的 V9 阶段历史；当时路线图已更新为“已完成至 V10，后续从 V11 开始”，当前路线已推进到 V11 已归档、后续从 V12 开始。
   - 已修正 ARCHITECTURE 当前架构段落中仍指向 V8 lexical RAG 的过期措辞。
   - 已补充本 handoff 的 V9 完整摘要。
   - 当前未提交工作区验证：`openspec validate --all` 7 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1` 通过，`pytest` 67 passed, 1 skipped，`ruff check .` All checks passed；`git diff --check` 通过，仅有 CRLF 提示。
