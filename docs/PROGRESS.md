@@ -32,6 +32,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 可审计优先：model/tool/skill/memory 调用都要有结构化摘要和脱敏策略。
 - 可验证优先：每个阶段都要有最小测试和默认验证命令。
 - 可进化 Skill：skill 不是一次性 prompt 文件，后续应逐步支持 metadata、content、selection、tool limits、version、review 和演进记录。
+- 检索 grep-first：RepoPilot adopts a grep-first, RAG-assisted retrieval stance；lexical/path/symbol/exact match 是代码仓库分析的主要可审计基线，embedding/hybrid retrieval 只作为语义召回辅助。
 
 建议后续路线：
 
@@ -95,6 +96,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-26，V11 外部 review follow-up：确认 `httpx>=0.27.0` 已在 `[project].dependencies`，并补充 PROGRESS 依赖记录；修正 citation 校验 allowed 集合，使其只接受实际传给 provider 的 included 且非空 snippet evidence；`pytest tests\test_grounded_answer.py`：9 passed。
 - 2026-05-26，V11 外部 review follow-up 验证：`openspec validate --all`：8 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed；`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-26，V11 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-26，V11 review 前新增设计观察：RepoPilot 采用 grep-first, RAG-assisted 检索立场；V11 Grounded Answer 应优先基于可审计的 deterministic lexical/path/symbol evidence，V12 Query Rewrite / Rerank 应服务于该基线，不默认转向重型向量库或 embedding cache。
 
 - 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`openspec validate v10-evidence-pack-context-budget`：通过。
 - 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`pytest tests\test_evidence_pack.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：40 passed。

@@ -12,6 +12,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 V10 已经在 successful retrieval 后构建内部 Evidence Pack，并记录 `evidence_pack_summarized` trace。V11 只在 retrieval 完成后增加回答生成边界，不改变 query understanding、retrieval、permission、approval 或 safe file tools。
 
+本阶段继承 grep-first, RAG-assisted 检索立场：deterministic lexical/path/symbol search 是主要可审计基线，embedding/hybrid retrieval 只作为语义召回辅助。V11 grounded answer 只消费 Evidence Pack 中预算内证据，不让模型绕过 grep-like evidence 自由生成。
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -58,6 +60,10 @@ Provider audit 只记录 provider name、model、status、latency/error class �
 ### Decision 6: `httpx` 是显式批准的运行时依赖
 
 V11 允许将 `httpx` 加入 `[project].dependencies`。OpenAI-compatible provider 使用 `httpx`，测试必须通过 mock transport 覆盖，不把真实网络调用放入默认验证。
+
+### Decision 7: Grounded Answer 继承 grep-first 检索基线
+
+V11 不改变 retrieval 排序或召回策略。Grounded Answer 只消费上游 Evidence Pack，其中 lexical/path/symbol evidence 是主要可审计基线，embedding/hybrid evidence 仅作为辅助召回结果的一部分。后续 V12 Query Rewrite / Rerank 必须服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache。
 
 ## Error Behavior
 

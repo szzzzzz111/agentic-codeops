@@ -4,7 +4,7 @@
 
 ### Requirement: 系统基于预算内证据生成 grounded answer
 
-系统 SHALL 在 repo-local retrieval 成功并产生 Evidence Pack 后，使用预算内 included evidence snippets 生成 grounded answer。Grounded answer MUST NOT 直接读取仓库文件、执行工具、修改代码、执行 shell、执行 skill 或访问 omitted/truncated snippets。
+系统 SHALL 在 repo-local retrieval 成功并产生 Evidence Pack 后，使用预算内 included evidence snippets 生成 grounded answer。Grounded answer MUST 优先基于可审计的 deterministic lexical/path/symbol evidence 和对应 citation metadata 组织回答。Grounded answer MUST NOT 直接读取仓库文件、执行工具、修改代码、执行 shell、执行 skill、访问 omitted/truncated snippets 或让模型自由编造未被 evidence 支撑的结论。
 
 #### Scenario: 有证据时生成带 citation 的回答
 

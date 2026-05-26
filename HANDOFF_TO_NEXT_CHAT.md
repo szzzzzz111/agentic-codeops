@@ -11,6 +11,8 @@
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V11 已完成实现；V11 已把 V10 Evidence Pack / Context Budget 接入 grounded answer 和 Model Provider Boundary，默认 fake provider 保持离线可验证，OpenAI-compatible provider 通过环境变量显式启用。
 
+新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval 只作为语义召回辅助。V11 Grounded Answer 应优先消费可审计证据，V12 Query Rewrite / Rerank 应服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache。
+
 V8 已归档到：
 
 ```text

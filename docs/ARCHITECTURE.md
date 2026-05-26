@@ -29,6 +29,18 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答；默认不接真实 LLM、不自动修改代码、不执行 shell。显式配置后可通过 OpenAI-compatible provider 生成 grounded answer。
 
+## 检索设计原则：grep-first, RAG-assisted
+
+RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexical/path/symbol search remains the primary auditable baseline, while embedding/hybrid retrieval is an auxiliary channel for semantic recall.
+
+对代码仓库分析任务，函数名、类名、错误名、配置 key、路径、测试名和调用点等 exact match 往往比泛语义 embedding 更可靠、更便宜、更可审计。因此当前和后续检索链路应遵守：
+
+- deterministic code search、lexical search、path search 和 symbol search 是主通道。
+- embedding retrieval、hybrid retrieval、query rewrite 和 rerank 只能辅助召回或排序，不替代 grep-like baseline。
+- Evidence Pack 和 Grounded Answer 应优先消费可审计的 lexical/path/symbol evidence，并通过 citation 约束回答。
+- V12 Query Rewrite / Rerank 必须服务于 grep-first 检索基线，不能把系统改成默认向量库优先。
+- 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
+
 ## V2 工具层：安全只读仓库能力
 
 V2 新增安全只读文件工具：
@@ -131,7 +143,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 ## 后续路线调整
 
-V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
+V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
 V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 再处理 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 

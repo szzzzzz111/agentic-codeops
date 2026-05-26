@@ -2,13 +2,13 @@
 
 ## Purpose
 
-记录 V11 引入的 grounded answer 和 model provider boundary：系统只基于 V10 Evidence Pack / Context Budget 中预算内 included evidence 生成回答，默认使用本地 deterministic fake provider，显式配置后可使用 OpenAI-compatible provider。该能力不让模型参与检索规划、query rewrite、rerank、工具调用、代码修改、memory 或多步 agent 决策。
+记录 V11 引入的 grounded answer 和 model provider boundary：系统只基于 V10 Evidence Pack / Context Budget 中预算内 included evidence 生成回答，默认使用本地 deterministic fake provider，显式配置后可使用 OpenAI-compatible provider。该能力继承 grep-first, RAG-assisted 检索立场，优先基于可审计的 lexical/path/symbol evidence 进行 citation 约束回答，不让模型参与检索规划、query rewrite、rerank、工具调用、代码修改、memory 或多步 agent 决策。
 
 ## Requirements
 
 ### Requirement: 系统基于预算内证据生成 grounded answer
 
-系统 SHALL 在 repo-local retrieval 成功并产生 Evidence Pack 后，使用预算内 included evidence snippets 生成 grounded answer。Grounded answer MUST NOT 直接读取仓库文件、执行工具、修改代码、执行 shell、执行 skill 或访问 omitted/truncated snippets。
+系统 SHALL 在 repo-local retrieval 成功并产生 Evidence Pack 后，使用预算内 included evidence snippets 生成 grounded answer。Grounded answer MUST 优先基于可审计的 deterministic lexical/path/symbol evidence 和对应 citation metadata 组织回答。Grounded answer MUST NOT 直接读取仓库文件、执行工具、修改代码、执行 shell、执行 skill、访问 omitted/truncated snippets 或让模型自由编造未被 evidence 支撑的结论。
 
 #### Scenario: 有证据时生成带 citation 的回答
 
