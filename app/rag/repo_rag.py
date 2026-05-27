@@ -131,6 +131,13 @@ class HybridRepoRetriever:
     def retrieve(self, repo_path: str, plan: SearchPlan) -> list[RetrievalResult]:
         lexical_results = self.lexical_retriever.retrieve(repo_path, plan)
         embedding_results = self.embedding_retriever.retrieve(repo_path, plan)
+        if _requires_lexical_anchor(plan):
+            lexical_keys = {_citation_key(result.citation) for result in lexical_results}
+            embedding_results = [
+                result
+                for result in embedding_results
+                if _citation_key(result.citation) in lexical_keys
+            ]
         fused_results = hybrid_fuse(
             lexical_results,
             embedding_results,
@@ -267,6 +274,10 @@ def _normalized(score: int, max_score: int) -> float:
 
 def _citation_key(citation: Citation) -> tuple[str, int, int]:
     return (citation.file_path, citation.start_line, citation.end_line)
+
+
+def _requires_lexical_anchor(plan: SearchPlan) -> bool:
+    return bool(plan.path_hints or plan.symbols)
 
 
 def _deduplicate(results: list[RetrievalResult]) -> list[RetrievalResult]:

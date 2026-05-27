@@ -3,15 +3,15 @@
 ## 当前状态
 
 ```text
-当前工作分支：feature/v11-grounded-answer-model-provider-boundary
+当前工作分支：feature/v12-query-rewrite-rerank
 当前基线分支：main
-当前活跃 OpenSpec change：无
-最近完成阶段：V11 Grounded Answer / Model Provider Boundary（已实现、review、提交并归档）
+当前活跃 OpenSpec change：v12-query-rewrite-rerank
+最近完成阶段：V11 Grounded Answer / Model Provider Boundary（已实现、review、提交并归档）；V12 当前处于 active implementation
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V11 已完成实现；V11 已把 V10 Evidence Pack / Context Budget 接入 grounded answer 和 Model Provider Boundary，默认 fake provider 保持离线可验证，OpenAI-compatible provider 通过环境变量显式启用。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V11 已归档；V12 当前 active implementation 在 V11 grounded answer / Model Provider Boundary 之前加入 deterministic multi-query rewrite 和 before-Evidence rerank，默认不调用真实 LLM、网络或 API key。
 
-新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval 只作为语义召回辅助。V11 Grounded Answer 应优先消费可审计证据，V12 Query Rewrite / Rerank 应服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache。
+新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
 V8 已归档到：
 
@@ -35,14 +35,38 @@ openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/
 
 ```text
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
-  -> QueryUnderstanding/SearchPlan
+  -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
-`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary 只保留在内部 `trace_events_internal`，不作为 `/chat` 顶层字段暴露。
+`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary、V12 的 rewrite/rerank audit summary 只保留在内部 `trace_events_internal`，不作为 `/chat` 顶层字段暴露。
+
+## V12 实现摘要
+
+- 新增 `app/rag/query_rewrite.py`，提供 `QueryRewriteProvider` 边界、`QueryRewriteResult`、`QueryVariant` 和默认 deterministic Code Evidence variants。
+- 新增 `app/rag/rerank.py`，提供 before-Evidence deterministic rerank 边界和 fallback。
+- `ToolExecutor.search_repo_rag` 对 rewrite variants 执行 bounded multi-query retrieval，合并去重后 rerank，再构建 Evidence Pack；original variant 为空时不跳过 rewrite-only variants。
+- `HybridRepoRetriever` 对包含 `symbols` 或 `path_hints` 的查询保持 lexical anchor，避免 rewrite 模板词产生 embedding-only 误召回。
+- `AgentLoop` 记录 `query_rewrite_summarized` 和 `rerank_summarized` 内部 trace；`/chat.tool_calls` 不暴露完整 variants、完整 retrieval results 或完整 Evidence Pack。
+- V12 保持 Evidence Pack budget/summary 和 grounded answer citation validation 语义不变。
+- 当前验证：
+  - `openspec validate v12-query-rewrite-rerank`：通过。
+  - `pytest tests\test_query_rewrite.py tests\test_repo_rerank.py tests\test_agent_harness_kernel.py -q`：41 passed。
+  - `pytest tests\test_query_rewrite.py tests\test_repo_rerank.py tests\test_repo_rag.py tests\test_agent_harness_kernel.py tests\test_chat_api.py tests\test_evidence_pack.py tests\test_grounded_answer.py -q`：72 passed。
+  - `openspec validate --all`：8 passed, 0 failed。
+  - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 104 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+  - `git diff --check`：通过，仅有 CRLF 换行提示。
+- V12 外部 review follow-up：
+  - 已修正 original variant 为空时跳过 rewrite-only variants 的召回问题。
+  - 已将 variant 去重改为按 `query_text`、`keywords`、`symbols`、`path_hints` 分字段归一化。
+  - 已为 symbol/path 查询加入 lexical anchor，避免 rewrite 模板词产生 embedding-only 误召回。
+  - `pytest tests/test_chat_api.py::test_chat_endpoint_returns_empty_related_files_when_keyword_is_missing tests/test_repo_rag.py tests/test_query_rewrite.py tests/test_tool_executor.py tests/test_repo_rerank.py -q`：19 passed。
+  - `openspec validate v12-query-rewrite-rerank`：通过。
+  - `openspec validate --all`：8 passed, 0 failed。
+  - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 108 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 
 ## V11 实现摘要
 
@@ -109,13 +133,13 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- `.harness/allowed_files.md` 已同步为 V10 implementation 边界。
-- `.harness/review_checklist.md` 已同步为 V10 implementation review 和 verification 清单，并保留 plan/review 停止点记录。
+- `.harness/allowed_files.md` 已同步为 V12 implementation 边界。
+- `.harness/review_checklist.md` 已同步为 V12 implementation review 和 verification 清单，并保留 plan/review 停止点记录。
 - `openspec/changes/v10-evidence-pack-context-budget/` 已创建 proposal、design、tasks 和 `specs/repo-query-understanding-rag/spec.md`。
 - `openspec/changes/v9-embedding-hybrid-search/` 已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`。
 - `openspec/changes/v10-evidence-pack-context-budget/` 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`。
 - `openspec/specs/repo-query-understanding-rag/spec.md` 已同步 V10 长期规格，包括 Evidence Pack、Context Budget 和 `min_fused_score=0.35` 口径。
-- 当前已实现 V10 运行时代码，内部 self-review 和外部 review 均无阻塞发现，已提交并归档。
+- 当前已实现 V12 运行时代码，内部 self-review 和外部 review follow-up 已处理；尚未提交或归档。
 - V9 验证结果：
   - `openspec validate --all`：6 passed, 0 failed
   - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
@@ -180,9 +204,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. Harness 流程已在 V12 前瘦身：`scripts/check_stage_docs.ps1` 可扫描阶段文档漂移，`scripts/check_stage_closeout.ps1` 可做归档收口检查，`.harness/templates/stage_closeout.md` 和 `.harness/templates/stage_planning.md` 提供 closeout / planning 模板，`scripts/verify.ps1` 已接入 drift scan。
-2. 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
-3. V12 plan 必须继承 grep-first, RAG-assisted：rewrite/rerank 服务 lexical/path/symbol baseline，不默认切换到向量库优先。
+1. 继续完成 V12 最终 `git diff --check` 和 self-review。
+2. 若无新增外部 review 阻塞，再提交 V12 implementation。
+3. V12 archive 前同步长期 specs 并确认 `.harness/allowed_files.md` / `.harness/review_checklist.md` 不再把 V12 写成 active。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

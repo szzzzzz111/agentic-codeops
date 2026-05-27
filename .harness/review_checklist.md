@@ -1,6 +1,6 @@
 # 当前 Review 清单
 
-当前活跃阶段：无。V11 `v11-grounded-answer-model-provider-boundary` 已完成实现、review、提交并归档。
+当前活跃阶段：V12 `v12-query-rewrite-rerank` planning / implementation。
 
 ## V11 Archive Closeout
 
@@ -17,11 +17,24 @@
 
 ## Next Stage Gate
 
-- [ ] 使用 `.harness/templates/stage_planning.md` 先做阶段级规划，明确 capability、scope、non-goals、依赖和 human decision。
-- [ ] 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal、design、tasks 和 spec delta。
-- [ ] V12 必须继承 grep-first, RAG-assisted 检索立场：rewrite/rerank 服务于 lexical/path/symbol baseline，不默认切换到向量库优先。
-- [ ] V12 开工前同步 `.harness/allowed_files.md` 和本 checklist，明确允许修改的代码、测试、docs 和 OpenSpec artifacts。
-- [ ] V12 plan review 通过前，不修改运行时代码或测试。
+- [x] 使用 `.harness/templates/stage_planning.md` 先做阶段级规划，明确 capability、scope、non-goals、依赖和 human decision。
+- [x] 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal、design、tasks 和 spec delta。
+- [x] V12 必须继承 grep-first, RAG-assisted 检索立场：rewrite/rerank 服务于 lexical/path/symbol baseline，不默认切换到向量库优先。
+- [x] V12 开工前同步 `.harness/allowed_files.md` 和本 checklist，明确允许修改的代码、测试、docs 和 OpenSpec artifacts。
+- [x] V12 plan review 通过前，不修改运行时代码或测试。
+
+## V12 Implementation Review
+
+- [x] OpenSpec change 包含 proposal、design、tasks，以及 `repo-query-understanding-rag` / `agent-loop-tool-execution` spec delta。
+- [x] deterministic rewrite 永远保留 `original` variant，额外 variants 最多 3 条，id 和模板顺序稳定。
+- [x] rewrite 不改变 route、权限决策或整体 `question_type`。
+- [x] rerank 只作用于 retrieval results 层，Evidence Pack budget/summary 和 grounded answer citation validation 语义不变。
+- [x] 每个 rewrite variant 都执行 hybrid retrieval；不得因 original variant 为空跳过 rewrite-only variants。
+- [x] 原始 query 的 path/symbol/exact token 直接命中在容量允许时不被 variant-only 结果挤掉。
+- [x] symbol/path 查询保持 lexical anchor，embedding-only 弱命中不得绕过 grep-first baseline。
+- [x] rewrite/rerank audit 只进入内部 trace，不进入 `/chat` 顶层字段或完整 `tool_calls`。
+- [x] capability status 区分 deterministic rewrite/rerank 已实现和真实 LLM rewrite/rerank 未实现。
+- [x] 默认验证不依赖真实网络、API key 或真实模型输出。
 
 ## Reusable Archive Closeout Gate
 

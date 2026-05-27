@@ -40,6 +40,11 @@ V11_CAPABILITY_STATUS_ANSWER = (
     "默认 fake provider 保持离线可验证，显式配置后可使用 OpenAI-compatible provider；"
     "当前未实现 query rewrite、rerank、memory 或 context compression。"
 )
+V12_CAPABILITY_STATUS_ANSWER = (
+    "V12 提供 deterministic query rewrite 和 rerank；"
+    "默认不启用真实 LLM rewrite/rerank；"
+    "当前未实现 memory 或 context compression。"
+)
 
 
 @dataclass(frozen=True)
@@ -311,6 +316,36 @@ class AgentLoop:
             )
         )
         channel_summary = _channel_audit_summary(tool_result.audit_summary)
+        rewrite_summary = _prefixed_audit_summary(
+            tool_result.audit_summary,
+            "rewrite_",
+        )
+        rerank_summary = _prefixed_audit_summary(
+            tool_result.audit_summary,
+            "rerank_",
+        )
+        if rewrite_summary:
+            trace_events.append(
+                TraceEvent(
+                    event_type="query_rewrite_summarized",
+                    tool_name=tool_result.tool_name,
+                    status="ok"
+                    if rewrite_summary.get("rewrite_status") == "success"
+                    else "error",
+                    summary=_format_audit_summary(rewrite_summary),
+                )
+            )
+        if rerank_summary:
+            trace_events.append(
+                TraceEvent(
+                    event_type="rerank_summarized",
+                    tool_name=tool_result.tool_name,
+                    status="ok"
+                    if rerank_summary.get("rerank_status") == "success"
+                    else "error",
+                    summary=_format_audit_summary(rerank_summary),
+                )
+            )
         if channel_summary:
             trace_events.append(
                 TraceEvent(
@@ -469,6 +504,9 @@ def _asks_about_unimplemented_v10_stack(message: str) -> bool:
 
 
 def _capability_status_answer(message: str) -> str:
+    lower = message.lower()
+    if any(term in lower for term in ("query rewrite", "rerank")):
+        return V12_CAPABILITY_STATUS_ANSWER
     if _asks_about_unimplemented_v10_stack(message):
         return V11_CAPABILITY_STATUS_ANSWER
     return (
@@ -517,17 +555,33 @@ def _format_audit_summary(audit_summary: dict[str, str | int | float]) -> str:
 def _channel_audit_summary(
     audit_summary: dict[str, str | int | float],
 ) -> dict[str, str | int | float]:
-    evidence_keys = {
+    hidden_prefixes = ("rewrite_", "rerank_")
+    hidden_keys = {
         "evidence_items",
         "included_count",
         "omitted_count",
         "truncated_count",
         "budget_used_chars",
         "max_context_chars",
+        "merged_results",
+        "variant_count",
     }
     return {
-        key: value for key, value in audit_summary.items() if key not in evidence_keys
+        key: value
+        for key, value in audit_summary.items()
+        if key not in hidden_keys
+        and not any(key.startswith(prefix) for prefix in hidden_prefixes)
     }
+
+
+def _prefixed_audit_summary(
+    audit_summary: dict[str, str | int | float],
+    prefix: str,
+) -> dict[str, str | int | float]:
+    summary = {key: value for key, value in audit_summary.items() if key.startswith(prefix)}
+    if prefix == "rewrite_" and "variant_count" in audit_summary:
+        summary["variant_count"] = audit_summary["variant_count"]
+    return summary
 
 
 def _is_absolute_path(file_path: str) -> bool:

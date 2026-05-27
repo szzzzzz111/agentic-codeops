@@ -6,12 +6,12 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V11 已实现，最新阶段是 V11 Grounded Answer / Model Provider Boundary。
+- 当前主线能力：V1-V11 已归档；V12 Query Rewrite + Rerank 正在 active implementation。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
-- 当前检索与回答方式：deterministic query understanding + repo-local hybrid RAG（lexical + 轻量 deterministic embedding），内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
+- 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
 - 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
-- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、rerank、memory 或 context compression。
+- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、memory 或 context compression。
 
 ## 当前能力
 
@@ -136,9 +136,9 @@ curl -X POST http://127.0.0.1:8000/chat \
 
 ```text
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
-  -> QueryUnderstanding/SearchPlan
+  -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -153,6 +153,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/harness/kernel.py`：提供 RequestRouter、QueryUnderstanding 接入、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
+- `app/rag/query_rewrite.py`：提供 deterministic multi-query rewrite 边界和 Code Evidence variants。
+- `app/rag/rerank.py`：提供 before-Evidence deterministic rerank 边界。
 - `app/rag/evidence.py`：提供内部 Evidence Pack 和 deterministic character Context Budget 结构。
 - `app/answering/grounded_answer.py`：提供 grounded answer、citation 校验、fallback 和 provider audit 整理。
 - `app/providers/model_provider.py`：提供 Model Provider 边界、fake provider、OpenAI-compatible provider 和环境变量配置。
@@ -213,6 +215,12 @@ V10 的 trace/audit 只记录 Evidence Pack 摘要：`evidence_items`、`include
 
 V11 保持 `/chat` 顶层响应 contract 不变，grounded answer 写入现有 `answer` 字段。Provider audit 只保留在内部 trace，不进入 `/chat.tool_calls` 或顶层响应。
 
+### V12：Query Rewrite + Rerank
+
+在 V11 grounded answer 边界之前的检索链路加入 bounded deterministic multi-query rewrite 和 before-Evidence rerank。默认 rewrite provider 永远保留 `original` variant，并按 `definition -> usage -> configuration -> tests` 生成最多 3 条 Code Evidence variants；rerank 只在 retrieval results 层选择最多 `SearchPlan.max_results` 条结果进入 Evidence Pack。
+
+V12 保持 Evidence Pack budget/summary 和 grounded answer citation validation 语义不变；rewrite/rerank audit 只保留在内部 trace，不进入 `/chat.tool_calls` 或顶层响应。V12 不默认启用真实 LLM rewrite/rerank。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -221,7 +229,7 @@ V11 保持 `/chat` 顶层响应 contract 不变，grounded answer 写入现有 `
 - trace 持久化审计。
 - 反思检查和 eval。
 - 真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant。
-- LLM query rewrite、rerank 和 context compression。
+- 真实 LLM query rewrite/rerank 和 context compression。
 - Memory。
 - 自动修改代码。
 - shell 执行。
@@ -279,9 +287,8 @@ ChatService
 
 ## 路线图
 
-已完成至 V11：Grounded Answer / Model Provider Boundary。后续路线：
+已归档至 V11：Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank 正在 active implementation。后续路线：
 
-- V12：Query Rewrite + Rerank，再引入 query rewrite、rerank 和相关 provider 边界。
 - V13：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。
 - V14：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。
 - V15：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。

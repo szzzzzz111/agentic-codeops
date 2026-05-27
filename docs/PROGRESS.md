@@ -4,12 +4,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/v11-grounded-answer-model-provider-boundary`
-- 当前阶段：V11 `v11-grounded-answer-model-provider-boundary` 已完成实现、review、提交和归档；下一阶段应先规划 V12 Query Rewrite + Rerank
-- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用只读 hybrid repo RAG、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
+- 当前工作分支：`feature/v12-query-rewrite-rerank`
+- 当前阶段：V12 `v12-query-rewrite-rerank` 处于 active implementation；OpenSpec、harness、runtime 小切片、相关测试和外部 review follow-up 已推进，尚未归档
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前 active change 为 `openspec/changes/v12-query-rewrite-rerank/`；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -42,7 +42,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V9：Embedding Retrieval + Hybrid Search。补 embedding provider、可替换检索接口和 hybrid fusion；Milvus/ES 暂不默认引入。
 - V10：Evidence Pack + Context Budget。先把检索结果整理为可审计证据包和上下文预算边界，不做回答生成。
 - V11：Grounded Answer / Model Provider Boundary。已引入回答生成边界、证据约束策略、默认 fake provider 和可选 OpenAI-compatible provider。
-- V12：Query Rewrite + Rerank。再引入 query rewrite、rerank 和相关 provider 边界。
+- V12：Query Rewrite + Rerank。已引入默认 deterministic multi-query rewrite、before-Evidence rerank 和内部 audit 边界；真实 LLM rewrite/rerank 留作后续独立阶段。
 - V13：Memory。吸收 mem0 和 AGI-assistant 思路，区分 STM、LTM 和 PREF，并记录 memory audit。
 - V14：Long Task / ReAct / Subagents。加入计划、任务状态、pause/resume、scratch space、subagents、worktree handoff 和冲突检测。
 - V15：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
@@ -88,6 +88,16 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 最近验证
 
+- 2026-05-27，V12 OpenSpec 计划验证：`openspec validate v12-query-rewrite-rerank`：通过。
+- 2026-05-27，V12 rewrite/rerank 目标验证：`pytest tests/test_query_rewrite.py tests/test_repo_rerank.py tests/test_agent_harness_kernel.py -q`：41 passed。
+- 2026-05-27，V12 相关链路验证：`pytest tests/test_query_rewrite.py tests/test_repo_rerank.py tests/test_repo_rag.py tests/test_agent_harness_kernel.py tests/test_chat_api.py tests/test_evidence_pack.py tests/test_grounded_answer.py -q`：72 passed。
+- 2026-05-27，V12 全量 OpenSpec 验证：`openspec validate --all`：8 passed, 0 failed。
+- 2026-05-27，V12 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 104 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-05-27，V12 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-27，V12 外部 review follow-up：修正 original variant 为空时跳过 rewrite-only variants 的召回问题；variant 去重改为按 `query_text`、`keywords`、`symbols`、`path_hints` 分字段归一化；symbol/path 查询加入 lexical anchor，避免 rewrite 模板词产生 embedding-only 误召回。
+- 2026-05-27，V12 follow-up 目标验证：`pytest tests/test_chat_api.py::test_chat_endpoint_returns_empty_related_files_when_keyword_is_missing tests/test_repo_rag.py tests/test_query_rewrite.py tests/test_tool_executor.py tests/test_repo_rerank.py -q`：19 passed。
+- 2026-05-27，V12 follow-up OpenSpec 验证：`openspec validate v12-query-rewrite-rerank`：通过；`openspec validate --all`：8 passed, 0 failed。
+- 2026-05-27，V12 follow-up 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 108 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-26，V11 OpenSpec 计划验证：`openspec validate v11-grounded-answer-model-provider-boundary`：通过。
 - 2026-05-26，V11 provider / grounded answer 小切片验证：`pytest tests\test_model_provider.py tests\test_grounded_answer.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：54 passed。
 - 2026-05-26，V11 dependency 变更：`httpx>=0.27.0` 已从 dev dependency 提升为 `[project].dependencies` 运行时依赖，用于可选 OpenAI-compatible provider；默认验证仍不调用真实网络。
@@ -264,7 +274,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - `app/rag/evidence.py`：空 `snippet` 当前会被计为 `included=True` 且预算消耗为 `0`。真实 retriever 通常不会产空 chunk，但后续可改为空 snippet 直接 omitted 或跳过，以让 audit summary 更清晰。
 - `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
-- `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前已允许强 embedding-only 命中进入结果，后续如需调参或审计更严格，应把权重/阈值显式参数化。
+- `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前 symbol/path 查询已要求 lexical anchor，后续如需更细粒度召回策略或审计，应把权重、阈值和 anchor 策略显式参数化。
 - tests：仍有少量历史阶段命名测试保留，用于表达旧阶段边界；后续做测试命名清理时可统一改成阶段无关的 repo_rag / hybrid_repo_rag 命名。
 
 ## 下一步建议
@@ -273,7 +283,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V11 已完成实现、提交并归档；下一阶段开始前先创建 V12 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 harness 边界。
+- 当前建议：V12 runtime 小切片、相关测试和外部 review follow-up 已推进；下一步完成最终 diff check/self-review，再决定提交与归档。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 

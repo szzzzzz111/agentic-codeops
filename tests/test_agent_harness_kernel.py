@@ -430,6 +430,8 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
         "permission_checked",
         "tool_call",
         "tool_result",
+        "query_rewrite_summarized",
+        "rerank_summarized",
         "retrieval_channels_summarized",
         "evidence_pack_summarized",
         "model_provider_summarized",
@@ -649,15 +651,35 @@ def test_agent_loop_reports_v11_capability_status_without_repo_search(
 
     result = loop.run(
         AgentLoopRequest(
-            message="grounded answer、model provider、rerank、memory、context compression 实现了吗?",
+            message="grounded answer、model provider 实现了吗?",
             repo_path=str(tmp_path),
             trace_id="trace_v10_status",
         )
     )
 
     assert "V11 提供 Grounded Answer 和 Model Provider Boundary" in result.answer
-    assert "未实现 query rewrite、rerank、memory 或 context compression" in result.answer
     assert "未实现 grounded answer" not in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+
+
+def test_agent_loop_reports_v12_capability_status_without_repo_search(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "README.md", "RepoPilot V12 has rewrite and rerank.\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="query rewrite、rerank、真实 LLM rewrite、memory 实现了吗?",
+            repo_path=str(tmp_path),
+            trace_id="trace_v12_status",
+        )
+    )
+
+    assert "V12 提供 deterministic query rewrite 和 rerank" in result.answer
+    assert "真实 LLM rewrite/rerank" in result.answer
+    assert "未实现 memory" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 
@@ -780,6 +802,57 @@ def test_agent_loop_records_hybrid_channel_audit_summary(tmp_path: Path) -> None
         and "min_fused_score=0.35" in event.summary
         for event in result.trace_events_internal
     )
+
+
+def test_agent_loop_records_rewrite_and_rerank_audit_without_public_leak(
+    tmp_path: Path,
+) -> None:
+    write_text(
+        tmp_path / "app" / "providers" / "model_provider.py",
+        "class ModelProvider:\n"
+        "    pass\n"
+        "def load_model_provider_from_env():\n"
+        "    return ModelProvider()\n",
+    )
+    write_text(
+        tmp_path / "tests" / "test_model_provider.py",
+        "def test_model_provider_fallback():\n"
+        "    assert True\n",
+    )
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="ModelProvider 在 app/providers/model_provider.py 怎么接入?",
+            repo_path=str(tmp_path),
+            trace_id="trace_v12_audit",
+        )
+    )
+
+    assert result.tool_calls == [
+        {
+            "tool_name": "repo_rag",
+            "keyword": "ModelProvider",
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "hybrid",
+            "status": "success",
+            "result_count": "2",
+        }
+    ]
+    assert all("variant" not in tool_call for tool_call in result.tool_calls)
+    assert any(
+        event.event_type == "query_rewrite_summarized"
+        and "rewrite_provider=deterministic" in event.summary
+        and "variant_count=" in event.summary
+        for event in result.trace_events_internal
+    )
+    assert any(
+        event.event_type == "rerank_summarized"
+        and "rerank_provider=deterministic" in event.summary
+        and "rerank_output_count=" in event.summary
+        for event in result.trace_events_internal
+    )
+    assert all("C:/" not in event.summary for event in result.trace_events_internal)
 
 
 def test_agent_loop_records_evidence_pack_summary_without_public_tool_leak(

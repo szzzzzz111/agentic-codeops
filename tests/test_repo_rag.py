@@ -5,6 +5,7 @@ from app.rag.repo_rag import (
     Citation,
     DeterministicEmbeddingProvider,
     EmbeddingRepoRetriever,
+    HybridRepoRetriever,
     LexicalRepoRetriever,
     RepoChunk,
     RetrievalResult,
@@ -215,3 +216,26 @@ def test_hybrid_fusion_keeps_embedding_only_results_by_default() -> None:
 
     assert [result.citation.file_path for result in results] == ["docs/semantic.md"]
     assert results[0].score == 350
+
+
+def test_hybrid_retriever_requires_lexical_anchor_for_symbol_queries(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app.py", "print('ok')\n")
+    plan = QueryUnderstanding().build_search_plan("帮我分析 UNIQUE_BUG_TOKEN")
+
+    results = HybridRepoRetriever().retrieve(str(tmp_path), plan)
+
+    assert results == []
+    assert plan.symbols == ["UNIQUE_BUG_TOKEN"]
+
+
+def test_hybrid_retriever_keeps_symbol_results_when_lexical_anchor_exists(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app.py", "UNIQUE_BUG_TOKEN = True\n")
+    plan = QueryUnderstanding().build_search_plan("帮我分析 UNIQUE_BUG_TOKEN")
+
+    results = HybridRepoRetriever().retrieve(str(tmp_path), plan)
+
+    assert [result.citation.file_path for result in results] == ["app.py"]

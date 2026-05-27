@@ -6,9 +6,9 @@ RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE
 
 ```text
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
-  -> QueryUnderstanding/SearchPlan
+  -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -17,10 +17,12 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `ChatService` 负责编排请求、生成 `trace_id`、调用智能体。
 - `CodeAgent` 负责调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
+- `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
 - `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code` 和 `repo_rag`。
 - `LexicalRepoRetriever` 负责 repo-local chunk、lexical scoring、dedup 和 citation。
 - `EmbeddingRepoRetriever` 使用本地确定性 embedding provider 对 repo chunk 做轻量 embedding retrieval。
 - `HybridRepoRetriever` 负责合并 lexical 与 embedding retrieval 结果。
+- `Reranker` 负责在 Evidence Pack 前对 merged retrieval results 做 deterministic rerank，并最多选择 `SearchPlan.max_results` 条结果。
 - `EvidencePack` / `ContextBudget` 在 retrieval 后生成内部证据输入层和字符级预算摘要。
 - `GroundedAnswerGenerator` 只消费预算内 included evidence，并负责 provider 调用、citation 校验、fallback 和脱敏 audit 摘要。
 - `ModelProvider` 默认使用本地 deterministic fake provider；显式配置后可调用 OpenAI-compatible provider。
@@ -37,6 +39,7 @@ RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexi
 
 - deterministic code search、lexical search、path search 和 symbol search 是主通道。
 - embedding retrieval、hybrid retrieval、query rewrite 和 rerank 只能辅助召回或排序，不替代 grep-like baseline。
+- 对包含 `symbols` 或 `path_hints` 的高精度查询，hybrid retrieval 使用 lexical anchor，embedding-only result 不能单独绕过 lexical/path/symbol 命中进入证据池。
 - Evidence Pack 和 Grounded Answer 应优先消费可审计的 lexical/path/symbol evidence，并通过 citation 约束回答。
 - V12 Query Rewrite / Rerank 必须服务于 grep-first 检索基线，不能把系统改成默认向量库优先。
 - 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
@@ -110,7 +113,7 @@ ChatService
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
 - LangGraph。
-- 真实外部 embedding 服务、向量库、LLM query rewrite、rerank 或 context compression。
+- 真实外部 embedding 服务、向量库、真实 LLM query rewrite/rerank 或 context compression。
 - Memory。
 - 多 Agent。
 - 自动修改代码。
@@ -145,7 +148,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 再处理 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank 正在 active implementation；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -211,3 +214,26 @@ AgentLoop
 - provider audit 只记录 provider name、model、status、error class 或 fallback reason，不记录完整 prompt、完整模型输出、完整 Evidence Pack、API key 或本机绝对路径。
 - `/chat` 顶层响应仍只要求 `trace_id`、`answer`、`related_files` 和 `tool_calls`；provider audit 不进入 `tool_calls`。
 - V11 不实现 query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
+
+## V12 架构补充：Query Rewrite + Rerank
+
+V12 在 V11 检索与回答链路中加入 deterministic rewrite/rerank 边界。当前执行链路为：
+
+```text
+ToolExecutor(repo_rag)
+  -> QueryRewriteProvider(deterministic)
+  -> HybridRepoRetriever per query variant
+  -> merged retrieval results
+  -> Reranker(deterministic)
+  -> EvidencePack / ContextBudget
+```
+
+边界约束：
+
+- rewrite 永远保留 `original` variant，并最多生成 3 条 Code Evidence variants：`definition`、`usage`、`configuration`、`tests`。
+- rewrite 不改变 route、权限决策或整体 `question_type`。
+- rewrite variants 都会执行 hybrid retrieval；对 symbol/path 查询，embedding-only 弱命中仍需 lexical anchor。
+- rerank 只作用于 retrieval results 层，不新增独立语义过滤阈值。
+- Evidence Pack budget/summary 和 grounded answer citation validation 语义不变。
+- rewrite/rerank audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
+- V12 不默认启用真实 LLM rewrite/rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。

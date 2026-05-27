@@ -2,7 +2,17 @@ from dataclasses import dataclass, field
 
 from app.rag.evidence import EvidencePack, build_evidence_pack
 from app.rag.query_understanding import SearchPlan
-from app.rag.repo_rag import HybridRepoRetriever
+from app.rag.query_rewrite import (
+    DeterministicQueryRewriteProvider,
+    QueryRewriteProvider,
+    build_original_rewrite_result,
+)
+from app.rag.rerank import (
+    DeterministicRepoReranker,
+    RepoReranker,
+    rerank_with_fallback,
+)
+from app.rag.repo_rag import HybridRepoRetriever, RetrievalResult
 from app.tools.file_tools import search_code
 
 
@@ -28,8 +38,17 @@ class ToolExecutionResult:
 
 
 class ToolExecutor:
-    def __init__(self, repo_retriever: HybridRepoRetriever | None = None) -> None:
+    def __init__(
+        self,
+        repo_retriever: HybridRepoRetriever | None = None,
+        query_rewrite_provider: QueryRewriteProvider | None = None,
+        reranker: RepoReranker | None = None,
+    ) -> None:
         self.repo_retriever = repo_retriever or HybridRepoRetriever()
+        self.query_rewrite_provider = (
+            query_rewrite_provider or DeterministicQueryRewriteProvider()
+        )
+        self.reranker = reranker or DeterministicRepoReranker()
 
     def search_code(
         self,
@@ -68,6 +87,58 @@ class ToolExecutor:
             "retrieval_mode": search_plan.retrieval_mode,
         }
         try:
+            rewrite_result = build_original_rewrite_result(
+                search_plan,
+                provider=self.query_rewrite_provider,
+            )
+            retrieval_results = []
+            original_result_keys: set[tuple[str, int, int]] = set()
+            aggregate_channel_summary: dict[str, str | int | float] = {}
+            for variant in rewrite_result.variants:
+                variant_results = self.repo_retriever.retrieve(
+                    repo_path,
+                    variant.to_search_plan(),
+                )
+                channel_summary = getattr(
+                    self.repo_retriever,
+                    "last_channel_summary",
+                    {},
+                )
+                if channel_summary:
+                    if not aggregate_channel_summary:
+                        aggregate_channel_summary = {
+                            "mode": search_plan.retrieval_mode,
+                            "lexical_results": 0,
+                            "embedding_results": 0,
+                            "fused_results": 0,
+                            "min_fused_score": channel_summary.get(
+                                "min_fused_score",
+                                0.35,
+                            ),
+                        }
+                    aggregate_channel_summary["lexical_results"] = int(
+                        aggregate_channel_summary["lexical_results"]
+                    ) + int(channel_summary.get("lexical_results", 0))
+                    aggregate_channel_summary["embedding_results"] = int(
+                        aggregate_channel_summary["embedding_results"]
+                    ) + int(channel_summary.get("embedding_results", 0))
+                    aggregate_channel_summary["fused_results"] = int(
+                        aggregate_channel_summary["fused_results"]
+                    ) + int(channel_summary.get("fused_results", len(variant_results)))
+                for result in variant_results:
+                    key = _citation_key(result)
+                    if variant.variant_id == "original":
+                        original_result_keys.add(key)
+                    retrieval_results.append(result)
+
+            merged_results = _merge_retrieval_results(retrieval_results)
+            rerank_result = rerank_with_fallback(
+                merged_results,
+                plan=search_plan,
+                original_result_keys=original_result_keys,
+                max_results=search_plan.max_results,
+                reranker=self.reranker,
+            )
             results = [
                 {
                     "file_path": result.citation.file_path,
@@ -77,7 +148,7 @@ class ToolExecutor:
                     "end_line": result.citation.end_line,
                     "score": result.score,
                 }
-                for result in self.repo_retriever.retrieve(repo_path, search_plan)
+                for result in rerank_result.results
             ]
         except (NotADirectoryError, OSError, ValueError) as exc:
             return ToolExecutionResult(
@@ -93,7 +164,10 @@ class ToolExecutor:
             retrieval_mode=search_plan.retrieval_mode,
         )
         audit_summary = {
-            **getattr(self.repo_retriever, "last_channel_summary", {}),
+            **aggregate_channel_summary,
+            "merged_results": len(merged_results),
+            **rewrite_result.audit_summary(),
+            **rerank_result.audit_summary(),
             **evidence_pack.audit_summary(),
         }
 
@@ -104,3 +178,26 @@ class ToolExecutor:
             audit_summary=audit_summary,
             evidence_pack=evidence_pack,
         )
+
+
+def _citation_key(result: RetrievalResult) -> tuple[str, int, int]:
+    return (
+        result.citation.file_path,
+        result.citation.start_line,
+        result.citation.end_line,
+    )
+
+
+def _merge_retrieval_results(
+    results: list[RetrievalResult],
+) -> list[RetrievalResult]:
+    merged: dict[tuple[str, int, int], RetrievalResult] = {}
+    for result in results:
+        key = _citation_key(result)
+        existing = merged.get(key)
+        if existing is None or result.score > existing.score:
+            merged[key] = result
+    return sorted(
+        merged.values(),
+        key=lambda item: (-item.score, item.citation.file_path, item.citation.start_line),
+    )

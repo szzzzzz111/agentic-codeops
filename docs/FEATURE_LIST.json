@@ -235,5 +235,29 @@
     ],
     "passes": true,
     "notes": "由 tests/test_model_provider.py、tests/test_grounded_answer.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v12-query-rewrite-rerank",
+    "category": "rag",
+    "description": "AgentLoop 在 repo retrieval 前执行 bounded deterministic multi-query rewrite，并在 Evidence Pack 前执行 deterministic rerank。",
+    "steps": [
+      "构造触发 repo_search 的 /chat 请求",
+      "QueryUnderstanding 生成 original SearchPlan",
+      "QueryRewriteProvider 生成 original variant 和最多 3 条 Code Evidence variants",
+      "ToolExecutor 对 variants 执行 hybrid retrieval、合并去重并 rerank",
+      "检查 Evidence Pack、grounded answer 和 /chat contract 仍保持既有边界"
+    ],
+    "acceptance_criteria": [
+      "默认 rewrite provider 不调用网络、密钥、真实 LLM 或外部服务",
+      "variant id 固定为 original、definition、usage、configuration、tests，额外 variants 最多 3 条",
+      "rewrite 不改变 route、权限决策或整体 question_type",
+      "rerank 只作用于 retrieval results 层，并最多选择 SearchPlan.max_results 条结果进入 Evidence Pack",
+      "Evidence Pack budget/summary 和 grounded answer citation validation 语义不变",
+      "rewrite/rerank audit 只进入内部 trace，不进入 /chat 顶层字段或完整 tool_calls",
+      "V12 不默认启用真实 LLM rewrite/rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_query_rewrite.py、tests/test_repo_rerank.py、tests/test_agent_harness_kernel.py、tests/test_chat_api.py 和相关 repo/evidence/grounded answer 回归测试覆盖。"
   }
 ]
