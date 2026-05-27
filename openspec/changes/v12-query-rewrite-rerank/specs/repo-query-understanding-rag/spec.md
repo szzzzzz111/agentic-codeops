@@ -36,7 +36,7 @@ Query Understanding MUST 产生 `SearchPlan`，至少包含问题类型、关键
 
 Hybrid fusion MUST 使用默认最低相关性阈值 `min_fused_score=0.35`。低于该阈值的 fused result MUST NOT 返回给 `/chat`。
 
-系统 SHALL 记录 hybrid retrieval 的内部 channel audit summary。该 summary MUST 至少包含 retrieval mode、lexical result count、embedding result count、fused result count 和 minimum fused score。该 summary MUST NOT 作为 `/chat` 顶层字段暴露。
+系统 SHALL 记录 hybrid retrieval 的内部 channel audit summary。该 summary MUST 至少包含 retrieval mode、lexical result count、embedding result count、anchored embedding result count、fused result count 和 minimum fused score。该 summary MUST NOT 作为 `/chat` 顶层字段暴露。
 
 当 `SearchPlan` 包含 `symbols` 或 `path_hints` 时，hybrid retrieval MUST 保持 lexical anchor：未与 lexical result citation 重合的 embedding-only result MUST NOT 独立进入 fused pool。
 
@@ -70,6 +70,7 @@ V12 SHALL 对 rewrite variants 执行 bounded multi-query retrieval，并在 Evi
 
 - **WHEN** 系统执行 hybrid retrieval
 - **THEN** 内部 trace MUST 记录 lexical、embedding 和 fused result count
+- **AND** 当 lexical anchor 过滤 embedding-only 结果时，内部 trace SHOULD 记录 anchored embedding result count
 - **AND** 内部 trace MUST 记录 `min_fused_score=0.35`
 - **AND** `/chat` 顶层响应 MUST NOT 新增审计字段
 

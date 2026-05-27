@@ -148,7 +148,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank 正在 active implementation；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank 已实现并提交，等待人工确认是否归档；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -167,7 +167,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `DeterministicEmbeddingProvider` 是本地确定性实现，不调用网络、密钥、模型下载或外部服务。
 - `EmbeddingRepoRetriever` 复用安全文件工具允许访问的 repo 文本 chunk，并输出相对路径 citation。
 - `HybridRepoRetriever` 对 lexical 和 embedding 结果做 deterministic fusion，保留路径、文件名、符号和 exact token 命中的优势。
-- 内部 trace 记录 hybrid channel audit summary，包括 lexical、embedding、fused 结果数和 `min_fused_score`；该摘要不作为 `/chat` 顶层字段暴露。
+- 内部 trace 记录 hybrid channel audit summary，包括 lexical、embedding、anchored embedding、fused 结果数和 `min_fused_score`；该摘要不作为 `/chat` 顶层字段暴露。
 - V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或持久化向量索引。
 - V9 不实现 LLM query rewrite、LLM rerank、grounded answer、model provider、memory 或 context compression。
 

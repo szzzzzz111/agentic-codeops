@@ -6,7 +6,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V11 已归档；V12 Query Rewrite + Rerank 正在 active implementation。
+- 当前主线能力：V1-V11 已归档；V12 Query Rewrite + Rerank 已实现并提交，OpenSpec change 已 Complete，等待人工确认是否归档。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
@@ -287,7 +287,7 @@ ChatService
 
 ## 路线图
 
-已归档至 V11：Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank 正在 active implementation。后续路线：
+已归档至 V11：Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank 已实现并提交，等待人工确认是否归档。后续路线：
 
 - V13：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。
 - V14：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。

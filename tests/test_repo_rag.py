@@ -218,16 +218,44 @@ def test_hybrid_fusion_keeps_embedding_only_results_by_default() -> None:
     assert results[0].score == 350
 
 
+class EmptyLexicalRetriever:
+    def retrieve(self, repo_path, plan):
+        return []
+
+
+class SingleEmbeddingRetriever:
+    def retrieve(self, repo_path, plan):
+        chunk = RepoChunk(
+            chunk_id="app.py:1-1",
+            file_path="app.py",
+            start_line=1,
+            end_line=1,
+            text="semantic-only candidate",
+        )
+        return [
+            RetrievalResult(
+                chunk=chunk,
+                citation=Citation("app.py", 1, 1),
+                score=100,
+            )
+        ]
+
+
 def test_hybrid_retriever_requires_lexical_anchor_for_symbol_queries(
     tmp_path: Path,
 ) -> None:
-    write_text(tmp_path / "app.py", "print('ok')\n")
+    retriever = HybridRepoRetriever(
+        lexical_retriever=EmptyLexicalRetriever(),
+        embedding_retriever=SingleEmbeddingRetriever(),
+    )
     plan = QueryUnderstanding().build_search_plan("帮我分析 UNIQUE_BUG_TOKEN")
 
-    results = HybridRepoRetriever().retrieve(str(tmp_path), plan)
+    results = retriever.retrieve(str(tmp_path), plan)
 
     assert results == []
     assert plan.symbols == ["UNIQUE_BUG_TOKEN"]
+    assert retriever.last_channel_summary["embedding_results"] >= 1
+    assert retriever.last_channel_summary["anchored_embedding_results"] == 0
 
 
 def test_hybrid_retriever_keeps_symbol_results_when_lexical_anchor_exists(

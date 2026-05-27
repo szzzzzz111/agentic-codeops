@@ -798,6 +798,7 @@ def test_agent_loop_records_hybrid_channel_audit_summary(tmp_path: Path) -> None
         and "mode=hybrid" in event.summary
         and "lexical_results=" in event.summary
         and "embedding_results=" in event.summary
+        and "anchored_embedding_results=" in event.summary
         and "fused_results=" in event.summary
         and "min_fused_score=0.35" in event.summary
         for event in result.trace_events_internal

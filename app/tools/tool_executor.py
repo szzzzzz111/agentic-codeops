@@ -110,6 +110,7 @@ class ToolExecutor:
                             "mode": search_plan.retrieval_mode,
                             "lexical_results": 0,
                             "embedding_results": 0,
+                            "anchored_embedding_results": 0,
                             "fused_results": 0,
                             "min_fused_score": channel_summary.get(
                                 "min_fused_score",
@@ -122,6 +123,9 @@ class ToolExecutor:
                     aggregate_channel_summary["embedding_results"] = int(
                         aggregate_channel_summary["embedding_results"]
                     ) + int(channel_summary.get("embedding_results", 0))
+                    aggregate_channel_summary["anchored_embedding_results"] = int(
+                        aggregate_channel_summary["anchored_embedding_results"]
+                    ) + int(channel_summary.get("anchored_embedding_results", 0))
                     aggregate_channel_summary["fused_results"] = int(
                         aggregate_channel_summary["fused_results"]
                     ) + int(channel_summary.get("fused_results", len(variant_results)))

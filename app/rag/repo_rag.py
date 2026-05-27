@@ -131,6 +131,7 @@ class HybridRepoRetriever:
     def retrieve(self, repo_path: str, plan: SearchPlan) -> list[RetrievalResult]:
         lexical_results = self.lexical_retriever.retrieve(repo_path, plan)
         embedding_results = self.embedding_retriever.retrieve(repo_path, plan)
+        raw_embedding_result_count = len(embedding_results)
         if _requires_lexical_anchor(plan):
             lexical_keys = {_citation_key(result.citation) for result in lexical_results}
             embedding_results = [
@@ -148,7 +149,8 @@ class HybridRepoRetriever:
         self.last_channel_summary = {
             "mode": "hybrid",
             "lexical_results": len(lexical_results),
-            "embedding_results": len(embedding_results),
+            "embedding_results": raw_embedding_result_count,
+            "anchored_embedding_results": len(embedding_results),
             "fused_results": len(fused_results),
             "min_fused_score": DEFAULT_MIN_FUSED_SCORE,
         }

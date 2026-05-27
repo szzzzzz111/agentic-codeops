@@ -183,7 +183,7 @@ def test_docs_keep_v10_route_map_consistent() -> None:
     assert "V10：Evidence Pack + Context Budget" in combined
     assert "V11：Grounded Answer / Model Provider Boundary" in combined
     assert "V12：Query Rewrite + Rerank" in combined
-    assert "V12 Query Rewrite + Rerank 正在 active implementation" in combined
+    assert "V12 Query Rewrite + Rerank 已实现并提交" in combined
     assert "V10：Query Rewrite / Rerank / Context Budget" not in combined
     assert "V10 = Query Rewrite / Rerank / Context Budget" not in combined
     assert "V12 不默认启用真实 LLM rewrite/rerank" in combined
