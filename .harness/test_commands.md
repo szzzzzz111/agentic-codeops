@@ -18,6 +18,12 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1
 ```
 
+## 阶段归档收口检查
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1
+```
+
 ## 静态检查
 
 ```bash

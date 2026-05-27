@@ -15,6 +15,7 @@
 - `.harness/review_checklist.md`
 - `.harness/templates/**`
 - `scripts/check_stage_docs.ps1`
+- `scripts/check_stage_closeout.ps1`
 - `scripts/verify.ps1`
 - `.harness/test_commands.md`
 - `openspec/specs/**`

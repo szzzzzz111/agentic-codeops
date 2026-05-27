@@ -180,7 +180,7 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. Harness 流程已在 V12 前瘦身：`scripts/check_stage_docs.ps1` 可扫描阶段文档漂移，`.harness/templates/stage_closeout.md` 提供 closeout 模板，`scripts/verify.ps1` 已接入 drift scan。
+1. Harness 流程已在 V12 前瘦身：`scripts/check_stage_docs.ps1` 可扫描阶段文档漂移，`scripts/check_stage_closeout.ps1` 可做归档收口检查，`.harness/templates/stage_closeout.md` 和 `.harness/templates/stage_planning.md` 提供 closeout / planning 模板，`scripts/verify.ps1` 已接入 drift scan。
 2. 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal/design/tasks/spec delta，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
 3. V12 plan 必须继承 grep-first, RAG-assisted：rewrite/rerank 服务 lexical/path/symbol baseline，不默认切换到向量库优先。
 

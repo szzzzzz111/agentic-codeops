@@ -17,6 +17,7 @@
 
 ## Next Stage Gate
 
+- [ ] 使用 `.harness/templates/stage_planning.md` 先做阶段级规划，明确 capability、scope、non-goals、依赖和 human decision。
 - [ ] 开始 V12 前先创建 Query Rewrite + Rerank 的 OpenSpec proposal、design、tasks 和 spec delta。
 - [ ] V12 必须继承 grep-first, RAG-assisted 检索立场：rewrite/rerank 服务于 lexical/path/symbol baseline，不默认切换到向量库优先。
 - [ ] V12 开工前同步 `.harness/allowed_files.md` 和本 checklist，明确允许修改的代码、测试、docs 和 OpenSpec artifacts。
@@ -30,5 +31,6 @@
 - [ ] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过。
 - [ ] `git diff --check` 通过。
 - [ ] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1` 通过。
+- [ ] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1` 通过，或记录仍有 active change 的原因。
 - [ ] `README.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 不再把已归档阶段描述为 active。
 - [ ] 下一阶段只写成 planned / next，不写成 implemented。

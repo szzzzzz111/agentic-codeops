@@ -1,0 +1,70 @@
+# Stage Planning Template
+
+用于创建新阶段 OpenSpec change 前的轻量规划。先填这个模板，再写 `proposal.md`、`design.md`、`tasks.md` 和 spec delta。
+
+## Stage
+
+- Stage: `<Vx stage name>`
+- Proposed branch: `<feature branch>`
+- Capability owner:
+  - New capability: `<name or none>`
+  - Modified capabilities: `<names>`
+- Previous completed stage: `<Vx-1>`
+
+## Intent
+
+- Problem:
+  - `<what is missing or unsafe today>`
+- Why now:
+  - `<why this is the next slice>`
+- User-visible outcome:
+  - `<what changes for /chat or docs>`
+
+## Scope
+
+- In scope:
+  - `<one small vertical slice>`
+- Out of scope:
+  - `<future stage capability>`
+- API contract:
+  - `<unchanged / changed with exact fields>`
+- Runtime dependency changes:
+  - `<none / dependency and reason>`
+
+## Boundaries
+
+- Harness boundaries preserved:
+  - `<ToolExecutor / PermissionPolicy / ApprovalGate / provider / audit>`
+- Security and audit:
+  - `<what must not leak>`
+- Retrieval stance:
+  - `grep-first, RAG-assisted`; rewrite/rerank must serve lexical/path/symbol baseline.
+
+## Tests
+
+- Unit tests:
+  - `<test file and behavior>`
+- API / contract tests:
+  - `<top-level fields / redaction / fallback>`
+- Docs / route-map tests:
+  - `<docs assertions>`
+
+## Docs And Harness
+
+- Allowed files to update:
+  - `<paths>`
+- Review checklist additions:
+  - `<gates>`
+- Durable docs to update:
+  - `README.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/PROGRESS.md`
+  - `docs/FEATURE_LIST.json`
+  - `HANDOFF_TO_NEXT_CHAT.md`
+
+## Human Decisions
+
+- Decision needed:
+  - `<stage-level question, not code detail>`
+- Default recommendation:
+  - `<recommended option>`

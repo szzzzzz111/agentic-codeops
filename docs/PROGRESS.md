@@ -99,7 +99,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-26，V11 review 前新增设计观察：RepoPilot 采用 grep-first, RAG-assisted 检索立场；V11 Grounded Answer 应优先基于可审计的 deterministic lexical/path/symbol evidence，V12 Query Rewrite / Rerank 应服务于该基线，不默认转向重型向量库或 embedding cache。
 - 2026-05-26，V11 archive：`openspec archive v11-grounded-answer-model-provider-boundary --skip-specs -y` 已完成，归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`；长期 specs 已在 archive 前同步。
 - 2026-05-26，V11 archive 后验证：`openspec validate --all`：7 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 97 passed, 1 skipped；`ruff check .` All checks passed；`git diff --check`：通过，仅有 CRLF 换行提示。
-- 2026-05-26，V12 前 harness 流程瘦身：新增 `scripts/check_stage_docs.ps1` 阶段文档漂移扫描、`.harness/templates/stage_closeout.md` closeout 模板，并将 drift scan 接入 `scripts/verify.ps1`。
+- 2026-05-26，V12 前 harness 流程瘦身：新增 `scripts/check_stage_docs.ps1` 阶段文档漂移扫描、`scripts/check_stage_closeout.ps1` 归档收口检查、`.harness/templates/stage_closeout.md` closeout 模板和 `.harness/templates/stage_planning.md` 规划模板，并将 drift scan 接入 `scripts/verify.ps1`。
 
 - 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`openspec validate v10-evidence-pack-context-budget`：通过。
 - 2026-05-25，V10 Evidence Pack + Context Budget 实现验证：`pytest tests\test_evidence_pack.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：40 passed。
