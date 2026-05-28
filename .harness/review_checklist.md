@@ -1,6 +1,20 @@
 # 当前 Review 清单
 
-当前活跃阶段：V13 `v13-memory`。
+当前活跃阶段：暂无；V13 `v13-memory` 已实现、review、提交并归档。
+
+## V13 Archive Closeout Gate
+
+- [x] V13 implementation commit 已创建：`1b5696d Add V13 memory`。
+- [x] V13 active change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`。
+- [x] 长期 specs 已在 archive 前同步。
+- [x] `openspec list` 显示 no active changes。
+- [x] `openspec validate --all` 通过。
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过。
+- [x] `git diff --check` 通过。
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1` 通过。
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1` 通过。
+- [x] `README.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 不再把 V13 描述为 active。
+- [x] 下一阶段只写成 planned / next，不写成 implemented。
 
 ## V13 Implementation Review
 

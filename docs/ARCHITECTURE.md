@@ -150,7 +150,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 Memory 正在实现和验证收口；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 

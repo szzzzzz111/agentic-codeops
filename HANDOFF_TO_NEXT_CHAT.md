@@ -5,12 +5,11 @@
 ```text
 当前工作分支：feature/v13-memory
 当前基线分支：main
-当前活跃 OpenSpec change：v13-memory
-最近完成阶段：V12 Query Rewrite + Rerank（已实现、review、提交并归档）
-当前阶段：V13 Memory（已实现，正在验证和收口）
+当前活跃 OpenSpec change：暂无
+最近完成阶段：V13 Memory（已实现、review、提交并归档）
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V12 已归档；V13 已加入 repo-local SQLite-backed Memory，支持 PREF/LTM 持久化、进程内 STM、明确 memory 指令和内部 memory audit。默认不调用真实 LLM、网络或 API key。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V13 已归档；V13 已加入 repo-local SQLite-backed Memory，支持 PREF/LTM 持久化、进程内 STM、明确 memory 指令和内部 memory audit。默认不调用真实 LLM、网络或 API key。
 
 新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
@@ -38,6 +37,12 @@ V12 已归档到：
 openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/
 ```
 
+V13 已归档到：
+
+```text
+openspec/changes/archive/2026-05-28-v13-memory/
+```
+
 ## 当前主链路
 
 ```text
@@ -60,6 +65,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `AgentLoop` 在 route 后处理 memory command；命中后返回确认，不执行 `repo_rag`。
 - 普通 repo_search 在权限通过后记录 `memory_summarized`，memory read failure 不阻断检索。
 - `.gitignore` 已加入 `.repopilot/`，repo-local SQLite DB 被视为本地状态。
+- Implementation commit：`1b5696d Add V13 memory`。
+- Archive：`openspec archive v13-memory --skip-specs -y` 已完成；长期 specs 已在 archive 前同步。
 - 当前验证：
   - `openspec validate v13-memory`：通过。
   - `pytest tests\test_memory.py -q`：5 passed。
@@ -67,6 +74,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   - `openspec validate --all`：9 passed, 0 failed。
   - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 120 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
   - `git diff --check`：通过，仅有 CRLF 换行提示。
+  - Archive 后 `openspec list`：No active changes found。
+  - Archive 后 `openspec validate --all`：8 passed, 0 failed。
+  - Archive closeout：`powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1`：通过。
+  - Archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 120 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 
 ## V12 实现摘要
 
@@ -179,8 +190,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- `.harness/allowed_files.md` 已同步为 V13 `v13-memory` 实现边界。
-- `.harness/review_checklist.md` 已同步为 V13 Memory implementation review gates。
+- `.harness/allowed_files.md` 已同步为暂无活跃阶段的保护态。
+- `.harness/review_checklist.md` 已同步为 V13 archive closeout gate 和历史 implementation review 记录。
 - `openspec/changes/v10-evidence-pack-context-budget/` 已创建 proposal、design、tasks 和 `specs/repo-query-understanding-rag/spec.md`。
 - `openspec/changes/v9-embedding-hybrid-search/` 已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`。
 - `openspec/changes/v10-evidence-pack-context-budget/` 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`。
@@ -250,9 +261,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. V13 implementation self-review 已完成，未发现 P0/P1；外部 review follow-up 已处理。
-2. 下一步可由用户决定是否进入 commit / archive / closeout 流程。
-3. 归档前仍需避免把 active change 和 archive closeout 混在同一步里。
+1. V13 archive closeout commit 完成后，可考虑合并 `feature/v13-memory` 回 `main`。
+2. 下一阶段建议从 V14 Long Task / ReAct / Subagents 规划开始。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

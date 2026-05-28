@@ -5,11 +5,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前工作分支：`feature/v13-memory`
-- 当前阶段：V13 `v13-memory` 已实现，正在验证和收口；V12 `v12-query-rewrite-rerank` 已实现、review、提交并归档
+- 当前阶段：V13 `v13-memory` 已实现、review、提交并归档；暂无活跃开发阶段，下一阶段建议从 V14 Long Task / ReAct / Subagents 规划开始
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前 active change 为 `openspec/changes/v13-memory/`；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`，V13 change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -102,6 +102,11 @@ LLMGateway 设计备忘：
 - 2026-05-28，V13 全量 OpenSpec 验证：`openspec validate --all`：9 passed, 0 failed。
 - 2026-05-28，V13 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 120 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-28，V13 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-28，V13 implementation commit：`1b5696d Add V13 memory`。
+- 2026-05-28，V13 archive：`openspec archive v13-memory --skip-specs -y` 已完成，归档到 `openspec/changes/archive/2026-05-28-v13-memory/`；长期 specs 已在 archive 前同步。
+- 2026-05-28，V13 archive 后 OpenSpec 验证：`openspec list` 显示 No active changes found；`openspec validate --all`：8 passed, 0 failed。
+- 2026-05-28，V13 archive closeout 验证：`powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
+- 2026-05-28，V13 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 120 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-27，V12 OpenSpec 计划验证：`openspec validate v12-query-rewrite-rerank`：通过。
 - 2026-05-27，V12 rewrite/rerank 目标验证：`pytest tests/test_query_rewrite.py tests/test_repo_rerank.py tests/test_agent_harness_kernel.py -q`：41 passed。
 - 2026-05-27，V12 相关链路验证：`pytest tests/test_query_rewrite.py tests/test_repo_rerank.py tests/test_repo_rag.py tests/test_agent_harness_kernel.py tests/test_chat_api.py tests/test_evidence_pack.py tests/test_grounded_answer.py -q`：72 passed。
@@ -303,7 +308,7 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V13 Memory 完成默认验证和 self-review 后，进入外部 review；无阻塞后再考虑 archive。
+- 当前建议：V13 已归档；下一阶段建议从 V14 Long Task / ReAct / Subagents 规划开始。
 - 后续可做 Long Task / ReAct / Subagents，为计划、pause/resume、scratch space、subagents 和 worktree handoff 提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
