@@ -24,6 +24,11 @@ class FailingSearchExecutor:
         raise AssertionError("search_repo_rag must not be called when policy blocks")
 
 
+class FailingRepoRagExecutor:
+    def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
+        raise AssertionError("repo_rag must not be called for memory commands")
+
+
 class NoCitationProvider:
     def generate(self, request):
         return ModelProviderResponse(
@@ -428,6 +433,7 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
     assert [event.event_type for event in result.trace_events_internal] == [
         "request_routed",
         "permission_checked",
+        "memory_summarized",
         "tool_call",
         "tool_result",
         "query_rewrite_summarized",
@@ -436,6 +442,106 @@ def test_agent_loop_runs_repo_search_with_trace_events(tmp_path: Path) -> None:
         "evidence_pack_summarized",
         "model_provider_summarized",
     ]
+
+
+def test_agent_loop_memory_command_confirms_without_repo_rag(tmp_path: Path) -> None:
+    loop = AgentLoop(tool_executor=FailingRepoRagExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="记住：pref:language=中文",
+            repo_path=str(tmp_path),
+            trace_id="trace_memory_remember",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert result.answer == "已记住偏好：language。"
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "request_routed",
+        "memory_command",
+    ]
+    assert "kind=PREF" in result.trace_events_internal[-1].summary
+    assert str(tmp_path) not in result.trace_events_internal[-1].summary
+
+
+def test_agent_loop_forget_command_returns_deleted_count(tmp_path: Path) -> None:
+    loop = AgentLoop(tool_executor=FailingRepoRagExecutor())
+    request_kwargs = {
+        "repo_path": str(tmp_path),
+        "user_id": "u001",
+        "session_id": "s001",
+    }
+    loop.run(
+        AgentLoopRequest(
+            message="remember: pref:language=中文",
+            trace_id="trace_memory_seed",
+            **request_kwargs,
+        )
+    )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="forget: language",
+            trace_id="trace_memory_forget",
+            **request_kwargs,
+        )
+    )
+
+    assert result.answer == "已删除 1 条记忆。"
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert "deleted_count=1" in result.trace_events_internal[-1].summary
+
+
+def test_agent_loop_memory_command_fails_gracefully_for_missing_repo(
+    tmp_path: Path,
+) -> None:
+    missing_repo = tmp_path / "missing"
+    loop = AgentLoop(tool_executor=FailingRepoRagExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="记住：project:stack=FastAPI",
+            repo_path=str(missing_repo),
+            trace_id="trace_memory_missing_repo",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert result.answer == "无法写入记忆：当前仓库记忆存储不可用。"
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert str(missing_repo) not in result.trace_events_internal[-1].summary
+
+
+def test_agent_loop_records_memory_read_summary_without_public_tool_leak(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app" / "service.py", "UNIQUE_BUG_TOKEN = True\n")
+    loop = AgentLoop()
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="帮我分析 UNIQUE_BUG_TOKEN",
+            repo_path=str(tmp_path),
+            trace_id="trace_memory_summary",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert any(
+        event.event_type == "memory_summarized"
+        and "memory_status=success" in event.summary
+        and "repo_key_present=true" in event.summary
+        for event in result.trace_events_internal
+    )
+    assert all("memory" not in tool_call for tool_call in result.tool_calls)
 
 
 def test_agent_loop_allows_retrievers_without_channel_summary(
@@ -591,6 +697,7 @@ def test_agent_loop_does_not_claim_vector_infrastructure_is_implemented(
     assert "V9 提供轻量 embedding retrieval 和 hybrid search" in result.answer
     assert "规划提供" not in result.answer
     assert "未默认接入" in result.answer
+    assert "V13 提供 SQLite-backed PREF/LTM 和进程内 STM" in result.answer
     assert "已实现 embedding" not in result.answer
     assert "已实现 Milvus" not in result.answer
     assert "已实现 ES" not in result.answer
@@ -614,6 +721,30 @@ def test_agent_loop_answers_lowercase_vector_status_questions(
     )
 
     assert "未默认接入" in result.answer
+    assert "V13 提供 SQLite-backed PREF/LTM 和进程内 STM" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+
+
+def test_agent_loop_reports_v13_memory_capability_status_without_repo_search(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(
+        tool_registry=ToolRegistry(),
+        tool_executor=FailingSearchExecutor(),
+    )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="memory 实现了吗?",
+            repo_path=str(tmp_path),
+            trace_id="trace_v13_memory_status",
+        )
+    )
+
+    assert "V13 提供 SQLite-backed PREF/LTM 和进程内 STM" in result.answer
+    assert "明确 memory 指令" in result.answer
+    assert "未实现向量记忆" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 
@@ -679,7 +810,7 @@ def test_agent_loop_reports_v12_capability_status_without_repo_search(
 
     assert "V12 提供 deterministic query rewrite 和 rerank" in result.answer
     assert "真实 LLM rewrite/rerank" in result.answer
-    assert "未实现 memory" in result.answer
+    assert "V13 提供 SQLite-backed PREF/LTM 和进程内 STM" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 

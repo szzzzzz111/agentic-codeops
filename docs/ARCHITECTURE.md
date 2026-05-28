@@ -6,6 +6,7 @@ RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE
 
 ```text
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
+  -> MemoryManager(STM/PREF/LTM command/read audit)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -16,6 +17,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - API 层只接收请求并返回响应。
 - `ChatService` 负责编排请求、生成 `trace_id`、调用智能体。
 - `CodeAgent` 负责调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
+- `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
 - `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code` 和 `repo_rag`。
@@ -29,7 +31,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答；默认不接真实 LLM、不自动修改代码、不执行 shell。显式配置后可通过 OpenAI-compatible provider 生成 grounded answer。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令；默认不接真实 LLM、不自动修改代码、不执行 shell。显式配置后可通过 OpenAI-compatible provider 生成 grounded answer。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -42,6 +44,7 @@ RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexi
 - 对包含 `symbols` 或 `path_hints` 的高精度查询，hybrid retrieval 使用 lexical anchor，embedding-only result 不能单独绕过 lexical/path/symbol 命中进入证据池。
 - Evidence Pack 和 Grounded Answer 应优先消费可审计的 lexical/path/symbol evidence，并通过 citation 约束回答。
 - V12 Query Rewrite / Rerank 必须服务于 grep-first 检索基线，不能把系统改成默认向量库优先。
+- V13 Memory 只能作为偏好和用户明确项目事实的本地状态层，不能替代 repo evidence 或 citation validation。
 - 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
 
 ## V2 工具层：安全只读仓库能力
@@ -113,8 +116,7 @@ ChatService
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
 - LangGraph。
-- 真实外部 embedding 服务、向量库、真实 LLM query rewrite/rerank 或 context compression。
-- Memory。
+- 真实外部 embedding 服务、向量库、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
 - 多 Agent。
 - 自动修改代码。
 - 沙箱执行命令。
@@ -148,7 +150,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 Memory 正在实现和验证收口；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -215,6 +217,21 @@ AgentLoop
 - `/chat` 顶层响应仍只要求 `trace_id`、`answer`、`related_files` 和 `tool_calls`；provider audit 不进入 `tool_calls`。
 - V11 不实现 query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
 
+## 后续设计备忘：轻量 LLM Gateway
+
+外部 LLMGateway 资料中的“稳定性控制面”概念对 RepoPilot 有参考价值，但本项目不应直接复制重型工业网关。当前已实现的是 V11 Model Provider Boundary，不是完整 LLMGateway：它只收口 provider 调用、环境变量配置、基础 timeout、错误 fallback、citation validation 和脱敏 provider audit。
+
+后续如果增强真实模型调用，RepoPilot 应优先吸收轻量子集：
+
+- 模型调用统一入口：继续围绕 `ModelProvider` / `GroundedAnswerGenerator`，不要让 API handler、AgentLoop 或工具层直接散落 HTTP 调用。
+- 配置和密钥边界：API key 只来自环境变量或后续受控配置源，audit/log 不记录 key、完整 prompt、完整输出或完整 Evidence Pack。
+- 超时和兜底：保留明确 timeout、provider error fallback、citation invalid fallback，让真实模型失败不破坏 `/chat` contract。
+- 最小重试：如后续需要，只对网络瞬断、429/5xx 等可恢复错误做小次数、可测试的 deterministic retry；默认验证仍不得依赖真实网络。
+- 轻量路由：只在明确需求出现时支持按任务类型选择 provider/model，例如 grounded answer、rewrite、rerank 分开配置；不要提前做复杂策略引擎。
+- 成本/用量摘要：可以先记录 provider、model、status、latency、token/cost 估算字段，但只进入内部 trace 或后续受控审计，不进入 `/chat.tool_calls`。
+
+暂不追求完整工业 LLMGateway 能力：全局限流服务、熔断集群、复杂供应商竞价、多租户配额、持久化成本账单、分布式日志追踪或控制台。只有当 RepoPilot 真的开始依赖多个真实 provider、长任务或 always-on gateway 时，再作为独立阶段评估。
+
 ## V12 架构补充：Query Rewrite + Rerank
 
 V12 在 V11 检索与回答链路中加入 deterministic rewrite/rerank 边界。当前执行链路为：
@@ -237,3 +254,24 @@ ToolExecutor(repo_rag)
 - Evidence Pack budget/summary 和 grounded answer citation validation 语义不变。
 - rewrite/rerank audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
 - V12 不默认启用真实 LLM rewrite/rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
+
+## V13 架构补充：Memory
+
+V13 在 AgentLoop 中加入轻量 Memory 边界：
+
+```text
+AgentLoop
+  -> MemoryManager
+     -> SQLiteMemoryStore(PREF/LTM in .repopilot/memory.sqlite3)
+     -> InMemorySessionMemoryStore(STM)
+  -> QueryUnderstanding/SearchPlan -> repo_search...
+```
+
+边界约束：
+
+- Memory command 在 route 后确认优先，命中后不执行 `repo_rag`。
+- `.repopilot/` 是 repo-local 本地状态目录，必须被 git 忽略；Memory 不修改被分析仓库代码文件。
+- `repo_key` 使用 resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash；audit 不暴露绝对路径或 DB 路径。
+- PREF/LTM 使用 SQLite 持久化，STM 使用进程内存储。
+- Memory audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
+- Memory 不实现向量召回、自动模型总结、跨 repo 智能召回、context compression、SandboxRunner、skill execution 或多 agent orchestration。

@@ -15,3 +15,6 @@ env/
 # 本地环境变量
 .env
 .env.*
+
+# RepoPilot 本地状态
+.repopilot/

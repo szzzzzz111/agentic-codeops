@@ -1,6 +1,21 @@
 # 当前 Review 清单
 
-当前活跃阶段：暂无；V12 `v12-query-rewrite-rerank` 已实现、review、提交并归档。
+当前活跃阶段：V13 `v13-memory`。
+
+## V13 Implementation Review
+
+- [x] OpenSpec change 包含 proposal、design、tasks，以及 `memory`、`agent-loop-tool-execution` 和 `chat-api` spec delta。
+- [x] `.repopilot/` 已加入 `.gitignore`，SQLite DB 只作为 repo-local 本地状态，不修改被分析仓库代码文件。
+- [x] `repo_key` 使用 `Path(repo_path).resolve()`、POSIX 分隔符、Windows lower-case 和稳定 hash，audit 不暴露绝对路径。
+- [x] Memory parser 先把全角冒号 `：` 归一化为半角 `:`，并覆盖中文/英文明确指令。
+- [x] Memory command 命中后确认优先，不执行 `repo_rag`，`related_files=[]` 且 `tool_calls=[]`。
+- [x] PREF/LTM 使用 SQLite 持久化，STM 使用进程内按 `user_id/session_id` 隔离。
+- [x] STM 可通过 `stm:` / `会话:` 明确写入，并按 `user_id/session_id` 读取摘要。
+- [x] PREF 可影响表达偏好，但代码事实仍由 repo evidence 和 citation validation 约束。
+- [x] Memory audit 只进入内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
+- [x] repo_path 不存在、不可解析或 `.repopilot/` 不可写时 memory command 优雅失败且不泄露本机路径。
+- [x] 普通 repo_search 的 memory read failure 不阻断检索，只记录 memory unavailable。
+- [x] 默认验证不依赖真实网络、API key、外部数据库或真实模型输出。
 
 ## V11 Archive Closeout
 
@@ -14,14 +29,6 @@
 - [x] `git diff --check` 通过。
 - [x] 内部 self-review 和外部 review 均已处理。
 - [x] V11 active change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`。
-
-## V13 Next Stage Gate
-
-- [ ] 使用 `.harness/templates/stage_planning.md` 先做 V13 阶段级规划，明确 capability、scope、non-goals、依赖和 human decision。
-- [ ] 开始 V13 前先创建 Memory 的 OpenSpec proposal、design、tasks 和 spec delta。
-- [ ] V13 必须区分 STM、LTM 和 PREF，并定义 memory audit、脱敏和 `/chat` contract 边界。
-- [ ] V13 开工前同步 `.harness/allowed_files.md` 和本 checklist，明确允许修改的代码、测试、docs 和 OpenSpec artifacts。
-- [ ] V13 plan review 通过前，不修改运行时代码或测试。
 
 ## V12 Implementation Review
 

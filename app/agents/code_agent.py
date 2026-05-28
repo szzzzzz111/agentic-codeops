@@ -19,12 +19,21 @@ class CodeAgent:
     ) -> None:
         self._agent_loop = agent_loop or AgentLoop(tool_executor=tool_executor)
 
-    def run(self, message: str, repo_path: str, trace_id: str) -> AgentResult:
+    def run(
+        self,
+        message: str,
+        repo_path: str,
+        trace_id: str,
+        user_id: str = "",
+        session_id: str = "",
+    ) -> AgentResult:
         result = self._agent_loop.run(
             AgentLoopRequest(
                 message=message,
                 repo_path=repo_path,
                 trace_id=trace_id,
+                user_id=user_id,
+                session_id=session_id,
             )
         )
         agent_result = result.to_agent_result()

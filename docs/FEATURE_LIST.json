@@ -259,5 +259,29 @@
     ],
     "passes": true,
     "notes": "由 tests/test_query_rewrite.py、tests/test_repo_rerank.py、tests/test_agent_harness_kernel.py、tests/test_chat_api.py 和相关 repo/evidence/grounded answer 回归测试覆盖。"
+  },
+  {
+    "id": "v13-memory",
+    "category": "memory",
+    "description": "AgentLoop 支持 repo-local SQLite-backed PREF/LTM、进程内 STM、明确 memory 指令和内部 memory audit。",
+    "steps": [
+      "发送明确 memory 指令，例如 记住：pref:language=中文",
+      "检查 /chat 返回确认回答且不调用 repo_rag",
+      "发送 forget 或 忘记 指令删除 memory",
+      "构造普通 repo_search 请求并检查内部 memory audit 不进入公开响应"
+    ],
+    "acceptance_criteria": [
+      "PREF/LTM 使用 repo-local .repopilot/memory.sqlite3 持久化，STM 使用进程内 user/session 隔离",
+      "stm:/会话: 前缀可写入 STM，并按 user_id + session_id 隔离",
+      "repo_key 使用 resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash",
+      "parser 支持全角/半角冒号和中英文明确指令",
+      "memory command 命中后确认优先，不执行 repo_rag",
+      "Memory audit 不进入 /chat 顶层字段或 tool_calls，且不泄露绝对路径、DB 路径或完整 memory value",
+      "普通 repo_search 的 memory read failure 不阻断检索",
+      "V13 不实现向量 memory、自动模型总结、context compression、SandboxRunner、skill execution 或多 agent orchestration",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_memory.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

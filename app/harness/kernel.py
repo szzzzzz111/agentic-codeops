@@ -3,6 +3,7 @@ from pathlib import PurePosixPath, PureWindowsPath
 import re
 
 from app.answering.grounded_answer import GroundedAnswerGenerator
+from app.memory.manager import MemoryManager
 from app.providers.model_provider import ModelProvider, load_model_provider_from_env
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
 from app.rag.repo_rag import HybridRepoRetriever
@@ -45,6 +46,15 @@ V12_CAPABILITY_STATUS_ANSWER = (
     "默认不启用真实 LLM rewrite/rerank；"
     "当前未实现 memory 或 context compression。"
 )
+V13_CAPABILITY_STATUS_ANSWER = (
+    "V13 提供 SQLite-backed PREF/LTM 和进程内 STM；"
+    "支持明确 memory 指令和内部 memory audit；"
+    "当前未实现向量记忆、自动模型总结、跨 repo 智能召回或 context compression。"
+)
+VECTOR_CAPABILITY_STATUS_ANSWER = (
+    "V9 提供轻量 embedding retrieval 和 hybrid search；"
+    "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant 或真实外部 embedding 服务。"
+)
 
 
 @dataclass(frozen=True)
@@ -52,6 +62,8 @@ class AgentLoopRequest:
     message: str
     repo_path: str
     trace_id: str
+    user_id: str = ""
+    session_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -197,6 +209,7 @@ class AgentLoop:
         query_understanding: QueryUnderstanding | None = None,
         repo_retriever: HybridRepoRetriever | None = None,
         model_provider: ModelProvider | None = None,
+        memory_manager: MemoryManager | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
@@ -204,6 +217,7 @@ class AgentLoop:
         self.permission_policy = permission_policy or PermissionPolicy()
         self.approval_gate = approval_gate or ApprovalGate()
         self.query_understanding = query_understanding or QueryUnderstanding()
+        self.memory_manager = memory_manager or MemoryManager()
         self.grounded_answer = GroundedAnswerGenerator(
             provider=model_provider or load_model_provider_from_env()
         )
@@ -217,6 +231,27 @@ class AgentLoop:
                 summary=f"route={decision.route}; reason={decision.reason}",
             )
         ]
+
+        memory_command = self.memory_manager.handle_command(
+            user_id=request.user_id,
+            session_id=request.session_id,
+            repo_path=request.repo_path,
+            message=request.message,
+        )
+        if memory_command.handled:
+            return AgentLoopResult(
+                answer=memory_command.answer,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="memory_command",
+                        status="ok"
+                        if "unavailable" not in memory_command.audit_summary
+                        else "error",
+                        summary=memory_command.audit_summary,
+                    ),
+                ],
+            )
 
         if decision.route == "capability_status":
             return AgentLoopResult(
@@ -292,6 +327,19 @@ class AgentLoop:
                     ),
                 ],
             )
+
+        memory_summary = self.memory_manager.summarize_for_request(
+            user_id=request.user_id,
+            session_id=request.session_id,
+            repo_path=request.repo_path,
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="memory_summarized",
+                status="ok" if "unavailable" not in memory_summary else "error",
+                summary=memory_summary,
+            )
+        )
 
         trace_events.append(
             TraceEvent(
@@ -505,15 +553,23 @@ def _asks_about_unimplemented_v10_stack(message: str) -> bool:
 
 def _capability_status_answer(message: str) -> str:
     lower = message.lower()
-    if any(term in lower for term in ("query rewrite", "rerank")):
+    asks_memory = "memory" in lower or "记忆" in message
+    asks_rewrite_or_rerank = any(term in lower for term in ("query rewrite", "rerank"))
+    asks_vector_stack = any(
+        term in lower
+        for term in ("embedding", "milvus", "elasticsearch", "pgvector", "qdrant", "vector")
+    )
+    if asks_memory and asks_vector_stack:
+        return f"{VECTOR_CAPABILITY_STATUS_ANSWER}；{V13_CAPABILITY_STATUS_ANSWER}"
+    if asks_memory and asks_rewrite_or_rerank:
+        return f"{V12_CAPABILITY_STATUS_ANSWER}；{V13_CAPABILITY_STATUS_ANSWER}"
+    if asks_memory:
+        return V13_CAPABILITY_STATUS_ANSWER
+    if asks_rewrite_or_rerank:
         return V12_CAPABILITY_STATUS_ANSWER
     if _asks_about_unimplemented_v10_stack(message):
         return V11_CAPABILITY_STATUS_ANSWER
-    return (
-        "V9 提供轻量 embedding retrieval 和 hybrid search；"
-        "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant、"
-        "真实外部 embedding 服务或 memory。"
-    )
+    return VECTOR_CAPABILITY_STATUS_ANSWER
 
 
 def _unique_related_files(results: list[dict[str, str | int]]) -> list[str]:

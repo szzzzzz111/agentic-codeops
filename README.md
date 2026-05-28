@@ -6,12 +6,13 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V12 已归档；暂无活跃开发阶段，下一阶段建议从 V13 Memory 规划开始。
+- 当前主线能力：V1-V12 已归档；V13 Memory 已实现，当前处于实现验证/收口阶段。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
+- 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
 - 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
-- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、memory 或 context compression。
+- 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
 
 ## 当前能力
 
@@ -41,6 +42,15 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 可选 `OpenAICompatibleModelProvider` 通过环境变量启用：`REPOPILOT_MODEL_PROVIDER=openai_compatible`、`REPOPILOT_MODEL_BASE_URL`、`REPOPILOT_MODEL_API_KEY`、`REPOPILOT_MODEL_NAME`。
 - provider 输出必须包含合法 citation，格式为 `relative/path.py:start-end`；无证据、无合法 citation、越界 citation 或 provider 失败时返回保守 fallback。
 - provider audit 只保留在内部 trace，且不记录完整 prompt、完整模型输出、完整 Evidence Pack 或 API key。
+
+### Memory
+
+- `MemoryManager` 解析明确 memory 指令并编排读写删除。
+- `SQLiteMemoryStore` 默认把 PREF/LTM 写入目标 repo 的 `.repopilot/memory.sqlite3`，使用 stdlib `sqlite3`，不依赖外部数据库。
+- `repo_key` 通过 resolved repo path、POSIX 分隔符、Windows lower-case 和稳定 hash 生成；audit 不暴露本机绝对路径或 DB 路径。
+- 支持 `记住: ...`、`请记住...`、`忘记: ...`、`请忘记...`、`remember: ...`、`forget: ...`，并兼容全角/半角冒号；`stm:` / `会话:` 写 STM，`pref:` / `偏好:` 写 PREF，`project:` / `项目:` 写 LTM。
+- memory command 命中后确认优先，不执行 `repo_rag`；普通 repo_search 可记录脱敏 memory summary。
+- Memory audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
 
 ### Safe Repository Tools
 
@@ -221,6 +231,12 @@ V11 保持 `/chat` 顶层响应 contract 不变，grounded answer 写入现有 `
 
 V12 保持 Evidence Pack budget/summary 和 grounded answer citation validation 语义不变；rewrite/rerank audit 只保留在内部 trace，不进入 `/chat.tool_calls` 或顶层响应。V12 不默认启用真实 LLM rewrite/rerank。
 
+### V13：Memory
+
+在 AgentLoop 中加入真实可用的轻量 Memory 边界。V13 使用 repo-local SQLite 保存 PREF/LTM，使用进程内 STM 保存 session 记忆，支持明确中英文 memory 指令和删除指令。Memory 指令通过现有 `answer` 字段返回确认，且不调用 repo_rag；普通请求只把脱敏 memory audit 写入内部 trace。
+
+V13 保持 `/chat` 顶层响应 contract 不变。Memory 不提供向量召回、不做自动 LLM 总结、不参与 citation validation，也不能覆盖 repo evidence 对代码事实回答的约束。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -229,8 +245,7 @@ V12 保持 Evidence Pack budget/summary 和 grounded answer citation validation 
 - trace 持久化审计。
 - 反思检查和 eval。
 - 真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant。
-- 真实 LLM query rewrite/rerank 和 context compression。
-- Memory。
+- 真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结和 context compression。
 - 自动修改代码。
 - shell 执行。
 - 复杂智能体循环、LLM 驱动语义理解和多步规划。
@@ -251,6 +266,7 @@ RepoPilot 后续路线要体现工程化味道，但不追求重型企业平台�
 - 一开始就引入复杂微服务、Kafka、Milvus、Elasticsearch、PostgreSQL 等重依赖。
 - 一次性做完整企业级权限、观测、队列、分布式任务系统。
 - 为了“看起来工程化”而增加个人维护不起的代码量。
+- 直接实现完整工业 LLMGateway；后续只在真实模型调用需要时，增量吸收 timeout、fallback、脱敏 audit、轻量 retry、简单模型路由和成本摘要等小切片。
 
 ## Harness Engineering
 
@@ -287,8 +303,7 @@ ChatService
 
 ## 路线图
 
-已归档至 V12：Query Rewrite + Rerank。后续路线：
+已归档至 V12：Query Rewrite + Rerank。当前已实现 V13 Memory，后续路线：
 
-- V13：Memory，区分 STM、LTM 和 PREF，并加入 memory audit。
 - V14：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。
 - V15：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。

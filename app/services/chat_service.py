@@ -13,6 +13,8 @@ class ChatService:
             message=request.message,
             repo_path=request.repo_path,
             trace_id=trace_id,
+            user_id=request.user_id,
+            session_id=request.session_id,
         )
         return ChatResponse(
             trace_id=trace_id,

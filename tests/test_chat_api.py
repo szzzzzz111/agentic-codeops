@@ -171,6 +171,24 @@ def test_chat_endpoint_keeps_contract_for_v8_repo_rag(tmp_path: Path) -> None:
     assert "app/harness/kernel.py:1-" in body["answer"]
 
 
+def test_chat_endpoint_memory_command_keeps_contract_and_redacts_paths(
+    tmp_path: Path,
+) -> None:
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, "记住：pref:language=中文"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert body["answer"] == "已记住偏好：language。"
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+    assert str(tmp_path) not in response.text
+    assert "memory.sqlite3" not in response.text
+
+
 def test_docs_keep_v10_route_map_consistent() -> None:
     docs = [
         Path("README.md"),
