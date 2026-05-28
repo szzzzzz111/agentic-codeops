@@ -1,8 +1,8 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：V12 `v12-query-rewrite-rerank` planning / implementation。
+当前活跃阶段：暂无。
 
-V12 引入 bounded deterministic multi-query rewrite 和 before-Evidence rerank。默认不调用真实 LLM、网络或 API key。
+V12 `v12-query-rewrite-rerank` 已实现并归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`。下一阶段开始前，必须先创建新的 OpenSpec change，并重新同步本文件与 `.harness/review_checklist.md`。
 
 ## 当前允许修改
 
@@ -20,15 +20,6 @@ V12 引入 bounded deterministic multi-query rewrite 和 before-Evidence rerank�
 - `.harness/test_commands.md`
 - `openspec/specs/**`
 - `openspec/changes/archive/**`
-- `openspec/changes/v12-query-rewrite-rerank/**`
-- `app/rag/**`
-- `app/tools/tool_executor.py`
-- `app/harness/kernel.py`
-- `tests/test_query_rewrite.py`
-- `tests/test_repo_rerank.py`
-- `tests/test_repo_rag.py`
-- `tests/test_agent_harness_kernel.py`
-- `tests/test_chat_api.py`
 
 ## 禁止修改
 
@@ -38,6 +29,6 @@ V12 引入 bounded deterministic multi-query rewrite 和 before-Evidence rerank�
 - 不新增 `/chat` 必需顶层字段。
 - 不绕过 `ToolExecutor(repo_rag)`、`PermissionPolicy`、`ApprovalGate` 或安全文件工具边界。
 - 不默认接入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务、模型下载、tokenizer 依赖或持久化向量索引。
-- V12 只实现默认 deterministic query rewrite 和 deterministic rerank；不实现真实 LLM rewrite/rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
+- V12 已实现默认 deterministic query rewrite 和 deterministic rerank；后续不得把真实 LLM rewrite/rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration 写成已实现，除非新阶段明确开放。
 - 不把小米 MiMo/Mino 写死为运行时主链路；真实 provider 只能作为 OpenAI-compatible provider 的显式配置。
 - 不让默认验证依赖真实网络、真实 API key 或真实模型输出。

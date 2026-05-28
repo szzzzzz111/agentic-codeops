@@ -5,11 +5,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前工作分支：`feature/v12-query-rewrite-rerank`
-- 当前阶段：V12 `v12-query-rewrite-rerank` 已实现并提交，OpenSpec change 状态为 Complete；等待人工确认是否归档
+- 当前阶段：V12 `v12-query-rewrite-rerank` 已实现、review、提交并归档；暂无活跃开发阶段，下一阶段建议从 V13 Memory 规划开始
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前 active change 为 `openspec/changes/v12-query-rewrite-rerank/`；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -19,6 +19,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 后续同类请求中，如果用户要求“先理解状态”或“先规划”，Codex 必须停在总结/方案确认点，不得自动进入实现。
 - 2026-05-17，用户确认“V6 得重新开发”后，Codex 再次把该确认理解为可直接写代码，已创建 `v6-agent-harness-kernel` OpenSpec、harness 边界、测试和部分运行时代码。这再次越过了“先给 plan 审查，再实现”的确认门。
 - 二次偏差处理：用户已在 review plan 后确认“没问题就进行开发，按计划来”，当前 `v6-agent-harness-kernel` 草稿改为保留并按计划改造。后续硬规则仍保留：凡是阶段重做/重新开发请求，Codex 只能先产出阶段 plan、OpenSpec/harness 边界和审查摘要；除非用户明确说“开始实现/写代码/按这个计划开发”，不得修改运行时代码或测试。
+- 2026-05-27，V12 收口中 Codex 曾把“进入下一流程”误解为可直接 commit/archive，越过了最终 self-review 和人工判断点；已纠正。后续外部 review 无阻塞后，必须先做最终 self-review 并列出需用户亲自判断的阶段级事项，再执行 commit、archive、merge 或 push。
 
 ## 路线重定向：加速但保持轻量工程化
 
@@ -98,7 +99,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-27，V12 follow-up 目标验证：`pytest tests/test_chat_api.py::test_chat_endpoint_returns_empty_related_files_when_keyword_is_missing tests/test_repo_rag.py tests/test_query_rewrite.py tests/test_tool_executor.py tests/test_repo_rerank.py -q`：19 passed。
 - 2026-05-27，V12 follow-up OpenSpec 验证：`openspec validate v12-query-rewrite-rerank`：通过；`openspec validate --all`：8 passed, 0 failed。
 - 2026-05-27，V12 follow-up 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 108 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
-- 2026-05-27，V12 implementation commit：`aaddad2 Add V12 query rewrite rerank`；active OpenSpec change 仍保留，等待人工确认是否归档。
+- 2026-05-27，V12 implementation commit：`aaddad2 Add V12 query rewrite rerank`。
+- 2026-05-27，V12 follow-up commit：`4553b11 Fix V12 review follow-ups`。
+- 2026-05-27，V12 archive：`openspec archive v12-query-rewrite-rerank --skip-specs -y` 已完成，归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`；长期 specs 已在 archive 前同步。
+- 2026-05-28，V12 archive 后 OpenSpec 验证：`openspec list` 显示 No active changes found；`openspec validate --all`：7 passed, 0 failed。
+- 2026-05-28，V12 archive closeout 验证：`powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
+- 2026-05-28，V12 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 108 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-26，V11 OpenSpec 计划验证：`openspec validate v11-grounded-answer-model-provider-boundary`：通过。
 - 2026-05-26，V11 provider / grounded answer 小切片验证：`pytest tests\test_model_provider.py tests\test_grounded_answer.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：54 passed。
 - 2026-05-26，V11 dependency 变更：`httpx>=0.27.0` 已从 dev dependency 提升为 `[project].dependencies` 运行时依赖，用于可选 OpenAI-compatible provider；默认验证仍不调用真实网络。
@@ -127,9 +133,9 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 2026-05-25，非 V10 历史代码债修复验证：`pytest tests\test_repo_rag.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：50 passed。
 - 2026-05-25，非 V10 历史代码债修复验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 81 passed, 1 skipped；`ruff check .` All checks passed。
 - 2026-05-25，非 V10 历史代码债修复验证：`openspec validate --all`：7 passed, 0 failed；`git diff --check`：通过，仅有 CRLF 换行提示。
-- 2026-05-25，V9 文档漂移修正 / V10 plan 当前未提交工作区验证：`openspec validate --all`：7 passed, 0 failed
-- 2026-05-25，V9 文档漂移修正 / V10 plan 当前未提交工作区验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
-- 2026-05-25，V9 文档漂移修正 / V10 plan 当前未提交工作区验证：`git diff --check`：通过，仅有 CRLF 换行提示
+- 2026-05-25，V9 文档漂移修正 / V10 plan 历史验证：`openspec validate --all`：7 passed, 0 failed
+- 2026-05-25，V9 文档漂移修正 / V10 plan 历史验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
+- 2026-05-25，V9 文档漂移修正 / V10 plan 历史验证：`git diff --check`：通过，仅有 CRLF 换行提示
 - 2026-05-26，V10 implementation self-review：未发现 P0/P1 阻塞；P2 文档历史措辞债已修正。
 - 2026-05-26，V10 外部 review：用户反馈外部 review 显示没问题，无阻塞发现。
 - 2026-05-26，V10 外部 review 后 full verify：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 81 passed, 1 skipped；`ruff check .` All checks passed。
@@ -284,7 +290,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V12 runtime 小切片、相关测试、外部 review follow-up 和 implementation commit 已完成；下一步由用户确认是否归档 active OpenSpec change。
+- 当前建议：V12 已归档；V13 Memory 开始前，先创建新的 OpenSpec change，并重新同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 - 后续可做 trace/tool/skill audit，为更完整的审计记录、真实审批流程和后续高风险工具提供基础。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 

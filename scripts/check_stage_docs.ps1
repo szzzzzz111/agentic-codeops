@@ -21,8 +21,8 @@ $pendingFinalReview = U "\u5f85\u6700\u7ec8 review"
 $pendingFinalVerify = U "\u5f85\u6700\u7ec8\u9a8c\u8bc1"
 $pendingCommitArchive = U "\u5f85\u63d0\u4ea4\u548c\u5f52\u6863"
 $pendingArchive = U "\u5f85\u5f52\u6863"
-$activeChange = U "\u5f53\u524d\u6d3b\u8dc3 OpenSpec change\uff1av11-grounded-answer-model-provider-boundary"
-$activeChangePath = U "V11 active change \u4f4d\u4e8e openspec/changes/v11-grounded-answer-model-provider-boundary/"
+$activeChange = U "\u5f53\u524d\u6d3b\u8dc3 OpenSpec change\uff1av12-query-rewrite-rerank"
+$activeChangePath = U "openspec/changes/v12-query-rewrite-rerank/"
 $oldRoadmap = U "\u5f53\u524d\u8def\u7ebf\u56fe\u5df2\u66f4\u65b0\u4e3a\u201c\u5df2\u5b8c\u6210\u81f3 V10\uff0c\u540e\u7eed\u4ece V11 \u5f00\u59cb\u201d"
 $readmeV10Roadmap = U "\u5df2\u5b8c\u6210\u81f3 V10\uff1aEvidence Pack \+ Context Budget\u3002\u540e\u7eed\u8def\u7ebf"
 $v13Implemented = U "V13 \u5df2\u5b9e\u73b0|\u5df2\u5b8c\u6210\u81f3 V13|V13 \u5df2\u5b8c\u6210"
@@ -39,7 +39,7 @@ $rules = @(
     },
     @{
         Pattern = "$activeChange|$activeChangePath"
-        Reason = "V11 is archived but still described as an active change"
+        Reason = "V12 is archived but still described as an active change"
     },
     @{
         Pattern = $oldRoadmap
