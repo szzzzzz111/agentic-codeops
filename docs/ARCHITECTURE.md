@@ -33,7 +33,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令。V14 active change 正在加入 Long Task Control Plane：任务状态写入 `.repopilot/tasks.sqlite3`，控制命令不调用 repo_rag，显式 resume/run 每次只推进一个只读 repo_rag step。默认不接真实 LLM、不自动修改代码、不执行 shell；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令和 Long Task Control Plane：任务状态写入 `.repopilot/tasks.sqlite3`，控制命令不调用 repo_rag，显式 resume/run 每次只推进一个只读 repo_rag step。默认不接真实 LLM、不自动修改代码、不执行 shell；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -154,7 +154,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 做 Personal Assistant Gateway。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 

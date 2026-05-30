@@ -3,54 +3,26 @@
 ## Purpose
 
 记录已实现的轻量 Agent Harness Kernel、确定性 Agent Loop、工具执行边界、V11 grounded answer 边界、V12 deterministic rewrite/rerank 边界和 V13 Memory 边界：`CodeAgent` 通过 `AgentLoop` 编排 `RequestRouter`、`MemoryManager`、`QueryUnderstanding`、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolExecutor`、`GroundedAnswerGenerator` 和内存级 `TraceEvent`，从 repo-local hybrid RAG 结果生成 `related_files`、安全 `tool_calls` 摘要和基于证据的 `answer`。默认路径不依赖真实 LLM；显式配置后可通过 Model Provider Boundary 调用 OpenAI-compatible provider 生成 grounded answer。不修改代码、不执行 shell、不引入真实外部 embedding 服务、外部向量库、LLM query rewrite、LLM rerank、向量 Memory、自动 memory 总结、Reflection、eval、SandboxRunner 或复杂多 Agent。
-
 ## Requirements
-
 ### Requirement: Agent Loop 由轻量 Harness Kernel 编排
 
-系统 SHALL 提供轻量 Agent Harness Kernel，用于编排请求路由、Memory 边界、工具元数据、工具调用、grounded answer 边界和 trace event。默认 Kernel MUST 保持确定性，MUST NOT 在未显式配置 provider 时依赖真实 LLM。V11 MAY 通过 Model Provider Boundary 在显式配置下调用真实 OpenAI-compatible provider，但该 provider MUST NOT 绕过 AgentLoop、ToolExecutor、PermissionPolicy、ApprovalGate、Memory audit 或 Evidence Pack / Context Budget 边界。
+系统 SHALL 提供轻量 Agent Harness Kernel，用于编排请求路由、Long Task 边界、Memory 边界、工具元数据、工具调用、grounded answer 边界和 trace event。默认 Kernel MUST 保持确定性，MUST NOT 在未显式配置 provider 时依赖真实 LLM。
 
-Kernel MUST 定义最小可测试 contract：`AgentLoopRequest(message, repo_path, trace_id, user_id, session_id)`、`RouteDecision(route, keyword, reason)`、`ToolSpec(name, description, read_only, risk, requires_approval)`、`PermissionDecision(tool_name, status, reason)`、`TraceEvent(event_type, tool_name, status, summary)` 和内部 `AgentLoopResult(answer, related_files, tool_calls, trace_events_internal)`。
+Long Task 指令解析 MUST 优先于 `RequestRouter` / keyword 路由，并与 V13 memory command 同级前置处理。前置控制命令的具体顺序为：先解析 V13 memory command，再解析 Long Task command，最后才进入 `RequestRouter`。Long Task 控制命令命中后，系统 MUST NOT 先执行 repo_search 或 keyword extraction。Long Task 的显式 resume/run MAY 调用当前 step action，但该 action MUST 继续通过 ToolRegistry、PermissionPolicy、ApprovalGate 和 ToolExecutor。
 
-V12 SHALL 在 repo_search 链路中记录 deterministic query rewrite 和 rerank 的内部 trace summary。该 summary MUST NOT 作为 `/chat` 顶层字段暴露，也 MUST NOT 将完整 variants、完整 retrieval results、完整 Evidence Pack、本机绝对路径或模型输出写入 `/chat.tool_calls`。
+#### Scenario: Long Task 控制命令不进入 repo_search
 
-V13 SHALL 在 memory command 或普通请求 memory read 时记录内部 memory trace summary。该 summary MUST NOT 作为 `/chat` 顶层字段暴露，也 MUST NOT 将完整 memory value、本机绝对路径或 DB 路径写入 `/chat.tool_calls`。
-
-#### Scenario: 可搜索请求进入 repo_search route
-
-- **WHEN** 聊天消息包含明确可搜索 token，例如 `UNIQUE_BUG_TOKEN`
-- **THEN** Kernel 将请求路由为 `repo_search`
-- **AND** route decision 包含搜索 keyword 和路由原因
-- **AND** Agent 通过注册工具执行仓库搜索
-- **AND** Agent MAY 在 successful evidence pack 后通过 grounded answer 边界生成回答
-
-#### Scenario: 不含搜索 token 的请求进入 chat_only route
-
-- **WHEN** 聊天消息不包含可搜索 token
-- **THEN** Kernel 将请求路由为 `chat_only`
-- **AND** route decision 不包含搜索 keyword
-- **AND** Agent 不调用仓库搜索工具
-
-#### Scenario: rewrite 和 rerank audit 不公开暴露
-
-- **WHEN** repo_search 执行 deterministic rewrite 或 rerank
-- **THEN** `trace_events_internal` MAY 包含 rewrite/rerank 摘要事件
-- **AND** `/chat` 响应 MUST 继续只要求 `trace_id`、`answer`、`related_files` 和 `tool_calls`
-- **AND** `tool_calls` MUST NOT 包含完整 variants、完整 retrieval results 或完整 Evidence Pack
-
-#### Scenario: memory command 确认优先
-
-- **WHEN** 聊天消息是明确 memory command
-- **THEN** Kernel 处理 memory command 并返回确认式 answer
-- **AND** Agent MUST NOT 调用 repo_rag
+- **WHEN** 聊天消息是明确 Long Task 控制命令，例如 `查看任务 task_20260529_ab12`
+- **THEN** AgentLoop 在 RequestRouter 前处理该命令
+- **AND** Agent MUST NOT 因 `task_20260529_ab12` 触发 repo_rag
 - **AND** `related_files` 和 `tool_calls` 均为空
 
-#### Scenario: 普通 repo_search 记录 memory summary
+#### Scenario: Memory command 同级前置且先于 Long Task command
 
-- **WHEN** 聊天消息进入 repo_search
-- **THEN** Kernel MAY 读取 memory 并记录脱敏 memory summary
-- **AND** Kernel 继续通过权限、审批和 ToolExecutor 执行 repo_rag
-- **AND** `/chat.tool_calls` MUST NOT 包含 memory 内容
+- **WHEN** 聊天消息是明确 memory command 且正文包含 `创建长任务` 或 `task_xxx`
+- **THEN** AgentLoop 在 RequestRouter 前按 memory command 处理
+- **AND** Agent MUST NOT 创建 Long Task
+- **AND** Agent MUST NOT 执行 repo_rag
 
 ### Requirement: 工具调用经过 ToolRegistry、PermissionPolicy、ApprovalGate 和 ToolExecutor
 
@@ -156,14 +128,10 @@ V7 的权限和审批审计事件仅记录在内部 `trace_events_internal`，MU
 
 当前 Agent Loop MUST NOT 修改代码、执行 shell 命令、执行 skill、使用真实外部 embedding 服务、使用外部向量库、执行 LLM query rewrite、执行 LLM rerank、执行向量 Memory、实现自动 LLM memory 总结、执行 Reflection、运行 eval、使用复杂多 Agent 编排或实现 SandboxRunner。
 
-V11 MAY 在显式配置下通过 Model Provider Boundary 调用 OpenAI-compatible provider 生成 grounded answer。该 provider MUST 只消费预算内 evidence，不得参与检索规划、工具调用、代码修改、query rewrite、rerank、memory 或多步 agent 决策。
+V14 SHALL 提供 Long Task Control Plane 和 ReAct trace skeleton。该能力 MUST NOT 执行后台任务、自动循环执行、自动修改代码、创建或管理 worktree、调度真实 subagents、执行 shell、运行 evaluator 或自动语义验收。
 
-V12 SHALL 提供默认 deterministic query rewrite 和 deterministic rerank。该能力 MUST NOT 调用真实 LLM，MUST NOT 改变权限/审批边界，MUST NOT 修改代码或执行 shell。
+#### Scenario: Long Task resume 仍只执行只读 repo_rag
 
-V13 SHALL 提供 repo-local SQLite-backed PREF/LTM、进程内 STM、明确 memory 指令和内部 memory audit。该能力 MUST NOT 执行向量召回、自动模型总结、context compression、代码修改或 shell。
-
-#### Scenario: 当前聊天行为
-
-- **WHEN** 用户发送聊天请求
-- **THEN** 系统只执行当前确定性路由、权限边界、只读仓库搜索、deterministic rewrite/rerank 和 grounded answer 边界行为
-- **AND** 系统 MUST NOT 执行代码修改、shell、skill、向量 memory、LLM rewrite/rerank 或多 agent 编排
+- **WHEN** 用户显式恢复 Long Task 当前 step
+- **THEN** 系统 MAY 调用只读 `repo_rag`
+- **AND** 系统 MUST NOT 执行 shell、写文件工具、真实 subagent 或 worktree 操作

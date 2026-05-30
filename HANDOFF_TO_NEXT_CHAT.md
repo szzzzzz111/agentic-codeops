@@ -3,14 +3,13 @@
 ## 当前状态
 
 ```text
-当前工作分支：feature/v14-long-task-react-subagents
 当前基线分支：main
-当前活跃 OpenSpec change：v14-long-task-react-subagents
-最近完成阶段：V13 Memory（已实现、review、提交并归档）
-当前阶段：V14 Long Task Control Plane + ReAct Skeleton（active，未提交未归档）
+当前活跃 OpenSpec change：无
+最近完成阶段：V14 Long Task Control Plane + ReAct Skeleton（已实现、review、提交、合并、推送并归档）
+当前阶段：暂无 active development stage
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V13 已归档；V14 正在加入 repo-local Long Task Control Plane，支持明确长任务指令、`.repopilot/tasks.sqlite3`、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace。默认不调用真实 LLM、网络或 API key。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V14 已归档；V14 已加入 repo-local Long Task Control Plane，支持明确长任务指令、`.repopilot/tasks.sqlite3`、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace。默认不调用真实 LLM、网络或 API key。
 
 新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
@@ -44,6 +43,12 @@ V13 已归档到：
 openspec/changes/archive/2026-05-28-v13-memory/
 ```
 
+V14 已归档到：
+
+```text
+openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/
+```
+
 ## 当前主链路
 
 ```text
@@ -61,8 +66,9 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 ## V14 当前实现摘要
 
-- 已创建 OpenSpec change：`openspec/changes/v14-long-task-react-subagents/`，包含 proposal、design、tasks 和 `long-task-agent-execution` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
-- 已同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 为 V14 active 边界。
+- OpenSpec change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`，包含 proposal、design、tasks 和 `long-task-agent-execution` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
+- 长期 specs 已同步，新增 `openspec/specs/long-task-agent-execution/spec.md`。
+- `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已切回暂无 active stage 的收口状态。
 - 新增 `app/longtask/`：
   - `parser.py`：解析明确长任务自然语言指令。
   - `planner.py`：deterministic task-type templates，并支持显式真实 provider 的受控 JSON 增强和 fallback。
@@ -92,6 +98,12 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   - V14 external review OpenSpec 验证：`openspec validate v14-long-task-react-subagents` 通过；`openspec validate --all`：9 passed, 0 failed。
   - V14 external review 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 134 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
   - V14 external review close：外部 review 确认无新增 P0/P1/P2；剩余 P3 `app/longtask/__pycache__` 已复核，文件系统和 git tracked files 均无 pyc。
+  - Implementation commit：`ed48fa9 Add V14 long task control plane`。
+  - Merge/push：已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`。
+  - Archive：`openspec archive v14-long-task-react-subagents -y` 已完成，长期 specs 已同步。
+  - Archive 后 `openspec validate --all`：9 passed, 0 failed。
+  - Archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 134 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+  - Archive closeout：`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
   - `ruff check app\longtask app\harness\kernel.py tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：All checks passed。
   - `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 130 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
   - `git diff --check`：通过，仅有 CRLF 换行提示。
@@ -185,7 +197,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - 在需要时加入小次数 retry、latency/token/cost 摘要和简单 provider/model routing。
 - 不提前实现工业级限流、熔断集群、多租户成本账单、供应商竞价或控制台。
 
-这个备忘适合后续 V14/V15 或单独 `llm-gateway-lite` change 规划时参考。
+这个备忘适合后续 V15 或单独 `llm-gateway-lite` change 规划时参考。
 
 ## 已完成阶段摘要
 
@@ -229,9 +241,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- `.harness/allowed_files.md` 已同步为 V14 active 写入边界。
-- `.harness/review_checklist.md` 已同步为 V14 Long Task / ReAct implementation gate，并保留历史 closeout/review 记录。
-- `openspec/changes/v14-long-task-react-subagents/` 已创建 proposal、design、tasks 和 spec deltas。
+- `.harness/allowed_files.md` 已同步为暂无 active stage；下一阶段开始前必须先创建新 OpenSpec change 并更新写入边界。
+- `.harness/review_checklist.md` 已同步 V14 archive closeout，并保留历史 closeout/review 记录。
+- `openspec/changes/v14-long-task-react-subagents/` 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`。
 - `openspec/changes/v10-evidence-pack-context-budget/` 已创建 proposal、design、tasks 和 `specs/repo-query-understanding-rag/spec.md`。
 - `openspec/changes/v9-embedding-hybrid-search/` 已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`。
 - `openspec/changes/v10-evidence-pack-context-budget/` 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`。
@@ -301,9 +313,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 继续 V14 收口：运行 `openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`、`git diff --check`。
-2. 做 V14 implementation self-review，确认 Long Task 路由优先级、repo_key 规范化、redaction、quota/archive、provider fallback 和 subagent/worktree non-goals。
-3. review 无阻塞后再提交；归档需等用户确认。
+1. 若开始 V15 Personal Assistant Gateway，先按项目流程读取 AGENTS/README/PROGRESS/ARCHITECTURE/allowed_files/review_checklist/HANDOFF，并创建新的 OpenSpec change。
+2. 新阶段开始前先同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，不要直接修改 runtime。
+3. 继续保持默认验证：`openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`、`git diff --check`。
 
-后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct / Subagents；V15 做 Personal Assistant Gateway。
+后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Personal Assistant Gateway。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

@@ -239,7 +239,7 @@ def test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call(
     assert "provider" not in response.text
 
 
-def test_docs_keep_v10_route_map_consistent() -> None:
+def test_docs_keep_stage_route_map_consistent() -> None:
     docs = [
         Path("README.md"),
         Path("docs/PROGRESS.md"),
@@ -251,7 +251,7 @@ def test_docs_keep_v10_route_map_consistent() -> None:
     assert "V10：Evidence Pack + Context Budget" in combined
     assert "V11：Grounded Answer / Model Provider Boundary" in combined
     assert "V12：Query Rewrite + Rerank" in combined
-    assert "已归档至 V13：Memory" in combined
+    assert "已归档至 V14：Long Task / ReAct Skeleton" in combined
     assert "V10：Query Rewrite / Rerank / Context Budget" not in combined
     assert "V10 = Query Rewrite / Rerank / Context Budget" not in combined
     assert "V12 不默认启用真实 LLM rewrite/rerank" in combined

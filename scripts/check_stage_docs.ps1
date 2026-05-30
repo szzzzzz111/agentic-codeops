@@ -21,11 +21,11 @@ $pendingFinalReview = U "\u5f85\u6700\u7ec8 review"
 $pendingFinalVerify = U "\u5f85\u6700\u7ec8\u9a8c\u8bc1"
 $pendingCommitArchive = U "\u5f85\u63d0\u4ea4\u548c\u5f52\u6863"
 $pendingArchive = U "\u5f85\u5f52\u6863"
-$activeChange = U "\u5f53\u524d\u6d3b\u8dc3 OpenSpec change\uff1av12-query-rewrite-rerank"
+$activeChange = U "\u5f53\u524d\u6d3b\u8dc3 OpenSpec change\uff1a(v12-query-rewrite-rerank|v14-long-task-react-subagents)"
 $activeChangePath = U "openspec/changes/v12-query-rewrite-rerank/"
 $oldRoadmap = U "\u5f53\u524d\u8def\u7ebf\u56fe\u5df2\u66f4\u65b0\u4e3a\u201c\u5df2\u5b8c\u6210\u81f3 V10\uff0c\u540e\u7eed\u4ece V11 \u5f00\u59cb\u201d"
 $readmeV10Roadmap = U "\u5df2\u5b8c\u6210\u81f3 V10\uff1aEvidence Pack \+ Context Budget\u3002\u540e\u7eed\u8def\u7ebf"
-$v14Implemented = U "V14 \u5df2\u5b9e\u73b0|\u5df2\u5b8c\u6210\u81f3 V14|V14 \u5df2\u5b8c\u6210"
+$v15Implemented = U "V15 \u5df2\u5b9e\u73b0|\u5df2\u5b8c\u6210\u81f3 V15|V15 \u5df2\u5b8c\u6210"
 $currentDefaultRealLlm = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM|\u5df2\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM"
 $currentDefaultMilvus = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Milvus|\u5df2\u9ed8\u8ba4\u63a5\u5165 Milvus"
 $currentDefaultEs = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Elasticsearch|\u5df2\u9ed8\u8ba4\u63a5\u5165 Elasticsearch"
@@ -50,8 +50,8 @@ $rules = @(
         Reason = "README roadmap should not stop at V10"
     },
     @{
-        Pattern = $v14Implemented
-        Reason = "V14 should be planned, not described as implemented"
+        Pattern = $v15Implemented
+        Reason = "V15 should be planned, not described as implemented"
     },
     @{
         Pattern = "$currentDefaultRealLlm|$currentDefaultMilvus|$currentDefaultEs|$currentDefaultPgVector|$currentDefaultQdrant"

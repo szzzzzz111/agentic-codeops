@@ -4,12 +4,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/v14-long-task-react-subagents`
-- 当前阶段：V14 `v14-long-task-react-subagents` active；OpenSpec、harness、Long Task runtime、AgentLoop 集成和首批测试已推进，尚未提交或归档
+- 当前基线分支：`main`
+- 当前阶段：暂无 active development stage；V14 `v14-long-task-react-subagents` 已实现、review、提交、合并、推送并归档
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；active change 为 `openspec/changes/v14-long-task-react-subagents/`；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`，V13 change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`，V13 change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`，V14 change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -45,7 +45,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V11：Grounded Answer / Model Provider Boundary。已引入回答生成边界、证据约束策略、默认 fake provider 和可选 OpenAI-compatible provider。
 - V12：Query Rewrite + Rerank。已引入默认 deterministic multi-query rewrite、before-Evidence rerank 和内部 audit 边界；真实 LLM rewrite/rerank 留作后续独立阶段。
 - V13：Memory。已实现 repo-local SQLite-backed PREF/LTM、进程内 STM、明确 memory 指令和内部 memory audit；不做向量 memory 或自动模型总结。
-- V14：Long Task / ReAct / Subagents。加入计划、任务状态、pause/resume、scratch space、subagents、worktree handoff 和冲突检测。
+- V14：Long Task / ReAct Skeleton。已加入 repo-local Long Task control plane、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；真实 subagents、worktree automation 和后台任务仍为非目标。
 - V15：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
 
 LLMGateway 设计备忘：
@@ -118,6 +118,13 @@ LLMGateway 设计备忘：
 - 2026-05-30，V14 external review OpenSpec 验证：`openspec validate v14-long-task-react-subagents` 通过；`openspec validate --all`：9 passed, 0 failed。
 - 2026-05-30，V14 external review 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 134 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-30，V14 external review close：外部 review 确认无新增 P0/P1/P2；剩余 P3 `app/longtask/__pycache__` 已复核，文件系统和 git tracked files 均无 pyc。
+- 2026-05-30，V14 implementation commit：`ed48fa9 Add V14 long task control plane`。
+- 2026-05-30，V14 merge/push：`feature/v14-long-task-react-subagents` 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`。
+- 2026-05-30，V14 archive：`openspec archive v14-long-task-react-subagents -y` 已完成，归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`；长期 specs 已同步，新增 `openspec/specs/long-task-agent-execution/spec.md`。
+- 2026-05-30，V14 archive 后 OpenSpec 全量验证：`openspec validate --all`：9 passed, 0 failed。
+- 2026-05-30，V14 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 134 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-05-30，V14 archive closeout：`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
+- 2026-05-30，V14 archive diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-29，V14 OpenSpec 全量验证：`openspec validate --all`：9 passed, 0 failed。
 - 2026-05-29，V14 局部 lint：`ruff check app\longtask app\harness\kernel.py tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：All checks passed。
 - 2026-05-29，V14 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 130 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
@@ -389,7 +396,7 @@ LLMGateway 设计备忘：
 
 V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical repo RAG 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Evidence Pack + Context Budget；V11 为 Grounded Answer / Model Provider Boundary；V12 为 Query Rewrite + Rerank；V13 为 Memory；V14 为 Long Task / ReAct / Subagents；V15 为 Personal Assistant Gateway。
+路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Evidence Pack + Context Budget；V11 为 Grounded Answer / Model Provider Boundary；V12 为 Query Rewrite + Rerank；V13 为 Memory；V14 为 Long Task / ReAct Skeleton；V15 为 Personal Assistant Gateway。
 
 说明：V8 archive 中保留的是当时路线记录；后续已由 V9/V10 路线重排 supersede，当前长期 docs/specs 以 V10 Evidence Pack + Context Budget、V11 Grounded Answer / Model Provider Boundary、V12 Query Rewrite + Rerank 为准。
 

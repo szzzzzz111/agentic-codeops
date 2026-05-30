@@ -6,11 +6,11 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V13 已归档；V14 `v14-long-task-react-subagents` 正在开发，用于建立 Long Task Control Plane 和 ReAct trace skeleton。
+- 当前主线能力：V1-V14 已归档；V14 已建立 Long Task Control Plane 和 ReAct trace skeleton。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
-- 当前 Long Task：V14 active change 正在加入 repo-local `.repopilot/tasks.sqlite3`、明确长任务指令、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；不新增 `/tasks` API 或 `/chat` 必需顶层字段。
+- 当前 Long Task：repo-local `.repopilot/tasks.sqlite3`、明确长任务指令、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；不新增 `/tasks` API 或 `/chat` 必需顶层字段。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
 - 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
@@ -251,7 +251,7 @@ V12 保持 Evidence Pack budget/summary 和 grounded answer citation validation 
 
 V13 保持 `/chat` 顶层响应 contract 不变。Memory 不提供向量召回、不做自动 LLM 总结、不参与 citation validation，也不能覆盖 repo evidence 对代码事实回答的约束。
 
-### V14：Long Task / ReAct Skeleton（当前开发中）
+### V14：Long Task / ReAct Skeleton
 
 V14 在 AgentLoop 中加入 Long Task Control Plane。Memory command 和明确长任务指令均在 `RequestRouter` / keyword 路由前处理，顺序为 Memory command 先识别、Long Task command 后识别；创建、查看、列出、暂停、补充、归档和 reopen 控制命令不调用 `repo_rag`。显式 `resume/run` 每次只推进一个 step，并继续通过现有权限、审批和 `ToolExecutor(repo_rag)` 执行只读检索。
 
@@ -323,6 +323,6 @@ ChatService
 
 ## 路线图
 
-已归档至 V13：Memory。当前 active change 为 V14 Long Task / ReAct Skeleton。后续路线：
+已归档至 V14：Long Task / ReAct Skeleton。当前暂无 active change。后续路线：
 
 - V15：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。

@@ -1,6 +1,16 @@
 # 当前 Review 清单
 
-当前活跃阶段：V14 `v14-long-task-react-subagents`。
+当前活跃阶段：暂无。
+
+## V14 Archive Closeout Gate
+
+- [x] V14 implementation commit 已创建：`ed48fa9 Add V14 long task control plane`。
+- [x] V14 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`。
+- [x] V14 change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`。
+- [x] 长期 specs 已通过 `openspec archive v14-long-task-react-subagents -y` 同步。
+- [x] `openspec list` 显示 no active changes。
+- [x] V14 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
+- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 
 ## V14 Planning / Implementation Gate
 

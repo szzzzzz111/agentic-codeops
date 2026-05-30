@@ -85,15 +85,11 @@ OpenSpec、Superpowers、MCP、plugin 和外部 skill 概念 MUST NOT 被视为 
 
 项目 SHALL 优先通过清晰边界、结构化审计、确定性验证、可替换接口和交接文档体现工程化。项目 MUST NOT 为了“看起来工程化”而在无明确阶段需求时引入重型基础设施。
 
-#### Scenario: 新阶段规划
+V14 Long Task SHALL 使用 repo-local SQLite、确定性模板、摘要级 ReAct trace 和现有权限/审批/ToolExecutor 边界。V14 MUST NOT 引入后台 worker、外部队列、真实 subagent runtime、worktree automation、Shell executor 或新的公开 task API。
 
-- **WHEN** 规划新阶段
-- **THEN** proposal/design/tasks 明确该阶段的纵向切片
-- **AND** 明确默认实现是否为内存、JSON、SQLite 或其它轻量实现
-- **AND** 若引入 PostgreSQL、Milvus、Elasticsearch、Kafka 等重依赖，必须在 spec 中说明必要性
+#### Scenario: V14 轻量长任务阶段
 
-#### Scenario: 能力演进
-
-- **WHEN** 新增 RAG、Memory、Skill、Provider 或 Tool 能力
-- **THEN** 系统优先定义可替换接口和安全摘要
-- **AND** 不把未来 Roadmap 能力写成已实现
+- **WHEN** V14 实现 Long Task Control Plane
+- **THEN** 系统使用 repo-local SQLite 和确定性模板作为默认实现
+- **AND** 系统保持 `/chat` contract 和现有 Harness 边界
+- **AND** review checklist MUST 检查 Long Task 指令路由优先级、repo_key 规范化、quota/archive、redaction 和 non-goals
