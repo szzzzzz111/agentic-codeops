@@ -29,6 +29,36 @@ class FailingRepoRagExecutor:
         raise AssertionError("repo_rag must not be called for memory commands")
 
 
+class FailingLongTaskExecutor:
+    def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
+        raise AssertionError("repo_rag must not be called for long task control commands")
+
+
+class SuccessfulLongTaskExecutor:
+    def __init__(self) -> None:
+        self.keywords: list[str] = []
+
+    def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> ToolExecutionResult:
+        self.keywords.append(keyword)
+        return ToolExecutionResult(
+            tool_name="repo_rag",
+            parameters={
+                "keyword": keyword,
+                "question_type": search_plan.question_type,
+                "retrieval_mode": search_plan.retrieval_mode,
+            },
+            results=[
+                {
+                    "file_path": "app/harness/kernel.py",
+                    "line_number": 1,
+                    "line_text": "class AgentLoop:",
+                    "start_line": 1,
+                    "end_line": 1,
+                }
+            ],
+        )
+
+
 class NoCitationProvider:
     def generate(self, request):
         return ModelProviderResponse(
@@ -461,11 +491,143 @@ def test_agent_loop_memory_command_confirms_without_repo_rag(tmp_path: Path) -> 
     assert result.related_files == []
     assert result.tool_calls == []
     assert [event.event_type for event in result.trace_events_internal] == [
-        "request_routed",
         "memory_command",
     ]
     assert "kind=PREF" in result.trace_events_internal[-1].summary
     assert str(tmp_path) not in result.trace_events_internal[-1].summary
+
+
+def test_agent_loop_handles_memory_command_before_router_and_long_task(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=FailingRepoRagExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="记住：pref:task_hint=创建长任务 task_xxx 时先确认目标",
+            repo_path=str(tmp_path),
+            trace_id="trace_memory_before_long_task",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert result.answer == "已记住偏好：task_hint。"
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "memory_command",
+    ]
+
+
+def test_agent_loop_handles_long_task_command_before_router_keyword(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=FailingLongTaskExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="创建长任务：查看 task_abc 的路由优先级",
+            repo_path=str(tmp_path),
+            trace_id="trace_long_task_create",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "已创建长任务" in result.answer
+    assert "task_" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "long_task_command",
+    ]
+
+
+def test_agent_loop_resumes_one_long_task_step_through_repo_rag(
+    tmp_path: Path,
+) -> None:
+    executor = SuccessfulLongTaskExecutor()
+    loop = AgentLoop(tool_executor=executor)
+    create_result = loop.run(
+        AgentLoopRequest(
+            message="创建长任务：分析 AgentLoop 在 app/harness/kernel.py 的实现",
+            repo_path=str(tmp_path),
+            trace_id="trace_long_task_seed",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+    task_id = create_result.answer.split("task_id=")[1].split("，")[0]
+
+    result = loop.run(
+        AgentLoopRequest(
+            message=f"恢复任务 {task_id}",
+            repo_path=str(tmp_path),
+            trace_id="trace_long_task_resume",
+            user_id="u001",
+            session_id="s002",
+        )
+    )
+
+    assert "已推进任务" in result.answer
+    assert result.related_files == ["app/harness/kernel.py"]
+    assert result.tool_calls == [
+        {
+            "tool_name": "repo_rag",
+            "keyword": executor.keywords[0],
+            "question_type": "implementation_explanation",
+            "retrieval_mode": "hybrid",
+            "status": "success",
+            "result_count": "1",
+        }
+    ]
+    assert [event.event_type for event in result.trace_events_internal][:4] == [
+        "long_task_command",
+        "permission_checked",
+        "tool_call",
+        "tool_result",
+    ]
+
+
+def test_agent_loop_blocks_long_task_when_resume_has_no_results(
+    tmp_path: Path,
+) -> None:
+    executor = RecordingRepoRagExecutor()
+    loop = AgentLoop(tool_executor=executor)
+    create_result = loop.run(
+        AgentLoopRequest(
+            message="创建长任务：定位 MissingSymbol",
+            repo_path=str(tmp_path),
+            trace_id="trace_long_task_empty_seed",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+    task_id = create_result.answer.split("task_id=")[1].split("，")[0]
+
+    result = loop.run(
+        AgentLoopRequest(
+            message=f"恢复任务 {task_id}",
+            repo_path=str(tmp_path),
+            trace_id="trace_long_task_empty_resume",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "已阻塞任务" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == [
+            {
+                "tool_name": "repo_rag",
+                "keyword": executor.search_plan.original_query,
+                "question_type": "code_location",
+                "retrieval_mode": "hybrid",
+                "status": "success",
+                "result_count": "0",
+            }
+    ]
 
 
 def test_agent_loop_forget_command_returns_deleted_count(tmp_path: Path) -> None:

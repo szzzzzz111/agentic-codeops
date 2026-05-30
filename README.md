@@ -6,13 +6,15 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V13 已归档；暂无活跃开发阶段，下一阶段建议从 V14 Long Task / ReAct / Subagents 规划开始。
+- 当前主线能力：V1-V13 已归档；V14 `v14-long-task-react-subagents` 正在开发，用于建立 Long Task Control Plane 和 ReAct trace skeleton。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
+- 当前 Long Task：V14 active change 正在加入 repo-local `.repopilot/tasks.sqlite3`、明确长任务指令、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；不新增 `/tasks` API 或 `/chat` 必需顶层字段。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
 - 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
+- 当前不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码。
 
 ## 当前能力
 
@@ -49,8 +51,17 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - `SQLiteMemoryStore` 默认把 PREF/LTM 写入目标 repo 的 `.repopilot/memory.sqlite3`，使用 stdlib `sqlite3`，不依赖外部数据库。
 - `repo_key` 通过 resolved repo path、POSIX 分隔符、Windows lower-case 和稳定 hash 生成；audit 不暴露本机绝对路径或 DB 路径。
 - 支持 `记住: ...`、`请记住...`、`忘记: ...`、`请忘记...`、`remember: ...`、`forget: ...`，并兼容全角/半角冒号；`stm:` / `会话:` 写 STM，`pref:` / `偏好:` 写 PREF，`project:` / `项目:` 写 LTM。
-- memory command 命中后确认优先，不执行 `repo_rag`；普通 repo_search 可记录脱敏 memory summary。
+- memory command 在 `RequestRouter` / keyword 路由前确认优先，不执行 `repo_rag`；普通 repo_search 可记录脱敏 memory summary。
 - Memory audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
+
+### Long Task Control Plane
+
+- `LongTaskManager` 解析明确长任务指令，并在 memory command 之后、`RequestRouter` / keyword 路由前处理控制命令，避免 `task_xxx` 误触发 repo_search。
+- `SQLiteLongTaskStore` 默认把任务状态写入目标 repo 的 `.repopilot/tasks.sqlite3`，复用 V13 repo_key 规范化规则：resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash。
+- 创建长任务只保存 deterministic task-type plan，不自动执行；显式 `恢复任务 task_xxx` 每次只推进一个 step。
+- step action 只允许调用现有只读 `repo_rag`，且必须经过 `ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和 `ToolExecutor`。
+- 支持 `paused`、`blocked`、`completed`、`failed`、reopen for retry、quota 和 archive；scratch 与 ReAct trace 只保存脱敏摘要。
+- V14 只预留 subagent/worktree handoff metadata，不执行真实 subagent 调度或 git/worktree 操作。
 
 ### Safe Repository Tools
 
@@ -146,6 +157,8 @@ curl -X POST http://127.0.0.1:8000/chat \
 
 ```text
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
+  -> MemoryManager(STM/PREF/LTM command/read audit)
+  -> LongTaskManager(command/status/step audit)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -161,6 +174,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/services/chat_service.py`：创建请求级 `trace_id` 并编排智能体调用。
 - `app/agents/code_agent.py`：调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
 - `app/harness/kernel.py`：提供 RequestRouter、QueryUnderstanding 接入、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
+- `app/longtask/`：提供 Long Task parser、planner、repo-local SQLite store、manager 和 ReAct trace skeleton。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
 - `app/rag/query_rewrite.py`：提供 deterministic multi-query rewrite 边界和 Code Evidence variants。
@@ -237,6 +251,12 @@ V12 保持 Evidence Pack budget/summary 和 grounded answer citation validation 
 
 V13 保持 `/chat` 顶层响应 contract 不变。Memory 不提供向量召回、不做自动 LLM 总结、不参与 citation validation，也不能覆盖 repo evidence 对代码事实回答的约束。
 
+### V14：Long Task / ReAct Skeleton（当前开发中）
+
+V14 在 AgentLoop 中加入 Long Task Control Plane。Memory command 和明确长任务指令均在 `RequestRouter` / keyword 路由前处理，顺序为 Memory command 先识别、Long Task command 后识别；创建、查看、列出、暂停、补充、归档和 reopen 控制命令不调用 `repo_rag`。显式 `resume/run` 每次只推进一个 step，并继续通过现有权限、审批和 `ToolExecutor(repo_rag)` 执行只读检索。
+
+V14 使用 `.repopilot/tasks.sqlite3` 保存 `user_id + repo_key` 范围的任务状态、task-type plan、scratch 摘要和 ReAct trace 摘要。默认 planning 使用 deterministic templates；显式真实 provider 配置时可增强模板字段，失败时 fallback。V14 保持 `/chat` contract 不变，不新增 `/tasks` API，不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -248,7 +268,7 @@ V13 保持 `/chat` 顶层响应 contract 不变。Memory 不提供向量召回�
 - 真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结和 context compression。
 - 自动修改代码。
 - shell 执行。
-- 复杂智能体循环、LLM 驱动语义理解和多步规划。
+- 后台任务、自动循环执行、LLM 驱动自主多步规划。
 - 多 agent orchestration。
 
 ## 工程化取向
@@ -303,7 +323,6 @@ ChatService
 
 ## 路线图
 
-已归档至 V13：Memory。后续路线：
+已归档至 V13：Memory。当前 active change 为 V14 Long Task / ReAct Skeleton。后续路线：
 
-- V14：Long Task / ReAct / Subagents，支持计划、任务状态、pause/resume、scratch space、subagents 和 worktree handoff。
 - V15：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。

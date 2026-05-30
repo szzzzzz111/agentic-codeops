@@ -4,12 +4,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 当前状态
 
-- 当前工作分支：`feature/v13-memory`
-- 当前阶段：V13 `v13-memory` 已实现、review、提交并归档；暂无活跃开发阶段，下一阶段建议从 V14 Long Task / ReAct / Subagents 规划开始
-- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
+- 当前工作分支：`feature/v14-long-task-react-subagents`
+- 当前阶段：V14 `v14-long-task-react-subagents` active；OpenSpec、harness、Long Task runtime、AgentLoop 集成和首批测试已推进，尚未提交或归档
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`，V13 change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；active change 为 `openspec/changes/v14-long-task-react-subagents/`；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`，V13 change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -96,6 +96,32 @@ LLMGateway 设计备忘：
 
 ## 最近验证
 
+- 2026-05-29，V14 OpenSpec 计划验证：`openspec validate v14-long-task-react-subagents`：通过。
+- 2026-05-29，V14 Long Task 小切片 TDD RED：`pytest tests\test_long_task.py tests\test_agent_harness_kernel.py::test_agent_loop_handles_long_task_command_before_router_keyword tests\test_chat_api.py::test_chat_endpoint_long_task_create_keeps_contract_and_does_not_search -q`：预期失败，`ModuleNotFoundError: No module named 'app.longtask'`。
+- 2026-05-29，V14 Long Task 目标验证：`pytest tests\test_long_task.py tests\test_agent_harness_kernel.py::test_agent_loop_handles_long_task_command_before_router_keyword tests\test_agent_harness_kernel.py::test_agent_loop_resumes_one_long_task_step_through_repo_rag tests\test_agent_harness_kernel.py::test_agent_loop_blocks_long_task_when_resume_has_no_results tests\test_chat_api.py::test_chat_endpoint_long_task_create_keeps_contract_and_does_not_search tests\test_chat_api.py::test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call -q`：9 passed。
+- 2026-05-29，V14 Long Task / AgentLoop / API 相关验证：`pytest tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：60 passed。
+- 2026-05-29，V14 self-review follow-up：补充直接 `task_id` 访问的 `user_id + repo_key` 隔离，避免跨用户查看任务；`pytest tests\test_long_task.py::test_manager_rejects_cross_user_task_id_access -q` 先失败后修复。
+- 2026-05-29，V14 follow-up 相关验证：`pytest tests\test_long_task.py::test_manager_rejects_cross_user_task_id_access tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：62 passed。
+- 2026-05-30，V14 review follow-up RED：新增 completion 阶段跨用户隔离与 provider JSON planning schema 测试；`pytest tests\test_long_task.py::test_planner_sends_json_schema_prompt_for_provider_enhancement tests\test_long_task.py::test_manager_rejects_cross_user_tool_completion -q`：预期失败，分别表现为 `deterministic_fallback` 和缺少 `user_id` 参数。
+- 2026-05-30，V14 review follow-up 修复：`complete_tool_action` 增加 `user_id + repo_key` 作用域校验；provider planning prompt 明确 JSON-only schema 和不可改变 step/action 边界。
+- 2026-05-30，V14 review follow-up 验证：`pytest tests\test_long_task.py::test_planner_sends_json_schema_prompt_for_provider_enhancement tests\test_long_task.py::test_manager_rejects_cross_user_tool_completion -q`：2 passed。
+- 2026-05-30，V14 review follow-up 相关验证：`pytest tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：63 passed。
+- 2026-05-30，V14 review follow-up lint：`ruff check app\longtask app\harness\kernel.py tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：All checks passed。
+- 2026-05-30，V14 OpenSpec change 验证：`openspec validate v14-long-task-react-subagents`：通过。
+- 2026-05-30，V14 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+- 2026-05-30，V14 review follow-up 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 132 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-05-30，V14 review follow-up OpenSpec 全量验证：`openspec validate --all`：9 passed, 0 failed。
+- 2026-05-30，V14 external review triage：修复 Memory/Long Task 前置顺序、Long Task result summary 绝对路径脱敏，并清理 `app/longtask/__pycache__` 生成物；新增 targeted tests 先失败后修复。
+- 2026-05-30，V14 external review targeted 验证：`pytest tests\test_agent_harness_kernel.py::test_agent_loop_handles_memory_command_before_router_and_long_task tests\test_agent_harness_kernel.py::test_agent_loop_memory_command_confirms_without_repo_rag tests\test_long_task.py::test_manager_tool_completion_summary_redacts_absolute_paths -q`：3 passed。
+- 2026-05-30，V14 external review 相关验证：`pytest tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：65 passed。
+- 2026-05-30，V14 external review lint：`ruff check app\longtask app\harness\kernel.py tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：All checks passed。
+- 2026-05-30，V14 external review OpenSpec 验证：`openspec validate v14-long-task-react-subagents` 通过；`openspec validate --all`：9 passed, 0 failed。
+- 2026-05-30，V14 external review 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 134 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-05-30，V14 external review close：外部 review 确认无新增 P0/P1/P2；剩余 P3 `app/longtask/__pycache__` 已复核，文件系统和 git tracked files 均无 pyc。
+- 2026-05-29，V14 OpenSpec 全量验证：`openspec validate --all`：9 passed, 0 failed。
+- 2026-05-29，V14 局部 lint：`ruff check app\longtask app\harness\kernel.py tests\test_long_task.py tests\test_agent_harness_kernel.py tests\test_chat_api.py`：All checks passed。
+- 2026-05-29，V14 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 130 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-05-29，V14 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-28，V13 OpenSpec 计划验证：`openspec validate v13-memory`：通过。
 - 2026-05-28，V13 memory 单元验证：`pytest tests\test_memory.py -q`：5 passed。
 - 2026-05-28，V13 memory/AgentLoop/API 小切片验证：`pytest tests\test_memory.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：57 passed。
@@ -294,6 +320,9 @@ LLMGateway 设计备忘：
 - `PermissionPolicy` 和最小 `ApprovalGate` 已实现；真实审批流程、SandboxRunner、trace 持久化审计、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
 - 后续接入真实审批、沙箱或高风险工具时，应通过当前权限/审批边界和 `ToolExecutor` 增量加入。
 - 缓存文件已从 git 跟踪中移除，并由 `.gitignore` 忽略。
+- V14 Memory command 与 Long Task 控制命令必须在 `RequestRouter` / keyword 路由前处理，顺序为 Memory command 先识别、Long Task command 后识别；除显式 resume/run 当前 step 外，不得调用 `repo_rag`。
+- V14 Long Task 只写 repo-local `.repopilot/tasks.sqlite3`；不得修改被分析仓库代码文件。
+- V14 只预留 subagent/worktree handoff metadata；不得执行真实 subagent 调度、后台任务、git branch/worktree 操作、shell 或自动代码修改。
 
 ## 已知剩余代码债
 
@@ -308,8 +337,8 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V13 已归档；下一阶段建议从 V14 Long Task / ReAct / Subagents 规划开始。
-- 后续可做 Long Task / ReAct / Subagents，为计划、pause/resume、scratch space、subagents 和 worktree handoff 提供基础。
+- 当前建议：继续收口 V14 Long Task / ReAct Skeleton，完成 OpenSpec 全量验证、默认验证、diff 检查和 self-review。
+- 后续可在 V14 基础上单独规划真实 subagents、worktree automation、always-on gateway 或 task API。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
 ## V8：Query Understanding + Lexical Repo RAG（已实现）

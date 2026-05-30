@@ -1,8 +1,8 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：暂无。
+当前活跃阶段：V14 `v14-long-task-react-subagents`。
 
-V13 `v13-memory` 已实现并归档到 `openspec/changes/archive/2026-05-28-v13-memory/`。下一阶段开始前，必须先创建新的 OpenSpec change，并重新同步本文件与 `.harness/review_checklist.md`。
+V14 目标是在现有 `/chat` 和 AgentLoop 边界内加入 Long Task Control Plane 与 ReAct trace skeleton。Long Task 指令必须先于 `RequestRouter` / keyword 路由前置处理；本阶段不新增 `/tasks` API、不新增 `/chat` 必需顶层字段、不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码。
 
 ## 当前允许修改
 
@@ -19,6 +19,14 @@ V13 `v13-memory` 已实现并归档到 `openspec/changes/archive/2026-05-28-v13-
 - `scripts/check_stage_closeout.ps1`
 - `scripts/verify.ps1`
 - `.harness/test_commands.md`
+- `app/longtask/**`
+- `app/harness/kernel.py`
+- `app/agents/code_agent.py`
+- `app/services/chat_service.py`
+- `tests/test_long_task.py`
+- `tests/test_agent_harness_kernel.py`
+- `tests/test_chat_api.py`
+- `openspec/changes/v14-long-task-react-subagents/**`
 - `openspec/specs/**`
 - `openspec/changes/archive/**`
 
@@ -35,3 +43,8 @@ V13 `v13-memory` 已实现并归档到 `openspec/changes/archive/2026-05-28-v13-
 - 不让默认验证依赖真实网络、真实 API key 或真实模型输出。
 - Memory 只能写入 repo-local `.repopilot/` 本地状态目录；不得修改被分析仓库代码文件。
 - Memory audit 不得暴露完整 memory value、本机绝对路径、DB 路径、完整 Evidence Pack 或模型输出。
+- Long Task 控制命令不得先进入 `RequestRouter` / keyword 路由；创建、查看、列出、暂停、补充和归档不得调用 `repo_rag`。
+- Long Task 只能在显式 `resume/run` 当前 step 时调用只读 `repo_rag`，且必须通过现有权限、审批和 `ToolExecutor` 边界。
+- Long Task 状态写入只能进入 repo-local `.repopilot/tasks.sqlite3`；不得修改被分析仓库代码文件。
+- Long Task audit、scratch 和 ReAct trace 不得暴露完整 prompt、完整 Evidence Pack、完整模型输出、本机绝对路径或 DB 路径。
+- V14 只允许预留 subagent/worktree handoff metadata，不得创建、展示或调度真实 subagents，不得执行 git branch/worktree 操作。

@@ -7,6 +7,7 @@ RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE
 ```text
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> MemoryManager(STM/PREF/LTM command/read audit)
+  -> LongTaskManager(command/status/step audit)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -17,7 +18,8 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - API 层只接收请求并返回响应。
 - `ChatService` 负责编排请求、生成 `trace_id`、调用智能体。
 - `CodeAgent` 负责调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
-- `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。
+- `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。Memory command 在 `RequestRouter` / keyword 路由前识别。
+- `LongTaskManager` 负责明确长任务指令、repo-local SQLite task store、deterministic task-type plan、pause/resume、scratch 摘要和 ReAct trace skeleton。Long Task 控制命令在 memory command 之后、`RequestRouter` / keyword 路由前处理；只有显式 resume/run 当前 step 才能调用只读 `repo_rag`。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
 - `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code` 和 `repo_rag`。
@@ -31,7 +33,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令；默认不接真实 LLM、不自动修改代码、不执行 shell。显式配置后可通过 OpenAI-compatible provider 生成 grounded answer。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令。V14 active change 正在加入 Long Task Control Plane：任务状态写入 `.repopilot/tasks.sqlite3`，控制命令不调用 repo_rag，显式 resume/run 每次只推进一个只读 repo_rag step。默认不接真实 LLM、不自动修改代码、不执行 shell；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -45,6 +47,7 @@ RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexi
 - Evidence Pack 和 Grounded Answer 应优先消费可审计的 lexical/path/symbol evidence，并通过 citation 约束回答。
 - V12 Query Rewrite / Rerank 必须服务于 grep-first 检索基线，不能把系统改成默认向量库优先。
 - V13 Memory 只能作为偏好和用户明确项目事实的本地状态层，不能替代 repo evidence 或 citation validation。
+- V14 Long Task 的 step action 仍只能通过 grep-first, RAG-assisted 的 `repo_rag` 执行；scratch 和 ReAct trace 不能替代 repo evidence 或 citation validation。
 - 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
 
 ## V2 工具层：安全只读仓库能力
@@ -118,6 +121,7 @@ ChatService
 - LangGraph。
 - 真实外部 embedding 服务、向量库、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
 - 多 Agent。
+- 后台任务、自动循环执行、真实 subagent orchestration 或 worktree automation。
 - 自动修改代码。
 - 沙箱执行命令。
 - SandboxRunner 的实际实现。
@@ -269,9 +273,34 @@ AgentLoop
 
 边界约束：
 
-- Memory command 在 route 后确认优先，命中后不执行 `repo_rag`。
+- Memory command 在 `RequestRouter` / keyword 路由前确认优先，命中后不执行 `repo_rag`。
 - `.repopilot/` 是 repo-local 本地状态目录，必须被 git 忽略；Memory 不修改被分析仓库代码文件。
 - `repo_key` 使用 resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash；audit 不暴露绝对路径或 DB 路径。
 - PREF/LTM 使用 SQLite 持久化，STM 使用进程内存储。
 - Memory audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
 - Memory 不实现向量召回、自动模型总结、跨 repo 智能召回、context compression、SandboxRunner、skill execution 或多 agent orchestration。
+
+## V14 架构补充：Long Task Control Plane + ReAct Skeleton
+
+V14 在 AgentLoop 前段加入 Long Task 控制面：
+
+```text
+AgentLoop
+  -> MemoryManager(command)
+  -> LongTaskManager
+     -> SQLiteLongTaskStore(tasks in .repopilot/tasks.sqlite3)
+     -> LongTaskPlanner(deterministic templates + provider-assisted fallback)
+  -> resume/run step
+     -> ToolRegistry -> PermissionPolicy -> ApprovalGate
+     -> ToolExecutor(repo_rag)
+```
+
+边界约束：
+
+- Long Task 指令解析优先于 `RequestRouter` / keyword 路由，并在 Memory command 之后处理；创建、查看、列出、暂停、补充、归档和 reopen 不调用 `repo_rag`。
+- `.repopilot/tasks.sqlite3` 是 repo-local 本地状态；repo_key 复用 V13 resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash 规则。
+- 创建任务只保存 plan，不自动执行；显式 resume/run 每次最多推进一个 step。
+- step action 仅允许现有只读 `repo_rag`，且必须经过 `ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和 `ToolExecutor`。
+- ReAct trace 只保存 `thought_summary`、`action`、`observation_summary` 和 `status` 摘要；scratch 只保存用户目标、补充信息、observation 摘要和 citation 引用。
+- Long Task audit 不进入 `/chat` 顶层字段；`tool_calls` 只保留实际 `repo_rag` 摘要。
+- V14 不新增 `/tasks` API，不执行后台任务、不自动循环执行、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码、不做 evaluator/reflection。

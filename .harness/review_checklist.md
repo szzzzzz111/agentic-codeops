@@ -1,6 +1,26 @@
 # 当前 Review 清单
 
-当前活跃阶段：暂无；V13 `v13-memory` 已实现、review、提交并归档。
+当前活跃阶段：V14 `v14-long-task-react-subagents`。
+
+## V14 Planning / Implementation Gate
+
+- [x] V14 OpenSpec change 包含 proposal、design、tasks，以及 `long-task-agent-execution`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
+- [x] Memory command 和 Long Task command 均优先于 `RequestRouter` / keyword 路由；前置顺序为 Memory command 先识别，然后 Long Task command。
+- [x] 创建、查看、列出、暂停、补充、归档和 reopen 控制命令不得调用 `repo_rag`；`task_xxx` 不得误触发 repo_search。
+- [x] 显式 resume/run 每次最多推进一个 step，且 step action 只能通过现有 `ToolExecutor(repo_rag)` 执行只读检索。
+- [x] resume/run 调用 `repo_rag` 前必须保留 `ToolRegistry`、`PermissionPolicy` 和 `ApprovalGate` 边界。
+- [x] `.repopilot/tasks.sqlite3` 使用独立 Long Task DB，不复用 V13 `memory.sqlite3`，不迁移为统一 state DB。
+- [x] Long Task repo_key 复用 V13 `compute_repo_key` / `normalize_repo_path_for_key` 规则：resolve、POSIX 分隔符、Windows lower-case、SHA-256 hash。
+- [x] task 状态机覆盖 `pending`、`running`、`paused`、`blocked`、`completed` 和 `failed`；`archived` 只能作为标记，不作为执行状态。
+- [x] `completed` 任务只读不可变；`failed` 只能 reopen for retry，保留历史并新增 retry round，不做真正回滚。
+- [x] 每个 `user_id + repo_key` 未归档任务配额为 20；list 默认返回最近 10 个未归档任务；archive 只允许 completed/failed 且不物理删除。
+- [x] deterministic task-type templates 覆盖现有五类 QueryUnderstanding 类型、`stage_planning` 和 `unknown`；`stage_planning` 只在明确 Long Task 创建指令中触发。
+- [x] provider-assisted planning 只能增强模板字段，不能改变 step 数、顺序或 `action_type`；provider 失败或 JSON 校验失败必须 fallback。
+- [x] Scratch 和 ReAct trace 只保存摘要和 citation 引用，不保存或公开完整 prompt、完整 Evidence Pack、完整 provider output、本机绝对路径或 DB 路径。
+- [x] `/chat` 顶层响应 contract 不新增必需字段；Long Task 公开信息只进入 `answer`，`tool_calls` 只保留实际 `repo_rag` 调用摘要。
+- [x] V14 只预留 subagent/worktree metadata，不得创建、展示、调度真实 subagents，不得执行 git branch/worktree 操作。
+- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
+- [x] V14 self-review 和外部 review 发现均已处理；当前无已知 P0/P1/P2。
 
 ## V13 Archive Closeout Gate
 

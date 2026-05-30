@@ -189,6 +189,56 @@ def test_chat_endpoint_memory_command_keeps_contract_and_redacts_paths(
     assert "memory.sqlite3" not in response.text
 
 
+def test_chat_endpoint_long_task_create_keeps_contract_and_does_not_search(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app.py", "task_abc = 'should not be searched'\n")
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, "创建长任务：查看 task_abc 的路由优先级"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "已创建长任务" in body["answer"]
+    assert "task_id=task_" in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+    assert str(tmp_path) not in response.text
+    assert "tasks.sqlite3" not in response.text
+
+
+def test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app" / "harness" / "kernel.py", "class AgentLoop:\n    pass\n")
+    create_response = client.post(
+        "/chat",
+        json=valid_payload(
+            tmp_path,
+            "创建长任务：分析 AgentLoop 在 app/harness/kernel.py 的实现",
+        ),
+    )
+    task_id = create_response.json()["answer"].split("task_id=")[1].split("，")[0]
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, f"恢复任务 {task_id}"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "已推进任务" in body["answer"]
+    assert body["related_files"] == ["app/harness/kernel.py"]
+    assert body["tool_calls"][0]["tool_name"] == "repo_rag"
+    assert body["tool_calls"][0]["status"] == "success"
+    assert "scratch" not in response.text
+    assert "provider" not in response.text
+
+
 def test_docs_keep_v10_route_map_consistent() -> None:
     docs = [
         Path("README.md"),

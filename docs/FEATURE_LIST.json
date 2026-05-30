@@ -283,5 +283,29 @@
     ],
     "passes": true,
     "notes": "由 tests/test_memory.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v14-long-task-react-skeleton",
+    "category": "agent",
+    "description": "AgentLoop 支持 repo-local Long Task Control Plane、明确长任务指令、任务状态、pause/resume、scratch 摘要和 ReAct trace skeleton。",
+    "steps": [
+      "发送明确长任务指令，例如 创建长任务：分析 AgentLoop",
+      "检查 /chat 返回 task_id 且不调用 repo_rag",
+      "发送 恢复任务 task_xxx",
+      "检查 AgentLoop 通过权限、审批和 ToolExecutor(repo_rag) 推进一个 step",
+      "检查查看、列出、补充、归档和 reopen 命令保持 /chat 顶层 contract 不变"
+    ],
+    "acceptance_criteria": [
+      "Long Task 指令解析优先于 RequestRouter / keyword 路由，task_xxx 不误触发 repo_search",
+      "任务状态写入 repo-local .repopilot/tasks.sqlite3，repo_key 复用 V13 resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash 规则",
+      "创建任务只保存 deterministic task-type plan，不自动执行",
+      "显式 resume/run 每次最多推进一个 step，且 step action 只能调用只读 repo_rag",
+      "resume/run 调用 repo_rag 前必须经过 ToolRegistry、PermissionPolicy 和 ApprovalGate",
+      "Scratch 和 ReAct trace 只保存摘要，不公开完整 prompt、完整 Evidence Pack、完整 provider output、DB 路径或本机绝对路径",
+      "每 user+repo 未归档任务上限为 20，list 默认最近 10 个，archive 只允许 completed/failed 且不物理删除",
+      "V14 不新增 /tasks API，不新增 /chat 必需顶层字段，不执行后台任务、shell、真实 subagent 调度或 worktree 操作"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_long_task.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

@@ -3,6 +3,8 @@ from pathlib import PurePosixPath, PureWindowsPath
 import re
 
 from app.answering.grounded_answer import GroundedAnswerGenerator
+from app.longtask.manager import LongTaskManager
+from app.longtask.planner import LongTaskPlanner
 from app.memory.manager import MemoryManager
 from app.providers.model_provider import ModelProvider, load_model_provider_from_env
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
@@ -210,6 +212,7 @@ class AgentLoop:
         repo_retriever: HybridRepoRetriever | None = None,
         model_provider: ModelProvider | None = None,
         memory_manager: MemoryManager | None = None,
+        long_task_manager: LongTaskManager | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
@@ -218,20 +221,16 @@ class AgentLoop:
         self.approval_gate = approval_gate or ApprovalGate()
         self.query_understanding = query_understanding or QueryUnderstanding()
         self.memory_manager = memory_manager or MemoryManager()
-        self.grounded_answer = GroundedAnswerGenerator(
-            provider=model_provider or load_model_provider_from_env()
+        provider = model_provider or load_model_provider_from_env()
+        self.long_task_manager = long_task_manager or LongTaskManager(
+            planner=LongTaskPlanner(
+                provider=provider,
+                provider_enabled=_is_real_provider(provider),
+            )
         )
+        self.grounded_answer = GroundedAnswerGenerator(provider=provider)
 
     def run(self, request: AgentLoopRequest) -> AgentLoopResult:
-        decision = self.router.route(request.message)
-        trace_events = [
-            TraceEvent(
-                event_type="request_routed",
-                status="ok",
-                summary=f"route={decision.route}; reason={decision.reason}",
-            )
-        ]
-
         memory_command = self.memory_manager.handle_command(
             user_id=request.user_id,
             session_id=request.session_id,
@@ -242,7 +241,6 @@ class AgentLoop:
             return AgentLoopResult(
                 answer=memory_command.answer,
                 trace_events_internal=[
-                    *trace_events,
                     TraceEvent(
                         event_type="memory_command",
                         status="ok"
@@ -252,6 +250,42 @@ class AgentLoop:
                     ),
                 ],
             )
+
+        long_task_command = self.long_task_manager.handle_command(
+            user_id=request.user_id,
+            session_id=request.session_id,
+            repo_path=request.repo_path,
+            message=request.message,
+        )
+        if long_task_command.handled:
+            trace_events = [
+                TraceEvent(
+                    event_type="long_task_command",
+                    status="ok"
+                    if "unavailable" not in long_task_command.audit_summary
+                    else "error",
+                    summary=long_task_command.audit_summary,
+                )
+            ]
+            if long_task_command.tool_action != REPO_RAG_TOOL:
+                return AgentLoopResult(
+                    answer=long_task_command.answer,
+                    trace_events_internal=trace_events,
+                )
+            return self._run_long_task_tool_action(
+                request=request,
+                command=long_task_command,
+                trace_events=trace_events,
+            )
+
+        decision = self.router.route(request.message)
+        trace_events = [
+            TraceEvent(
+                event_type="request_routed",
+                status="ok",
+                summary=f"route={decision.route}; reason={decision.reason}",
+            )
+        ]
 
         if decision.route == "capability_status":
             return AgentLoopResult(
@@ -440,6 +474,105 @@ class AgentLoop:
 
         return AgentLoopResult(
             answer=answer,
+            related_files=related_files,
+            tool_calls=[tool_result.call_summary()],
+            trace_events_internal=trace_events,
+        )
+
+    def _run_long_task_tool_action(
+        self,
+        *,
+        request: AgentLoopRequest,
+        command,
+        trace_events: list[TraceEvent],
+    ) -> AgentLoopResult:
+        tool_spec = self.tool_registry.get(REPO_RAG_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=REPO_RAG_TOOL,
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=REPO_RAG_TOOL,
+                status="ok" if permission_decision.status == "allow" else "error",
+                summary=(
+                    f"tool={REPO_RAG_TOOL}; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            )
+        )
+        if permission_decision.status == "deny":
+            return AgentLoopResult(
+                answer=DENY_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="tool_rejected",
+                        tool_name=REPO_RAG_TOOL,
+                        status="error",
+                        summary=(
+                            f"tool={REPO_RAG_TOOL} rejected by permission policy; "
+                            f"reason={permission_decision.reason}"
+                        ),
+                    ),
+                ],
+            )
+        if not self.approval_gate.evaluate(permission_decision):
+            return AgentLoopResult(
+                answer=ASK_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="approval_required",
+                        tool_name=REPO_RAG_TOOL,
+                        status="ok",
+                        summary=f"tool={REPO_RAG_TOOL} requires approval",
+                    ),
+                ],
+            )
+
+        search_plan = self.query_understanding.build_search_plan(command.query_text)
+        trace_events.append(
+            TraceEvent(
+                event_type="tool_call",
+                tool_name=REPO_RAG_TOOL,
+                status="ok",
+                summary=f"tool={REPO_RAG_TOOL}; keyword={command.query_text}",
+            )
+        )
+        tool_result = self._run_repo_rag(
+            repo_path=request.repo_path,
+            keyword=command.query_text,
+            search_plan=search_plan,
+        )
+        related_files = _unique_related_files(tool_result.results)
+        trace_events.append(
+            TraceEvent(
+                event_type="tool_result",
+                tool_name=tool_result.tool_name,
+                status="error" if tool_result.error else "ok",
+                summary=f"result_count={len(tool_result.results)}",
+            )
+        )
+        completed = self.long_task_manager.complete_tool_action(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            task_id=command.task_id or "",
+            results=tool_result.results,
+            error=tool_result.error,
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="long_task_step_summarized",
+                tool_name=REPO_RAG_TOOL,
+                status="ok" if tool_result.error is None else "error",
+                summary=completed.audit_summary,
+            )
+        )
+        return AgentLoopResult(
+            answer=completed.answer,
             related_files=related_files,
             tool_calls=[tool_result.call_summary()],
             trace_events_internal=trace_events,
@@ -644,3 +777,7 @@ def _is_absolute_path(file_path: str) -> bool:
     return PureWindowsPath(file_path).is_absolute() or PurePosixPath(
         file_path
     ).is_absolute()
+
+
+def _is_real_provider(provider: ModelProvider) -> bool:
+    return getattr(provider, "provider_name", "fake") != "fake"
