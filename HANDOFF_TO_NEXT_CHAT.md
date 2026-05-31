@@ -4,7 +4,7 @@
 
 ```text
 当前基线分支：main
-当前工作分支：feature/v16-safe-patch-authoring
+当前工作分支：main
 当前活跃 OpenSpec change：无
 最近完成阶段：V16 Safe Patch Authoring（已实现、review、提交并归档）
 当前阶段：暂无 active stage
@@ -112,6 +112,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   - V16 implementation commit：`d32a367 Add V16 safe patch authoring`。
   - V16 archive：`openspec archive v16-safe-patch-authoring -y` 已完成，归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`；长期 specs 已同步，新增 `openspec/specs/safe-patch-authoring/spec.md`。
   - V16 archive 后验证：`openspec validate --all`：11 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过，`pytest` 158 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过。
+  - V16 merge：已 fast-forward 合并 `feature/v16-safe-patch-authoring` 到 `main`；merge 后 `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1` 通过，`pytest` 158 passed, 1 skipped，`ruff check .` All checks passed；`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1` 通过。
 
 ## V15 当前实现摘要
 
@@ -369,7 +370,7 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 后续可按项目节奏决定是否 merge / push `feature/v16-safe-patch-authoring`。
+1. 后续可按项目节奏决定是否 push 当前 `main`。
 2. 下一阶段建议从 V17 Verification Runner 规划开始；开始前先创建 OpenSpec change，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
 3. 不要把 V17+ 的验证执行、失败修复循环、持久审计或 worktree 隔离归入 V16 当前能力。
 

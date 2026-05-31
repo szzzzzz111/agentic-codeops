@@ -6,7 +6,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V16 已归档；当前无 active OpenSpec change，工作分支 `feature/v16-safe-patch-authoring` 已完成 V16 实现与 archive 收口。
+- 当前主线能力：V1-V16 已归档；当前无 active OpenSpec change，V16 已 fast-forward 合并到 `main`。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。

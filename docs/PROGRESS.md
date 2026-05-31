@@ -5,8 +5,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前基线分支：`main`
-- 当前工作分支：`feature/v16-safe-patch-authoring`
-- 当前阶段：无 active OpenSpec change；V16 `v16-safe-patch-authoring` 已实现、提交并归档，工作分支 `feature/v16-safe-patch-authoring` 等待后续 merge/push 决策
+- 当前工作分支：`main`
+- 当前阶段：无 active OpenSpec change；V16 `v16-safe-patch-authoring` 已实现、提交、归档并 fast-forward 合并到 `main`，当前 `main` 等待 push
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / patch_apply) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 Assistant Control Surface、Safe Patch Authoring、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
@@ -124,6 +124,7 @@ LLMGateway 设计备忘：
 - 2026-05-31，V16 archive 后 OpenSpec 全量验证：`openspec validate --all`：11 passed, 0 failed。
 - 2026-05-31，V16 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 158 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-31，V16 archive closeout：`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
+- 2026-05-31，V16 merge：已 fast-forward 合并 `feature/v16-safe-patch-authoring` 到 `main`；merge 后 `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1` 通过，`pytest` 158 passed, 1 skipped，`ruff check .` All checks passed；`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1` 通过。
 - 2026-05-31，V15 OpenSpec 计划验证：`openspec validate v15-assistant-control-surface`：通过。
 - 2026-05-31，V15 Assistant Control Surface targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：10 passed。
 - 2026-05-31，V15 OpenSpec 全量验证：`openspec validate --all`：10 passed, 0 failed。
