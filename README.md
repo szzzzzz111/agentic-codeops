@@ -6,11 +6,12 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V14 已归档；V14 已建立 Long Task Control Plane 和 ReAct trace skeleton。
+- 当前主线能力：V1-V14 已归档；V15 Assistant Control Surface 已在当前工作分支实现并通过 review/验证。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
 - 当前 Long Task：repo-local `.repopilot/tasks.sqlite3`、明确长任务指令、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；不新增 `/tasks` API 或 `/chat` 必需顶层字段。
+- 当前 Assistant Control Surface：通过现有 `/chat.answer` 返回只读助手状态，聚合当前能力、Memory 计数和 Long Task 摘要；不新增 API、不新增 `/chat` 顶层字段、不调用 `repo_rag`、不写 memory、不创建任务。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
 - 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
@@ -62,6 +63,14 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - step action 只允许调用现有只读 `repo_rag`，且必须经过 `ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和 `ToolExecutor`。
 - 支持 `paused`、`blocked`、`completed`、`failed`、reopen for retry、quota 和 archive；scratch 与 ReAct trace 只保存脱敏摘要。
 - V14 只预留 subagent/worktree handoff metadata，不执行真实 subagent 调度或 git/worktree 操作。
+
+### Assistant Control Surface
+
+- 通过明确状态类 `/chat` 消息触发，例如 `助手状态`、`RepoPilot 状态`、`你能做什么`、`assistant status` 和 `what can you do`。
+- AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、capability-status、repo_search/chat_only。
+- 控制面只读聚合 Memory PREF/LTM/STM 计数和最近 Long Task 摘要，不隐式创建 `.repopilot/`、`memory.sqlite3` 或 `tasks.sqlite3`。
+- 控制面请求不调用 `repo_rag`，不进入工具权限链路，不写 memory，不创建或推进任务。
+- 控制面公开回答不泄露完整 memory value、scratch、ReAct trace、Evidence Pack、provider output、本机绝对路径或 DB 路径。
 
 ### Safe Repository Tools
 
@@ -159,6 +168,7 @@ curl -X POST http://127.0.0.1:8000/chat \
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> MemoryManager(STM/PREF/LTM command/read audit)
   -> LongTaskManager(command/status/step audit)
+  -> AssistantControlSurface(read-only status)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -175,6 +185,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/agents/code_agent.py`：调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
 - `app/harness/kernel.py`：提供 RequestRouter、QueryUnderstanding 接入、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
 - `app/longtask/`：提供 Long Task parser、planner、repo-local SQLite store、manager 和 ReAct trace skeleton。
+- `app/assistant/control_surface.py`：提供 Assistant Control Surface 触发词、只读状态聚合和 answer formatter。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
 - `app/rag/query_rewrite.py`：提供 deterministic multi-query rewrite 边界和 Code Evidence variants。
@@ -257,6 +268,12 @@ V14 在 AgentLoop 中加入 Long Task Control Plane。Memory command 和明确�
 
 V14 使用 `.repopilot/tasks.sqlite3` 保存 `user_id + repo_key` 范围的任务状态、task-type plan、scratch 摘要和 ReAct trace 摘要。默认 planning 使用 deterministic templates；显式真实 provider 配置时可增强模板字段，失败时 fallback。V14 保持 `/chat` contract 不变，不新增 `/tasks` API，不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码。
 
+### V15：Assistant Control Surface
+
+V15 在 AgentLoop 中加入只读 Assistant Control Surface。明确状态类消息通过现有 `/chat.answer` 返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议；`related_files=[]` 且 `tool_calls=[]`。
+
+V15 保持 `/chat` contract 不变，不新增公开 API 或顶层字段。控制面状态读取不调用 `repo_rag`、不写 memory、不创建任务、不执行 shell、不后台运行，也不隐式初始化 `.repopilot` 本地状态 DB。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -323,7 +340,7 @@ ChatService
 
 ## 路线图
 
-已归档至 V14：Long Task / ReAct Skeleton。当前暂无 active change。后续路线：
+已归档至 V14：Long Task / ReAct Skeleton。当前 active change：V15 Assistant Control Surface。后续路线：
 
 - V15：Assistant Control Surface。把 `/chat`、Memory、Long Task 和 RAG 组织成更好用的助手入口，并提供轻量只读状态聚合；不写代码、不执行 shell、不后台运行。
 - V16：Safe Patch Authoring。基于 repo evidence 生成 patch proposal / diff，用户明确确认后才 apply；不执行测试、不自动 commit、不创建 worktree。

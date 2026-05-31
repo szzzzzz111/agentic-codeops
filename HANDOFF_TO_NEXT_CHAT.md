@@ -4,14 +4,15 @@
 
 ```text
 当前基线分支：main
-当前活跃 OpenSpec change：无
+当前工作分支：codex/v15-assistant-control-surface
+当前活跃 OpenSpec change：v15-assistant-control-surface
 最近完成阶段：V14 Long Task Control Plane + ReAct Skeleton（已实现、review、提交、合并、推送并归档）
-当前阶段：暂无 active development stage
+当前阶段：V15 Assistant Control Surface（implementation complete in current workspace）
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V14 已归档；V14 已加入 repo-local Long Task Control Plane，支持明确长任务指令、`.repopilot/tasks.sqlite3`、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace。默认不调用真实 LLM、网络或 API key。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V14 已归档；V15 已在当前工作分支加入只读 Assistant Control Surface，通过现有 `/chat.answer` 返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。默认不调用真实 LLM、网络或 API key。
 
-后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。该路线判断只是文档决策，不代表 V15 已启动，也不代表写代码、验证执行、worktree、subagents、connectors 或 always-on 已实现。
+后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。该路线判断只是文档决策，不代表 V16+ 已启动，也不代表写代码、验证执行、worktree、subagents、connectors 或 always-on 已实现。
 
 新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
@@ -57,6 +58,7 @@ openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> MemoryManager(STM/PREF/LTM command/read audit)
   -> LongTaskManager(command/status/step audit)
+  -> AssistantControlSurface(read-only status)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -64,13 +66,26 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
-`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary、V12 的 rewrite/rerank audit summary、V13 的 memory audit summary、V14 的 long task / ReAct 摘要只保留在内部 `trace_events_internal` 或 repo-local task DB，不作为 `/chat` 顶层字段暴露。
+`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary、V12 的 rewrite/rerank audit summary、V13 的 memory audit summary、V14 的 long task / ReAct 摘要和 V15 的 Assistant Control Surface 摘要只保留在内部 trace 或现有 `answer`，不作为 `/chat` 顶层字段暴露。
+
+## V15 当前实现摘要
+
+- OpenSpec change：`openspec/changes/v15-assistant-control-surface/`，包含 proposal、design、tasks，以及 `assistant-control-surface` / `agent-loop-tool-execution` / `chat-api` / `memory` / `long-task-agent-execution` / `harness-development-workflow` spec delta。
+- `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已同步 V15 写入边界和 review gate。
+- 新增 `app/assistant/control_surface.py`：明确触发词、只读状态聚合和 answer formatter。
+- `AgentLoop` 前置顺序为 Memory command、Long Task command、Assistant Control Surface、capability-status、repo_search/chat_only。
+- Memory / Long Task 增加只读 control surface summary；不存在 `.repopilot` DB 时返回空状态，不创建目录或 DB。
+- V15 不新增 API，不新增 `/chat` 顶层字段，不调用 `repo_rag`，不写 memory，不创建任务，不执行 shell，不后台运行。
+- 当前 targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：11 passed。
+- OpenSpec / 默认验证记录：`openspec validate v15-assistant-control-surface` 通过；`openspec validate --all`：10 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过，`pytest` 144 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示。
+- V15 external review follow-up：已补测试并修复 Assistant Control Surface Long Task 摘要中 task title / next step title 的本机绝对路径脱敏；`pytest tests/test_assistant_control_surface.py::test_status_answer_redacts_absolute_paths_from_recent_long_tasks -q`：1 passed；V15 targeted 相关验证：11 passed；`openspec validate v15-assistant-control-surface` 通过；`openspec validate --all`：10 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过，`pytest` 145 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示；阶段文档已补齐 4.2-4.5 验证记录，`openspec/changes/v15-assistant-control-surface/tasks.md` 完成状态保留。
+- V15 external review close：用户确认外部 review 没问题；final stage debt sweep 已执行，未发现新的 P0/P1/P2 或需记录的阶段内剩余债务。当前工作区尚未提交、尚未归档。
 
 ## V14 当前实现摘要
 
 - OpenSpec change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`，包含 proposal、design、tasks 和 `long-task-agent-execution` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
 - 长期 specs 已同步，新增 `openspec/specs/long-task-agent-execution/spec.md`。
-- `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已切回暂无 active stage 的收口状态。
+- V14 archive 后 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 曾切回暂无 active stage；当前已由 V15 active change 重新同步为 V15 写入边界和 review gate。
 - 新增 `app/longtask/`：
   - `parser.py`：解析明确长任务自然语言指令。
   - `planner.py`：deterministic task-type templates，并支持显式真实 provider 的受控 JSON 增强和 fallback。
@@ -244,23 +259,12 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- `.harness/allowed_files.md` 已同步为暂无 active stage；下一阶段开始前必须先创建新 OpenSpec change 并更新写入边界。
-- `.harness/review_checklist.md` 已同步 V14 archive closeout，并保留历史 closeout/review 记录。
-- `openspec/changes/v14-long-task-react-subagents/` 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`。
-- `openspec/changes/v10-evidence-pack-context-budget/` 已创建 proposal、design、tasks 和 `specs/repo-query-understanding-rag/spec.md`。
-- `openspec/changes/v9-embedding-hybrid-search/` 已归档到 `openspec/changes/archive/2026-05-22-v9-embedding-hybrid-search/`。
-- `openspec/changes/v10-evidence-pack-context-budget/` 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`。
-- `openspec/specs/repo-query-understanding-rag/spec.md` 已同步 V10 长期规格，包括 Evidence Pack、Context Budget 和 `min_fused_score=0.35` 口径。
-- 当前已实现 V12 运行时代码，内部 self-review 和外部 review follow-up 已处理；implementation commit、follow-up commit 和 archive 均已完成。
-- V9 验证结果：
-  - `openspec validate --all`：6 passed, 0 failed
-  - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 67 passed, 1 skipped；`ruff check .` All checks passed
-  - `git diff --check`：通过，仅有 CRLF 换行提示
-- V9 文档漂移修正：
-  - 已补齐 README 的 V9 阶段历史；当时路线图已更新为“已完成至 V10，后续从 V11 开始”，当前路线已推进到 V11 已归档、后续从 V12 开始。
-  - 已修正 ARCHITECTURE 当前架构段落中仍指向 V8 lexical RAG 的过期措辞。
-  - 已补充本 handoff 的 V9 完整摘要。
-  - 历史验证：`openspec validate --all` 7 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1` 通过，`pytest` 67 passed, 1 skipped，`ruff check .` All checks passed；`git diff --check` 通过，仅有 CRLF 提示。
+- 当前 active change：`openspec/changes/v15-assistant-control-surface/`。
+- `.harness/allowed_files.md` 已同步为 V15 写入边界。
+- `.harness/review_checklist.md` 已同步 V15 planning / implementation gate，并保留 V14 及更早历史 review/closeout 记录。
+- V15 当前允许修改范围集中在 `app/assistant/**`、`app/harness/kernel.py`、Memory/Long Task 只读 summary、相关测试、OpenSpec 和阶段文档。
+- V15 当前禁止新增 API、新增 `/chat` 顶层字段、调用 `repo_rag`、写 memory、创建任务、执行 shell、生成 patch、运行验证 runner、创建 worktree 或调度真实 subagents。
+- V1-V14 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景，不代表当前 active change。
 
 ## V10 实现摘要
 
@@ -316,8 +320,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 若开始 V15 Assistant Control Surface，先按项目流程读取 AGENTS/README/PROGRESS/ARCHITECTURE/allowed_files/review_checklist/HANDOFF，并创建新的 OpenSpec change。
-2. 新阶段开始前先同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，不要直接修改 runtime。
+1. 继续完成 V15 review、默认验证和 archive。
+2. V15 收口前确认 `.harness/review_checklist.md` 中 contract、只读状态、DB 非初始化和 redaction gate 均已满足。
 3. 继续保持默认验证：`openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`、`git diff --check`。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。

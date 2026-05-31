@@ -34,6 +34,11 @@ class FailingLongTaskExecutor:
         raise AssertionError("repo_rag must not be called for long task control commands")
 
 
+class FailingAssistantStatusExecutor:
+    def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
+        raise AssertionError("repo_rag must not be called for assistant status")
+
+
 class SuccessfulLongTaskExecutor:
     def __init__(self) -> None:
         self.keywords: list[str] = []
@@ -497,6 +502,34 @@ def test_agent_loop_memory_command_confirms_without_repo_rag(tmp_path: Path) -> 
     assert str(tmp_path) not in result.trace_events_internal[-1].summary
 
 
+def test_agent_loop_answers_assistant_status_without_repo_rag(tmp_path: Path) -> None:
+    loop = AgentLoop(tool_executor=FailingAssistantStatusExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="助手状态",
+            repo_path=str(tmp_path),
+            trace_id="trace_assistant_status",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "当前能力" in result.answer
+    assert "当前状态" in result.answer
+    assert "下一步" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "assistant_control_surface",
+    ]
+    assert all(
+        event.event_type != "permission_checked"
+        for event in result.trace_events_internal
+    )
+    assert not (tmp_path / ".repopilot").exists()
+
+
 def test_agent_loop_handles_memory_command_before_router_and_long_task(
     tmp_path: Path,
 ) -> None:
@@ -515,6 +548,27 @@ def test_agent_loop_handles_memory_command_before_router_and_long_task(
     assert result.answer == "已记住偏好：task_hint。"
     assert result.related_files == []
     assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "memory_command",
+    ]
+
+
+def test_agent_loop_memory_command_still_precedes_assistant_status(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=FailingRepoRagExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="记住：pref:assistant_status=优先确认目标",
+            repo_path=str(tmp_path),
+            trace_id="trace_memory_before_assistant",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert result.answer == "已记住偏好：assistant_status。"
     assert [event.event_type for event in result.trace_events_internal] == [
         "memory_command",
     ]
@@ -539,6 +593,27 @@ def test_agent_loop_handles_long_task_command_before_router_keyword(
     assert "task_" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "long_task_command",
+    ]
+
+
+def test_agent_loop_long_task_command_still_precedes_assistant_status(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=FailingLongTaskExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="创建长任务：查看助手状态",
+            repo_path=str(tmp_path),
+            trace_id="trace_long_task_before_assistant",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "已创建长任务" in result.answer
     assert [event.event_type for event in result.trace_events_internal] == [
         "long_task_command",
     ]

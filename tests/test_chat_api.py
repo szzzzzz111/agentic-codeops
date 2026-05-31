@@ -210,6 +210,30 @@ def test_chat_endpoint_long_task_create_keeps_contract_and_does_not_search(
     assert "tasks.sqlite3" not in response.text
 
 
+def test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state(
+    tmp_path: Path,
+) -> None:
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, "助手状态"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "当前能力" in body["answer"]
+    assert "当前状态" in body["answer"]
+    assert "下一步" in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+    assert str(tmp_path) not in response.text
+    assert "memory.sqlite3" not in response.text
+    assert "tasks.sqlite3" not in response.text
+    assert "evidence_pack" not in response.text
+    assert "provider" not in response.text
+    assert not (tmp_path / ".repopilot").exists()
+
+
 def test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call(
     tmp_path: Path,
 ) -> None:
@@ -252,6 +276,8 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "V11：Grounded Answer / Model Provider Boundary" in combined
     assert "V12：Query Rewrite + Rerank" in combined
     assert "已归档至 V14：Long Task / ReAct Skeleton" in combined
+    assert "V15：Assistant Control Surface" in combined
+    assert "Assistant Control Surface" in combined
     assert "V10：Query Rewrite / Rerank / Context Budget" not in combined
     assert "V10 = Query Rewrite / Rerank / Context Budget" not in combined
     assert "V12 不默认启用真实 LLM rewrite/rerank" in combined

@@ -1,6 +1,23 @@
 # 当前 Review 清单
 
-当前活跃阶段：暂无。
+当前活跃阶段：V15 Assistant Control Surface。
+
+## V15 Planning / Implementation Gate
+
+- [x] V15 OpenSpec change 包含 proposal、design、tasks，以及 `assistant-control-surface`、`agent-loop-tool-execution`、`chat-api`、`memory`、`long-task-agent-execution` 和 `harness-development-workflow` spec delta。
+- [x] Assistant Control Surface 只通过现有 `/chat` 暴露，不新增 `/status`、`/tasks` 或其他公开 API。
+- [x] `/chat` 顶层响应 contract 不新增必需或可选字段；控制面状态只进入 `answer`。
+- [x] AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、capability-status、repo_search/chat_only。
+- [x] Memory command 和 Long Task command 继续优先于 Assistant Control Surface；`memory 实现了吗?` 等能力状态问题不被控制面误吞。
+- [x] 控制面状态请求不得调用 `repo_rag`，不得进入 PermissionPolicy / ApprovalGate 工具调用链路。
+- [x] 控制面状态请求不得写 memory、创建任务、恢复任务、暂停任务、补充任务、归档任务或 reopen 任务。
+- [x] Memory / Long Task 只读摘要不得隐式创建 `.repopilot/`、`memory.sqlite3` 或 `tasks.sqlite3`。
+- [x] 控制面公开回答不得泄露完整 memory value、scratch、ReAct trace、完整 Evidence Pack、完整 provider output、本机绝对路径或 DB 路径。
+- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
+- [x] V15 不实现 patch proposal、diff apply、Verification Runner、Shell executor、SandboxRunner、后台任务、真实 subagent orchestration 或 worktree automation。
+- [x] V15 external review findings 已处理，用户确认外部 review 无新增 P0/P1/P2。
+- [x] V15 final stage debt sweep 已执行，未发现新的阶段内 P0/P1/P2 或需记录的剩余债务。
+- [x] V15 当前工作区已通过 `openspec validate v15-assistant-control-surface`、`openspec validate --all`、`scripts/verify.ps1` 和 `git diff --check`。
 
 ## V14 Archive Closeout Gate
 

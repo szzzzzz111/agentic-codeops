@@ -184,6 +184,51 @@ class MemoryManager:
             f"stm_count={stm_count}; repo_key_present=true"
         )
 
+    def control_surface_summary(
+        self,
+        *,
+        user_id: str,
+        session_id: str,
+        repo_path: str | Path,
+    ) -> dict[str, str | int]:
+        root = Path(repo_path)
+        if not root.exists() or not root.is_dir():
+            return _unavailable_control_surface_memory_summary()
+
+        stm_count = len(self.session_store.list(user_id=user_id, session_id=session_id))
+        db_path = root / ".repopilot" / "memory.sqlite3"
+        if not db_path.exists():
+            return {
+                "available": "true",
+                "pref_count": 0,
+                "ltm_count": 0,
+                "stm_count": stm_count,
+            }
+
+        try:
+            repo_key = compute_repo_key(root)
+            pref_count = _count_memories_readonly(
+                db_path=db_path,
+                kind=PREF_KIND,
+                user_id=user_id,
+                repo_key=None,
+            )
+            ltm_count = _count_memories_readonly(
+                db_path=db_path,
+                kind=LTM_KIND,
+                user_id=user_id,
+                repo_key=repo_key,
+            )
+        except (OSError, sqlite3.Error, ValueError):
+            return _unavailable_control_surface_memory_summary(stm_count=stm_count)
+
+        return {
+            "available": "true",
+            "pref_count": pref_count,
+            "ltm_count": ltm_count,
+            "stm_count": stm_count,
+        }
+
 
 def _store_for_existing_repo(repo_path: str | Path) -> tuple[SQLiteMemoryStore, str]:
     root = Path(repo_path)
@@ -270,3 +315,38 @@ def _label_for_kind(kind: str) -> str:
     if kind == STM_KIND:
         return "会话记忆"
     return "项目记忆"
+
+
+def _count_memories_readonly(
+    *,
+    db_path: Path,
+    kind: str,
+    user_id: str,
+    repo_key: str | None,
+) -> int:
+    uri = f"file:{db_path.as_posix()}?mode=ro"
+    with sqlite3.connect(uri, uri=True) as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM memories
+            WHERE kind = ?
+              AND user_id = ?
+              AND COALESCE(repo_key, '') = COALESCE(?, '')
+              AND COALESCE(session_id, '') = ''
+            """,
+            (kind, user_id, repo_key),
+        ).fetchone()
+    return int(row[0])
+
+
+def _unavailable_control_surface_memory_summary(
+    *,
+    stm_count: int = 0,
+) -> dict[str, str | int]:
+    return {
+        "available": "false",
+        "pref_count": 0,
+        "ltm_count": 0,
+        "stm_count": stm_count,
+    }

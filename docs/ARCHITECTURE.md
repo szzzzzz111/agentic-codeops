@@ -8,6 +8,7 @@ RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE
 API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> MemoryManager(STM/PREF/LTM command/read audit)
   -> LongTaskManager(command/status/step audit)
+  -> AssistantControlSurface(read-only status)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -20,6 +21,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `CodeAgent` 负责调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
 - `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。Memory command 在 `RequestRouter` / keyword 路由前识别。
 - `LongTaskManager` 负责明确长任务指令、repo-local SQLite task store、deterministic task-type plan、pause/resume、scratch 摘要和 ReAct trace skeleton。Long Task 控制命令在 memory command 之后、`RequestRouter` / keyword 路由前处理；只有显式 resume/run 当前 step 才能调用只读 `repo_rag`。
+- `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、capability-status / repo_search 之前处理，不调用 `repo_rag`，不写状态，不初始化 DB。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
 - `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code` 和 `repo_rag`。
@@ -33,7 +35,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令和 Long Task Control Plane：任务状态写入 `.repopilot/tasks.sqlite3`，控制命令不调用 repo_rag，显式 resume/run 每次只推进一个只读 repo_rag step。默认不接真实 LLM、不自动修改代码、不执行 shell；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane 和 Assistant Control Surface。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不自动修改代码、不执行 shell；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -48,6 +50,7 @@ RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexi
 - V12 Query Rewrite / Rerank 必须服务于 grep-first 检索基线，不能把系统改成默认向量库优先。
 - V13 Memory 只能作为偏好和用户明确项目事实的本地状态层，不能替代 repo evidence 或 citation validation。
 - V14 Long Task 的 step action 仍只能通过 grep-first, RAG-assisted 的 `repo_rag` 执行；scratch 和 ReAct trace 不能替代 repo evidence 或 citation validation。
+- V15 Assistant Control Surface 只能聚合状态和建议命令，不能替代 repo evidence 或 citation validation。
 - 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
 
 ## V2 工具层：安全只读仓库能力
@@ -122,6 +125,7 @@ ChatService
 - 真实外部 embedding 服务、向量库、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
 - 多 Agent。
 - 后台任务、自动循环执行、真实 subagent orchestration 或 worktree automation。
+- 控制面之外的 always-on assistant、notifications、heartbeat 或 cron。
 - 自动修改代码。
 - 沙箱执行命令。
 - SandboxRunner 的实际实现。
@@ -154,9 +158,9 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton。后续路线调整为 lightweight industrial harness：V15 做 Assistant Control Surface，V16 做 Safe Patch Authoring，V17 做 Verification Runner，V18 做 Patch + Verify Loop，V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 Assistant Control Surface 已在当前工作分支实现并通过 review/验证。后续路线调整为 lightweight industrial harness：V16 做 Safe Patch Authoring，V17 做 Verification Runner，V18 做 Patch + Verify Loop，V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
 
-这些后续阶段仍是未来能力，不是当前架构已实现部分。写代码、验证执行、持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
+V16 及之后仍是未来能力，不是当前架构已实现部分。写代码、验证执行、持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -308,3 +312,24 @@ AgentLoop
 - ReAct trace 只保存 `thought_summary`、`action`、`observation_summary` 和 `status` 摘要；scratch 只保存用户目标、补充信息、observation 摘要和 citation 引用。
 - Long Task audit 不进入 `/chat` 顶层字段；`tool_calls` 只保留实际 `repo_rag` 摘要。
 - V14 不新增 `/tasks` API，不执行后台任务、不自动循环执行、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码、不做 evaluator/reflection。
+
+## V15 架构补充：Assistant Control Surface
+
+V15 在 AgentLoop 前段加入只读助手控制面：
+
+```text
+AgentLoop
+  -> MemoryManager(command)
+  -> LongTaskManager(command)
+  -> AssistantControlSurface(status summary)
+  -> RequestRouter / capability-status / repo_search
+```
+
+边界约束：
+
+- Assistant Control Surface 只通过现有 `/chat` 入口触发，不新增公开 API 或 `/chat` 顶层字段。
+- 触发词包括 `助手状态`、`RepoPilot 状态`、`你能做什么`、`assistant status` 和 `what can you do`。
+- 控制面只读聚合 Memory PREF/LTM/STM 计数和 Long Task 最近摘要；不存在本地 DB 时返回空状态，不创建 `.repopilot/`、`memory.sqlite3` 或 `tasks.sqlite3`。
+- 控制面请求不调用 `repo_rag`，不进入 PermissionPolicy / ApprovalGate 工具调用链路，不写 memory，不创建或推进任务。
+- 公开回答不得泄露完整 memory value、scratch、ReAct trace、完整 Evidence Pack、完整 provider output、本机绝对路径或 DB 路径。
+- V15 不实现 patch proposal、diff apply、Verification Runner、Shell executor、SandboxRunner、后台任务、真实 subagent orchestration 或 worktree automation。

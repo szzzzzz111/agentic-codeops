@@ -1,9 +1,15 @@
 from pathlib import Path, PurePosixPath, PureWindowsPath
+import re
 import sqlite3
 
 from app.longtask.parser import parse_long_task_command
 from app.longtask.planner import LongTaskPlanner
-from app.longtask.store import SQLiteLongTaskStore, store_for_existing_repo
+from app.longtask.store import (
+    LONGTASK_DB,
+    LONGTASK_DIR,
+    SQLiteLongTaskStore,
+    store_for_existing_repo,
+)
 from app.longtask.types import (
     ACTION_REPO_RAG,
     LongTask,
@@ -18,6 +24,9 @@ from app.longtask.types import (
 
 
 LONG_TASK_UNAVAILABLE_ANSWER = "无法处理长任务：当前仓库任务存储不可用。"
+_ABSOLUTE_PATH_CANDIDATE_PATTERN = re.compile(
+    r"(?<!\w)(?:[A-Za-z]:[\\/][^\s，。；,;]+|/[^\s，。；,;]+)"
+)
 
 
 class LongTaskManager:
@@ -363,6 +372,46 @@ class LongTaskManager:
             audit_summary=f"long_task_status={updated.status}; task_id={task_id}",
         )
 
+    def control_surface_summary(
+        self,
+        *,
+        user_id: str,
+        repo_path: str | Path,
+    ) -> dict[str, str | int | list[str]]:
+        root = Path(repo_path)
+        if not root.exists() or not root.is_dir():
+            return _unavailable_control_surface_task_summary()
+
+        db_path = root / LONGTASK_DIR / LONGTASK_DB
+        if not db_path.exists():
+            return {
+                "available": "true",
+                "open_task_count": 0,
+                "recent_tasks": [],
+            }
+
+        try:
+            repo_key = _compute_repo_key_for_control_surface(root)
+            open_count = _count_open_tasks_readonly(
+                db_path=db_path,
+                user_id=user_id,
+                repo_key=repo_key,
+            )
+            recent = _recent_tasks_readonly(
+                db_path=db_path,
+                user_id=user_id,
+                repo_key=repo_key,
+                limit=3,
+            )
+        except (OSError, sqlite3.Error, ValueError):
+            return _unavailable_control_surface_task_summary()
+
+        return {
+            "available": "true",
+            "open_task_count": open_count,
+            "recent_tasks": recent,
+        }
+
     def _resolve_task(
         self,
         command: LongTaskCommand,
@@ -441,8 +490,89 @@ def _is_absolute_path(file_path: str) -> bool:
     ).is_absolute()
 
 
+def _redact_absolute_paths(value: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        candidate = match.group(0)
+        path = candidate.rstrip(".,;，。；")
+        suffix = candidate[len(path) :]
+        if _is_absolute_path(path):
+            return f"[redacted_path]{suffix}"
+        return candidate
+
+    return _ABSOLUTE_PATH_CANDIDATE_PATTERN.sub(replace, value)
+
+
 def _limit(value: str, max_chars: int) -> str:
     value = value.strip()
     if len(value) <= max_chars:
         return value
     return value[: max_chars - 1].rstrip() + "…"
+
+
+def _compute_repo_key_for_control_surface(root: Path) -> str:
+    from app.memory.store import compute_repo_key
+
+    return compute_repo_key(root)
+
+
+def _count_open_tasks_readonly(*, db_path: Path, user_id: str, repo_key: str) -> int:
+    uri = f"file:{db_path.as_posix()}?mode=ro"
+    with sqlite3.connect(uri, uri=True) as conn:
+        row = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM long_tasks
+            WHERE user_id = ? AND repo_key = ? AND archived = 0
+            """,
+            (user_id, repo_key),
+        ).fetchone()
+    return int(row[0])
+
+
+def _recent_tasks_readonly(
+    *,
+    db_path: Path,
+    user_id: str,
+    repo_key: str,
+    limit: int,
+) -> list[str]:
+    uri = f"file:{db_path.as_posix()}?mode=ro"
+    with sqlite3.connect(uri, uri=True) as conn:
+        rows = conn.execute(
+            """
+            SELECT task_id, title, status, current_step_index
+            FROM long_tasks
+            WHERE user_id = ? AND repo_key = ? AND archived = 0
+            ORDER BY updated_at DESC, created_at DESC
+            LIMIT ?
+            """,
+            (user_id, repo_key, limit),
+        ).fetchall()
+        tasks: list[str] = []
+        for task_id, title, status, current_index in rows:
+            step = conn.execute(
+                """
+                SELECT title
+                FROM long_task_steps
+                WHERE task_id = ?
+                ORDER BY position ASC
+                LIMIT 1 OFFSET ?
+                """,
+                (task_id, int(current_index)),
+            ).fetchone()
+            next_step = step[0] if step else "无"
+            safe_title = _redact_absolute_paths(str(title))
+            safe_next_step = _redact_absolute_paths(str(next_step))
+            tasks.append(
+                f"{task_id}/{status}/{_limit(safe_title, 80)}/"
+                f"下一步:{_limit(safe_next_step, 80)}"
+            )
+    return tasks
+
+
+def _unavailable_control_surface_task_summary() -> dict[str, str | int | list[str]]:
+    return {
+        "available": "false",
+        "open_task_count": 0,
+        "recent_tasks": [],
+    }

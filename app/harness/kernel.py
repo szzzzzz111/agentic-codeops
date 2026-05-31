@@ -3,6 +3,7 @@ from pathlib import PurePosixPath, PureWindowsPath
 import re
 
 from app.answering.grounded_answer import GroundedAnswerGenerator
+from app.assistant.control_surface import AssistantControlSurface, is_assistant_status_request
 from app.longtask.manager import LongTaskManager
 from app.longtask.planner import LongTaskPlanner
 from app.memory.manager import MemoryManager
@@ -213,6 +214,7 @@ class AgentLoop:
         model_provider: ModelProvider | None = None,
         memory_manager: MemoryManager | None = None,
         long_task_manager: LongTaskManager | None = None,
+        assistant_control_surface: AssistantControlSurface | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
@@ -226,6 +228,12 @@ class AgentLoop:
             planner=LongTaskPlanner(
                 provider=provider,
                 provider_enabled=_is_real_provider(provider),
+            )
+        )
+        self.assistant_control_surface = assistant_control_surface or (
+            AssistantControlSurface(
+                memory_manager=self.memory_manager,
+                long_task_manager=self.long_task_manager,
             )
         )
         self.grounded_answer = GroundedAnswerGenerator(provider=provider)
@@ -276,6 +284,23 @@ class AgentLoop:
                 request=request,
                 command=long_task_command,
                 trace_events=trace_events,
+            )
+
+        if is_assistant_status_request(request.message):
+            answer = self.assistant_control_surface.answer_status(
+                user_id=request.user_id,
+                session_id=request.session_id,
+                repo_path=request.repo_path,
+            )
+            return AgentLoopResult(
+                answer=answer,
+                trace_events_internal=[
+                    TraceEvent(
+                        event_type="assistant_control_surface",
+                        status="ok" if "状态不可用" not in answer else "error",
+                        summary="assistant_status=returned",
+                    )
+                ],
             )
 
         decision = self.router.route(request.message)

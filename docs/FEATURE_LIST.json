@@ -307,5 +307,26 @@
     ],
     "passes": true,
     "notes": "由 tests/test_long_task.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v15-assistant-control-surface",
+    "category": "agent",
+    "description": "AgentLoop 支持只读 Assistant Control Surface，通过现有 /chat answer 返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。",
+    "steps": [
+      "发送明确助手状态请求，例如 助手状态",
+      "检查 /chat 返回当前能力、当前状态和下一步建议",
+      "检查响应保持 trace_id、answer、related_files、tool_calls 顶层字段",
+      "检查控制面请求不调用 repo_rag、不创建 .repopilot 本地状态"
+    ],
+    "acceptance_criteria": [
+      "AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、capability-status、repo_search/chat_only",
+      "控制面请求 related_files=[] 且 tool_calls=[]",
+      "控制面只读聚合 Memory PREF/LTM/STM 计数和最近 Long Task 摘要",
+      "不存在 .repopilot DB 时状态读取不得创建 .repopilot/、memory.sqlite3 或 tasks.sqlite3",
+      "控制面公开回答不得泄露完整 memory value、scratch、ReAct trace、完整 Evidence Pack、完整 provider output、DB 路径或本机绝对路径",
+      "V15 不新增 API，不新增 /chat 顶层字段，不执行 shell，不生成 patch，不运行验证，不创建 worktree 或真实 subagents"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_assistant_control_surface.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]
