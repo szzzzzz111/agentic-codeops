@@ -5,12 +5,12 @@
 ```text
 当前基线分支：main
 当前工作分支：feature/v16-safe-patch-authoring
-当前活跃 OpenSpec change：v16-safe-patch-authoring
-最近完成阶段：V15 Assistant Control Surface（已实现、review、提交并归档）
-当前阶段：V16 Safe Patch Authoring（实现中）
+当前活跃 OpenSpec change：无
+最近完成阶段：V16 Safe Patch Authoring（已实现、review、提交并归档）
+当前阶段：暂无 active stage
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V15 已归档；V16 当前加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。默认 fake patch provider 不生成真实 diff；真实 provider 必须显式配置。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V16 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。默认 fake patch provider 不生成真实 diff；真实 provider 必须显式配置。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V16 当前只实现可确认 patch 和受控 apply，不代表验证执行、worktree、subagents、connectors 或 always-on 已实现。
 
@@ -58,6 +58,12 @@ V15 已归档到：
 openspec/changes/archive/2026-05-31-v15-assistant-control-surface/
 ```
 
+V16 已归档到：
+
+```text
+openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/
+```
+
 ## 当前主链路
 
 ```text
@@ -75,10 +81,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 `/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary、V12 的 rewrite/rerank audit summary、V13 的 memory audit summary、V14 的 long task / ReAct 摘要、V15 的 Assistant Control Surface 摘要和 V16 的 patch audit 摘要只保留在内部 trace 或现有 `answer`，不作为 `/chat` 顶层字段暴露。
 
-## V16 当前实现摘要
+## V16 实现摘要
 
-- Active OpenSpec change：`openspec/changes/v16-safe-patch-authoring/`，包含 proposal、design、tasks，以及 `safe-patch-authoring` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
-- 已同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，当前 active stage 为 V16。
+- OpenSpec change 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`，包含 proposal、design、tasks，以及 `safe-patch-authoring` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
+- 已同步长期 specs，新增 `openspec/specs/safe-patch-authoring/spec.md`；`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已切回暂无 active stage。
 - 新增 `app/patching/`：
   - `parser.py`：明确 patch proposal intent 和 `确认/应用/apply/confirm patch <patch_id>` 确认语法。
   - `provider.py`：Patch Authoring provider 边界，默认 fake provider 不生成真实 diff，ModelProvider wrapper 可解析结构化 JSON diff。
@@ -103,6 +109,9 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   - V16 OpenSpec 全量验证：`openspec validate --all`：11 passed, 0 failed。
   - V16 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 158 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
   - V16 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
+  - V16 implementation commit：`d32a367 Add V16 safe patch authoring`。
+  - V16 archive：`openspec archive v16-safe-patch-authoring -y` 已完成，归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`；长期 specs 已同步，新增 `openspec/specs/safe-patch-authoring/spec.md`。
+  - V16 archive 后验证：`openspec validate --all`：11 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过，`pytest` 158 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过。
 
 ## V15 当前实现摘要
 
@@ -299,11 +308,12 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- 当前 active change：`v16-safe-patch-authoring`；V16 实现、self-review 和外部 review follow-up 已完成，等待提交和 archive 收口。
-- `.harness/allowed_files.md` 当前指向 V16 Safe Patch Authoring 写入边界。
-- `.harness/review_checklist.md` 已加入并勾选 V16 planning / implementation gate，且保留 V15 及更早历史 review/closeout 记录。
+- 当前 active change：无；`openspec list` 显示 no active changes。
+- `.harness/allowed_files.md` 已切回暂无 active stage；下一阶段开始前必须先同步写入边界。
+- `.harness/review_checklist.md` 已加入 V16 archive closeout gate，并保留 V16 及更早历史 review/closeout 记录。
+- V16 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`，长期 specs 已同步。
 - V15 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，长期 specs 已同步。
-- V1-V15 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景，不代表当前 active change。
+- V1-V16 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景，不代表当前 active change。
 
 ## V10 实现摘要
 
@@ -359,8 +369,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 完成 V16 self-review / external review 后，再进入 commit、archive、merge 或 push 决策。
-2. 后续路线继续保持 V17 Verification Runner、V18 Patch + Verify Loop、V19 Persistent Audit / Recovery、V20 Worktree Isolation。
+1. 后续可按项目节奏决定是否 merge / push `feature/v16-safe-patch-authoring`。
+2. 下一阶段建议从 V17 Verification Runner 规划开始；开始前先创建 OpenSpec change，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
 3. 不要把 V17+ 的验证执行、失败修复循环、持久审计或 worktree 隔离归入 V16 当前能力。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。

@@ -1,6 +1,15 @@
 ﻿# 当前 Review 清单
 
-当前活跃阶段：V16 Safe Patch Authoring。
+当前活跃阶段：无。
+
+## V16 Archive Closeout Gate
+
+- [x] V16 implementation commit 已创建：`d32a367 Add V16 safe patch authoring`。
+- [x] V16 active change 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`。
+- [x] 长期 specs 已通过 `openspec archive v16-safe-patch-authoring -y` 同步，新增 `openspec/specs/safe-patch-authoring/spec.md`。
+- [x] `openspec list` 显示 no active changes。
+- [x] V16 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
+- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 
 ## V16 Planning / Implementation Gate
 
