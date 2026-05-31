@@ -328,5 +328,30 @@
     ],
     "passes": true,
     "notes": "由 tests/test_assistant_control_surface.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v16-safe-patch-authoring",
+    "category": "agent",
+    "description": "AgentLoop 支持基于 repo evidence 的 Safe Patch Authoring，并在用户明确确认后通过受控 patch_apply 应用 unified diff。",
+    "steps": [
+      "发送明确 patch proposal 请求，例如 请生成 patch 修改 app.py",
+      "检查系统先通过 repo_rag / Evidence Pack 获取仓库证据",
+      "合法 provider 输出创建 pending patch，并通过 answer 返回摘要、目标文件、patch id 和确认方式",
+      "发送明确确认语法，例如 确认 patch patch_xxx",
+      "检查 AgentLoop 通过 ToolInvocationContext、PermissionPolicy、ApprovalGate 和 ToolExecutor.patch_apply 执行受控写入"
+    ],
+    "acceptance_criteria": [
+      "AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、capability-status、repo_search/chat_only",
+      "默认 fake Patch Authoring provider 不生成真实 diff，默认验证不依赖网络、API key 或真实模型输出",
+      "Pending patch 保存到 repo-local .repopilot/patches.sqlite3，并按 user_id + repo_key 隔离，默认 24 小时过期",
+      "确认语法只接受 应用 patch <patch_id>、确认 patch <patch_id>、apply patch <patch_id> 和 confirm patch <patch_id>",
+      "patch_apply 注册为 read_only=false、risk=write、requires_approval=true，只有有效确认上下文才能走 ask -> ApprovalGate pass",
+      "patch_apply 只允许写 unified diff 中声明的 repo 内相对路径，并拒绝路径穿越、敏感文件、隐藏状态目录、二进制文件和 context mismatch",
+      "Patch proposal answer 不泄露完整 diff 文本、完整 Evidence Pack、完整 provider prompt/output、本机绝对路径、DB 路径或 API key",
+      "V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell、不实现 Patch + Verify Loop",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_patch_authoring.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

@@ -6,16 +6,17 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V15 已归档；当前暂无 active OpenSpec change，下一阶段建议从 V16 Safe Patch Authoring 开始。
+- 当前主线能力：V1-V15 已归档；当前 active OpenSpec change 为 `v16-safe-patch-authoring`，工作分支 `feature/v16-safe-patch-authoring`。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
 - 当前 Long Task：repo-local `.repopilot/tasks.sqlite3`、明确长任务指令、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；不新增 `/tasks` API 或 `/chat` 必需顶层字段。
 - 当前 Assistant Control Surface：通过现有 `/chat.answer` 返回只读助手状态，聚合当前能力、Memory 计数和 Long Task 摘要；不新增 API、不新增 `/chat` 顶层字段、不调用 `repo_rag`、不写 memory、不创建任务。
-- 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 和统一 `ToolExecutor`。
-- 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
+- 当前 Safe Patch Authoring：通过明确 patch 请求基于 repo evidence 生成 pending patch proposal；默认 fake patch provider 不生成真实 diff，显式配置真实 provider 后可返回结构化 unified diff；用户必须明确 `确认 patch <patch_id>` / `应用 patch <patch_id>` 才能通过受控 `patch_apply` 写入。
+- 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolInvocationContext` 和统一 `ToolExecutor`。
+- 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
-- 当前不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码。
+- 当前不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动运行测试或 commit；V16 仅允许用户明确确认后的受控 patch apply。
 
 ## 当前能力
 
@@ -71,6 +72,17 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 控制面只读聚合 Memory PREF/LTM/STM 计数和最近 Long Task 摘要，不隐式创建 `.repopilot/`、`memory.sqlite3` 或 `tasks.sqlite3`。
 - 控制面请求不调用 `repo_rag`，不进入工具权限链路，不写 memory，不创建或推进任务。
 - 控制面公开回答不泄露完整 memory value、scratch、ReAct trace、Evidence Pack、provider output、本机绝对路径或 DB 路径。
+
+### Safe Patch Authoring
+
+- 通过明确 patch 请求触发，例如 `请生成 patch 修改 app.py`。
+- AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、capability-status、repo_search/chat_only。
+- Patch proposal 先通过现有 `repo_rag` / Evidence Pack 获取仓库证据，再由 Patch Authoring provider 生成结构化 proposal。
+- 默认 fake Patch Authoring provider 保持离线确定性，不生成真实 diff；OpenAI-compatible provider 只有显式配置后才可返回结构化 diff。
+- Pending patch 写入 repo-local `.repopilot/patches.sqlite3`，按 `user_id + repo_key` 隔离，默认 24 小时过期。
+- Apply 只接受明确确认语法：`确认 patch <patch_id>`、`应用 patch <patch_id>`、`confirm patch <patch_id>`、`apply patch <patch_id>`。
+- `patch_apply` 是 V16 唯一写入工具，必须经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`，只写 diff 中的 repo 内相对路径。
+- V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell，不实现 Patch + Verify Loop。
 
 ### Safe Repository Tools
 
@@ -186,6 +198,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/harness/kernel.py`：提供 RequestRouter、QueryUnderstanding 接入、ToolRegistry、PermissionPolicy、ApprovalGate、AgentLoop 和 TraceEvent 最小 Kernel。
 - `app/longtask/`：提供 Long Task parser、planner、repo-local SQLite store、manager 和 ReAct trace skeleton。
 - `app/assistant/control_surface.py`：提供 Assistant Control Surface 触发词、只读状态聚合和 answer formatter。
+- `app/patching/`：提供 patch 确认解析、Patch Authoring provider 边界、pending patch SQLite store、unified diff preflight/apply 和 Patch manager。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
 - `app/rag/query_rewrite.py`：提供 deterministic multi-query rewrite 边界和 Code Evidence variants。
@@ -274,6 +287,12 @@ V15 在 AgentLoop 中加入只读 Assistant Control Surface。明确状态类消
 
 V15 保持 `/chat` contract 不变，不新增公开 API 或顶层字段。控制面状态读取不调用 `repo_rag`、不写 memory、不创建任务、不执行 shell、不后台运行，也不隐式初始化 `.repopilot` 本地状态 DB。
 
+### V16：Safe Patch Authoring
+
+V16 在 AgentLoop 前段加入 Safe Patch Authoring。明确 patch 请求先通过 repo evidence 生成 patch proposal；合法 provider 输出会保存为 repo-local pending patch，并通过现有 `/chat.answer` 返回摘要、目标文件、patch id 和确认方式。
+
+V16 保持 `/chat` contract 不变，不新增公开 API 或顶层字段。`patch_apply` 是唯一写入工具，必须在明确确认语法和有效 `ToolInvocationContext` 下通过 `PermissionPolicy` / `ApprovalGate`，并只修改 unified diff 中的 repo 内相对路径。V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -340,7 +359,7 @@ ChatService
 
 ## 路线图
 
-已归档至 V15：Assistant Control Surface。当前无 active change。后续路线：
+已归档至 V15：Assistant Control Surface。当前 active change：V16 Safe Patch Authoring。后续路线：
 
 - V16：Safe Patch Authoring。基于 repo evidence 生成 patch proposal / diff，用户明确确认后才 apply；不执行测试、不自动 commit、不创建 worktree。
 - V17：Verification Runner。通过白名单验证命令执行 `pytest`、`ruff check .` 或 `scripts/verify.ps1` 等受控验证，并经过权限和审批边界。

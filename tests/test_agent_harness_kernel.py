@@ -8,6 +8,7 @@ from app.harness.kernel import (
     PermissionPolicy,
     RequestRouter,
     RouteDecision,
+    ToolInvocationContext,
     ToolSpec,
     ToolRegistry,
 )
@@ -37,6 +38,14 @@ class FailingLongTaskExecutor:
 class FailingAssistantStatusExecutor:
     def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
         raise AssertionError("repo_rag must not be called for assistant status")
+
+
+class FailingPatchExecutor:
+    def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
+        raise AssertionError("repo_rag must not be called for patch confirm")
+
+    def patch_apply(self, repo_path: str, diff_text: str) -> None:
+        raise AssertionError("patch_apply must not be called without valid confirmation")
 
 
 class SuccessfulLongTaskExecutor:
@@ -206,6 +215,43 @@ def test_permission_policy_asks_for_approval_for_low_risk_approval_tool() -> Non
         reason="approval_required",
     )
     assert ApprovalGate().evaluate(decision) is False
+
+
+def test_permission_policy_allows_patch_apply_only_via_confirmation_context() -> None:
+    policy = PermissionPolicy()
+    gate = ApprovalGate()
+    spec = ToolSpec(
+        name="patch_apply",
+        description="Apply a confirmed patch.",
+        read_only=False,
+        risk="write",
+        requires_approval=True,
+    )
+    context = ToolInvocationContext(
+        tool_name="patch_apply",
+        user_id="u001",
+        repo_key="repo_a",
+        intent="patch_apply",
+        patch_id="patch_20260531_abcdef",
+        confirmed=True,
+        patch_status="pending",
+        diff_hash_match=True,
+        expires_at_valid=True,
+        scope_valid=True,
+    )
+
+    decision = policy.decide(spec, tool_name="patch_apply", context=context)
+
+    assert decision == PermissionDecision(
+        tool_name="patch_apply",
+        status="ask",
+        reason="approval_required",
+    )
+    assert gate.evaluate(decision, context=context) is True
+    assert policy.decide(spec, tool_name="patch_apply").status == "deny"
+    assert ApprovalGate().evaluate(
+        PermissionDecision("repo_rag", "ask", "approval_required")
+    ) is False
 
 
 def test_agent_loop_rejects_search_when_tool_is_not_registered(tmp_path: Path) -> None:
@@ -617,6 +663,50 @@ def test_agent_loop_long_task_command_still_precedes_assistant_status(
     assert [event.event_type for event in result.trace_events_internal] == [
         "long_task_command",
     ]
+
+
+def test_agent_loop_handles_patch_confirm_before_repo_search(tmp_path: Path) -> None:
+    loop = AgentLoop(tool_executor=FailingPatchExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="确认 patch patch_20260531_missing",
+            repo_path=str(tmp_path),
+            trace_id="trace_patch_confirm",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "未找到可应用的 patch" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "patch_command",
+    ]
+
+
+def test_agent_loop_reports_v16_patch_capability_without_repo_search(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(
+        tool_registry=ToolRegistry(),
+        tool_executor=FailingSearchExecutor(),
+    )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="patch apply 实现了吗?",
+            repo_path=str(tmp_path),
+            trace_id="trace_v16_patch_status",
+        )
+    )
+
+    assert "V16 提供 Safe Patch Authoring" in result.answer
+    assert "明确确认后受控 apply" in result.answer
+    assert "V17" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
 
 
 def test_agent_loop_resumes_one_long_task_step_through_repo_rag(

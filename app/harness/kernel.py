@@ -7,6 +7,8 @@ from app.assistant.control_surface import AssistantControlSurface, is_assistant_
 from app.longtask.manager import LongTaskManager
 from app.longtask.planner import LongTaskPlanner
 from app.memory.manager import MemoryManager
+from app.patching.manager import PatchManager
+from app.patching.types import ToolInvocationContext
 from app.providers.model_provider import ModelProvider, load_model_provider_from_env
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
 from app.rag.repo_rag import HybridRepoRetriever
@@ -16,6 +18,7 @@ from app.tools.tool_executor import ToolExecutor
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
 ALLOWED_TOOL_RISK = "low"
 REPO_RAG_TOOL = "repo_rag"
+PATCH_APPLY_TOOL = "patch_apply"
 _ROUTING_STOPWORDS = {
     "hello",
     "hi",
@@ -57,6 +60,11 @@ V13_CAPABILITY_STATUS_ANSWER = (
 VECTOR_CAPABILITY_STATUS_ANSWER = (
     "V9 提供轻量 embedding retrieval 和 hybrid search；"
     "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant 或真实外部 embedding 服务。"
+)
+V16_CAPABILITY_STATUS_ANSWER = (
+    "V16 提供 Safe Patch Authoring：可基于仓库证据生成 patch proposal，"
+    "并在明确确认后受控 apply；V17 才会实现 Verification Runner，"
+    "当前未实现 Patch + Verify Loop、Persistent Audit / Recovery 或 Worktree Isolation。"
 )
 
 
@@ -150,7 +158,14 @@ class ToolRegistry:
                     description="Search a repository using read-only repo-local RAG.",
                     read_only=True,
                     risk=ALLOWED_TOOL_RISK,
-                )
+                ),
+                ToolSpec(
+                    name=PATCH_APPLY_TOOL,
+                    description="Apply a confirmed repository patch.",
+                    read_only=False,
+                    risk="write",
+                    requires_approval=True,
+                ),
             ]
         )
 
@@ -163,6 +178,7 @@ class PermissionPolicy:
         self,
         tool_spec: ToolSpec | None,
         tool_name: str = REPO_RAG_TOOL,
+        context: ToolInvocationContext | None = None,
     ) -> PermissionDecision:
         if tool_spec is None:
             return PermissionDecision(
@@ -170,6 +186,8 @@ class PermissionPolicy:
                 status="deny",
                 reason="not_registered",
             )
+        if tool_spec.name == PATCH_APPLY_TOOL:
+            return _decide_patch_apply(tool_spec, context)
         if not tool_spec.read_only:
             return PermissionDecision(
                 tool_name=tool_spec.name,
@@ -196,8 +214,58 @@ class PermissionPolicy:
 
 
 class ApprovalGate:
-    def evaluate(self, decision: PermissionDecision) -> bool:
+    def evaluate(
+        self,
+        decision: PermissionDecision,
+        context: ToolInvocationContext | None = None,
+    ) -> bool:
+        if decision.tool_name == PATCH_APPLY_TOOL and decision.status == "ask":
+            return _valid_patch_context(context)
         return decision.status == "allow"
+
+
+def _decide_patch_apply(
+    tool_spec: ToolSpec,
+    context: ToolInvocationContext | None,
+) -> PermissionDecision:
+    if not _valid_patch_context(context):
+        return PermissionDecision(
+            tool_name=tool_spec.name,
+            status="deny",
+            reason=_patch_context_rejection_reason(context),
+        )
+    return PermissionDecision(
+        tool_name=tool_spec.name,
+        status="ask",
+        reason="approval_required",
+    )
+
+
+def _valid_patch_context(context: ToolInvocationContext | None) -> bool:
+    return bool(
+        context is not None
+        and context.tool_name == PATCH_APPLY_TOOL
+        and context.intent == "patch_apply"
+        and context.confirmed
+        and context.patch_status == "pending"
+        and context.diff_hash_match
+        and context.expires_at_valid
+        and context.scope_valid
+    )
+
+
+def _patch_context_rejection_reason(context: ToolInvocationContext | None) -> str:
+    if context is None or not context.confirmed:
+        return "missing_confirmation"
+    if context.patch_status != "pending":
+        return "patch_not_pending"
+    if not context.diff_hash_match:
+        return "patch_hash_mismatch"
+    if not context.expires_at_valid:
+        return "patch_expired"
+    if not context.scope_valid:
+        return "patch_scope_invalid"
+    return "patch_context_invalid"
 
 
 class AgentLoop:
@@ -215,6 +283,7 @@ class AgentLoop:
         memory_manager: MemoryManager | None = None,
         long_task_manager: LongTaskManager | None = None,
         assistant_control_surface: AssistantControlSurface | None = None,
+        patch_manager: PatchManager | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
@@ -236,6 +305,7 @@ class AgentLoop:
                 long_task_manager=self.long_task_manager,
             )
         )
+        self.patch_manager = patch_manager or PatchManager()
         self.grounded_answer = GroundedAnswerGenerator(provider=provider)
 
     def run(self, request: AgentLoopRequest) -> AgentLoopResult:
@@ -302,6 +372,31 @@ class AgentLoop:
                     )
                 ],
             )
+
+        patch_confirmation = self.patch_manager.prepare_apply(
+            user_id=request.user_id,
+            repo_path=request.repo_path,
+            message=request.message,
+        )
+        if patch_confirmation.handled:
+            if patch_confirmation.context is None or not patch_confirmation.diff_text:
+                return AgentLoopResult(
+                    answer=patch_confirmation.answer,
+                    trace_events_internal=[
+                        TraceEvent(
+                            event_type="patch_command",
+                            status="error",
+                            summary=patch_confirmation.audit_summary,
+                        )
+                    ],
+                )
+            return self._run_patch_apply(
+                request=request,
+                command=patch_confirmation,
+            )
+
+        if self.patch_manager.is_patch_proposal_request(request.message):
+            return self._run_patch_proposal(request)
 
         decision = self.router.route(request.message)
         trace_events = [
@@ -603,6 +698,151 @@ class AgentLoop:
             trace_events_internal=trace_events,
         )
 
+    def _run_patch_proposal(self, request: AgentLoopRequest) -> AgentLoopResult:
+        search_plan = self.query_understanding.build_search_plan(request.message)
+        keyword = search_plan.keywords[0] if search_plan.keywords else request.message
+        trace_events = [
+            TraceEvent(
+                event_type="patch_command",
+                status="ok",
+                summary="patch_intent=proposal",
+            )
+        ]
+        tool_spec = self.tool_registry.get(REPO_RAG_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=REPO_RAG_TOOL,
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=REPO_RAG_TOOL,
+                status="ok" if permission_decision.status == "allow" else "error",
+                summary=(
+                    f"tool={REPO_RAG_TOOL}; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            )
+        )
+        if permission_decision.status == "deny":
+            return AgentLoopResult(answer=DENY_ANSWER, trace_events_internal=trace_events)
+        if not self.approval_gate.evaluate(permission_decision):
+            return AgentLoopResult(answer=ASK_ANSWER, trace_events_internal=trace_events)
+
+        tool_result = self._run_repo_rag(
+            repo_path=request.repo_path,
+            keyword=keyword,
+            search_plan=search_plan,
+        )
+        related_files = _unique_related_files(tool_result.results)
+        patch_result = self.patch_manager.propose_patch(
+            user_id=request.user_id,
+            repo_path=request.repo_path,
+            message=request.message,
+            evidence_pack=tool_result.evidence_pack,
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="patch_proposal_summarized",
+                status="ok" if patch_result.patch_id else "error",
+                summary=patch_result.audit_summary,
+            )
+        )
+        return AgentLoopResult(
+            answer=patch_result.answer,
+            related_files=related_files,
+            tool_calls=[tool_result.call_summary()],
+            trace_events_internal=trace_events,
+        )
+
+    def _run_patch_apply(
+        self,
+        *,
+        request: AgentLoopRequest,
+        command,
+    ) -> AgentLoopResult:
+        context = command.context
+        tool_spec = self.tool_registry.get(PATCH_APPLY_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=PATCH_APPLY_TOOL,
+            context=context,
+        )
+        trace_events = [
+            TraceEvent(
+                event_type="patch_command",
+                status="ok",
+                summary=command.audit_summary,
+            ),
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=PATCH_APPLY_TOOL,
+                status="ok" if permission_decision.status == "ask" else "error",
+                summary=(
+                    f"tool={PATCH_APPLY_TOOL}; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            ),
+        ]
+        if permission_decision.status == "deny":
+            return AgentLoopResult(
+                answer=DENY_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="tool_rejected",
+                        tool_name=PATCH_APPLY_TOOL,
+                        status="error",
+                        summary=f"reason={permission_decision.reason}",
+                    ),
+                ],
+            )
+        if not self.approval_gate.evaluate(permission_decision, context=context):
+            return AgentLoopResult(
+                answer=ASK_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="approval_required",
+                        tool_name=PATCH_APPLY_TOOL,
+                    ),
+                ],
+            )
+        tool_result = self.tool_executor.patch_apply(
+            repo_path=request.repo_path,
+            diff_text=command.diff_text,
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="tool_result",
+                tool_name=PATCH_APPLY_TOOL,
+                status="error" if tool_result.error else "ok",
+                summary=f"result_count={len(tool_result.results)}",
+            )
+        )
+        apply_result = getattr(tool_result, "patch_apply_result", None)
+        completed = self.patch_manager.complete_apply(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            patch_id=command.patch_id or "",
+            result=apply_result,
+        )
+        return AgentLoopResult(
+            answer=completed.answer,
+            tool_calls=[tool_result.call_summary()],
+            trace_events_internal=[
+                *trace_events,
+                TraceEvent(
+                    event_type="patch_apply_summarized",
+                    tool_name=PATCH_APPLY_TOOL,
+                    status="ok" if tool_result.error is None else "error",
+                    summary=completed.audit_summary,
+                ),
+            ],
+        )
+
     def _run_repo_rag(
         self,
         *,
@@ -653,6 +893,7 @@ def _asks_about_unimplemented_vector_stack(message: str) -> bool:
             "rerank",
             "context compression",
             "query rewrite",
+            "patch",
         )
     )
     if not has_capability_term:
@@ -711,12 +952,15 @@ def _asks_about_unimplemented_v10_stack(message: str) -> bool:
 
 def _capability_status_answer(message: str) -> str:
     lower = message.lower()
+    asks_patch = "patch" in lower or "补丁" in message
     asks_memory = "memory" in lower or "记忆" in message
     asks_rewrite_or_rerank = any(term in lower for term in ("query rewrite", "rerank"))
     asks_vector_stack = any(
         term in lower
         for term in ("embedding", "milvus", "elasticsearch", "pgvector", "qdrant", "vector")
     )
+    if asks_patch:
+        return V16_CAPABILITY_STATUS_ANSWER
     if asks_memory and asks_vector_stack:
         return f"{VECTOR_CAPABILITY_STATUS_ANSWER}；{V13_CAPABILITY_STATUS_ANSWER}"
     if asks_memory and asks_rewrite_or_rerank:

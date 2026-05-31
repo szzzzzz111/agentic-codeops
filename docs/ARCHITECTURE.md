@@ -9,9 +9,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> MemoryManager(STM/PREF/LTM command/read audit)
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
+  -> PatchManager(proposal/apply confirmation)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / patch_apply) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -22,9 +23,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。Memory command 在 `RequestRouter` / keyword 路由前识别。
 - `LongTaskManager` 负责明确长任务指令、repo-local SQLite task store、deterministic task-type plan、pause/resume、scratch 摘要和 ReAct trace skeleton。Long Task 控制命令在 memory command 之后、`RequestRouter` / keyword 路由前处理；只有显式 resume/run 当前 step 才能调用只读 `repo_rag`。
 - `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、capability-status / repo_search 之前处理，不调用 `repo_rag`，不写状态，不初始化 DB。
+- `PatchManager` 负责明确 patch proposal 请求和明确 patch apply 确认。Proposal 先走 repo evidence；apply 只接受 `确认 patch <patch_id>` / `应用 patch <patch_id>` 等明确语法，并在权限检查前生成已归一化 `ToolInvocationContext`。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
-- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code` 和 `repo_rag`。
+- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag` 和受控写入 `patch_apply`。
 - `LexicalRepoRetriever` 负责 repo-local chunk、lexical scoring、dedup 和 citation。
 - `EmbeddingRepoRetriever` 使用本地确定性 embedding provider 对 repo chunk 做轻量 embedding retrieval。
 - `HybridRepoRetriever` 负责合并 lexical 与 embedding retrieval 结果。
@@ -35,7 +37,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane 和 Assistant Control Surface。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不自动修改代码、不执行 shell；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface 和 Safe Patch Authoring。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行 shell、不运行测试、不自动 commit、不创建 worktree；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源或 Patch Authoring 结构化 diff 来源。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -51,6 +53,7 @@ RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexi
 - V13 Memory 只能作为偏好和用户明确项目事实的本地状态层，不能替代 repo evidence 或 citation validation。
 - V14 Long Task 的 step action 仍只能通过 grep-first, RAG-assisted 的 `repo_rag` 执行；scratch 和 ReAct trace 不能替代 repo evidence 或 citation validation。
 - V15 Assistant Control Surface 只能聚合状态和建议命令，不能替代 repo evidence 或 citation validation。
+- V16 Safe Patch Authoring 的 proposal 必须先使用 repo evidence；provider diff 必须通过 schema、citation、路径和 diff 校验后才能创建 pending patch。
 - 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
 
 ## V2 工具层：安全只读仓库能力
@@ -158,9 +161,9 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface。后续路线调整为 lightweight industrial harness：V16 做 Safe Patch Authoring，V17 做 Verification Runner，V18 做 Patch + Verify Loop，V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 当前实现 Safe Patch Authoring。后续路线调整为 lightweight industrial harness：V17 做 Verification Runner，V18 做 Patch + Verify Loop，V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
 
-V16 及之后仍是未来能力，不是当前架构已实现部分。写代码、验证执行、持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
+V17 及之后仍是未来能力，不是当前架构已实现部分。运行验证、持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -333,3 +336,28 @@ AgentLoop
 - 控制面请求不调用 `repo_rag`，不进入 PermissionPolicy / ApprovalGate 工具调用链路，不写 memory，不创建或推进任务。
 - 公开回答不得泄露完整 memory value、scratch、ReAct trace、完整 Evidence Pack、完整 provider output、本机绝对路径或 DB 路径。
 - V15 不实现 patch proposal、diff apply、Verification Runner、Shell executor、SandboxRunner、后台任务、真实 subagent orchestration 或 worktree automation。
+
+## V16 架构补充：Safe Patch Authoring
+
+V16 在 AgentLoop 前段加入 Safe Patch Authoring：
+
+```text
+AgentLoop
+  -> MemoryManager(command)
+  -> LongTaskManager(command)
+  -> AssistantControlSurface(status summary)
+  -> PatchManager(proposal / confirm apply)
+     -> proposal: ToolExecutor(repo_rag) -> EvidencePack -> PatchAuthoringProvider -> SQLitePatchStore
+     -> apply: ToolInvocationContext -> PermissionPolicy -> ApprovalGate -> ToolExecutor(patch_apply)
+```
+
+边界约束：
+
+- Patch proposal 只通过明确 patch 请求触发，并在 capability-status / repo_search 前处理。
+- 默认 fake Patch Authoring provider 不生成真实 diff；真实 provider 必须显式配置，且输出必须通过结构化 schema、citation 和 diff 校验。
+- Pending patch 存入 `.repopilot/patches.sqlite3`，按 `user_id + repo_key` 隔离，默认 24 小时过期。
+- Apply 只接受 `确认 patch <patch_id>`、`应用 patch <patch_id>`、`confirm patch <patch_id>` 和 `apply patch <patch_id>`。
+- `ToolInvocationContext` 由 Patch manager 预校验生成；`PermissionPolicy` 和 `ApprovalGate` 不读 patch store、不解析用户消息、不重新计算 hash。
+- `PermissionPolicy` 仍只产出 `allow`、`deny` 或 `ask`；`patch_apply` 只有在有效确认上下文下走 `ask -> ApprovalGate pass`。
+- `patch_apply` 是唯一写入路径，只修改 unified diff 中的 repo 内相对路径，并拒绝路径穿越、敏感文件、隐藏状态目录、二进制文件和 context mismatch。
+- V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell、不实现 Patch + Verify Loop。

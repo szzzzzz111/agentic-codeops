@@ -1,0 +1,1 @@
+"""Safe patch authoring support."""

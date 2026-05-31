@@ -234,6 +234,63 @@ def test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state
     assert not (tmp_path / ".repopilot").exists()
 
 
+def test_chat_endpoint_patch_proposal_keeps_contract_and_does_not_write(
+    tmp_path: Path,
+) -> None:
+    write_text(tmp_path / "app.py", "old\n")
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, "请生成 patch 修改 app.py"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "无法生成可应用 patch" in body["answer"]
+    assert "--- a/app.py" not in response.text
+    assert body["related_files"] == ["app.py"]
+    assert body["tool_calls"][0]["tool_name"] == "repo_rag"
+    assert (tmp_path / "app.py").read_text(encoding="utf-8") == "old\n"
+
+
+def test_chat_endpoint_confirm_patch_applies_without_running_verification(
+    tmp_path: Path,
+) -> None:
+    from app.memory.store import compute_repo_key
+    from app.patching.store import SQLitePatchStore
+
+    write_text(tmp_path / "app.py", "old\n")
+    patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
+        user_id="u001",
+        repo_key=compute_repo_key(tmp_path),
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, f"确认 patch {patch.patch_id}"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "已应用 patch" in body["answer"]
+    assert body["tool_calls"] == [
+        {
+            "tool_name": "patch_apply",
+            "status": "success",
+            "result_count": "1",
+        }
+    ]
+    assert (tmp_path / "app.py").read_text(encoding="utf-8") == "new\n"
+    assert "pytest" not in response.text
+    assert "commit" not in response.text
+    assert "worktree" not in response.text
+
+
 def test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call(
     tmp_path: Path,
 ) -> None:

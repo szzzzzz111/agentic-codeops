@@ -4,15 +4,15 @@
 
 ```text
 当前基线分支：main
-当前工作分支：codex/v15-assistant-control-surface
-当前活跃 OpenSpec change：无
-最近完成阶段：V15 Assistant Control Surface（已实现、review、提交并归档；待后续 merge/push 决策）
-当前阶段：暂无 active stage
+当前工作分支：feature/v16-safe-patch-authoring
+当前活跃 OpenSpec change：v16-safe-patch-authoring
+最近完成阶段：V15 Assistant Control Surface（已实现、review、提交并归档）
+当前阶段：V16 Safe Patch Authoring（实现中）
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V15 已归档；V15 已加入只读 Assistant Control Surface，通过现有 `/chat.answer` 返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。默认不调用真实 LLM、网络或 API key。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V15 已归档；V16 当前加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。默认 fake patch provider 不生成真实 diff；真实 provider 必须显式配置。
 
-后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。该路线判断只是文档决策，不代表 V16+ 已启动，也不代表写代码、验证执行、worktree、subagents、connectors 或 always-on 已实现。
+后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V16 当前只实现可确认 patch 和受控 apply，不代表验证执行、worktree、subagents、connectors 或 always-on 已实现。
 
 新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
@@ -65,14 +65,44 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> MemoryManager(STM/PREF/LTM command/read audit)
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
+  -> PatchManager(proposal/apply confirmation)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / patch_apply) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
 
-`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary、V12 的 rewrite/rerank audit summary、V13 的 memory audit summary、V14 的 long task / ReAct 摘要和 V15 的 Assistant Control Surface 摘要只保留在内部 trace 或现有 `answer`，不作为 `/chat` 顶层字段暴露。
+`/chat` 顶层响应保持现有 contract：`trace_id`、`answer`、`related_files`、`tool_calls`。V7 的权限和审批审计、V8/V9 的 query understanding/retrieval 摘要、V10 的 Evidence Pack audit summary、V11 的 provider audit summary、V12 的 rewrite/rerank audit summary、V13 的 memory audit summary、V14 的 long task / ReAct 摘要、V15 的 Assistant Control Surface 摘要和 V16 的 patch audit 摘要只保留在内部 trace 或现有 `answer`，不作为 `/chat` 顶层字段暴露。
+
+## V16 当前实现摘要
+
+- Active OpenSpec change：`openspec/changes/v16-safe-patch-authoring/`，包含 proposal、design、tasks，以及 `safe-patch-authoring` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
+- 已同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，当前 active stage 为 V16。
+- 新增 `app/patching/`：
+  - `parser.py`：明确 patch proposal intent 和 `确认/应用/apply/confirm patch <patch_id>` 确认语法。
+  - `provider.py`：Patch Authoring provider 边界，默认 fake provider 不生成真实 diff，ModelProvider wrapper 可解析结构化 JSON diff。
+  - `store.py`：repo-local `.repopilot/patches.sqlite3` pending patch store，按 `user_id + repo_key` 隔离，默认 24 小时 TTL。
+  - `apply.py`：unified diff parser/applicator，全量 preflight、repo 内相对路径、安全文件、二进制和 context 校验。
+  - `manager.py`：proposal、apply confirmation、`ToolInvocationContext` 预校验和状态更新。
+- 新增 `ToolInvocationContext`，`PermissionPolicy.decide(..., context=None)` 和 `ApprovalGate.evaluate(..., context=None)` 保持可选 context；权限状态仍只有 `allow`、`deny`、`ask`。
+- `patch_apply` 注册为 `read_only=False`、`risk=write`、`requires_approval=True`；只有有效确认上下文才能 `ask -> ApprovalGate pass`。
+- `ToolExecutor.patch_apply(...)` 是 V16 唯一写入路径；普通 API handler 不直接写文件。
+- AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、capability-status、repo_search/chat_only。
+- V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell、不实现 Verification Runner 或 Patch + Verify Loop。
+- 当前验证：
+  - `openspec validate v16-safe-patch-authoring`：通过。
+  - V16 targeted RED：缺少 `ToolInvocationContext` 和 patching runtime，按预期失败。
+  - V16 targeted GREEN：`pytest tests\test_patch_authoring.py tests\test_agent_harness_kernel.py::test_permission_policy_allows_patch_apply_only_via_confirmation_context tests\test_agent_harness_kernel.py::test_agent_loop_handles_patch_confirm_before_repo_search tests\test_agent_harness_kernel.py::test_agent_loop_reports_v16_patch_capability_without_repo_search tests\test_chat_api.py::test_chat_endpoint_patch_proposal_keeps_contract_and_does_not_write tests\test_chat_api.py::test_chat_endpoint_confirm_patch_applies_without_running_verification -q`：11 passed。
+  - V16 相关回归：`pytest tests\test_patch_authoring.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：72 passed。
+  - V16 self-review follow-up：已补 provider unsafe diff 不得创建 pending patch 测试，并把 unified diff 只读 preflight 前移到 pending patch 创建前；`pytest tests\test_patch_authoring.py -q`：7 passed；`pytest tests\test_patch_authoring.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：73 passed。
+  - V16 external review follow-up：已补 provider summary 本机绝对路径不得进入 `/chat.answer` 的回归测试；patch proposal answer 公开展示前会对 summary 做路径脱敏；复核 `__pycache__` / `.pyc` 未被 git 跟踪且已被 `.gitignore` 忽略，并清理本地 `app\patching\__pycache__`、`app\providers\__pycache__`。
+  - V16 external review follow-up targeted 验证：`pytest tests\test_patch_authoring.py -q`：8 passed。
+  - V16 external review follow-up 相关回归：`pytest tests\test_patch_authoring.py tests\test_agent_harness_kernel.py tests\test_chat_api.py -q`：74 passed。
+  - V16 final stage debt sweep：已复核 active OpenSpec、harness、README、ARCHITECTURE、PROGRESS、FEATURE_LIST、HANDOFF 和长期 specs；修正 handoff 中残留的旧 “no active change” harness 状态，并补齐 V15 `assistant-control-surface` 长期 spec Purpose；未发现新的阶段内 P0/P1/P2。
+  - V16 OpenSpec 全量验证：`openspec validate --all`：11 passed, 0 failed。
+  - V16 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 158 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+  - V16 diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
 
 ## V15 当前实现摘要
 
@@ -269,9 +299,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- 当前 active change：无；`openspec list` 显示 no active changes。
-- `.harness/allowed_files.md` 已切回暂无 active stage；下一阶段开始前必须先同步写入边界。
-- `.harness/review_checklist.md` 已加入 V15 archive closeout gate，并保留 V15 及更早历史 review/closeout 记录。
+- 当前 active change：`v16-safe-patch-authoring`；V16 实现、self-review 和外部 review follow-up 已完成，等待提交和 archive 收口。
+- `.harness/allowed_files.md` 当前指向 V16 Safe Patch Authoring 写入边界。
+- `.harness/review_checklist.md` 已加入并勾选 V16 planning / implementation gate，且保留 V15 及更早历史 review/closeout 记录。
 - V15 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，长期 specs 已同步。
 - V1-V15 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景，不代表当前 active change。
 
@@ -329,9 +359,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 完成 V15 archive 后验证、closeout commit，以及后续 merge/push 决策。
-2. 下一阶段建议从 V16 Safe Patch Authoring 规划开始；开始前先创建 OpenSpec change，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
-3. 继续保持默认验证：`openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`、`git diff --check`。
+1. 完成 V16 self-review / external review 后，再进入 commit、archive、merge 或 push 决策。
+2. 后续路线继续保持 V17 Verification Runner、V18 Patch + Verify Loop、V19 Persistent Audit / Recovery、V20 Worktree Isolation。
+3. 不要把 V17+ 的验证执行、失败修复循环、持久审计或 worktree 隔离归入 V16 当前能力。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

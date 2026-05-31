@@ -13,6 +13,7 @@ from app.rag.rerank import (
     rerank_with_fallback,
 )
 from app.rag.repo_rag import HybridRepoRetriever, RetrievalResult
+from app.patching.apply import PatchApplyResult, apply_unified_diff
 from app.tools.file_tools import search_code
 
 
@@ -24,6 +25,7 @@ class ToolExecutionResult:
     error: str | None = None
     audit_summary: dict[str, str | int | float] = field(default_factory=dict)
     evidence_pack: EvidencePack | None = None
+    patch_apply_result: PatchApplyResult | None = None
 
     def call_summary(self) -> dict[str, str]:
         summary = {
@@ -181,6 +183,24 @@ class ToolExecutor:
             results=results,
             audit_summary=audit_summary,
             evidence_pack=evidence_pack,
+        )
+
+    def patch_apply(self, repo_path: str, diff_text: str) -> ToolExecutionResult:
+        result = apply_unified_diff(repo_path, diff_text)
+        if not result.applied:
+            return ToolExecutionResult(
+                tool_name="patch_apply",
+                parameters={},
+                error=result.error or "PatchApplyError",
+                audit_summary={"changed_files": 0},
+                patch_apply_result=result,
+            )
+        return ToolExecutionResult(
+            tool_name="patch_apply",
+            parameters={},
+            results=[{"file_path": path, "line_number": 0, "line_text": ""} for path in result.changed_files],
+            audit_summary={"changed_files": len(result.changed_files)},
+            patch_apply_result=result,
         )
 
 

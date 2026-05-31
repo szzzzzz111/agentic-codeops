@@ -1,6 +1,27 @@
-# 当前 Review 清单
+﻿# 当前 Review 清单
 
-当前活跃阶段：无。
+当前活跃阶段：V16 Safe Patch Authoring。
+
+## V16 Planning / Implementation Gate
+
+- [x] V16 OpenSpec change 包含 proposal、design、tasks，以及 `safe-patch-authoring`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
+- [x] AgentLoop 前置顺序固定为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、capability-status、repo_search/chat_only。
+- [x] Patch intent 不得被 Assistant Control Surface、capability-status 或 repo_search 误吞。
+- [x] Patch proposal 请求必须先经过现有 `repo_rag` / Evidence Pack 边界，不得只凭模型自由生成 patch。
+- [x] 默认 fake Patch Authoring provider 不生成真实 diff；真实 OpenAI-compatible provider 只能显式配置。
+- [x] `/chat` 顶层响应 contract 不新增必需或可选字段；patch proposal、patch id、确认提示和 apply 结果只进入 `answer`。
+- [x] Patch proposal 公开回答不得泄露完整 diff 文本、完整 Evidence Pack、完整 provider prompt/output、本机绝对路径、DB 路径或 API key。
+- [x] 明确确认语法仅接受 `应用 patch <patch_id>`、`确认 patch <patch_id>`、`apply patch <patch_id>` 和 `confirm patch <patch_id>`；不得接受“可以”“继续”“就这样”等含糊表达。
+- [x] Pending patch 使用 repo-local `.repopilot/patches.sqlite3`，按 `user_id + repo_key` 隔离，并保存 `patch_id`、`status`、`target_files`、`diff_text`、`diff_hash`、`summary`、`created_at`、`updated_at` 和 `expires_at`。
+- [x] Pending patch 默认 24 小时过期；过期 patch 不可 apply，确认时应标记为 `expired` 并返回安全失败摘要。
+- [x] `ToolInvocationContext` 由 Patch manager 在权限检查前预校验生成；`PermissionPolicy` 和 `ApprovalGate` 不得直接读 patch store、解析用户消息或重新计算 hash。
+- [x] 权限状态仍只允许 `allow`、`deny` 和 `ask`；不得新增 `allowable_confirmation` 等新状态。
+- [x] `patch_apply` 必须注册为 `read_only=False`、`risk=write`、`requires_approval=True`，且只能在有效确认上下文下走 `ask -> ApprovalGate pass`。
+- [x] 非确认态写入、跨用户/跨 repo、hash 不匹配、状态非 pending、TTL 过期或 scope 无效时必须拒绝 apply。
+- [x] 写入只允许 patch apply，只作用于 diff 中声明的 repo 内相对路径；必须拒绝路径穿越、绝对路径、repo 外路径、敏感文件、隐藏状态目录和二进制文件。
+- [x] 多文件 patch 必须先完成全量 preflight；任一 preflight 失败不得写任何文件；写入阶段 I/O 失败时必须尝试恢复已写文件并标记 `failed`。
+- [x] V16 不运行测试命令、不自动 commit、不创建 branch/worktree、不执行 shell、不实现 Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 或 Worktree Isolation。
+- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
 
 ## V15 Archive Closeout Gate
 

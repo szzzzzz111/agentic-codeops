@@ -1,7 +1,8 @@
 # assistant-control-surface Specification
 
 ## Purpose
-TBD - created by archiving change v15-assistant-control-surface. Update Purpose after archive.
+定义 RepoPilot 通过现有 `/chat` 暴露的只读 Assistant Control Surface，包括状态聚合、公开回答边界、路由优先级和非写入约束。
+
 ## Requirements
 ### Requirement: 系统通过 `/chat` 提供只读助手控制面
 
