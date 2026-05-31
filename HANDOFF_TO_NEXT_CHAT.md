@@ -11,6 +11,8 @@
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V14 已归档；V14 已加入 repo-local Long Task Control Plane，支持明确长任务指令、`.repopilot/tasks.sqlite3`、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace。默认不调用真实 LLM、网络或 API key。
 
+后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。该路线判断只是文档决策，不代表 V15 已启动，也不代表写代码、验证执行、worktree、subagents、connectors 或 always-on 已实现。
+
 新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
 V8 已归档到：
@@ -195,6 +197,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - 继续把真实模型调用收口在 `ModelProvider` / `GroundedAnswerGenerator`，避免散落 HTTP 调用。
 - 保持 API key、prompt、模型输出、Evidence Pack 的脱敏边界。
 - 在需要时加入小次数 retry、latency/token/cost 摘要和简单 provider/model routing。
+- JavaGuide LLM API 工程实践（`https://javaguide.cn/ai/llm-basis/llm-api-engineering.html`）可作为 V15-V17 规划参考：重点吸收流式输出取消/超时、结构化返回 schema/fallback、request/attempt id、重试幂等、解析失败率和 provider audit 摘要；不要照搬企业级网关。
 - 不提前实现工业级限流、熔断集群、多租户成本账单、供应商竞价或控制台。
 
 这个备忘适合后续 V15 或单独 `llm-gateway-lite` change 规划时参考。
@@ -313,9 +316,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 若开始 V15 Personal Assistant Gateway，先按项目流程读取 AGENTS/README/PROGRESS/ARCHITECTURE/allowed_files/review_checklist/HANDOFF，并创建新的 OpenSpec change。
+1. 若开始 V15 Assistant Control Surface，先按项目流程读取 AGENTS/README/PROGRESS/ARCHITECTURE/allowed_files/review_checklist/HANDOFF，并创建新的 OpenSpec change。
 2. 新阶段开始前先同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，不要直接修改 runtime。
 3. 继续保持默认验证：`openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`、`git diff --check`。
 
-后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Personal Assistant Gateway。
+后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

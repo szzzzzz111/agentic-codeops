@@ -154,7 +154,9 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 做 Personal Assistant Gateway。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton。后续路线调整为 lightweight industrial harness：V15 做 Assistant Control Surface，V16 做 Safe Patch Authoring，V17 做 Verification Runner，V18 做 Patch + Verify Loop，V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
+
+这些后续阶段仍是未来能力，不是当前架构已实现部分。写代码、验证执行、持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -230,11 +232,13 @@ AgentLoop
 - 模型调用统一入口：继续围绕 `ModelProvider` / `GroundedAnswerGenerator`，不要让 API handler、AgentLoop 或工具层直接散落 HTTP 调用。
 - 配置和密钥边界：API key 只来自环境变量或后续受控配置源，audit/log 不记录 key、完整 prompt、完整输出或完整 Evidence Pack。
 - 超时和兜底：保留明确 timeout、provider error fallback、citation invalid fallback，让真实模型失败不破坏 `/chat` contract。
+- 流式与结构化输出：后续若引入 streaming 或 patch proposal schema，应按 JavaGuide LLM API 工程实践参考处理取消、TTFT/总超时、断流、结构化解析失败和 fallback；结构化 patch/verification metadata 解析失败时不得直接 apply 或推进任务。
 - 最小重试：如后续需要，只对网络瞬断、429/5xx 等可恢复错误做小次数、可测试的 deterministic retry；默认验证仍不得依赖真实网络。
+- 幂等和审计：后续 patch apply、verification run 或 provider call 应有 request/attempt id，记录 provider、model、status、latency、retry count、parse failure 等摘要，避免重复确认导致重复 apply。
 - 轻量路由：只在明确需求出现时支持按任务类型选择 provider/model，例如 grounded answer、rewrite、rerank 分开配置；不要提前做复杂策略引擎。
 - 成本/用量摘要：可以先记录 provider、model、status、latency、token/cost 估算字段，但只进入内部 trace 或后续受控审计，不进入 `/chat.tool_calls`。
 
-暂不追求完整工业 LLMGateway 能力：全局限流服务、熔断集群、复杂供应商竞价、多租户配额、持久化成本账单、分布式日志追踪或控制台。只有当 RepoPilot 真的开始依赖多个真实 provider、长任务或 always-on gateway 时，再作为独立阶段评估。
+暂不追求完整工业 LLMGateway 能力：全局限流服务、熔断集群、复杂供应商竞价、多租户配额、持久化成本账单、分布式日志追踪或控制台。只有当 RepoPilot 真的开始依赖多个真实 provider、长任务 worker、connectors 或 always-on assistant 时，再作为独立阶段评估。
 
 ## V12 架构补充：Query Rewrite + Rerank
 

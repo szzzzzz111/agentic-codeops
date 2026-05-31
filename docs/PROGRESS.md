@@ -23,12 +23,13 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 ## 路线重定向：加速但保持轻量工程化
 
-用户希望 RepoPilot 后续不只是玩具项目，而是更偏工程化的 Agent Harness；同时由于主要由个人使用 AI 开发，不能走重型企业平台路线。后续工程化应优先体现在边界、审计、验证、可替换接口和交接文档，而不是堆中间件或堆代码量。
+用户希望 RepoPilot 后续不只是玩具项目，而是更偏工程化的 Agent Harness；同时由于主要由个人使用 AI 开发，不能走重型企业平台路线。后续路线应采用 lightweight industrial harness：不堆中间件、不堆概念，但也不能停留在 demo 接口或假执行；工程化优先体现在真实可用闭环、权限审批、审计、可恢复状态、验证、隔离和交接文档。
 
 原则：
 
 - 工程化但轻量：先用内存、JSON、SQLite 或简单文件存储打通接口，只有在阶段需要时才引入 PostgreSQL、Milvus、Elasticsearch、Kafka 等外部依赖。
 - 纵向切片优先：每个阶段都交付一条可运行闭环，而不是只堆抽象层。
+- 真实闭环优先：后续阶段要逐步交付可确认 patch、受控验证、失败恢复和隔离执行，而不是继续只增加接口骨架。
 - Harness 边界优先：Provider、Router、AgentLoop、ToolRegistry、ToolExecutor、Memory、RAG、Skill、Trace 分层明确。
 - 可审计优先：model/tool/skill/memory 调用都要有结构化摘要和脱敏策略。
 - 可验证优先：每个阶段都要有最小测试和默认验证命令。
@@ -46,12 +47,18 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V12：Query Rewrite + Rerank。已引入默认 deterministic multi-query rewrite、before-Evidence rerank 和内部 audit 边界；真实 LLM rewrite/rerank 留作后续独立阶段。
 - V13：Memory。已实现 repo-local SQLite-backed PREF/LTM、进程内 STM、明确 memory 指令和内部 memory audit；不做向量 memory 或自动模型总结。
 - V14：Long Task / ReAct Skeleton。已加入 repo-local Long Task control plane、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；真实 subagents、worktree automation 和后台任务仍为非目标。
-- V15：Personal Assistant Gateway。探索 always-on、heartbeat/cron、connector、通知和人工审批。
+- V15：Assistant Control Surface。把 `/chat`、Memory、Long Task 和 RAG 组织成更好用的助手入口，并提供轻量只读状态聚合；不写代码、不执行 shell、不后台运行。
+- V16：Safe Patch Authoring。基于 repo evidence 生成 patch proposal / diff，用户明确确认后才 apply；不执行测试、不自动 commit、不创建 worktree。
+- V17：Verification Runner。通过白名单验证命令执行 `pytest`、`ruff check .` 或 `scripts/verify.ps1` 等受控验证，并经过权限和审批边界。
+- V18：Patch + Verify Loop。串联 patch、apply、verify、失败摘要、修复建议和再次 patch，让代码改动形成可恢复闭环。
+- V19：Persistent Audit / Recovery。用轻量 SQLite 持久化关键 trace、patch attempt、verification result 和 task event，支持跨 session 恢复。
+- V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
 
 LLMGateway 设计备忘：
 
 - 当前 RepoPilot 已有的是 V11 Model Provider Boundary，不是完整工业 LLMGateway。
 - 对项目有用的方向是轻量稳定性控制面：模型调用统一入口、环境变量密钥边界、timeout、错误 fallback、citation validation、脱敏 provider audit、必要时的小次数 retry 和简单模型路由。
+- 参考资料：JavaGuide《大模型 API 调用工程实践：流式输出、重试、限流与结构化返回》（`https://javaguide.cn/ai/llm-basis/llm-api-engineering.html`）可作为 V15-V17 规划参考；吸收流式输出取消/超时、结构化返回 schema/fallback、provider request audit、重试/幂等和解析失败处理等轻量工程实践。
 - 暂不追求全局限流、熔断集群、多租户成本账单、供应商竞价、复杂控制台或分布式日志系统；这些只有在多 provider、长任务或 always-on 场景真实出现后再单独规划。
 - 后续增强真实模型调用时，必须继续保护 Evidence Pack、Grounded Answer citation validation、`/chat` contract 和默认离线验证。
 
@@ -344,8 +351,9 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：继续收口 V14 Long Task / ReAct Skeleton，完成 OpenSpec 全量验证、默认验证、diff 检查和 self-review。
-- 后续可在 V14 基础上单独规划真实 subagents、worktree automation、always-on gateway 或 task API。
+- 当前建议：先完成本轮路线文档确认；正式进入 V15 前，再按项目流程创建 V15 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+- 近期三阶段默认选择：V15 Assistant Control Surface、V16 Safe Patch Authoring、V17 Verification Runner。
+- 后续真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；不要写成当前 runtime 已实现能力。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
 ## V8：Query Understanding + Lexical Repo RAG（已实现）
@@ -396,7 +404,7 @@ LLMGateway 设计备忘：
 
 V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical repo RAG 作为一等通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Evidence Pack + Context Budget；V11 为 Grounded Answer / Model Provider Boundary；V12 为 Query Rewrite + Rerank；V13 为 Memory；V14 为 Long Task / ReAct Skeleton；V15 为 Personal Assistant Gateway。
+路线重排：V9 为 Embedding Retrieval + Hybrid Search；V10 为 Evidence Pack + Context Budget；V11 为 Grounded Answer / Model Provider Boundary；V12 为 Query Rewrite + Rerank；V13 为 Memory；V14 为 Long Task / ReAct Skeleton；V15 为 Assistant Control Surface；V16 为 Safe Patch Authoring；V17 为 Verification Runner；V18 为 Patch + Verify Loop；V19 为 Persistent Audit / Recovery；V20 为 Worktree Isolation。
 
 说明：V8 archive 中保留的是当时路线记录；后续已由 V9/V10 路线重排 supersede，当前长期 docs/specs 以 V10 Evidence Pack + Context Budget、V11 Grounded Answer / Model Provider Boundary、V12 Query Rewrite + Rerank 为准。
 

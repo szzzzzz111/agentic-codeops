@@ -273,7 +273,7 @@ V14 使用 `.repopilot/tasks.sqlite3` 保存 `user_id + repo_key` 范围的任�
 
 ## 工程化取向
 
-RepoPilot 后续路线要体现工程化味道，但不追求重型企业平台。由于当前主要由个人配合 AI 开发，工程化优先体现在边界、审计、验证、可替换接口和交接文档，而不是堆中间件或堆代码量。
+RepoPilot 后续路线采用 lightweight industrial harness 取向：不是企业级平台，也不能停留在玩具 demo。默认继续使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但每个阶段都应交付更真实的可用闭环，并保留权限、审批、审计、可恢复状态、验证和隔离等工业级边界。
 
 - 清晰边界：Provider、Router、AgentLoop、ToolRegistry、ToolExecutor、Memory、RAG、Skill、Trace 分层明确。
 - 可审计：每次 model/tool/skill/memory 调用都有结构化摘要，敏感内容默认不外泄。
@@ -325,4 +325,11 @@ ChatService
 
 已归档至 V14：Long Task / ReAct Skeleton。当前暂无 active change。后续路线：
 
-- V15：Personal Assistant Gateway，探索 always-on、heartbeat/cron、connector、通知和人工审批。
+- V15：Assistant Control Surface。把 `/chat`、Memory、Long Task 和 RAG 组织成更好用的助手入口，并提供轻量只读状态聚合；不写代码、不执行 shell、不后台运行。
+- V16：Safe Patch Authoring。基于 repo evidence 生成 patch proposal / diff，用户明确确认后才 apply；不执行测试、不自动 commit、不创建 worktree。
+- V17：Verification Runner。通过白名单验证命令执行 `pytest`、`ruff check .` 或 `scripts/verify.ps1` 等受控验证，并经过权限和审批边界。
+- V18：Patch + Verify Loop。串联 patch、apply、verify、失败摘要、修复建议和再次 patch，让代码改动形成可恢复闭环。
+- V19：Persistent Audit / Recovery。用轻量 SQLite 持久化关键 trace、patch attempt、verification result 和 task event，支持跨 session 恢复。
+- V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
+
+真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；当前不要把这些写成 V15 主线或已实现能力。
