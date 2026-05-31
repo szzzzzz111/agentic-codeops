@@ -6,7 +6,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V14 已归档；V15 Assistant Control Surface 已在当前工作分支实现并通过 review/验证。
+- 当前主线能力：V1-V15 已归档；当前暂无 active OpenSpec change，下一阶段建议从 V16 Safe Patch Authoring 开始。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -340,13 +340,12 @@ ChatService
 
 ## 路线图
 
-已归档至 V14：Long Task / ReAct Skeleton。当前 active change：V15 Assistant Control Surface。后续路线：
+已归档至 V15：Assistant Control Surface。当前无 active change。后续路线：
 
-- V15：Assistant Control Surface。把 `/chat`、Memory、Long Task 和 RAG 组织成更好用的助手入口，并提供轻量只读状态聚合；不写代码、不执行 shell、不后台运行。
 - V16：Safe Patch Authoring。基于 repo evidence 生成 patch proposal / diff，用户明确确认后才 apply；不执行测试、不自动 commit、不创建 worktree。
 - V17：Verification Runner。通过白名单验证命令执行 `pytest`、`ruff check .` 或 `scripts/verify.ps1` 等受控验证，并经过权限和审批边界。
 - V18：Patch + Verify Loop。串联 patch、apply、verify、失败摘要、修复建议和再次 patch，让代码改动形成可恢复闭环。
 - V19：Persistent Audit / Recovery。用轻量 SQLite 持久化关键 trace、patch attempt、verification result 和 task event，支持跨 session 恢复。
 - V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
 
-真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；当前不要把这些写成 V15 主线或已实现能力。
+真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；当前不要把这些写成已实现能力。

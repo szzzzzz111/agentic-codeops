@@ -5,11 +5,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前基线分支：`main`
-- 当前阶段：V15 `v15-assistant-control-surface` implementation complete in current workspace，工作分支 `codex/v15-assistant-control-surface`；外部 review 已确认无新增阻塞
+- 当前阶段：暂无 active OpenSpec change；V15 `v15-assistant-control-surface` 已归档，工作分支 `codex/v15-assistant-control-surface` 等待后续 merge/push 决策
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 Assistant Control Surface、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前 active change 为 `openspec/changes/v15-assistant-control-surface/`；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`，V13 change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`，V14 change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10 change 已归档到 `openspec/changes/archive/2026-05-26-v10-evidence-pack-context-budget/`，V11 change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`，V12 change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`，V13 change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`，V14 change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`，V15 change 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -47,7 +47,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V12：Query Rewrite + Rerank。已引入默认 deterministic multi-query rewrite、before-Evidence rerank 和内部 audit 边界；真实 LLM rewrite/rerank 留作后续独立阶段。
 - V13：Memory。已实现 repo-local SQLite-backed PREF/LTM、进程内 STM、明确 memory 指令和内部 memory audit；不做向量 memory 或自动模型总结。
 - V14：Long Task / ReAct Skeleton。已加入 repo-local Long Task control plane、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；真实 subagents、worktree automation 和后台任务仍为非目标。
-- V15：Assistant Control Surface。当前工作区已实现并通过 review/验证；把 `/chat`、Memory、Long Task 和 RAG 组织成更好用的助手入口，并提供轻量只读状态聚合；不写代码、不执行 shell、不后台运行。
+- V15：Assistant Control Surface。已实现并归档；把 `/chat`、Memory、Long Task 和 RAG 组织成更好用的助手入口，并提供轻量只读状态聚合；不写代码、不执行 shell、不后台运行。
 - V16：Safe Patch Authoring。基于 repo evidence 生成 patch proposal / diff，用户明确确认后才 apply；不执行测试、不自动 commit、不创建 worktree。
 - V17：Verification Runner。通过白名单验证命令执行 `pytest`、`ruff check .` 或 `scripts/verify.ps1` 等受控验证，并经过权限和审批边界。
 - V18：Patch + Verify Loop。串联 patch、apply、verify、失败摘要、修复建议和再次 patch，让代码改动形成可恢复闭环。
@@ -58,7 +58,7 @@ LLMGateway 设计备忘：
 
 - 当前 RepoPilot 已有的是 V11 Model Provider Boundary，不是完整工业 LLMGateway。
 - 对项目有用的方向是轻量稳定性控制面：模型调用统一入口、环境变量密钥边界、timeout、错误 fallback、citation validation、脱敏 provider audit、必要时的小次数 retry 和简单模型路由。
-- 参考资料：JavaGuide《大模型 API 调用工程实践：流式输出、重试、限流与结构化返回》（`https://javaguide.cn/ai/llm-basis/llm-api-engineering.html`）可作为 V15-V17 规划参考；吸收流式输出取消/超时、结构化返回 schema/fallback、provider request audit、重试/幂等和解析失败处理等轻量工程实践。
+- 参考资料：JavaGuide《大模型 API 调用工程实践：流式输出、重试、限流与结构化返回》（`https://javaguide.cn/ai/llm-basis/llm-api-engineering.html`）可作为 V16+ 规划参考；吸收流式输出取消/超时、结构化返回 schema/fallback、provider request audit、重试/幂等和解析失败处理等轻量工程实践。
 - 暂不追求全局限流、熔断集群、多租户成本账单、供应商竞价、复杂控制台或分布式日志系统；这些只有在多 provider、长任务或 always-on 场景真实出现后再单独规划。
 - 后续增强真实模型调用时，必须继续保护 Evidence Pack、Grounded Answer citation validation、`/chat` contract 和默认离线验证。
 
@@ -114,7 +114,13 @@ LLMGateway 设计备忘：
 - 2026-05-31，V15 external review follow-up OpenSpec 验证：`openspec validate v15-assistant-control-surface`：通过；`openspec validate --all`：10 passed, 0 failed。
 - 2026-05-31，V15 external review follow-up 默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 145 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-31，V15 external review follow-up diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
-- 2026-05-31，V15 external review close：用户确认外部 review 没问题；final stage debt sweep 已执行，未发现新的 P0/P1/P2 或需记录的阶段内剩余债务。当前工作区尚未提交、尚未归档。
+- 2026-05-31，V15 external review close：用户确认外部 review 没问题；final stage debt sweep 已执行，未发现新的 P0/P1/P2 或需记录的阶段内剩余债务。
+- 2026-05-31，V15 implementation commit：`86d175a Add V15 assistant control surface`。
+- 2026-05-31，V15 archive：`openspec archive v15-assistant-control-surface -y` 已完成，归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`；长期 specs 已同步，新增 `openspec/specs/assistant-control-surface/spec.md`。
+- 2026-05-31，V15 archive 后 OpenSpec 全量验证：`openspec validate --all`：10 passed, 0 failed。
+- 2026-05-31，V15 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 145 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-05-31，V15 archive closeout：`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
+- 2026-05-31，V15 archive diff 验证：`git diff --check`：通过，仅有 CRLF 换行提示。
 - 2026-05-29，V14 OpenSpec 计划验证：`openspec validate v14-long-task-react-subagents`：通过。
 - 2026-05-29，V14 Long Task 小切片 TDD RED：`pytest tests\test_long_task.py tests\test_agent_harness_kernel.py::test_agent_loop_handles_long_task_command_before_router_keyword tests\test_chat_api.py::test_chat_endpoint_long_task_create_keeps_contract_and_does_not_search -q`：预期失败，`ModuleNotFoundError: No module named 'app.longtask'`。
 - 2026-05-29，V14 Long Task 目标验证：`pytest tests\test_long_task.py tests\test_agent_harness_kernel.py::test_agent_loop_handles_long_task_command_before_router_keyword tests\test_agent_harness_kernel.py::test_agent_loop_resumes_one_long_task_step_through_repo_rag tests\test_agent_harness_kernel.py::test_agent_loop_blocks_long_task_when_resume_has_no_results tests\test_chat_api.py::test_chat_endpoint_long_task_create_keeps_contract_and_does_not_search tests\test_chat_api.py::test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call -q`：9 passed。
@@ -364,8 +370,8 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：完成 V15 Assistant Control Surface review、默认验证和 archive，再进入 V16 Safe Patch Authoring。
-- 近期三阶段默认选择：V15 Assistant Control Surface、V16 Safe Patch Authoring、V17 Verification Runner。
+- 当前建议：完成 V15 archive 后验证和 closeout commit，再进入 V16 Safe Patch Authoring 规划。
+- 近期三阶段默认选择：V16 Safe Patch Authoring、V17 Verification Runner、V18 Patch + Verify Loop。
 - 后续真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；不要写成当前 runtime 已实现能力。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 

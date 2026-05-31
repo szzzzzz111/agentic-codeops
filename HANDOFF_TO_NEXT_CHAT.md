@@ -5,12 +5,12 @@
 ```text
 当前基线分支：main
 当前工作分支：codex/v15-assistant-control-surface
-当前活跃 OpenSpec change：v15-assistant-control-surface
-最近完成阶段：V14 Long Task Control Plane + ReAct Skeleton（已实现、review、提交、合并、推送并归档）
-当前阶段：V15 Assistant Control Surface（implementation complete in current workspace）
+当前活跃 OpenSpec change：无
+最近完成阶段：V15 Assistant Control Surface（已实现、review、提交并归档；待后续 merge/push 决策）
+当前阶段：暂无 active stage
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V14 已归档；V15 已在当前工作分支加入只读 Assistant Control Surface，通过现有 `/chat.answer` 返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。默认不调用真实 LLM、网络或 API key。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V15 已归档；V15 已加入只读 Assistant Control Surface，通过现有 `/chat.answer` 返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。默认不调用真实 LLM、网络或 API key。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。该路线判断只是文档决策，不代表 V16+ 已启动，也不代表写代码、验证执行、worktree、subagents、connectors 或 always-on 已实现。
 
@@ -52,6 +52,12 @@ V14 已归档到：
 openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/
 ```
 
+V15 已归档到：
+
+```text
+openspec/changes/archive/2026-05-31-v15-assistant-control-surface/
+```
+
 ## 当前主链路
 
 ```text
@@ -70,8 +76,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 ## V15 当前实现摘要
 
-- OpenSpec change：`openspec/changes/v15-assistant-control-surface/`，包含 proposal、design、tasks，以及 `assistant-control-surface` / `agent-loop-tool-execution` / `chat-api` / `memory` / `long-task-agent-execution` / `harness-development-workflow` spec delta。
-- `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已同步 V15 写入边界和 review gate。
+- OpenSpec change 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，包含 proposal、design、tasks，以及 `assistant-control-surface` / `agent-loop-tool-execution` / `chat-api` / `memory` / `long-task-agent-execution` / `harness-development-workflow` spec delta。
+- 长期 specs 已同步，新增 `openspec/specs/assistant-control-surface/spec.md`。
+- V15 implementation commit：`86d175a Add V15 assistant control surface`。
+- V15 archive 已完成；当前工作分支尚未 merge/push。
 - 新增 `app/assistant/control_surface.py`：明确触发词、只读状态聚合和 answer formatter。
 - `AgentLoop` 前置顺序为 Memory command、Long Task command、Assistant Control Surface、capability-status、repo_search/chat_only。
 - Memory / Long Task 增加只读 control surface summary；不存在 `.repopilot` DB 时返回空状态，不创建目录或 DB。
@@ -79,13 +87,15 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - 当前 targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：11 passed。
 - OpenSpec / 默认验证记录：`openspec validate v15-assistant-control-surface` 通过；`openspec validate --all`：10 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过，`pytest` 144 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示。
 - V15 external review follow-up：已补测试并修复 Assistant Control Surface Long Task 摘要中 task title / next step title 的本机绝对路径脱敏；`pytest tests/test_assistant_control_surface.py::test_status_answer_redacts_absolute_paths_from_recent_long_tasks -q`：1 passed；V15 targeted 相关验证：11 passed；`openspec validate v15-assistant-control-surface` 通过；`openspec validate --all`：10 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过，`pytest` 145 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示；阶段文档已补齐 4.2-4.5 验证记录，`openspec/changes/v15-assistant-control-surface/tasks.md` 完成状态保留。
-- V15 external review close：用户确认外部 review 没问题；final stage debt sweep 已执行，未发现新的 P0/P1/P2 或需记录的阶段内剩余债务。当前工作区尚未提交、尚未归档。
+- V15 external review close：用户确认外部 review 没问题；final stage debt sweep 已执行，未发现新的 P0/P1/P2 或需记录的阶段内剩余债务。
+- V15 archive：`openspec archive v15-assistant-control-surface -y` 已完成，长期 specs 已同步，`openspec list` 显示 no active changes。
+- V15 archive 后验证：`openspec validate --all`：10 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过，`pytest` 145 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过；`git diff --check`：通过，仅有 CRLF 换行提示。
 
 ## V14 当前实现摘要
 
 - OpenSpec change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`，包含 proposal、design、tasks 和 `long-task-agent-execution` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
 - 长期 specs 已同步，新增 `openspec/specs/long-task-agent-execution/spec.md`。
-- V14 archive 后 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 曾切回暂无 active stage；当前已由 V15 active change 重新同步为 V15 写入边界和 review gate。
+- V14 archive 后 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 曾切回暂无 active stage；V15 archive 后当前也已切回暂无 active stage。
 - 新增 `app/longtask/`：
   - `parser.py`：解析明确长任务自然语言指令。
   - `planner.py`：deterministic task-type templates，并支持显式真实 provider 的受控 JSON 增强和 fallback。
@@ -212,10 +222,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - 继续把真实模型调用收口在 `ModelProvider` / `GroundedAnswerGenerator`，避免散落 HTTP 调用。
 - 保持 API key、prompt、模型输出、Evidence Pack 的脱敏边界。
 - 在需要时加入小次数 retry、latency/token/cost 摘要和简单 provider/model routing。
-- JavaGuide LLM API 工程实践（`https://javaguide.cn/ai/llm-basis/llm-api-engineering.html`）可作为 V15-V17 规划参考：重点吸收流式输出取消/超时、结构化返回 schema/fallback、request/attempt id、重试幂等、解析失败率和 provider audit 摘要；不要照搬企业级网关。
+- JavaGuide LLM API 工程实践（`https://javaguide.cn/ai/llm-basis/llm-api-engineering.html`）可作为 V16+ 规划参考：重点吸收流式输出取消/超时、结构化返回 schema/fallback、request/attempt id、重试幂等、解析失败率和 provider audit 摘要；不要照搬企业级网关。
 - 不提前实现工业级限流、熔断集群、多租户成本账单、供应商竞价或控制台。
 
-这个备忘适合后续 V15 或单独 `llm-gateway-lite` change 规划时参考。
+这个备忘适合后续单独 `llm-gateway-lite` change 或真实模型调用增强规划时参考。
 
 ## 已完成阶段摘要
 
@@ -259,12 +269,11 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- 当前 active change：`openspec/changes/v15-assistant-control-surface/`。
-- `.harness/allowed_files.md` 已同步为 V15 写入边界。
-- `.harness/review_checklist.md` 已同步 V15 planning / implementation gate，并保留 V14 及更早历史 review/closeout 记录。
-- V15 当前允许修改范围集中在 `app/assistant/**`、`app/harness/kernel.py`、Memory/Long Task 只读 summary、相关测试、OpenSpec 和阶段文档。
-- V15 当前禁止新增 API、新增 `/chat` 顶层字段、调用 `repo_rag`、写 memory、创建任务、执行 shell、生成 patch、运行验证 runner、创建 worktree 或调度真实 subagents。
-- V1-V14 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景，不代表当前 active change。
+- 当前 active change：无；`openspec list` 显示 no active changes。
+- `.harness/allowed_files.md` 已切回暂无 active stage；下一阶段开始前必须先同步写入边界。
+- `.harness/review_checklist.md` 已加入 V15 archive closeout gate，并保留 V15 及更早历史 review/closeout 记录。
+- V15 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，长期 specs 已同步。
+- V1-V15 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景，不代表当前 active change。
 
 ## V10 实现摘要
 
@@ -320,8 +329,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 继续完成 V15 review、默认验证和 archive。
-2. V15 收口前确认 `.harness/review_checklist.md` 中 contract、只读状态、DB 非初始化和 redaction gate 均已满足。
+1. 完成 V15 archive 后验证、closeout commit，以及后续 merge/push 决策。
+2. 下一阶段建议从 V16 Safe Patch Authoring 规划开始；开始前先创建 OpenSpec change，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`。
 3. 继续保持默认验证：`openspec validate --all`、`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`、`git diff --check`。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。

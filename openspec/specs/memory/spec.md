@@ -1,11 +1,9 @@
-# memory Specification
+﻿# memory Specification
 
 ## Purpose
 
 记录 V13 已实现的轻量 Memory 边界：RepoPilot 使用 repo-local SQLite 保存 PREF/LTM，使用进程内 STM 保存短期会话记忆，并通过明确聊天指令进行记住、忘记和内部审计。Memory 是本地状态能力，不是代码修改能力；默认不调用网络、真实 LLM、外部数据库或向量记忆服务。
-
 ## Requirements
-
 ### Requirement: 系统提供 repo-local SQLite Memory 存储
 
 系统 SHALL 提供 Memory 存储能力，默认使用目标 repo 内 `.repopilot/memory.sqlite3` 保存持久记忆。`.repopilot/` MUST 被 git 忽略。Memory 存储 MUST 使用 Python stdlib `sqlite3`，默认 MUST NOT 引入外部数据库、网络服务或新增运行时依赖。
@@ -95,3 +93,13 @@ Memory schema MUST 至少包含 `id`、`kind`、`scope`、`user_id`、`repo_key`
 - **THEN** 系统继续执行 repo_rag
 - **AND** 内部 trace 记录 memory unavailable
 - **AND** 公开响应不泄露本机路径或 DB 路径
+
+### Requirement: Memory 提供只读控制面摘要
+
+系统 SHALL 为 Assistant Control Surface 提供只读 Memory 摘要。摘要 MAY 包含 PREF、LTM 和当前 STM 的数量。摘要 MUST NOT 包含完整 memory value，MUST NOT 暴露本机绝对路径或 DB 路径。
+
+#### Scenario: 控制面读取 Memory 摘要不创建 DB
+
+- **WHEN** Assistant Control Surface 请求读取 Memory 摘要，且 `.repopilot/memory.sqlite3` 不存在
+- **THEN** 系统返回 PREF/LTM 计数为 0 的摘要
+- **AND** 系统 MUST NOT 创建 `.repopilot/` 目录或 `memory.sqlite3`

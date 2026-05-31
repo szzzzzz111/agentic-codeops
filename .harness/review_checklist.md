@@ -1,6 +1,15 @@
 # 当前 Review 清单
 
-当前活跃阶段：V15 Assistant Control Surface。
+当前活跃阶段：无。
+
+## V15 Archive Closeout Gate
+
+- [x] V15 implementation commit 已创建：`86d175a Add V15 assistant control surface`。
+- [x] V15 active change 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`。
+- [x] 长期 specs 已通过 `openspec archive v15-assistant-control-surface -y` 同步，新增长期 `assistant-control-surface` spec。
+- [x] `openspec list` 显示 no active changes。
+- [x] V15 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
+- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 
 ## V15 Planning / Implementation Gate
 
