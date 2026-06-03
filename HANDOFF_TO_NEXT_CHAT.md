@@ -4,9 +4,9 @@
 
 ```text
 当前基线分支：main
-当前工作分支：feature/v17-verification-runner
+当前工作分支：main
 当前活跃 OpenSpec change：无
-最近完成阶段：V17 Verification Runner（已实现、review、提交并归档）
+最近完成阶段：V17 Verification Runner（已实现、review、提交、归档并 fast-forward 合并到 main）
 当前阶段：无 active stage；下一阶段建议从 V18 Patch + Verify Loop 规划开始
 ```
 
