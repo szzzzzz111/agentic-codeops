@@ -1,6 +1,15 @@
 ﻿# 当前 Review 清单
 
-当前活跃阶段：V17 Verification Runner。
+当前活跃阶段：无。
+
+## V17 Archive Closeout Gate
+
+- [x] V17 implementation commit 已创建：`8fe1fde Add V17 verification runner`。
+- [x] V17 active change 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`。
+- [x] 长期 specs 已通过 `openspec archive v17-verification-runner -y` 同步，新增 `openspec/specs/verification-runner/spec.md`。
+- [x] `openspec list` 显示 no active changes。
+- [x] V17 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
+- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
 
 ## V17 Planning / Implementation Gate
 

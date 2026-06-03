@@ -407,7 +407,7 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "V10：Evidence Pack + Context Budget" in combined
     assert "V11：Grounded Answer / Model Provider Boundary" in combined
     assert "V12：Query Rewrite + Rerank" in combined
-    assert "已归档至 V16：Safe Patch Authoring" in combined
+    assert "已归档至 V17：Verification Runner" in combined
     assert "V15：Assistant Control Surface" in combined
     assert "V16：Safe Patch Authoring" in combined
     assert "V17：Verification Runner" in combined

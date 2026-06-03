@@ -5,12 +5,12 @@
 ```text
 当前基线分支：main
 当前工作分支：feature/v17-verification-runner
-当前活跃 OpenSpec change：v17-verification-runner
-最近完成阶段：V16 Safe Patch Authoring（已实现、review、提交并归档）
-当前阶段：V17 Verification Runner 实现完成，已通过全量验证、自审和外部 review；待提交、归档和合并决策
+当前活跃 OpenSpec change：无
+最近完成阶段：V17 Verification Runner（已实现、review、提交并归档）
+当前阶段：无 active stage；下一阶段建议从 V18 Patch + Verify Loop 规划开始
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V16 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。默认 fake patch provider 不生成真实 diff；真实 provider 必须显式配置。V17 当前实现 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行，公开响应只返回截断脱敏摘要。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V17 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。默认 fake patch provider 不生成真实 diff；真实 provider 必须显式配置。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行，公开响应只返回截断脱敏摘要。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V17 当前只实现独立 Verification Runner，不代表 Patch + Verify Loop、worktree、subagents、connectors 或 always-on 已实现。
 
@@ -309,15 +309,15 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- 当前 active change：`v17-verification-runner`。
-- `.harness/allowed_files.md` 已同步 V17 写入边界。
-- `.harness/review_checklist.md` 已加入 V17 planning / implementation gate，并保留 V16 及更早历史 review/closeout 记录。
-- V17 planning artifacts 位于 `openspec/changes/v17-verification-runner/`，包含 `stage_planning.md`、proposal、design、tasks 和 spec delta；`openspec validate v17-verification-runner` 已通过。
-- V17 runtime 当前新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
-- V17 外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
+- 当前 active change：无。
+- `.harness/allowed_files.md` 已重置为无 active stage；下一阶段开始前必须先同步新的写入边界。
+- `.harness/review_checklist.md` 已加入 V17 archive closeout gate，并保留 V17 及更早历史 review/closeout 记录。
+- V17 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`，长期 specs 已同步，新增 `openspec/specs/verification-runner/spec.md`。
+- V17 runtime 新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
 - V16 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`，长期 specs 已同步。
 - V15 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，长期 specs 已同步。
-- V1-V16 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景，不代表当前 active change。
+- V1-V17 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景。
 
 ## V10 实现摘要
 
