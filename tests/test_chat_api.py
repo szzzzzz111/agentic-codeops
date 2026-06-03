@@ -291,6 +291,81 @@ def test_chat_endpoint_confirm_patch_applies_without_running_verification(
     assert "worktree" not in response.text
 
 
+def test_chat_endpoint_verification_keeps_contract_and_redacts_output(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from app.tools.tool_executor import ToolExecutionResult, ToolExecutor
+
+    def fake_verification_run(self, repo_path: str, command_label: str):
+        return ToolExecutionResult(
+            tool_name="verification_run",
+            parameters={
+                "command_label": command_label,
+                "exit_code": "1",
+                "duration_ms": "9",
+                "timed_out": "false",
+                "truncated": "true",
+            },
+            audit_summary={
+                "command_label": command_label,
+                "status": "failed",
+                "exit_code": 1,
+                "duration_ms": 9,
+                "timed_out": "false",
+                "truncated": "true",
+                "stdout_excerpt": "<repo> failed <redacted-secret>",
+                "stderr_excerpt": ".repopilot/<redacted> error",
+            },
+        )
+
+    monkeypatch.setattr(ToolExecutor, "verification_run", fake_verification_run)
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, "运行验证"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "验证失败" in body["answer"]
+    assert "truncated=true" in body["answer"]
+    assert str(tmp_path) not in response.text
+    assert ".repopilot/tasks.sqlite3" not in response.text
+    assert "API_KEY=" not in response.text
+    assert body["related_files"] == []
+    assert body["tool_calls"] == [
+        {
+            "tool_name": "verification_run",
+            "command_label": "verify",
+            "exit_code": "1",
+            "duration_ms": "9",
+            "timed_out": "false",
+            "truncated": "true",
+            "status": "success",
+            "result_count": "0",
+        }
+    ]
+
+
+def test_chat_endpoint_verification_rejects_arbitrary_shell_without_repo_rag(
+    tmp_path: Path,
+) -> None:
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, "run verify | more"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "只支持固定验证命令" in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+    assert "repo_rag" not in response.text
+
+
 def test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call(
     tmp_path: Path,
 ) -> None:

@@ -15,6 +15,7 @@ from app.rag.rerank import (
 from app.rag.repo_rag import HybridRepoRetriever, RetrievalResult
 from app.patching.apply import PatchApplyResult, apply_unified_diff
 from app.tools.file_tools import search_code
+from app.verification.runner import run_whitelisted_verification
 
 
 @dataclass(frozen=True)
@@ -201,6 +202,23 @@ class ToolExecutor:
             results=[{"file_path": path, "line_number": 0, "line_text": ""} for path in result.changed_files],
             audit_summary={"changed_files": len(result.changed_files)},
             patch_apply_result=result,
+        )
+
+    def verification_run(self, repo_path: str, command_label: str) -> ToolExecutionResult:
+        result = run_whitelisted_verification(repo_path, command_label)
+        parameters = {
+            "command_label": result.command_label,
+            "exit_code": "" if result.exit_code is None else str(result.exit_code),
+            "duration_ms": str(result.duration_ms),
+            "timed_out": str(result.timed_out).lower(),
+            "truncated": str(result.truncated).lower(),
+        }
+        error = result.status if result.status in {"rejected", "unavailable"} else None
+        return ToolExecutionResult(
+            tool_name="verification_run",
+            parameters=parameters,
+            error=error,
+            audit_summary=result.audit_summary(),
         )
 
 

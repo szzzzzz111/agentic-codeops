@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from pathlib import PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 
 from app.answering.grounded_answer import GroundedAnswerGenerator
@@ -13,12 +13,19 @@ from app.providers.model_provider import ModelProvider, load_model_provider_from
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
 from app.rag.repo_rag import HybridRepoRetriever
 from app.tools.tool_executor import ToolExecutor
+from app.verification.runner import (
+    command_argv,
+    format_verification_answer,
+    parse_verification_request,
+    unsupported_verification_answer,
+)
 
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
 ALLOWED_TOOL_RISK = "low"
 REPO_RAG_TOOL = "repo_rag"
 PATCH_APPLY_TOOL = "patch_apply"
+VERIFICATION_RUN_TOOL = "verification_run"
 _ROUTING_STOPWORDS = {
     "hello",
     "hi",
@@ -63,7 +70,7 @@ VECTOR_CAPABILITY_STATUS_ANSWER = (
 )
 V16_CAPABILITY_STATUS_ANSWER = (
     "V16 提供 Safe Patch Authoring：可基于仓库证据生成 patch proposal，"
-    "并在明确确认后受控 apply；V17 才会实现 Verification Runner，"
+    "并在明确确认后受控 apply；V17 提供独立 Verification Runner，"
     "当前未实现 Patch + Verify Loop、Persistent Audit / Recovery 或 Worktree Isolation。"
 )
 
@@ -166,6 +173,13 @@ class ToolRegistry:
                     risk="write",
                     requires_approval=True,
                 ),
+                ToolSpec(
+                    name=VERIFICATION_RUN_TOOL,
+                    description="Run a whitelisted repository verification command.",
+                    read_only=False,
+                    risk="write",
+                    requires_approval=True,
+                ),
             ]
         )
 
@@ -188,6 +202,8 @@ class PermissionPolicy:
             )
         if tool_spec.name == PATCH_APPLY_TOOL:
             return _decide_patch_apply(tool_spec, context)
+        if tool_spec.name == VERIFICATION_RUN_TOOL:
+            return _decide_verification_run(tool_spec, context)
         if not tool_spec.read_only:
             return PermissionDecision(
                 tool_name=tool_spec.name,
@@ -221,6 +237,8 @@ class ApprovalGate:
     ) -> bool:
         if decision.tool_name == PATCH_APPLY_TOOL and decision.status == "ask":
             return _valid_patch_context(context)
+        if decision.tool_name == VERIFICATION_RUN_TOOL and decision.status == "ask":
+            return _valid_verification_context(context)
         return decision.status == "allow"
 
 
@@ -266,6 +284,46 @@ def _patch_context_rejection_reason(context: ToolInvocationContext | None) -> st
     if not context.scope_valid:
         return "patch_scope_invalid"
     return "patch_context_invalid"
+
+
+def _decide_verification_run(
+    tool_spec: ToolSpec,
+    context: ToolInvocationContext | None,
+) -> PermissionDecision:
+    if not _valid_verification_context(context):
+        return PermissionDecision(
+            tool_name=tool_spec.name,
+            status="deny",
+            reason=_verification_context_rejection_reason(context),
+        )
+    return PermissionDecision(
+        tool_name=tool_spec.name,
+        status="ask",
+        reason="approval_required",
+    )
+
+
+def _valid_verification_context(context: ToolInvocationContext | None) -> bool:
+    return bool(
+        context is not None
+        and context.tool_name == VERIFICATION_RUN_TOOL
+        and context.intent == "verification_run"
+        and context.confirmed
+        and context.scope_valid
+        and command_argv(context.command_label) is not None
+    )
+
+
+def _verification_context_rejection_reason(
+    context: ToolInvocationContext | None,
+) -> str:
+    if context is None or not context.confirmed:
+        return "missing_confirmation"
+    if not context.scope_valid:
+        return "verification_scope_invalid"
+    if command_argv(context.command_label) is None:
+        return "verification_command_not_whitelisted"
+    return "verification_context_invalid"
 
 
 class AgentLoop:
@@ -397,6 +455,24 @@ class AgentLoop:
 
         if self.patch_manager.is_patch_proposal_request(request.message):
             return self._run_patch_proposal(request)
+
+        verification_request = parse_verification_request(request.message)
+        if verification_request.handled:
+            if verification_request.rejected or not verification_request.command_label:
+                return AgentLoopResult(
+                    answer=unsupported_verification_answer(),
+                    trace_events_internal=[
+                        TraceEvent(
+                            event_type="verification_command",
+                            status="error",
+                            summary=f"reason={verification_request.reason}",
+                        )
+                    ],
+                )
+            return self._run_verification(
+                request=request,
+                command_label=verification_request.command_label,
+            )
 
         decision = self.router.route(request.message)
         trace_events = [
@@ -843,6 +919,95 @@ class AgentLoop:
             ],
         )
 
+    def _run_verification(
+        self,
+        *,
+        request: AgentLoopRequest,
+        command_label: str,
+    ) -> AgentLoopResult:
+        context = ToolInvocationContext(
+            tool_name=VERIFICATION_RUN_TOOL,
+            user_id=request.user_id,
+            intent="verification_run",
+            command_label=command_label,
+            confirmed=True,
+            scope_valid=_valid_repo_scope(request.repo_path),
+        )
+        tool_spec = self.tool_registry.get(VERIFICATION_RUN_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=VERIFICATION_RUN_TOOL,
+            context=context,
+        )
+        trace_events = [
+            TraceEvent(
+                event_type="verification_command",
+                status="ok",
+                summary=f"command_label={command_label}",
+            ),
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=VERIFICATION_RUN_TOOL,
+                status="ok" if permission_decision.status == "ask" else "error",
+                summary=(
+                    f"tool={VERIFICATION_RUN_TOOL}; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            ),
+        ]
+        if permission_decision.status == "deny":
+            return AgentLoopResult(
+                answer=DENY_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="tool_rejected",
+                        tool_name=VERIFICATION_RUN_TOOL,
+                        status="error",
+                        summary=f"reason={permission_decision.reason}",
+                    ),
+                ],
+            )
+        if not self.approval_gate.evaluate(permission_decision, context=context):
+            return AgentLoopResult(
+                answer=ASK_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="approval_required",
+                        tool_name=VERIFICATION_RUN_TOOL,
+                    ),
+                ],
+            )
+        tool_result = self.tool_executor.verification_run(
+            repo_path=request.repo_path,
+            command_label=command_label,
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="tool_result",
+                tool_name=VERIFICATION_RUN_TOOL,
+                status="error" if tool_result.error else "ok",
+                summary=f"status={tool_result.audit_summary.get('status', '')}",
+            )
+        )
+        trace_events.append(
+            TraceEvent(
+                event_type="verification_summarized",
+                tool_name=VERIFICATION_RUN_TOOL,
+                status="error"
+                if tool_result.audit_summary.get("status") not in {"success", ""}
+                else "ok",
+                summary=_verification_trace_summary(tool_result.audit_summary),
+            )
+        )
+        return AgentLoopResult(
+            answer=_verification_answer_from_tool_result(tool_result),
+            tool_calls=[tool_result.call_summary()],
+            trace_events_internal=trace_events,
+        )
+
     def _run_repo_rag(
         self,
         *,
@@ -1046,6 +1211,49 @@ def _is_absolute_path(file_path: str) -> bool:
     return PureWindowsPath(file_path).is_absolute() or PurePosixPath(
         file_path
     ).is_absolute()
+
+
+def _valid_repo_scope(repo_path: str) -> bool:
+    try:
+        return Path(repo_path).resolve(strict=True).is_dir()
+    except (OSError, RuntimeError):
+        return False
+
+
+def _verification_answer_from_tool_result(tool_result) -> str:
+    audit = tool_result.audit_summary
+    status = str(audit.get("status", "failed"))
+    exit_code_value = audit.get("exit_code")
+    exit_code = None if exit_code_value == "" else int(exit_code_value)
+    from app.verification.runner import VerificationRunResult
+
+    result = VerificationRunResult(
+        command_label=str(audit.get("command_label", "")),
+        status=status,
+        exit_code=exit_code,
+        duration_ms=int(audit.get("duration_ms", 0)),
+        stdout_excerpt=str(audit.get("stdout_excerpt", "")),
+        stderr_excerpt=str(audit.get("stderr_excerpt", "")),
+        timed_out=str(audit.get("timed_out", "false")) == "true",
+        truncated=str(audit.get("truncated", "false")) == "true",
+    )
+    return format_verification_answer(result)
+
+
+def _verification_trace_summary(
+    audit_summary: dict[str, str | int | float],
+) -> str:
+    public_keys = (
+        "command_label",
+        "status",
+        "exit_code",
+        "duration_ms",
+        "timed_out",
+        "truncated",
+    )
+    return _format_audit_summary(
+        {key: audit_summary[key] for key in public_keys if key in audit_summary}
+    )
 
 
 def _is_real_provider(provider: ModelProvider) -> bool:

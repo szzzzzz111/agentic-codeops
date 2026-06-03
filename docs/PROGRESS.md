@@ -5,12 +5,12 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前基线分支：`main`
-- 当前工作分支：`main`
-- 当前阶段：无 active OpenSpec change；V16 `v16-safe-patch-authoring` 已实现、提交、归档并 fast-forward 合并到 `main`，当前 `main` 等待 push
-- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / patch_apply) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 Assistant Control Surface、Safe Patch Authoring、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
+- 当前工作分支：`feature/v17-verification-runner`
+- 当前阶段：V17 Verification Runner 实现完成；active OpenSpec change 为 `v17-verification-runner`，已实现固定白名单验证标签、`verification_run` 权限/审批边界、ToolExecutor 执行入口、输出截断脱敏和 `/chat` contract 测试，并已通过自审、外部 review 和全量验证；待提交、归档和合并决策
+- 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 Assistant Control Surface、Safe Patch Authoring、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10-V16 changes 已归档；V16 归档路径为 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前 active change 为 `openspec/changes/v17-verification-runner/`；V10-V16 changes 已归档；V16 归档路径为 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -125,6 +125,14 @@ LLMGateway 设计备忘：
 - 2026-05-31，V16 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过；`pytest` 158 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-05-31，V16 archive closeout：`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
 - 2026-05-31，V16 merge：已 fast-forward 合并 `feature/v16-safe-patch-authoring` 到 `main`；merge 后 `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1` 通过，`pytest` 158 passed, 1 skipped，`ruff check .` All checks passed；`powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1` 通过。
+- 2026-06-03，V17 planning：已在 `feature/v17-verification-runner` 创建 active OpenSpec change `v17-verification-runner`，包含 `stage_planning.md`、proposal、design、tasks，以及 `verification-runner` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta；已同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`；`openspec validate v17-verification-runner` 通过。
+- 2026-06-03，V17 implementation RED：新增 verification runner、PermissionPolicy / ApprovalGate、AgentLoop 和 `/chat` contract 测试；targeted RED 按预期失败，缺少 `app.verification`、`ToolInvocationContext.command_label`、`ToolExecutor.verification_run` 和 AgentLoop verification 分支。
+- 2026-06-03，V17 targeted GREEN：`pytest tests/test_verification_runner.py tests/test_agent_harness_kernel.py::test_permission_policy_allows_verification_run_only_via_context tests/test_agent_harness_kernel.py::test_agent_loop_runs_verification_after_patch_and_before_repo_search tests/test_agent_harness_kernel.py::test_agent_loop_rejects_unsafe_verification_syntax_before_repo_search tests/test_chat_api.py::test_chat_endpoint_verification_keeps_contract_and_redacts_output tests/test_chat_api.py::test_chat_endpoint_verification_rejects_arbitrary_shell_without_repo_rag -q`：11 passed。
+- 2026-06-03，V17 相关回归：`pytest tests/test_verification_runner.py tests/test_agent_harness_kernel.py tests/test_chat_api.py -q`：78 passed。
+- 2026-06-03，V17 OpenSpec 验证：`openspec validate v17-verification-runner` 通过；`openspec validate --all`：12 passed, 0 failed。
+- 2026-06-03，V17 默认验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过；`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-06-03，V17 diff 验证：`git diff --check` 通过，仅有 CRLF 换行提示。
+- 2026-06-03，V17 外部 review：已覆盖 verification runner、AgentLoop integration、ToolExecutor boundary、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
 - 2026-05-31，V15 OpenSpec 计划验证：`openspec validate v15-assistant-control-surface`：通过。
 - 2026-05-31，V15 Assistant Control Surface targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：10 passed。
 - 2026-05-31，V15 OpenSpec 全量验证：`openspec validate --all`：10 passed, 0 failed。

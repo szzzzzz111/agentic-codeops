@@ -7,6 +7,7 @@ class ToolInvocationContext:
     user_id: str = ""
     repo_key: str = ""
     intent: str = ""
+    command_label: str = ""
     patch_id: str = ""
     confirmed: bool = False
     patch_status: str = ""

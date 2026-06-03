@@ -353,5 +353,30 @@
     ],
     "passes": true,
     "notes": "由 tests/test_patch_authoring.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v17-verification-runner",
+    "category": "agent",
+    "description": "AgentLoop 支持明确验证请求下的 Verification Runner，通过固定白名单标签运行 pytest、ruff 或 verify 并返回截断脱敏摘要。",
+    "steps": [
+      "发送明确验证请求，例如 运行验证",
+      "检查请求被归一化为 verify 标签",
+      "检查 AgentLoop 通过 ToolInvocationContext、PermissionPolicy、ApprovalGate 和 ToolExecutor.verification_run 执行受控验证",
+      "检查 /chat 返回验证状态、退出码、耗时和截断脱敏输出摘要"
+    ],
+    "acceptance_criteria": [
+      "白名单只包含 pytest、ruff 和 verify 三个固定标签",
+      "verify 映射到 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1",
+      "拒绝 pytest tests/x.py、ruff --fix、管道、重定向、环境变量赋值和任何用户附加参数",
+      "verification_run 注册为 read_only=false、risk=write、requires_approval=true，只有有效 verification context 才能走 ask -> ApprovalGate pass",
+      "API handler、AgentLoop 和 parser 不直接调用 subprocess，实际执行只能通过 ToolExecutor.verification_run",
+      "runner 使用 argv list 和 shell=false，cwd 固定为 resolved repo_path",
+      "stdout/stderr 各最多 4000 字符，/chat.answer 验证输出摘要总计最多 6000 字符，并标记 truncated=true/false",
+      "公开响应脱敏本机绝对路径、.repopilot 路径、API_KEY/TOKEN/SECRET/PASSWORD 等 secret，不公开完整 stdout/stderr 或 internal trace",
+      "V17 不自动串联 patch apply，不根据失败生成 patch，不持久化 verification result，不创建 worktree，不 commit/push",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_verification_runner.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

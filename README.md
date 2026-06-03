@@ -6,15 +6,16 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V16 已归档；当前无 active OpenSpec change，V16 已 fast-forward 合并到 `main`。
+- 当前主线能力：V1-V16 已归档；当前 active OpenSpec change 为 V17 `v17-verification-runner`，工作分支为 `feature/v17-verification-runner`，Verification Runner 已进入实现与验证。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
 - 当前 Long Task：repo-local `.repopilot/tasks.sqlite3`、明确长任务指令、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；不新增 `/tasks` API 或 `/chat` 必需顶层字段。
 - 当前 Assistant Control Surface：通过现有 `/chat.answer` 返回只读助手状态，聚合当前能力、Memory 计数和 Long Task 摘要；不新增 API、不新增 `/chat` 顶层字段、不调用 `repo_rag`、不写 memory、不创建任务。
 - 当前 Safe Patch Authoring：通过明确 patch 请求基于 repo evidence 生成 pending patch proposal；默认 fake patch provider 不生成真实 diff，显式配置真实 provider 后可返回结构化 unified diff；用户必须明确 `确认 patch <patch_id>` / `应用 patch <patch_id>` 才能通过受控 `patch_apply` 写入。
+- 当前 Verification Runner：通过明确验证请求运行固定白名单标签 `pytest`、`ruff` 或 `verify`，其中 `verify` 映射到 `scripts/verify.ps1`；执行必须经过 `verification_run` 权限/审批边界和 `ToolExecutor`，公开响应只返回截断脱敏摘要。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolInvocationContext` 和统一 `ToolExecutor`。
-- 当前默认不接真实 LLM，不执行 shell，不自动修改代码，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
+- 当前默认不接真实 LLM，不执行任意 shell，不自动修改代码，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；V17 仅允许明确验证请求下的白名单验证命令；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
 - 当前不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动运行测试或 commit；V16 仅允许用户明确确认后的受控 patch apply。
 
@@ -293,6 +294,12 @@ V16 在 AgentLoop 前段加入 Safe Patch Authoring。明确 patch 请求先通�
 
 V16 保持 `/chat` contract 不变，不新增公开 API 或顶层字段。`patch_apply` 是唯一写入工具，必须在明确确认语法和有效 `ToolInvocationContext` 下通过 `PermissionPolicy` / `ApprovalGate`，并只修改 unified diff 中的 repo 内相对路径。V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell。
 
+### V17：Verification Runner
+
+V17 在 AgentLoop 前段加入 Verification Runner。明确验证请求通过固定白名单标签触发：`pytest`、`ruff` 和 `verify`；`verify` 映射到 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`。V17 不支持用户附加参数、targeted pytest、`ruff --fix`、管道、重定向或环境变量注入。
+
+`verification_run` 注册为 `read_only=False`、`risk="write"`、`requires_approval=True`，只有有效 verification context 才能走 `ask -> ApprovalGate pass`，并通过 `ToolExecutor.verification_run(...)` 执行。runner 使用 argv list 和 `shell=False`，cwd 固定为 resolved `repo_path`，stdout/stderr 各最多 4000 字符，`/chat.answer` 验证输出摘要总计最多 6000 字符，并脱敏本机绝对路径、`.repopilot/...` 和常见 secret。V17 不自动串联 patch apply，不根据失败生成 patch，不持久化 verification result，不创建 worktree，不 commit/push。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -359,7 +366,7 @@ ChatService
 
 ## 路线图
 
-已归档至 V16：Safe Patch Authoring。当前无 active change。后续路线：
+已归档至 V16：Safe Patch Authoring。当前 active change：V17 Verification Runner。后续路线：
 
 - V17：Verification Runner。通过白名单验证命令执行 `pytest`、`ruff check .` 或 `scripts/verify.ps1` 等受控验证，并经过权限和审批边界。
 - V18：Patch + Verify Loop。串联 patch、apply、verify、失败摘要、修复建议和再次 patch，让代码改动形成可恢复闭环。

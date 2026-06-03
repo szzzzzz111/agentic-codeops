@@ -48,6 +48,40 @@ class FailingPatchExecutor:
         raise AssertionError("patch_apply must not be called without valid confirmation")
 
 
+class FailingVerificationExecutor:
+    def search_repo_rag(self, repo_path: str, keyword: str, search_plan) -> None:
+        raise AssertionError("repo_rag must not be called for verification requests")
+
+    def verification_run(self, repo_path: str, command_label: str) -> None:
+        raise AssertionError("verification_run must not be called without approval")
+
+
+class SuccessfulVerificationExecutor:
+    def __init__(self) -> None:
+        self.command_labels: list[str] = []
+
+    def verification_run(self, repo_path: str, command_label: str) -> ToolExecutionResult:
+        self.command_labels.append(command_label)
+        return ToolExecutionResult(
+            tool_name="verification_run",
+            parameters={
+                "command_label": command_label,
+                "exit_code": "0",
+                "duration_ms": "12",
+                "timed_out": "false",
+                "truncated": "false",
+            },
+            audit_summary={
+                "command_label": command_label,
+                "status": "success",
+                "exit_code": 0,
+                "duration_ms": 12,
+                "timed_out": "false",
+                "truncated": "false",
+            },
+        )
+
+
 class SuccessfulLongTaskExecutor:
     def __init__(self) -> None:
         self.keywords: list[str] = []
@@ -252,6 +286,50 @@ def test_permission_policy_allows_patch_apply_only_via_confirmation_context() ->
     assert ApprovalGate().evaluate(
         PermissionDecision("repo_rag", "ask", "approval_required")
     ) is False
+
+
+def test_permission_policy_allows_verification_run_only_via_context() -> None:
+    policy = PermissionPolicy()
+    gate = ApprovalGate()
+    spec = ToolSpec(
+        name="verification_run",
+        description="Run a whitelisted verification command.",
+        read_only=False,
+        risk="write",
+        requires_approval=True,
+    )
+    context = ToolInvocationContext(
+        tool_name="verification_run",
+        intent="verification_run",
+        command_label="verify",
+        confirmed=True,
+        scope_valid=True,
+    )
+
+    decision = policy.decide(spec, tool_name="verification_run", context=context)
+
+    assert decision == PermissionDecision(
+        tool_name="verification_run",
+        status="ask",
+        reason="approval_required",
+    )
+    assert gate.evaluate(decision, context=context) is True
+    assert policy.decide(spec, tool_name="verification_run").status == "deny"
+    assert policy.decide(
+        ToolSpec(
+            name="write_file",
+            description="Write a file.",
+            read_only=False,
+            risk="write",
+            requires_approval=True,
+        ),
+        tool_name="write_file",
+        context=context,
+    ) == PermissionDecision(
+        tool_name="write_file",
+        status="deny",
+        reason="not_read_only",
+    )
 
 
 def test_agent_loop_rejects_search_when_tool_is_not_registered(tmp_path: Path) -> None:
@@ -686,6 +764,68 @@ def test_agent_loop_handles_patch_confirm_before_repo_search(tmp_path: Path) -> 
     ]
 
 
+def test_agent_loop_runs_verification_after_patch_and_before_repo_search(
+    tmp_path: Path,
+) -> None:
+    executor = SuccessfulVerificationExecutor()
+    loop = AgentLoop(tool_executor=executor)
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="运行验证",
+            repo_path=str(tmp_path),
+            trace_id="trace_v17_verify",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert executor.command_labels == ["verify"]
+    assert "验证完成" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == [
+        {
+            "tool_name": "verification_run",
+            "command_label": "verify",
+            "exit_code": "0",
+            "duration_ms": "12",
+            "timed_out": "false",
+            "truncated": "false",
+            "status": "success",
+            "result_count": "0",
+        }
+    ]
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "verification_command",
+        "permission_checked",
+        "tool_result",
+        "verification_summarized",
+    ]
+
+
+def test_agent_loop_rejects_unsafe_verification_syntax_before_repo_search(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=FailingVerificationExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="运行 pytest tests/test_chat_api.py",
+            repo_path=str(tmp_path),
+            trace_id="trace_v17_verify_reject",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "只支持固定验证命令" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "verification_command",
+    ]
+
+
 def test_agent_loop_reports_v16_patch_capability_without_repo_search(
     tmp_path: Path,
 ) -> None:
@@ -704,7 +844,8 @@ def test_agent_loop_reports_v16_patch_capability_without_repo_search(
 
     assert "V16 提供 Safe Patch Authoring" in result.answer
     assert "明确确认后受控 apply" in result.answer
-    assert "V17" in result.answer
+    assert "V17 提供独立 Verification Runner" in result.answer
+    assert "当前未实现 Patch + Verify Loop" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 

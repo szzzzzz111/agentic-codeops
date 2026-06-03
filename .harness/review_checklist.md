@@ -1,6 +1,32 @@
 ﻿# 当前 Review 清单
 
-当前活跃阶段：无。
+当前活跃阶段：V17 Verification Runner。
+
+## V17 Planning / Implementation Gate
+
+- [x] V17 OpenSpec change 包含 stage planning、proposal、design、tasks，以及 `verification-runner`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
+- [x] `.harness/allowed_files.md` 已同步 V17 写入边界。
+- [x] V17 review checklist 已同步验证 intent、命令白名单、权限上下文、ToolExecutor 执行、输出脱敏、contract 和 non-goal gates。
+- [x] `openspec validate v17-verification-runner` 通过。
+- [x] AgentLoop 前置顺序固定为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、Verification intent、capability-status、repo_search/chat_only。
+- [x] Verification intent 不得被 Assistant Control Surface、Patch intent、capability-status 或 repo_search 误吞。
+- [x] Verification command parser 只接受明确验证请求，并归一化为 `pytest`、`ruff` 或 `verify` 白名单标签。
+- [x] V17 不接受任意 shell 文本、用户附加参数、管道、重定向、环境变量赋值或 `ruff --fix` 等修改型命令。
+- [x] `verify` 标签必须映射到 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`。
+- [x] `verification_run` 必须注册为 `read_only=False`、`risk="write"`、`requires_approval=True` 的高风险工具，且必须经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`。
+- [x] `PermissionPolicy` 仍只允许 `allow`、`deny` 和 `ask`；不得新增权限状态。
+- [x] `ToolInvocationContext` 只携带归一化验证标签和 repo scope，不携带用户原始 shell 命令。
+- [x] API handler、AgentLoop 和 parser 不得直接调用 subprocess；实际执行只能通过 `ToolExecutor.verification_run(...)`。
+- [x] runner 必须使用 argv list 执行命令，不使用 shell 字符串执行。
+- [x] runner cwd 必须限制为 resolved `repo_path`，repo_path 不存在或不可用时安全失败且不泄露本机路径。
+- [x] 每次验证必须有固定 timeout；timeout、命令缺失、非零退出码和 runner 异常必须返回结构化摘要。
+- [x] stdout/stderr 必须各最多 4000 字符，`/chat.answer` 验证输出摘要总计最多 6000 字符，并标记 `truncated=true/false`。
+- [x] 输出脱敏必须覆盖 resolved `repo_path`、Windows/POSIX 本机绝对路径、`.repopilot/...`、`API_KEY=...`、`TOKEN=...`、`SECRET=...` 和 `PASSWORD=...`。
+- [x] 公开 `answer` 和 `tool_calls` 不得泄露完整 stdout/stderr、本机绝对路径、DB 路径、环境变量、API key、完整 internal trace、完整 Evidence Pack 或 provider prompt/output。
+- [x] `/chat` 顶层响应 contract 不新增必需或可选字段；验证结果只进入现有 `answer` 和安全 `tool_calls` 摘要。
+- [x] V17 不自动在 patch apply 后运行验证，不根据验证失败自动生成 patch，不持久化 verification result，不创建 worktree，不 commit/push，不实现 Patch + Verify Loop、Persistent Audit / Recovery 或 Worktree Isolation。
+- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
+- [x] V17 外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
 
 ## V16 Archive Closeout Gate
 

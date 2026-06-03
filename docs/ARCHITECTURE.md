@@ -10,9 +10,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
   -> PatchManager(proposal/apply confirmation)
+  -> VerificationRunner(whitelisted pytest/ruff/verify)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag / patch_apply) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -24,9 +25,10 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `LongTaskManager` 负责明确长任务指令、repo-local SQLite task store、deterministic task-type plan、pause/resume、scratch 摘要和 ReAct trace skeleton。Long Task 控制命令在 memory command 之后、`RequestRouter` / keyword 路由前处理；只有显式 resume/run 当前 step 才能调用只读 `repo_rag`。
 - `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、capability-status / repo_search 之前处理，不调用 `repo_rag`，不写状态，不初始化 DB。
 - `PatchManager` 负责明确 patch proposal 请求和明确 patch apply 确认。Proposal 先走 repo evidence；apply 只接受 `确认 patch <patch_id>` / `应用 patch <patch_id>` 等明确语法，并在权限检查前生成已归一化 `ToolInvocationContext`。
+- `VerificationRunner` 负责明确验证请求、固定白名单标签、输出截断和脱敏。它在 Patch command / Patch intent 之后、capability-status / repo_search 之前处理，只允许 `pytest`、`ruff` 和 `verify`，并通过 `verification_run` 权限/审批边界执行。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
-- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag` 和受控写入 `patch_apply`。
+- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag`、受控写入 `patch_apply` 和受控验证 `verification_run`。
 - `LexicalRepoRetriever` 负责 repo-local chunk、lexical scoring、dedup 和 citation。
 - `EmbeddingRepoRetriever` 使用本地确定性 embedding provider 对 repo chunk 做轻量 embedding retrieval。
 - `HybridRepoRetriever` 负责合并 lexical 与 embedding retrieval 结果。
@@ -37,7 +39,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface 和 Safe Patch Authoring。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行 shell、不运行测试、不自动 commit、不创建 worktree；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源或 Patch Authoring 结构化 diff 来源。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring 和 Verification Runner。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 通过现有 `answer` 返回白名单验证摘要，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行任意 shell、不自动 commit、不创建 worktree；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源或 Patch Authoring 结构化 diff 来源。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -54,6 +56,7 @@ RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexi
 - V14 Long Task 的 step action 仍只能通过 grep-first, RAG-assisted 的 `repo_rag` 执行；scratch 和 ReAct trace 不能替代 repo evidence 或 citation validation。
 - V15 Assistant Control Surface 只能聚合状态和建议命令，不能替代 repo evidence 或 citation validation。
 - V16 Safe Patch Authoring 的 proposal 必须先使用 repo evidence；provider diff 必须通过 schema、citation、路径和 diff 校验后才能创建 pending patch。
+- V17 Verification Runner 不改变检索链路；验证请求不调用 `repo_rag`，不生成 Evidence Pack，也不影响 grep-first RAG baseline。
 - 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
 
 ## V2 工具层：安全只读仓库能力
@@ -161,9 +164,9 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 当前实现 Safe Patch Authoring。后续路线调整为 lightweight industrial harness：V17 做 Verification Runner，V18 做 Patch + Verify Loop，V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 当前实现 Verification Runner。后续路线调整为 lightweight industrial harness：V18 做 Patch + Verify Loop，V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
 
-V17 及之后仍是未来能力，不是当前架构已实现部分。运行验证、持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
+V18 及之后仍是未来能力，不是当前架构已实现部分。Patch + Verify Loop、持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
@@ -361,3 +364,32 @@ AgentLoop
 - `PermissionPolicy` 仍只产出 `allow`、`deny` 或 `ask`；`patch_apply` 只有在有效确认上下文下走 `ask -> ApprovalGate pass`。
 - `patch_apply` 是唯一写入路径，只修改 unified diff 中的 repo 内相对路径，并拒绝路径穿越、敏感文件、隐藏状态目录、二进制文件和 context mismatch。
 - V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell、不实现 Patch + Verify Loop。
+
+## V17 架构补充：Verification Runner
+
+V17 在 AgentLoop 前段加入受控 Verification Runner：
+
+```text
+AgentLoop
+  -> MemoryManager(command)
+  -> LongTaskManager(command)
+  -> AssistantControlSurface(status summary)
+  -> PatchManager(proposal / confirm apply)
+  -> VerificationRunner(intent / whitelist)
+     -> ToolInvocationContext
+     -> PermissionPolicy -> ApprovalGate
+     -> ToolExecutor(verification_run)
+     -> subprocess runner(argv list, shell=False)
+```
+
+边界约束：
+
+- Verification intent 在 Patch command / Patch intent 之后、capability-status / repo_search 之前处理。
+- V17 只支持固定白名单标签：`pytest`、`ruff` 和 `verify`；`verify` 映射到 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`。
+- V17 不支持用户附加参数、targeted pytest、`ruff --fix`、管道、重定向、环境变量赋值或任意 shell 文本。
+- `verification_run` 注册为 `read_only=False`、`risk="write"`、`requires_approval=True`；只有有效 verification context 才能走 `ask -> ApprovalGate pass`。
+- API handler、AgentLoop 和 parser 不直接调用 subprocess；实际执行只通过 `ToolExecutor.verification_run(...)`。
+- runner 使用 argv list 和 `shell=False`，cwd 固定为 resolved `repo_path`。
+- stdout/stderr 各最多 4000 字符；`/chat.answer` 验证输出摘要总计最多 6000 字符，并标记 `truncated=true/false`。
+- 公开响应脱敏 resolved repo path、本机绝对路径、`.repopilot/...` 和常见 secret，不公开完整 stdout/stderr、环境变量、完整 trace、Evidence Pack 或 provider prompt/output。
+- V17 不自动串联 patch apply，不根据失败生成 patch，不持久化 verification result，不创建 worktree，不 commit/push。
