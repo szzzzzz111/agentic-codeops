@@ -93,6 +93,29 @@ def parse_verification_request(message: str) -> VerificationRequest:
     return VerificationRequest(handled=True, command_label=label)
 
 
+def parse_verification_label(value: str) -> VerificationRequest:
+    normalized = " ".join(value.strip().split())
+    lower = normalized.lower()
+    if not normalized:
+        return VerificationRequest(
+            handled=True,
+            rejected=True,
+            reason="missing_verification_label",
+        )
+    if _SHELL_SYNTAX_RE.search(normalized):
+        return VerificationRequest(handled=True, rejected=True, reason="unsafe_syntax")
+    label = {
+        "验证": "verify",
+        "verify": "verify",
+        "verification": "verify",
+        "pytest": "pytest",
+        "ruff": "ruff",
+    }.get(lower)
+    if label is None:
+        return VerificationRequest(handled=True, rejected=True, reason="not_whitelisted")
+    return VerificationRequest(handled=True, command_label=label)
+
+
 def command_argv(command_label: str) -> list[str] | None:
     command = ALLOWED_COMMANDS.get(command_label)
     if command is None:

@@ -12,6 +12,9 @@ from app.harness.kernel import (
     ToolSpec,
     ToolRegistry,
 )
+from app.memory.store import compute_repo_key
+from app.patching.apply import PatchApplyResult
+from app.patching.store import SQLitePatchStore
 from app.providers.model_provider import ModelProviderResponse
 from app.rag.repo_rag import LexicalRepoRetriever
 from app.tools.tool_executor import ToolExecutionResult
@@ -80,6 +83,65 @@ class SuccessfulVerificationExecutor:
                 "truncated": "false",
             },
         )
+
+
+class RecordingPatchVerifyExecutor:
+    def __init__(self, *, patch_applied: bool = True) -> None:
+        self.patch_applied = patch_applied
+        self.calls: list[str] = []
+        self.command_labels: list[str] = []
+
+    def patch_apply(self, repo_path: str, diff_text: str) -> ToolExecutionResult:
+        self.calls.append("patch_apply")
+        result = PatchApplyResult(
+            applied=self.patch_applied,
+            changed_files=["app.py"] if self.patch_applied else [],
+            error=None if self.patch_applied else "context_mismatch",
+        )
+        return ToolExecutionResult(
+            tool_name="patch_apply",
+            parameters={},
+            results=[
+                {"file_path": "app.py", "line_number": 0, "line_text": ""}
+            ]
+            if self.patch_applied
+            else [],
+            error=None if self.patch_applied else "context_mismatch",
+            audit_summary={"changed_files": 1 if self.patch_applied else 0},
+            patch_apply_result=result,
+        )
+
+    def verification_run(self, repo_path: str, command_label: str) -> ToolExecutionResult:
+        self.calls.append("verification_run")
+        self.command_labels.append(command_label)
+        return ToolExecutionResult(
+            tool_name="verification_run",
+            parameters={
+                "command_label": command_label,
+                "exit_code": "0",
+                "duration_ms": "12",
+                "timed_out": "false",
+                "truncated": "false",
+            },
+            audit_summary={
+                "command_label": command_label,
+                "status": "success",
+                "exit_code": 0,
+                "duration_ms": 12,
+                "timed_out": "false",
+                "truncated": "false",
+            },
+        )
+
+
+class RecordingVerificationContextPolicy(PermissionPolicy):
+    def __init__(self) -> None:
+        self.verification_contexts: list[ToolInvocationContext | None] = []
+
+    def decide(self, tool_spec, tool_name="repo_rag", context=None):
+        if tool_name == "verification_run":
+            self.verification_contexts.append(context)
+        return super().decide(tool_spec, tool_name=tool_name, context=context)
 
 
 class SuccessfulLongTaskExecutor:
@@ -826,6 +888,127 @@ def test_agent_loop_rejects_unsafe_verification_syntax_before_repo_search(
     ]
 
 
+def test_agent_loop_patch_verify_combination_applies_then_runs_verification(
+    tmp_path: Path,
+) -> None:
+    patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
+        user_id="u001",
+        repo_key=compute_repo_key(tmp_path),
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+    executor = RecordingPatchVerifyExecutor()
+    policy = RecordingVerificationContextPolicy()
+    loop = AgentLoop(tool_executor=executor, permission_policy=policy)
+
+    result = loop.run(
+        AgentLoopRequest(
+            message=f"确认 patch {patch.patch_id} 并运行验证",
+            repo_path=str(tmp_path),
+            trace_id="trace_v18_patch_verify",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert executor.calls == ["patch_apply", "verification_run"]
+    assert executor.command_labels == ["verify"]
+    assert len(policy.verification_contexts) == 1
+    verification_context = policy.verification_contexts[0]
+    assert verification_context is not None
+    assert verification_context.tool_name == "verification_run"
+    assert verification_context.intent == "verification_run"
+    assert verification_context.command_label == "verify"
+    assert verification_context.confirmed is True
+    assert verification_context.scope_valid is True
+    assert "已应用 patch" in result.answer
+    assert "验证完成" in result.answer
+    assert result.tool_calls[0]["tool_name"] == "patch_apply"
+    assert result.tool_calls[1]["tool_name"] == "verification_run"
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "patch_verify_loop_started",
+        "patch_command",
+        "permission_checked",
+        "tool_result",
+        "patch_apply_summarized",
+        "patch_verify_apply_summarized",
+        "permission_checked",
+        "tool_result",
+        "patch_verify_verification_summarized",
+    ]
+
+
+def test_agent_loop_patch_verify_invalid_label_rejects_without_apply(
+    tmp_path: Path,
+) -> None:
+    patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
+        user_id="u001",
+        repo_key=compute_repo_key(tmp_path),
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+    executor = RecordingPatchVerifyExecutor()
+    loop = AgentLoop(tool_executor=executor)
+
+    result = loop.run(
+        AgentLoopRequest(
+            message=f"确认 patch {patch.patch_id} 并运行 pytest tests/test_chat_api.py",
+            repo_path=str(tmp_path),
+            trace_id="trace_v18_patch_verify_reject",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "只支持固定验证命令" in result.answer
+    assert executor.calls == []
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "patch_verify_loop_started",
+    ]
+
+
+def test_agent_loop_patch_verify_does_not_run_verification_when_apply_fails(
+    tmp_path: Path,
+) -> None:
+    patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
+        user_id="u001",
+        repo_key=compute_repo_key(tmp_path),
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+    executor = RecordingPatchVerifyExecutor(patch_applied=False)
+    policy = RecordingVerificationContextPolicy()
+    loop = AgentLoop(tool_executor=executor, permission_policy=policy)
+
+    result = loop.run(
+        AgentLoopRequest(
+            message=f"确认 patch {patch.patch_id} 并运行验证",
+            repo_path=str(tmp_path),
+            trace_id="trace_v18_patch_verify_apply_failed",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert executor.calls == ["patch_apply"]
+    assert policy.verification_contexts == []
+    assert "应用失败" in result.answer
+    assert "验证" not in result.answer
+    assert result.tool_calls == [
+        {
+            "tool_name": "patch_apply",
+            "status": "error",
+            "result_count": "0",
+            "error": "context_mismatch",
+        }
+    ]
+
+
 def test_agent_loop_reports_v16_patch_capability_without_repo_search(
     tmp_path: Path,
 ) -> None:
@@ -845,7 +1028,8 @@ def test_agent_loop_reports_v16_patch_capability_without_repo_search(
     assert "V16 提供 Safe Patch Authoring" in result.answer
     assert "明确确认后受控 apply" in result.answer
     assert "V17 提供独立 Verification Runner" in result.answer
-    assert "当前未实现 Patch + Verify Loop" in result.answer
+    assert "V18 提供明确组合确认下的 Patch + Verify Loop" in result.answer
+    assert "当前未实现 Persistent Audit / Recovery" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 

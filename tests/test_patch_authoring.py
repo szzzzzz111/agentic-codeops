@@ -3,7 +3,7 @@ from pathlib import Path
 
 from app.patching.apply import apply_unified_diff
 from app.patching.manager import PatchManager
-from app.patching.parser import parse_patch_confirmation
+from app.patching.parser import parse_patch_confirmation, parse_patch_verify_confirmation
 from app.patching.provider import PatchAuthoringProviderResponse
 from app.patching.store import SQLitePatchStore
 
@@ -30,6 +30,47 @@ def test_parse_patch_confirmation_accepts_only_explicit_syntax() -> None:
     )
     assert parse_patch_confirmation("可以") is None
     assert parse_patch_confirmation("继续 patch_20260531_abcdef") is None
+
+
+def test_parse_patch_verify_confirmation_requires_patch_id_and_label() -> None:
+    parsed = parse_patch_verify_confirmation("确认 patch patch_20260531_abcdef 并运行验证")
+
+    assert parsed.handled is True
+    assert parsed.patch_id == "patch_20260531_abcdef"
+    assert parsed.command_label == "verify"
+    assert parsed.rejected is False
+
+    parsed_pytest = parse_patch_verify_confirmation(
+        "apply patch patch_20260531_abcdef and run pytest"
+    )
+    assert parsed_pytest.handled is True
+    assert parsed_pytest.patch_id == "patch_20260531_abcdef"
+    assert parsed_pytest.command_label == "pytest"
+
+
+def test_parse_patch_verify_confirmation_rejects_half_parse_without_apply() -> None:
+    missing_label = parse_patch_verify_confirmation(
+        "确认 patch patch_20260531_abcdef 并运行"
+    )
+    unsafe_label = parse_patch_verify_confirmation(
+        "确认 patch patch_20260531_abcdef 并运行 pytest tests/test_chat_api.py"
+    )
+    shell_syntax = parse_patch_verify_confirmation(
+        "confirm patch patch_20260531_abcdef and run verify | more"
+    )
+
+    assert missing_label.handled is True
+    assert missing_label.rejected is True
+    assert missing_label.reason == "missing_verification_label"
+    assert unsafe_label.handled is True
+    assert unsafe_label.rejected is True
+    assert unsafe_label.reason == "not_whitelisted"
+    assert shell_syntax.handled is True
+    assert shell_syntax.rejected is True
+    assert shell_syntax.reason == "unsafe_syntax"
+    assert parse_patch_confirmation("确认 patch patch_20260531_abcdef") == (
+        "patch_20260531_abcdef"
+    )
 
 
 def test_pending_patch_store_scopes_by_user_repo_and_expires(tmp_path: Path) -> None:

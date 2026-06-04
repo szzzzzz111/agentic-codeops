@@ -291,6 +291,125 @@ def test_chat_endpoint_confirm_patch_applies_without_running_verification(
     assert "worktree" not in response.text
 
 
+def test_chat_endpoint_patch_verify_loop_keeps_contract(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    from app.memory.store import compute_repo_key
+    from app.patching.apply import PatchApplyResult
+    from app.patching.store import SQLitePatchStore
+    from app.tools.tool_executor import ToolExecutionResult, ToolExecutor
+
+    write_text(tmp_path / "app.py", "old\n")
+    patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
+        user_id="u001",
+        repo_key=compute_repo_key(tmp_path),
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+
+    def fake_patch_apply(self, repo_path: str, diff_text: str):
+        return ToolExecutionResult(
+            tool_name="patch_apply",
+            parameters={},
+            results=[{"file_path": "app.py", "line_number": 0, "line_text": ""}],
+            audit_summary={"changed_files": 1},
+            patch_apply_result=PatchApplyResult(
+                applied=True,
+                changed_files=["app.py"],
+            ),
+        )
+
+    def fake_verification_run(self, repo_path: str, command_label: str):
+        return ToolExecutionResult(
+            tool_name="verification_run",
+            parameters={
+                "command_label": command_label,
+                "exit_code": "0",
+                "duration_ms": "9",
+                "timed_out": "false",
+                "truncated": "false",
+            },
+            audit_summary={
+                "command_label": command_label,
+                "status": "success",
+                "exit_code": 0,
+                "duration_ms": 9,
+                "timed_out": "false",
+                "truncated": "false",
+                "stdout_excerpt": "<repo> ok",
+                "stderr_excerpt": "",
+            },
+        )
+
+    monkeypatch.setattr(ToolExecutor, "patch_apply", fake_patch_apply)
+    monkeypatch.setattr(ToolExecutor, "verification_run", fake_verification_run)
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, f"确认 patch {patch.patch_id} 并运行验证"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "已应用 patch" in body["answer"]
+    assert "验证完成" in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == [
+        {
+            "tool_name": "patch_apply",
+            "status": "success",
+            "result_count": "1",
+        },
+        {
+            "tool_name": "verification_run",
+            "command_label": "verify",
+            "exit_code": "0",
+            "duration_ms": "9",
+            "timed_out": "false",
+            "truncated": "false",
+            "status": "success",
+            "result_count": "0",
+        },
+    ]
+    assert "--- a/app.py" not in response.text
+    assert str(tmp_path) not in response.text
+
+
+def test_chat_endpoint_patch_verify_rejects_invalid_label_without_tool_calls(
+    tmp_path: Path,
+) -> None:
+    from app.memory.store import compute_repo_key
+    from app.patching.store import SQLitePatchStore
+
+    patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
+        user_id="u001",
+        repo_key=compute_repo_key(tmp_path),
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+
+    response = client.post(
+        "/chat",
+        json=valid_payload(
+            tmp_path,
+            f"确认 patch {patch.patch_id} 并运行 ruff --fix",
+        ),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "只支持固定验证命令" in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+    assert "patch_apply" not in response.text
+    assert "verification_run" not in response.text
+
+
 def test_chat_endpoint_verification_keeps_contract_and_redacts_output(
     tmp_path: Path,
     monkeypatch,

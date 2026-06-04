@@ -1,195 +1,30 @@
-﻿# 当前 Review 清单
+# 当前 Review 清单
 
-当前活跃阶段：无。
+当前活跃阶段：V18 Patch + Verify Loop。
 
-## V17 Archive Closeout Gate
+## V18 Planning / Implementation Gate
 
-- [x] V17 implementation commit 已创建：`8fe1fde Add V17 verification runner`。
-- [x] V17 active change 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`。
-- [x] 长期 specs 已通过 `openspec archive v17-verification-runner -y` 同步，新增 `openspec/specs/verification-runner/spec.md`。
-- [x] `openspec list` 显示 no active changes。
-- [x] V17 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
-- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+- [ ] V18 OpenSpec change 包含 `stage_planning.md`、proposal、design、tasks，以及 `patch-verify-loop`、`safe-patch-authoring`、`verification-runner`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
+- [ ] `.harness/allowed_files.md` 已同步 V18 写入边界。
+- [ ] `openspec validate v18-patch-verify-loop` 通过。
+- [ ] AgentLoop 前置顺序固定为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent（含组合确认）、Verification intent、capability-status、repo_search/chat_only。
+- [ ] 组合确认必须在 Patch command 分支内优先处理；优先级为 `组合确认 > 纯 verification intent > capability-status/repo_search`。
+- [ ] 组合确认 parser 必须同时解析 `patch_id` 和 verification label；缺失 label、半解析、只能解析出 patch id 时，不得默认补 `verify`，不得 apply。
+- [ ] 组合确认中的 verification label 只接受 `verify`、`pytest` 和 `ruff`；不得接受附加参数、管道、重定向、环境变量赋值、任意 shell 文本或 `ruff --fix`。
+- [ ] 非法组合请求必须整体拒绝，不执行 `patch_apply`，不触发 `verification_run`。
+- [ ] 单独 `确认 patch <patch_id>` / `应用 patch <patch_id>` 保持 V16 apply-only 行为，不自动验证。
+- [ ] 组合流程必须先通过 `PatchManager.prepare_apply` 和 `patch_apply` 权限审批链路；apply 成功后才允许进入 verification。
+- [ ] verification 必须使用独立 `ToolInvocationContext`，字段包含 `tool_name=verification_run`、`intent=verification_run`、`command_label`、`confirmed=true`、`scope_valid=true/false`，不得复用 patch context。
+- [ ] patch apply 失败、过期、hash mismatch、跨用户、跨 repo、非 pending 或 scope invalid 时，不生成 verification context，不运行验证。
+- [ ] `patch_apply` 和 `verification_run` 均必须通过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`。
+- [ ] API handler、parser 和 AgentLoop 不得直接调用 subprocess；实际验证只能通过 `ToolExecutor.verification_run(...)`。
+- [ ] 公开 `answer` 和 `tool_calls` 不得泄露完整 diff、完整 stdout/stderr、本机绝对路径、DB 路径、环境变量、API key、完整 internal trace、完整 Evidence Pack 或 provider prompt/output。
+- [ ] `/chat` 顶层响应 contract 不新增必需或可选字段；组合结果只进入现有 `answer` 和安全 `tool_calls` 摘要。
+- [ ] 验证失败只返回失败摘要和下一步建议；不得自动生成 patch、自动再次 apply、commit、push、创建 worktree 或调度 subagent。
+- [ ] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
 
-## V17 Planning / Implementation Gate
+## Historical Gates
 
-- [x] V17 OpenSpec change 包含 stage planning、proposal、design、tasks，以及 `verification-runner`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
-- [x] `.harness/allowed_files.md` 已同步 V17 写入边界。
-- [x] V17 review checklist 已同步验证 intent、命令白名单、权限上下文、ToolExecutor 执行、输出脱敏、contract 和 non-goal gates。
-- [x] `openspec validate v17-verification-runner` 通过。
-- [x] AgentLoop 前置顺序固定为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、Verification intent、capability-status、repo_search/chat_only。
-- [x] Verification intent 不得被 Assistant Control Surface、Patch intent、capability-status 或 repo_search 误吞。
-- [x] Verification command parser 只接受明确验证请求，并归一化为 `pytest`、`ruff` 或 `verify` 白名单标签。
-- [x] V17 不接受任意 shell 文本、用户附加参数、管道、重定向、环境变量赋值或 `ruff --fix` 等修改型命令。
-- [x] `verify` 标签必须映射到 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`。
-- [x] `verification_run` 必须注册为 `read_only=False`、`risk="write"`、`requires_approval=True` 的高风险工具，且必须经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`。
-- [x] `PermissionPolicy` 仍只允许 `allow`、`deny` 和 `ask`；不得新增权限状态。
-- [x] `ToolInvocationContext` 只携带归一化验证标签和 repo scope，不携带用户原始 shell 命令。
-- [x] API handler、AgentLoop 和 parser 不得直接调用 subprocess；实际执行只能通过 `ToolExecutor.verification_run(...)`。
-- [x] runner 必须使用 argv list 执行命令，不使用 shell 字符串执行。
-- [x] runner cwd 必须限制为 resolved `repo_path`，repo_path 不存在或不可用时安全失败且不泄露本机路径。
-- [x] 每次验证必须有固定 timeout；timeout、命令缺失、非零退出码和 runner 异常必须返回结构化摘要。
-- [x] stdout/stderr 必须各最多 4000 字符，`/chat.answer` 验证输出摘要总计最多 6000 字符，并标记 `truncated=true/false`。
-- [x] 输出脱敏必须覆盖 resolved `repo_path`、Windows/POSIX 本机绝对路径、`.repopilot/...`、`API_KEY=...`、`TOKEN=...`、`SECRET=...` 和 `PASSWORD=...`。
-- [x] 公开 `answer` 和 `tool_calls` 不得泄露完整 stdout/stderr、本机绝对路径、DB 路径、环境变量、API key、完整 internal trace、完整 Evidence Pack 或 provider prompt/output。
-- [x] `/chat` 顶层响应 contract 不新增必需或可选字段；验证结果只进入现有 `answer` 和安全 `tool_calls` 摘要。
-- [x] V17 不自动在 patch apply 后运行验证，不根据验证失败自动生成 patch，不持久化 verification result，不创建 worktree，不 commit/push，不实现 Patch + Verify Loop、Persistent Audit / Recovery 或 Worktree Isolation。
-- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
-- [x] V17 外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
-
-## V16 Archive Closeout Gate
-
-- [x] V16 implementation commit 已创建：`d32a367 Add V16 safe patch authoring`。
-- [x] V16 active change 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`。
-- [x] 长期 specs 已通过 `openspec archive v16-safe-patch-authoring -y` 同步，新增 `openspec/specs/safe-patch-authoring/spec.md`。
-- [x] `openspec list` 显示 no active changes。
-- [x] V16 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
-- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
-
-## V16 Planning / Implementation Gate
-
-- [x] V16 OpenSpec change 包含 proposal、design、tasks，以及 `safe-patch-authoring`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
-- [x] AgentLoop 前置顺序固定为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、capability-status、repo_search/chat_only。
-- [x] Patch intent 不得被 Assistant Control Surface、capability-status 或 repo_search 误吞。
-- [x] Patch proposal 请求必须先经过现有 `repo_rag` / Evidence Pack 边界，不得只凭模型自由生成 patch。
-- [x] 默认 fake Patch Authoring provider 不生成真实 diff；真实 OpenAI-compatible provider 只能显式配置。
-- [x] `/chat` 顶层响应 contract 不新增必需或可选字段；patch proposal、patch id、确认提示和 apply 结果只进入 `answer`。
-- [x] Patch proposal 公开回答不得泄露完整 diff 文本、完整 Evidence Pack、完整 provider prompt/output、本机绝对路径、DB 路径或 API key。
-- [x] 明确确认语法仅接受 `应用 patch <patch_id>`、`确认 patch <patch_id>`、`apply patch <patch_id>` 和 `confirm patch <patch_id>`；不得接受“可以”“继续”“就这样”等含糊表达。
-- [x] Pending patch 使用 repo-local `.repopilot/patches.sqlite3`，按 `user_id + repo_key` 隔离，并保存 `patch_id`、`status`、`target_files`、`diff_text`、`diff_hash`、`summary`、`created_at`、`updated_at` 和 `expires_at`。
-- [x] Pending patch 默认 24 小时过期；过期 patch 不可 apply，确认时应标记为 `expired` 并返回安全失败摘要。
-- [x] `ToolInvocationContext` 由 Patch manager 在权限检查前预校验生成；`PermissionPolicy` 和 `ApprovalGate` 不得直接读 patch store、解析用户消息或重新计算 hash。
-- [x] 权限状态仍只允许 `allow`、`deny` 和 `ask`；不得新增 `allowable_confirmation` 等新状态。
-- [x] `patch_apply` 必须注册为 `read_only=False`、`risk=write`、`requires_approval=True`，且只能在有效确认上下文下走 `ask -> ApprovalGate pass`。
-- [x] 非确认态写入、跨用户/跨 repo、hash 不匹配、状态非 pending、TTL 过期或 scope 无效时必须拒绝 apply。
-- [x] 写入只允许 patch apply，只作用于 diff 中声明的 repo 内相对路径；必须拒绝路径穿越、绝对路径、repo 外路径、敏感文件、隐藏状态目录和二进制文件。
-- [x] 多文件 patch 必须先完成全量 preflight；任一 preflight 失败不得写任何文件；写入阶段 I/O 失败时必须尝试恢复已写文件并标记 `failed`。
-- [x] V16 不运行测试命令、不自动 commit、不创建 branch/worktree、不执行 shell、不实现 Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 或 Worktree Isolation。
-- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
-
-## V15 Archive Closeout Gate
-
-- [x] V15 implementation commit 已创建：`86d175a Add V15 assistant control surface`。
-- [x] V15 active change 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`。
-- [x] 长期 specs 已通过 `openspec archive v15-assistant-control-surface -y` 同步，新增长期 `assistant-control-surface` spec。
-- [x] `openspec list` 显示 no active changes。
-- [x] V15 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
-- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
-
-## V15 Planning / Implementation Gate
-
-- [x] V15 OpenSpec change 包含 proposal、design、tasks，以及 `assistant-control-surface`、`agent-loop-tool-execution`、`chat-api`、`memory`、`long-task-agent-execution` 和 `harness-development-workflow` spec delta。
-- [x] Assistant Control Surface 只通过现有 `/chat` 暴露，不新增 `/status`、`/tasks` 或其他公开 API。
-- [x] `/chat` 顶层响应 contract 不新增必需或可选字段；控制面状态只进入 `answer`。
-- [x] AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、capability-status、repo_search/chat_only。
-- [x] Memory command 和 Long Task command 继续优先于 Assistant Control Surface；`memory 实现了吗?` 等能力状态问题不被控制面误吞。
-- [x] 控制面状态请求不得调用 `repo_rag`，不得进入 PermissionPolicy / ApprovalGate 工具调用链路。
-- [x] 控制面状态请求不得写 memory、创建任务、恢复任务、暂停任务、补充任务、归档任务或 reopen 任务。
-- [x] Memory / Long Task 只读摘要不得隐式创建 `.repopilot/`、`memory.sqlite3` 或 `tasks.sqlite3`。
-- [x] 控制面公开回答不得泄露完整 memory value、scratch、ReAct trace、完整 Evidence Pack、完整 provider output、本机绝对路径或 DB 路径。
-- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
-- [x] V15 不实现 patch proposal、diff apply、Verification Runner、Shell executor、SandboxRunner、后台任务、真实 subagent orchestration 或 worktree automation。
-- [x] V15 external review findings 已处理，用户确认外部 review 无新增 P0/P1/P2。
-- [x] V15 final stage debt sweep 已执行，未发现新的阶段内 P0/P1/P2 或需记录的剩余债务。
-- [x] V15 当前工作区已通过 `openspec validate v15-assistant-control-surface`、`openspec validate --all`、`scripts/verify.ps1` 和 `git diff --check`。
-
-## V14 Archive Closeout Gate
-
-- [x] V14 implementation commit 已创建：`ed48fa9 Add V14 long task control plane`。
-- [x] V14 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`。
-- [x] V14 change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`。
-- [x] 长期 specs 已通过 `openspec archive v14-long-task-react-subagents -y` 同步。
-- [x] `openspec list` 显示 no active changes。
-- [x] V14 内部 self-review 和外部 review 均已处理，无已知 P0/P1/P2。
-- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
-
-## V14 Planning / Implementation Gate
-
-- [x] V14 OpenSpec change 包含 proposal、design、tasks，以及 `long-task-agent-execution`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
-- [x] Memory command 和 Long Task command 均优先于 `RequestRouter` / keyword 路由；前置顺序为 Memory command 先识别，然后 Long Task command。
-- [x] 创建、查看、列出、暂停、补充、归档和 reopen 控制命令不得调用 `repo_rag`；`task_xxx` 不得误触发 repo_search。
-- [x] 显式 resume/run 每次最多推进一个 step，且 step action 只能通过现有 `ToolExecutor(repo_rag)` 执行只读检索。
-- [x] resume/run 调用 `repo_rag` 前必须保留 `ToolRegistry`、`PermissionPolicy` 和 `ApprovalGate` 边界。
-- [x] `.repopilot/tasks.sqlite3` 使用独立 Long Task DB，不复用 V13 `memory.sqlite3`，不迁移为统一 state DB。
-- [x] Long Task repo_key 复用 V13 `compute_repo_key` / `normalize_repo_path_for_key` 规则：resolve、POSIX 分隔符、Windows lower-case、SHA-256 hash。
-- [x] task 状态机覆盖 `pending`、`running`、`paused`、`blocked`、`completed` 和 `failed`；`archived` 只能作为标记，不作为执行状态。
-- [x] `completed` 任务只读不可变；`failed` 只能 reopen for retry，保留历史并新增 retry round，不做真正回滚。
-- [x] 每个 `user_id + repo_key` 未归档任务配额为 20；list 默认返回最近 10 个未归档任务；archive 只允许 completed/failed 且不物理删除。
-- [x] deterministic task-type templates 覆盖现有五类 QueryUnderstanding 类型、`stage_planning` 和 `unknown`；`stage_planning` 只在明确 Long Task 创建指令中触发。
-- [x] provider-assisted planning 只能增强模板字段，不能改变 step 数、顺序或 `action_type`；provider 失败或 JSON 校验失败必须 fallback。
-- [x] Scratch 和 ReAct trace 只保存摘要和 citation 引用，不保存或公开完整 prompt、完整 Evidence Pack、完整 provider output、本机绝对路径或 DB 路径。
-- [x] `/chat` 顶层响应 contract 不新增必需字段；Long Task 公开信息只进入 `answer`，`tool_calls` 只保留实际 `repo_rag` 调用摘要。
-- [x] V14 只预留 subagent/worktree metadata，不得创建、展示、调度真实 subagents，不得执行 git branch/worktree 操作。
-- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
-- [x] V14 self-review 和外部 review 发现均已处理；当前无已知 P0/P1/P2。
-
-## V13 Archive Closeout Gate
-
-- [x] V13 implementation commit 已创建：`1b5696d Add V13 memory`。
-- [x] V13 active change 已归档到 `openspec/changes/archive/2026-05-28-v13-memory/`。
-- [x] 长期 specs 已在 archive 前同步。
-- [x] `openspec list` 显示 no active changes。
-- [x] `openspec validate --all` 通过。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过。
-- [x] `git diff --check` 通过。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1` 通过。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1` 通过。
-- [x] `README.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 不再把 V13 描述为 active。
-- [x] 下一阶段只写成 planned / next，不写成 implemented。
-
-## V13 Implementation Review
-
-- [x] OpenSpec change 包含 proposal、design、tasks，以及 `memory`、`agent-loop-tool-execution` 和 `chat-api` spec delta。
-- [x] `.repopilot/` 已加入 `.gitignore`，SQLite DB 只作为 repo-local 本地状态，不修改被分析仓库代码文件。
-- [x] `repo_key` 使用 `Path(repo_path).resolve()`、POSIX 分隔符、Windows lower-case 和稳定 hash，audit 不暴露绝对路径。
-- [x] Memory parser 先把全角冒号 `：` 归一化为半角 `:`，并覆盖中文/英文明确指令。
-- [x] Memory command 命中后确认优先，不执行 `repo_rag`，`related_files=[]` 且 `tool_calls=[]`。
-- [x] PREF/LTM 使用 SQLite 持久化，STM 使用进程内按 `user_id/session_id` 隔离。
-- [x] STM 可通过 `stm:` / `会话:` 明确写入，并按 `user_id/session_id` 读取摘要。
-- [x] PREF 可影响表达偏好，但代码事实仍由 repo evidence 和 citation validation 约束。
-- [x] Memory audit 只进入内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
-- [x] repo_path 不存在、不可解析或 `.repopilot/` 不可写时 memory command 优雅失败且不泄露本机路径。
-- [x] 普通 repo_search 的 memory read failure 不阻断检索，只记录 memory unavailable。
-- [x] 默认验证不依赖真实网络、API key、外部数据库或真实模型输出。
-
-## V11 Archive Closeout
-
-- [x] V11 change 包含 proposal、design、tasks，以及 `grounded-answer-model-provider`、`agent-loop-tool-execution`、`chat-api` 和 `repo-query-understanding-rag` spec delta。
-- [x] `httpx>=0.27.0` 已放入 `[project].dependencies`，作为可选 OpenAI-compatible provider 的运行时依赖。
-- [x] 默认 provider 为 deterministic fake provider，真实 OpenAI-compatible provider 必须显式配置。
-- [x] `/chat` 顶层响应 contract 不新增必需字段。
-- [x] citation、fallback、provider audit 和脱敏边界已有测试覆盖。
-- [x] `openspec validate --all` 通过。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过。
-- [x] `git diff --check` 通过。
-- [x] 内部 self-review 和外部 review 均已处理。
-- [x] V11 active change 已归档到 `openspec/changes/archive/2026-05-26-v11-grounded-answer-model-provider-boundary/`。
-
-## V12 Implementation Review
-
-- [x] OpenSpec change 包含 proposal、design、tasks，以及 `repo-query-understanding-rag` / `agent-loop-tool-execution` spec delta。
-- [x] deterministic rewrite 永远保留 `original` variant，额外 variants 最多 3 条，id 和模板顺序稳定。
-- [x] rewrite 不改变 route、权限决策或整体 `question_type`。
-- [x] rerank 只作用于 retrieval results 层，Evidence Pack budget/summary 和 grounded answer citation validation 语义不变。
-- [x] 每个 rewrite variant 都执行 hybrid retrieval；不得因 original variant 为空跳过 rewrite-only variants。
-- [x] 原始 query 的 path/symbol/exact token 直接命中在容量允许时不被 variant-only 结果挤掉。
-- [x] symbol/path 查询保持 lexical anchor，embedding-only 弱命中不得绕过 grep-first baseline。
-- [x] rewrite/rerank audit 只进入内部 trace，不进入 `/chat` 顶层字段或完整 `tool_calls`。
-- [x] capability status 区分 deterministic rewrite/rerank 已实现和真实 LLM rewrite/rerank 未实现。
-- [x] 默认验证不依赖真实网络、API key 或真实模型输出。
-
-## V12 Archive Closeout Gate
-
-- [x] 使用 `.harness/templates/stage_closeout.md` 更新 PROGRESS、HANDOFF 和 harness 状态。
-- [x] V12 implementation commit 已创建：`aaddad2 Add V12 query rewrite rerank`。
-- [x] V12 review follow-up commit 已创建：`4553b11 Fix V12 review follow-ups`。
-- [x] V12 active change 已归档到 `openspec/changes/archive/2026-05-27-v12-query-rewrite-rerank/`。
-- [x] 长期 specs 已在 archive 前同步。
-- [x] `openspec list` 显示 no active changes。
-- [x] `openspec validate --all` 通过。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过。
-- [x] `git diff --check` 通过。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1` 通过。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1` 通过。
-- [x] `README.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 不再把已归档阶段描述为 active。
-- [x] 下一阶段只写成 planned / next，不写成 implemented。
+- V17 Verification Runner 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`。
+- V16 Safe Patch Authoring 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`。
+- V1-V17 active changes 均已归档；历史 review 明细保留在 git history 和 archived OpenSpec change 中。

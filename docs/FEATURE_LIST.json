@@ -378,5 +378,32 @@
     ],
     "passes": true,
     "notes": "由 tests/test_verification_runner.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+  },
+  {
+    "id": "v18-patch-verify-loop",
+    "category": "agent",
+    "description": "AgentLoop 支持明确组合确认下的 Patch + Verify Loop，先受控 apply pending patch，再运行白名单验证并返回组合摘要。",
+    "steps": [
+      "创建 pending patch",
+      "发送明确组合确认，例如 确认 patch patch_xxx 并运行验证",
+      "检查 AgentLoop 先通过 patch_apply 权限审批链路应用 patch",
+      "检查 apply 成功后使用独立 verification context 运行 verification_run",
+      "检查 /chat 返回 apply 摘要、验证摘要和安全 tool_calls"
+    ],
+    "acceptance_criteria": [
+      "AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent（含组合确认）、Verification intent、capability-status、repo_search/chat_only",
+      "组合确认优先级为 组合确认 > 纯 verification intent > capability-status/repo_search",
+      "组合确认必须同时解析 patch_id 和 verification label；缺失 label、半解析或只能解析 patch_id 时不得默认补 verify，不得 apply",
+      "verification label 只接受 verify、pytest 和 ruff，拒绝附加参数、管道、重定向、环境变量赋值、任意 shell 文本和 ruff --fix",
+      "非法组合请求整体拒绝，不执行 patch_apply，不触发 verification_run",
+      "单独 确认 patch <patch_id> 仍保持 apply-only 行为，不自动验证",
+      "apply 成功后才生成独立 verification ToolInvocationContext，不得复用 patch context",
+      "apply 失败、过期、hash mismatch、跨用户、跨 repo 或 scope invalid 时不运行验证",
+      "组合响应不泄露完整 diff、完整 stdout/stderr、本机绝对路径、DB 路径、环境变量、API key、完整 internal trace、Evidence Pack 或 provider output",
+      "V18 不持久化 verification result，不根据失败自动生成 patch，不再次 apply，不创建 worktree，不 commit/push",
+      "/chat 不新增必需顶层字段"
+    ],
+    "passes": true,
+    "notes": "由 tests/test_patch_authoring.py、tests/test_verification_runner.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
   }
 ]

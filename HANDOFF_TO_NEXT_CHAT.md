@@ -4,15 +4,15 @@
 
 ```text
 当前基线分支：main
-当前工作分支：main
-当前活跃 OpenSpec change：无
+当前工作分支：feature/v18-patch-verify-loop
+当前活跃 OpenSpec change：v18-patch-verify-loop
 最近完成阶段：V17 Verification Runner（已实现、review、提交、归档并 fast-forward 合并到 main）
-当前阶段：无 active stage；下一阶段建议从 V18 Patch + Verify Loop 规划开始
+当前阶段：V18 Patch + Verify Loop 正在实现
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V17 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。默认 fake patch provider 不生成真实 diff；真实 provider 必须显式配置。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行，公开响应只返回截断脱敏摘要。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V17 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行。V18 正在加入 Patch + Verify Loop：明确组合确认先 apply pending patch，apply 成功后再用独立 verification context 运行白名单验证。
 
-后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V17 当前只实现独立 Verification Runner，不代表 Patch + Verify Loop、worktree、subagents、connectors 或 always-on 已实现。
+后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V18 只实现明确组合确认下的 apply 后 verify，不代表 Persistent Audit / Recovery、worktree、subagents、connectors 或 always-on 已实现。
 
 新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
@@ -72,9 +72,11 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
   -> PatchManager(proposal/apply confirmation)
+  -> PatchVerifyLoop(explicit apply+verify confirmation)
+  -> VerificationRunner(whitelisted pytest/ruff/verify)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag / patch_apply) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -84,7 +86,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 ## V16 实现摘要
 
 - OpenSpec change 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`，包含 proposal、design、tasks，以及 `safe-patch-authoring` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
-- 已同步长期 specs，新增 `openspec/specs/safe-patch-authoring/spec.md`；`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已切回暂无 active stage。
+- 已同步长期 specs，新增 `openspec/specs/safe-patch-authoring/spec.md`；V16 当时的 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已在归档后切回暂无 active stage。
 - 新增 `app/patching/`：
   - `parser.py`：明确 patch proposal intent 和 `确认/应用/apply/confirm patch <patch_id>` 确认语法。
   - `provider.py`：Patch Authoring provider 边界，默认 fake provider 不生成真实 diff，ModelProvider wrapper 可解析结构化 JSON diff。
@@ -135,7 +137,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 - OpenSpec change 已归档到 `openspec/changes/archive/2026-05-30-v14-long-task-react-subagents/`，包含 proposal、design、tasks 和 `long-task-agent-execution` / `agent-loop-tool-execution` / `chat-api` / `harness-development-workflow` spec delta。
 - 长期 specs 已同步，新增 `openspec/specs/long-task-agent-execution/spec.md`。
-- V14 archive 后 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 曾切回暂无 active stage；V15 archive 后当前也已切回暂无 active stage。
+- V14 archive 后 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 曾切回暂无 active stage；V15 archive 后当时也已切回暂无 active stage。
 - 新增 `app/longtask/`：
   - `parser.py`：解析明确长任务自然语言指令。
   - `planner.py`：deterministic task-type templates，并支持显式真实 provider 的受控 JSON 增强和 fallback。
@@ -309,9 +311,13 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- 当前 active change：无。
-- `.harness/allowed_files.md` 已重置为无 active stage；下一阶段开始前必须先同步新的写入边界。
-- `.harness/review_checklist.md` 已加入 V17 archive closeout gate，并保留 V17 及更早历史 review/closeout 记录。
+- 当前 active change：`v18-patch-verify-loop`。
+- `.harness/allowed_files.md` 已同步 V18 写入边界。
+- `.harness/review_checklist.md` 已同步 V18 planning / implementation gate。
+- V18 OpenSpec change 已创建：`openspec/changes/v18-patch-verify-loop/`，包含 stage planning、proposal、design、tasks，以及 `patch-verify-loop`、`safe-patch-authoring`、`verification-runner`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
+- V18 runtime 新增组合确认解析、verification label parser、AgentLoop Patch + Verify Loop 编排；组合确认必须完整解析 patch id 和 verification label，非法组合请求整体拒绝且不 apply。
+- V18 targeted RED 已确认缺少 `parse_patch_verify_confirmation` 和 `parse_verification_label`；targeted GREEN 8 passed；相关回归 `pytest tests/test_patch_authoring.py tests/test_verification_runner.py tests/test_agent_harness_kernel.py tests/test_chat_api.py -q`：94 passed；`openspec validate --all`：13 passed；默认 `scripts/verify.ps1` 通过，`pytest` 178 passed, 1 skipped，`ruff check .` All checks passed。
+- V18 外部 review 已处理并确认无阻塞：spec delta 文件实际存在；README 和 HANDOFF 当前链路已补齐 `PatchManager -> PatchVerifyLoop -> VerificationRunner`。
 - V17 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`，长期 specs 已同步，新增 `openspec/specs/verification-runner/spec.md`。
 - V17 runtime 新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
@@ -373,9 +379,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 继续 V17 收口：进行 self-review / external review。
-2. 若 review 无新增阻塞，进入 commit / archive 决策。
-3. 不要把 V18+ 的 Patch + Verify Loop、失败修复循环、持久审计或 worktree 隔离归入 V17 当前能力。
+1. 继续 V18 收口：创建 implementation commit，然后进入 archive 决策。
+2. Archive 前再次确认 `openspec validate --all`、默认 verify、diff check 和 stage docs 状态。
+3. 不要把 V19 Persistent Audit / Recovery、V20 Worktree Isolation 或真实 subagents 归入 V18 当前能力。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

@@ -6,7 +6,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V17 已归档；当前无 active OpenSpec change，当前分支为 `main`，Verification Runner 已实现、review、提交、归档并合并。
+- 当前主线能力：V1-V17 已归档；当前 active OpenSpec change 为 `v18-patch-verify-loop`，当前工作分支为 `feature/v18-patch-verify-loop`，V18 Patch + Verify Loop 正在实现。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -14,8 +14,9 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 当前 Assistant Control Surface：通过现有 `/chat.answer` 返回只读助手状态，聚合当前能力、Memory 计数和 Long Task 摘要；不新增 API、不新增 `/chat` 顶层字段、不调用 `repo_rag`、不写 memory、不创建任务。
 - 当前 Safe Patch Authoring：通过明确 patch 请求基于 repo evidence 生成 pending patch proposal；默认 fake patch provider 不生成真实 diff，显式配置真实 provider 后可返回结构化 unified diff；用户必须明确 `确认 patch <patch_id>` / `应用 patch <patch_id>` 才能通过受控 `patch_apply` 写入。
 - 当前 Verification Runner：通过明确验证请求运行固定白名单标签 `pytest`、`ruff` 或 `verify`，其中 `verify` 映射到 `scripts/verify.ps1`；执行必须经过 `verification_run` 权限/审批边界和 `ToolExecutor`，公开响应只返回截断脱敏摘要。
+- 当前 Patch + Verify Loop：通过明确组合确认请求串联 pending patch apply 与白名单验证；组合请求必须同时包含 patch id 和验证标签，解析失败整体拒绝且不 apply；apply 成功后才使用独立 verification context 运行验证。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolInvocationContext` 和统一 `ToolExecutor`。
-- 当前默认不接真实 LLM，不执行任意 shell，不自动修改代码，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；V17 仅允许明确验证请求下的白名单验证命令；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
+- 当前默认不接真实 LLM，不执行任意 shell，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；V17 仅允许明确验证请求下的白名单验证命令；V18 仅允许明确组合确认下的 apply 后 verify；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
 - 当前不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动运行测试或 commit；V16 仅允许用户明确确认后的受控 patch apply。
 
@@ -84,6 +85,15 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - Apply 只接受明确确认语法：`确认 patch <patch_id>`、`应用 patch <patch_id>`、`confirm patch <patch_id>`、`apply patch <patch_id>`。
 - `patch_apply` 是 V16 唯一写入工具，必须经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`，只写 diff 中的 repo 内相对路径。
 - V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell，不实现 Patch + Verify Loop。
+
+### Patch + Verify Loop
+
+- 通过明确组合确认触发，例如 `确认 patch <patch_id> 并运行验证`、`应用 patch <patch_id> 并运行 pytest`、`confirm patch <patch_id> and run verify`。
+- 组合确认必须同时解析出 `patch_id` 和 verification label；缺失 label、半解析、非法 label、附加参数或 shell 语法时整体拒绝，不执行 `patch_apply`。
+- 单独 `确认 patch <patch_id>` 仍保持 V16 apply-only 行为，不自动验证。
+- apply 成功后才生成独立 `ToolInvocationContext(tool_name="verification_run", intent="verification_run", command_label=..., confirmed=True, scope_valid=...)` 并运行白名单验证。
+- apply 失败、过期、hash mismatch、跨用户或跨 repo 时不运行验证。
+- 验证失败只返回失败摘要和下一步建议；V18 不自动生成新 patch、不再次 apply、不持久化 verification result、不创建 worktree、不 commit/push。
 
 ### Safe Repository Tools
 
@@ -182,9 +192,12 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> MemoryManager(STM/PREF/LTM command/read audit)
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
+  -> PatchManager(proposal/apply confirmation)
+  -> PatchVerifyLoop(explicit apply+verify confirmation)
+  -> VerificationRunner(whitelisted pytest/ruff/verify)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -300,6 +313,12 @@ V17 在 AgentLoop 前段加入 Verification Runner。明确验证请求通过固
 
 `verification_run` 注册为 `read_only=False`、`risk="write"`、`requires_approval=True`，只有有效 verification context 才能走 `ask -> ApprovalGate pass`，并通过 `ToolExecutor.verification_run(...)` 执行。runner 使用 argv list 和 `shell=False`，cwd 固定为 resolved `repo_path`，stdout/stderr 各最多 4000 字符，`/chat.answer` 验证输出摘要总计最多 6000 字符，并脱敏本机绝对路径、`.repopilot/...` 和常见 secret。V17 不自动串联 patch apply，不根据失败生成 patch，不持久化 verification result，不创建 worktree，不 commit/push。
 
+### V18：Patch + Verify Loop
+
+V18 在 AgentLoop Patch command 分支中加入明确组合确认处理，优先级为 `组合确认 > 纯 verification intent > capability-status/repo_search`。合法组合确认先执行 pending patch apply；只有 apply 成功后才创建独立 verification context 并运行 `pytest`、`ruff` 或 `verify` 白名单验证。
+
+V18 保持 `/chat` contract 不变，组合结果只进入现有 `answer` 和安全 `tool_calls` 摘要。组合请求缺失验证标签、半解析、非法 label、附加参数或 shell 语法时整体拒绝，不 apply patch。V18 不持久化验证结果、不生成后续 patch、不创建 worktree、不 commit/push。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -366,9 +385,9 @@ ChatService
 
 ## 路线图
 
-已归档至 V17：Verification Runner。当前无 active change。后续路线：
+已归档至 V17：Verification Runner。当前 active change：V18 Patch + Verify Loop。后续路线：
 
-- V18：Patch + Verify Loop。串联 patch、apply、verify、失败摘要、修复建议和再次 patch，让代码改动形成可恢复闭环。
+- V18：Patch + Verify Loop。串联明确组合确认下的 patch apply 和白名单 verify，返回失败摘要与下一步建议；不做持久恢复或 worktree。
 - V19：Persistent Audit / Recovery。用轻量 SQLite 持久化关键 trace、patch attempt、verification result 和 task event，支持跨 session 恢复。
 - V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
 

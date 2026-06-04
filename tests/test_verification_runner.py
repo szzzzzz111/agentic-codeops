@@ -6,6 +6,7 @@ from app.verification.runner import (
     VerificationRunResult,
     format_verification_answer,
     parse_verification_request,
+    parse_verification_label,
     redact_verification_output,
     run_verification_command,
 )
@@ -30,6 +31,18 @@ def test_parser_rejects_arguments_shell_syntax_and_mutating_commands() -> None:
 
     for message in rejected_messages:
         parsed = parse_verification_request(message)
+        assert parsed.handled is True
+        assert parsed.rejected is True
+
+
+def test_patch_verify_label_parser_uses_same_whitelist_boundaries() -> None:
+    assert parse_verification_label("验证").command_label == "verify"
+    assert parse_verification_label("verify").command_label == "verify"
+    assert parse_verification_label("pytest").command_label == "pytest"
+    assert parse_verification_label("ruff").command_label == "ruff"
+
+    for value in ("", "pytest tests/test_chat_api.py", "ruff --fix", "verify | more"):
+        parsed = parse_verification_label(value)
         assert parsed.handled is True
         assert parsed.rejected is True
 

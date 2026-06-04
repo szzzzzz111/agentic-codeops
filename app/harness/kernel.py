@@ -8,11 +8,12 @@ from app.longtask.manager import LongTaskManager
 from app.longtask.planner import LongTaskPlanner
 from app.memory.manager import MemoryManager
 from app.patching.manager import PatchManager
+from app.patching.parser import parse_patch_verify_confirmation
 from app.patching.types import ToolInvocationContext
 from app.providers.model_provider import ModelProvider, load_model_provider_from_env
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
 from app.rag.repo_rag import HybridRepoRetriever
-from app.tools.tool_executor import ToolExecutor
+from app.tools.tool_executor import ToolExecutionResult, ToolExecutor
 from app.verification.runner import (
     command_argv,
     format_verification_answer,
@@ -70,8 +71,9 @@ VECTOR_CAPABILITY_STATUS_ANSWER = (
 )
 V16_CAPABILITY_STATUS_ANSWER = (
     "V16 提供 Safe Patch Authoring：可基于仓库证据生成 patch proposal，"
-    "并在明确确认后受控 apply；V17 提供独立 Verification Runner，"
-    "当前未实现 Patch + Verify Loop、Persistent Audit / Recovery 或 Worktree Isolation。"
+    "并在明确确认后受控 apply；V17 提供独立 Verification Runner；"
+    "V18 提供明确组合确认下的 Patch + Verify Loop；"
+    "当前未实现 Persistent Audit / Recovery 或 Worktree Isolation。"
 )
 
 
@@ -128,6 +130,20 @@ class AgentLoopResult:
             "related_files": self.related_files,
             "tool_calls": self.tool_calls,
         }
+
+
+@dataclass(frozen=True)
+class _PatchLoopApplyResult:
+    completed: object
+    tool_result: ToolExecutionResult
+    trace_events: list[TraceEvent]
+
+
+@dataclass(frozen=True)
+class _PatchLoopVerificationResult:
+    answer: str
+    tool_result: ToolExecutionResult
+    trace_events: list[TraceEvent]
 
 
 class RequestRouter:
@@ -429,6 +445,16 @@ class AgentLoop:
                         summary="assistant_status=returned",
                     )
                 ],
+            )
+
+        patch_verify_confirmation = parse_patch_verify_confirmation(request.message)
+        if patch_verify_confirmation.handled:
+            return self._run_patch_verify_loop(
+                request=request,
+                patch_id=patch_verify_confirmation.patch_id,
+                command_label=patch_verify_confirmation.command_label,
+                rejected=patch_verify_confirmation.rejected,
+                reason=patch_verify_confirmation.reason,
             )
 
         patch_confirmation = self.patch_manager.prepare_apply(
@@ -919,6 +945,261 @@ class AgentLoop:
             ],
         )
 
+    def _run_patch_verify_loop(
+        self,
+        *,
+        request: AgentLoopRequest,
+        patch_id: str,
+        command_label: str,
+        rejected: bool,
+        reason: str,
+    ) -> AgentLoopResult:
+        trace_events = [
+            TraceEvent(
+                event_type="patch_verify_loop_started",
+                status="error" if rejected else "ok",
+                summary=(
+                    f"patch_id={patch_id}; command_label={command_label}; "
+                    f"reason={reason}"
+                ),
+            )
+        ]
+        if rejected or not patch_id or not command_label:
+            return AgentLoopResult(
+                answer=unsupported_verification_answer(),
+                trace_events_internal=trace_events,
+            )
+
+        patch_command = self.patch_manager.prepare_apply(
+            user_id=request.user_id,
+            repo_path=request.repo_path,
+            message=f"确认 patch {patch_id}",
+        )
+        if patch_command.context is None or not patch_command.diff_text:
+            return AgentLoopResult(
+                answer=patch_command.answer,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="patch_command",
+                        status="error",
+                        summary=patch_command.audit_summary,
+                    ),
+                ],
+            )
+
+        patch_result = self._apply_patch_for_loop(
+            request=request,
+            command=patch_command,
+            trace_events=trace_events,
+        )
+        apply_result = getattr(patch_result.tool_result, "patch_apply_result", None)
+        if patch_result.tool_result.error or apply_result is None or not apply_result.applied:
+            failed_answer = getattr(patch_result.completed, "answer", "") or DENY_ANSWER
+            return AgentLoopResult(
+                answer=failed_answer,
+                tool_calls=[patch_result.tool_result.call_summary()],
+                trace_events_internal=patch_result.trace_events,
+            )
+
+        verification_result = self._verify_after_patch_apply(
+            request=request,
+            command_label=command_label,
+            trace_events=patch_result.trace_events,
+        )
+        return AgentLoopResult(
+            answer=_format_patch_verify_answer(
+                patch_result.completed.answer,
+                verification_result.answer,
+                verification_result.tool_result.audit_summary,
+            ),
+            tool_calls=[
+                patch_result.tool_result.call_summary(),
+                verification_result.tool_result.call_summary(),
+            ],
+            trace_events_internal=verification_result.trace_events,
+        )
+
+    def _apply_patch_for_loop(
+        self,
+        *,
+        request: AgentLoopRequest,
+        command,
+        trace_events: list[TraceEvent],
+    ):
+        context = command.context
+        tool_spec = self.tool_registry.get(PATCH_APPLY_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=PATCH_APPLY_TOOL,
+            context=context,
+        )
+        next_events = [
+            *trace_events,
+            TraceEvent(
+                event_type="patch_command",
+                status="ok",
+                summary=command.audit_summary,
+            ),
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=PATCH_APPLY_TOOL,
+                status="ok" if permission_decision.status == "ask" else "error",
+                summary=(
+                    f"tool={PATCH_APPLY_TOOL}; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            ),
+        ]
+        if permission_decision.status == "deny" or not self.approval_gate.evaluate(
+            permission_decision,
+            context=context,
+        ):
+            tool_result = ToolExecutionResult(
+                tool_name=PATCH_APPLY_TOOL,
+                parameters={},
+                error=permission_decision.reason,
+            )
+            return _PatchLoopApplyResult(
+                completed=command,
+                tool_result=tool_result,
+                trace_events=[
+                    *next_events,
+                    TraceEvent(
+                        event_type="tool_rejected",
+                        tool_name=PATCH_APPLY_TOOL,
+                        status="error",
+                        summary=f"reason={permission_decision.reason}",
+                    ),
+                ],
+            )
+
+        tool_result = self.tool_executor.patch_apply(
+            repo_path=request.repo_path,
+            diff_text=command.diff_text,
+        )
+        apply_result = getattr(tool_result, "patch_apply_result", None)
+        completed = self.patch_manager.complete_apply(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            patch_id=command.patch_id or "",
+            result=apply_result,
+        )
+        status = "ok" if tool_result.error is None else "error"
+        return _PatchLoopApplyResult(
+            completed=completed,
+            tool_result=tool_result,
+            trace_events=[
+                *next_events,
+                TraceEvent(
+                    event_type="tool_result",
+                    tool_name=PATCH_APPLY_TOOL,
+                    status=status,
+                    summary=f"result_count={len(tool_result.results)}",
+                ),
+                TraceEvent(
+                    event_type="patch_apply_summarized",
+                    tool_name=PATCH_APPLY_TOOL,
+                    status=status,
+                    summary=completed.audit_summary,
+                ),
+                TraceEvent(
+                    event_type="patch_verify_apply_summarized",
+                    tool_name=PATCH_APPLY_TOOL,
+                    status=status,
+                    summary=completed.audit_summary,
+                ),
+            ],
+        )
+
+    def _verify_after_patch_apply(
+        self,
+        *,
+        request: AgentLoopRequest,
+        command_label: str,
+        trace_events: list[TraceEvent],
+    ):
+        context = ToolInvocationContext(
+            tool_name=VERIFICATION_RUN_TOOL,
+            user_id=request.user_id,
+            intent="verification_run",
+            command_label=command_label,
+            confirmed=True,
+            scope_valid=_valid_repo_scope(request.repo_path),
+        )
+        tool_spec = self.tool_registry.get(VERIFICATION_RUN_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=VERIFICATION_RUN_TOOL,
+            context=context,
+        )
+        next_events = [
+            *trace_events,
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=VERIFICATION_RUN_TOOL,
+                status="ok" if permission_decision.status == "ask" else "error",
+                summary=(
+                    f"tool={VERIFICATION_RUN_TOOL}; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            ),
+        ]
+        if permission_decision.status == "deny" or not self.approval_gate.evaluate(
+            permission_decision,
+            context=context,
+        ):
+            tool_result = ToolExecutionResult(
+                tool_name=VERIFICATION_RUN_TOOL,
+                parameters={"command_label": command_label},
+                error=permission_decision.reason,
+            )
+            return _PatchLoopVerificationResult(
+                answer=DENY_ANSWER,
+                tool_result=tool_result,
+                trace_events=[
+                    *next_events,
+                    TraceEvent(
+                        event_type="tool_rejected",
+                        tool_name=VERIFICATION_RUN_TOOL,
+                        status="error",
+                        summary=f"reason={permission_decision.reason}",
+                    ),
+                ],
+            )
+
+        tool_result = self.tool_executor.verification_run(
+            repo_path=request.repo_path,
+            command_label=command_label,
+        )
+        answer = _verification_answer_from_tool_result(tool_result)
+        status = (
+            "error"
+            if tool_result.audit_summary.get("status") not in {"success", ""}
+            else "ok"
+        )
+        return _PatchLoopVerificationResult(
+            answer=answer,
+            tool_result=tool_result,
+            trace_events=[
+                *next_events,
+                TraceEvent(
+                    event_type="tool_result",
+                    tool_name=VERIFICATION_RUN_TOOL,
+                    status="error" if tool_result.error else "ok",
+                    summary=f"status={tool_result.audit_summary.get('status', '')}",
+                ),
+                TraceEvent(
+                    event_type="patch_verify_verification_summarized",
+                    tool_name=VERIFICATION_RUN_TOOL,
+                    status=status,
+                    summary=_verification_trace_summary(tool_result.audit_summary),
+                ),
+            ],
+        )
+
     def _run_verification(
         self,
         *,
@@ -1238,6 +1519,18 @@ def _verification_answer_from_tool_result(tool_result) -> str:
         truncated=str(audit.get("truncated", "false")) == "true",
     )
     return format_verification_answer(result)
+
+
+def _format_patch_verify_answer(
+    apply_answer: str,
+    verification_answer: str,
+    verification_audit: dict[str, str | int | float],
+) -> str:
+    status = str(verification_audit.get("status", ""))
+    suggestion = ""
+    if status and status != "success":
+        suggestion = " 下一步建议：请根据验证摘要生成新的 patch proposal 后再明确确认。"
+    return f"{apply_answer} 验证结果：{verification_answer}{suggestion}"
 
 
 def _verification_trace_summary(
