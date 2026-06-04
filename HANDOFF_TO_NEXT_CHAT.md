@@ -5,12 +5,12 @@
 ```text
 当前基线分支：main
 当前工作分支：feature/v18-patch-verify-loop
-当前活跃 OpenSpec change：v18-patch-verify-loop
-最近完成阶段：V17 Verification Runner（已实现、review、提交、归档并 fast-forward 合并到 main）
-当前阶段：V18 Patch + Verify Loop 正在实现
+当前活跃 OpenSpec change：无
+最近完成阶段：V18 Patch + Verify Loop（已实现、review、提交并归档）
+当前阶段：archive 后验证 / closeout 中
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V17 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行。V18 正在加入 Patch + Verify Loop：明确组合确认先 apply pending patch，apply 成功后再用独立 verification context 运行白名单验证。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V18 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行。V18 已加入 Patch + Verify Loop：明确组合确认先 apply pending patch，apply 成功后再用独立 verification context 运行白名单验证。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V18 只实现明确组合确认下的 apply 后 verify，不代表 Persistent Audit / Recovery、worktree、subagents、connectors 或 always-on 已实现。
 
@@ -311,19 +311,22 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 当前 Harness 状态
 
-- 当前 active change：`v18-patch-verify-loop`。
-- `.harness/allowed_files.md` 已同步 V18 写入边界。
-- `.harness/review_checklist.md` 已同步 V18 planning / implementation gate。
-- V18 OpenSpec change 已创建：`openspec/changes/v18-patch-verify-loop/`，包含 stage planning、proposal、design、tasks，以及 `patch-verify-loop`、`safe-patch-authoring`、`verification-runner`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
+- 当前 active change：无。
+- `.harness/allowed_files.md` 已切回无 active stage。
+- `.harness/review_checklist.md` 已加入 V18 archive closeout gate。
+- V18 OpenSpec change 已归档到 `openspec/changes/archive/2026-06-04-v18-patch-verify-loop/`，长期 specs 已同步，新增 `openspec/specs/patch-verify-loop/spec.md`。
 - V18 runtime 新增组合确认解析、verification label parser、AgentLoop Patch + Verify Loop 编排；组合确认必须完整解析 patch id 和 verification label，非法组合请求整体拒绝且不 apply。
 - V18 targeted RED 已确认缺少 `parse_patch_verify_confirmation` 和 `parse_verification_label`；targeted GREEN 8 passed；相关回归 `pytest tests/test_patch_authoring.py tests/test_verification_runner.py tests/test_agent_harness_kernel.py tests/test_chat_api.py -q`：94 passed；`openspec validate --all`：13 passed；默认 `scripts/verify.ps1` 通过，`pytest` 178 passed, 1 skipped，`ruff check .` All checks passed。
 - V18 外部 review 已处理并确认无阻塞：spec delta 文件实际存在；README 和 HANDOFF 当前链路已补齐 `PatchManager -> PatchVerifyLoop -> VerificationRunner`。
+- V18 implementation commit：`e76807d Add V18 patch verify loop`。
+- V18 archive：`openspec archive v18-patch-verify-loop -y` 已完成。
+- V18 archive 后验证：`openspec validate --all` 13 passed；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 178 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1` 通过。
 - V17 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`，长期 specs 已同步，新增 `openspec/specs/verification-runner/spec.md`。
 - V17 runtime 新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
 - V16 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`，长期 specs 已同步。
 - V15 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，长期 specs 已同步。
-- V1-V17 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景。
+- V1-V18 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景。
 
 ## V10 实现摘要
 
@@ -379,8 +382,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 继续 V18 收口：创建 implementation commit，然后进入 archive 决策。
-2. Archive 前再次确认 `openspec validate --all`、默认 verify、diff check 和 stage docs 状态。
+1. 继续 V18 closeout：创建 archive commit，然后进入 merge / push 决策。
+2. 若 merge 后无阻塞，运行 merge 后默认 verify 和 closeout gate。
 3. 不要把 V19 Persistent Audit / Recovery、V20 Worktree Isolation 或真实 subagents 归入 V18 当前能力。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。

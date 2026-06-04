@@ -6,11 +6,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 当前基线分支：`main`
 - 当前工作分支：`feature/v18-patch-verify-loop`
-- 当前阶段：V18 Patch + Verify Loop 正在实现；active OpenSpec change 为 `v18-patch-verify-loop`
+- 当前阶段：V18 Patch + Verify Loop 已实现、review、提交并归档；当前无 active OpenSpec change
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 Assistant Control Surface、Safe Patch Authoring、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前 active change 为 `v18-patch-verify-loop`；V10-V17 changes 已归档；V17 归档路径为 `openspec/changes/archive/2026-06-03-v17-verification-runner/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10-V18 changes 已归档；V18 归档路径为 `openspec/changes/archive/2026-06-04-v18-patch-verify-loop/`；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -143,6 +143,11 @@ LLMGateway 设计备忘：
 - 2026-06-04，V18 OpenSpec 全量验证：`openspec validate --all`：13 passed, 0 failed。
 - 2026-06-04，V18 默认验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 178 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-06-04，V18 外部 review：已处理外部 P2 反馈；确认 spec delta 实际存在，补齐 README 和 HANDOFF 当前链路中的 `PatchManager -> PatchVerifyLoop -> VerificationRunner`；外部 review 随后确认无阻塞问题。
+- 2026-06-04，V18 implementation commit：已创建 `e76807d Add V18 patch verify loop`。
+- 2026-06-04，V18 archive：`openspec archive v18-patch-verify-loop -y` 已完成；长期 specs 已同步，新增 `openspec/specs/patch-verify-loop/spec.md`；归档路径为 `openspec/changes/archive/2026-06-04-v18-patch-verify-loop/`。
+- 2026-06-04，V18 archive 后 OpenSpec 全量验证：`openspec validate --all`：13 passed, 0 failed。
+- 2026-06-04，V18 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 178 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
+- 2026-06-04，V18 archive closeout：`powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
 - 2026-05-31，V15 OpenSpec 计划验证：`openspec validate v15-assistant-control-surface`：通过。
 - 2026-05-31，V15 Assistant Control Surface targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：10 passed。
 - 2026-05-31，V15 OpenSpec 全量验证：`openspec validate --all`：10 passed, 0 failed。
@@ -410,8 +415,8 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：完成 V18 Patch + Verify Loop 默认验证、self-review 和外部 review 后，再进入 commit / archive 决策。
-- 近期三阶段默认选择：V18 Patch + Verify Loop、V19 Persistent Audit / Recovery、V20 Worktree Isolation。
+- 当前建议：完成 V18 archive 后验证和 closeout gate 后，再进入 merge / push 决策。
+- 近期三阶段默认选择：V19 Persistent Audit / Recovery、V20 Worktree Isolation，之后再规划真实 subagents/connectors/notifications。
 - 后续真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；不要写成当前 runtime 已实现能力。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 
