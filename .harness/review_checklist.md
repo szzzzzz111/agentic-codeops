@@ -1,6 +1,6 @@
 # 当前 Review 清单
 
-当前活跃阶段：V19 Persistent Audit / Recovery archive/merge closeout。
+当前活跃阶段：无 active implementation stage。
 
 ## V19 Planning / OpenSpec Gate
 
@@ -36,8 +36,8 @@
 - [x] 发现 debt 已修复或记录为 blocker，并沉淀到 `docs/PROGRESS.md` 与 `HANDOFF_TO_NEXT_CHAT.md`，不只留在聊天里。
 - [x] `.harness/review_checklist.md` 已记录 Stage Debt Sweep evidence/gate。
 - [x] `openspec/specs/**/spec.md` 不保留 `TBD`、`TODO`、`created by archiving change` 这类 Purpose 占位。
-- [ ] V19 merge/push 后 durable docs 必须更新真实 `main`/remote 状态、commit hash、验证结果和下一阶段建议。
-- [ ] V19 branch cleanup/retention 必须作为 closeout checklist 显式项执行并记录。
+- [x] V19 merge/push 后 durable docs 已更新真实 `main`/remote 状态、commit hash、验证结果和下一阶段建议。
+- [x] V19 branch cleanup/retention 已作为 closeout checklist 显式项执行并记录。
 
 ## V19 Stage Debt Sweep Evidence
 
@@ -49,6 +49,7 @@
 - [x] Adjacent runtime path sweep：patching、verification、longtask、AgentLoop/API tests 已覆盖 V19 audit hook 对既有路径的影响。
 - [x] Additional documentation debt fixed：`docs/FEATURE_LIST.json` 已修复为可解析 JSON，并将 V19 acceptance 更新为通过状态。
 - [x] Historical V18 doc drift fixed：V18 archive merge hash `3c7a8b3...` 已标注为历史归档记录，并由 V18 closeout debt commit `8b93330` supersede。
+- [x] Post-merge evidence：`main`、`agentic-codeops/main` 和本地 `feature/v19-persistent-audit-recovery` 均指向 `add702d62bcf737925b6418d3c9b9fb258e7ff35`；feature branch fully merged，并按审计惯例保留。
 
 ## V18 Closeout Baseline
 

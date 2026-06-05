@@ -1,8 +1,8 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：V19 Persistent Audit / Recovery archive/merge closeout。
+当前活跃阶段：无 active implementation stage。
 
-V19 Persistent Audit / Recovery 已实现、通过 external review 并归档到 `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/`；当前 closeout 正在准备 merge/push。V19 merge 基线为 `main` commit `8b93330`。V19 必须聚焦持久审计与只读恢复，不得把 V20 Worktree Isolation、真实 subagents/connectors/notifications/always-on assistant 或流程 skill 写成 runtime 能力。
+V19 Persistent Audit / Recovery 已实现、通过 external review、归档到 `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/`，并 fast-forward 合并推送到 `agentic-codeops/main` commit `add702d62bcf737925b6418d3c9b9fb258e7ff35`。下一阶段开始前必须重新同步本文件和 `.harness/review_checklist.md`。
 
 ## 当前允许修改
 
@@ -13,28 +13,9 @@ V19 Persistent Audit / Recovery 已实现、通过 external review 并归档到 
 - `docs/PROGRESS.md`
 - `docs/FEATURE_LIST.json`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/**`
-- `openspec/specs/persistent-audit-recovery/spec.md`
-- `openspec/specs/agent-loop-tool-execution/spec.md`
-- `openspec/specs/chat-api/spec.md`
-- `openspec/specs/safe-patch-authoring/spec.md`
-- `openspec/specs/verification-runner/spec.md`
-- `openspec/specs/long-task-agent-execution/spec.md`
-- `openspec/specs/harness-development-workflow/spec.md`
-- `app/audit/**`
-- `app/harness/kernel.py`
-- `app/tools/tool_executor.py`
-- `app/verification/**`
-- `app/patching/**`
-- `app/longtask/**`
-- `tests/test_persistent_audit.py`
-- `tests/test_agent_harness_kernel.py`
-- `tests/test_chat_api.py`
-- `tests/test_patch_authoring.py`
-- `tests/test_verification_runner.py`
-- `tests/test_long_task.py`
-- `scripts/check_stage_docs.ps1`
-- `scripts/check_stage_closeout.ps1`
+- `docs/FEATURE_LIST.json`
+
+上述路径仅用于 post-merge handoff 文档修正。V20 或其他新阶段开始前必须替换为该阶段自己的 allowed files。
 
 ## 可选流程文档修改
 
