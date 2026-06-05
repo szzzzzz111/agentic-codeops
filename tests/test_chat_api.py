@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from fastapi.testclient import TestClient
 
@@ -231,7 +232,9 @@ def test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state
     assert "tasks.sqlite3" not in response.text
     assert "evidence_pack" not in response.text
     assert "provider" not in response.text
-    assert not (tmp_path / ".repopilot").exists()
+    assert (tmp_path / ".repopilot" / "audit.sqlite3").exists()
+    assert not (tmp_path / ".repopilot" / "memory.sqlite3").exists()
+    assert not (tmp_path / ".repopilot" / "tasks.sqlite3").exists()
 
 
 def test_chat_endpoint_patch_proposal_keeps_contract_and_does_not_write(
@@ -541,9 +544,11 @@ def test_long_term_specs_allow_repo_local_hybrid_rag() -> None:
     agent_loop_spec = Path(
         "openspec/specs/agent-loop-tool-execution/spec.md"
     ).read_text(encoding="utf-8")
-    feature_list = Path("docs/FEATURE_LIST.json").read_text(encoding="utf-8")
+    feature_list = json.loads(Path("docs/FEATURE_LIST.json").read_text(encoding="utf-8"))
+    feature_by_id = {item["id"]: item for item in feature_list}
 
     assert "repo-local hybrid RAG" in agent_loop_spec
     assert "不引入 embedding/vector RAG" not in agent_loop_spec
     assert "使用 embedding/vector RAG" not in agent_loop_spec
-    assert "当前默认检索模式已由 V9 升级为 hybrid" in feature_list
+    assert "hybrid" in feature_by_id["v9-embedding-hybrid-search"]["description"]
+    assert feature_by_id["v19-persistent-audit-recovery"]["passes"] is True

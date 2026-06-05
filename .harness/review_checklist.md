@@ -1,51 +1,58 @@
 # 当前 Review 清单
 
-当前活跃阶段：V18 closeout debt remediation。
+当前活跃阶段：V19 Persistent Audit / Recovery。
 
-## V18 Post-Merge / Handoff Debt Gate
+## V19 Planning / OpenSpec Gate
 
-- [x] `README.md`、`docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md` 必须记录 V18 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`，不得继续提示 archive 后 closeout 或 merge / push 决策。
-- [x] `openspec/specs/**/spec.md` 不得保留 `TBD`、`TODO` 或 `created by archiving change...` 这类 Purpose 占位。
-- [x] Stage Debt Sweep 结果必须沉淀到 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`，不得只留在聊天里。
-- [x] `scripts/check_stage_docs.ps1` 必须扫描当前 durable docs、harness docs 和 long-term specs，并能拦截 stale branch、stale merge / push 建议和 archive 生成的 Purpose 占位。
-- [x] branch cleanup / retention 必须显式记录；已合并 feature 分支若保留，必须说明其已 fully merged 且与 `main` 同 hash。
-- [x] 本次不得实现 V19 Persistent Audit / Recovery runtime；V19 必须另起 OpenSpec change 后再开始。
+- [x] V19 plan 已明确 runtime scope：持久审计摘要 + 只读恢复视图。
+- [x] V19 non-goals 已明确：不做 V20 Worktree Isolation，不做真实 subagents/connectors/notifications/heartbeat/always-on assistant。
+- [x] OpenSpec change 包含 `persistent-audit-recovery` 新能力 spec delta。
+- [x] OpenSpec change 覆盖所有被修改或约束的能力：`agent-loop-tool-execution`、`chat-api`、`safe-patch-authoring`、`verification-runner`、`long-task-agent-execution`、`harness-development-workflow`。
+- [x] Recovery intent 路由优先级固定为 patch/verification 之后、capability/status 与 repo_search 之前。
+- [x] `.codex/skills/**` 若修改，只能作为流程文档，不得写成 RepoPilot runtime 能力。
 
-## V18 Archive Closeout Gate
+## V19 Runtime Gate
 
-- [x] V18 implementation commit 已创建：`e76807d Add V18 patch verify loop`。
-- [x] V18 external review 已处理并确认无阻塞。
-- [x] V18 active change 已归档到 `openspec/changes/archive/2026-06-04-v18-patch-verify-loop/`。
-- [x] 长期 specs 已通过 `openspec archive v18-patch-verify-loop -y` 同步，新增 `openspec/specs/patch-verify-loop/spec.md`。
-- [x] `openspec list` 显示 no active changes。
-- [x] V18 archive 后 OpenSpec 全量验证通过。
-- [x] V18 archive 后默认验证通过。
-- [x] V18 archive closeout gate 通过。
-- [x] 下一阶段开始前必须先创建新 OpenSpec change，并同步 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`。
+- [x] 所有 `/chat` 请求记录轻量 trace envelope；patch、verification、long task 记录脱敏摘要。
+- [x] Audit store 使用 repo-local `.repopilot/audit.sqlite3`，并按 `user_id + repo_key` 隔离。
+- [x] Audit record 不保存 full diff、full stdout/stderr、full Evidence Pack、provider prompt/output、secret、DB path、环境变量或本机绝对路径。
+- [x] Recovery/status 是只读能力，不执行 patch、verification、task resume、repo mutation、commit、push 或 worktree 操作。
+- [x] Missing audit DB 查询不创建 `.repopilot` 或 `audit.sqlite3`。
+- [x] Audit persistence failure 不影响主 `/chat` 请求。
+- [x] `/chat` 顶层 response schema 不新增字段；recovery 只通过 `answer` 返回。
+- [x] Recovery intent 命中后不调用 repo RAG。
+- [x] Retention 维持 V19 锁定决策：无限保留，不自动清理；查询默认最近 20 条。
 
-## V18 Planning / Implementation Gate
+## V19 Test Gate
 
-- [x] V18 OpenSpec change 包含 `stage_planning.md`、proposal、design、tasks，以及 `patch-verify-loop`、`safe-patch-authoring`、`verification-runner`、`agent-loop-tool-execution`、`chat-api` 和 `harness-development-workflow` spec delta。
-- [x] `.harness/allowed_files.md` 已同步 V18 写入边界。
-- [x] `openspec validate v18-patch-verify-loop` 通过。
-- [x] AgentLoop 前置顺序固定为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent（含组合确认）、Verification intent、capability-status、repo_search/chat_only。
-- [x] 组合确认必须在 Patch command 分支内优先处理；优先级为 `组合确认 > 纯 verification intent > capability-status/repo_search`。
-- [x] 组合确认 parser 必须同时解析 `patch_id` 和 verification label；缺失 label、半解析、只能解析出 patch id 时，不得默认补 `verify`，不得 apply。
-- [x] 组合确认中的 verification label 只接受 `verify`、`pytest` 和 `ruff`；不得接受附加参数、管道、重定向、环境变量赋值、任意 shell 文本或 `ruff --fix`。
-- [x] 非法组合请求必须整体拒绝，不执行 `patch_apply`，不触发 `verification_run`。
-- [x] 单独 `确认 patch <patch_id>` / `应用 patch <patch_id>` 保持 V16 apply-only 行为，不自动验证。
-- [x] 组合流程必须先通过 `PatchManager.prepare_apply` 和 `patch_apply` 权限审批链路；apply 成功后才允许进入 verification。
-- [x] verification 必须使用独立 `ToolInvocationContext`，字段包含 `tool_name=verification_run`、`intent=verification_run`、`command_label`、`confirmed=true`、`scope_valid=true/false`，不得复用 patch context。
-- [x] patch apply 失败、过期、hash mismatch、跨用户、跨 repo、非 pending 或 scope invalid 时，不生成 verification context，不运行验证。
-- [x] `patch_apply` 和 `verification_run` 均必须通过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`。
-- [x] API handler、parser 和 AgentLoop 不得直接调用 subprocess；实际验证只能通过 `ToolExecutor.verification_run(...)`。
-- [x] 公开 `answer` 和 `tool_calls` 不得泄露完整 diff、完整 stdout/stderr、本机绝对路径、DB 路径、环境变量、API key、完整 internal trace、完整 Evidence Pack 或 provider prompt/output。
-- [x] `/chat` 顶层响应 contract 不新增必需或可选字段；组合结果只进入现有 `answer` 和安全 `tool_calls` 摘要。
-- [x] 验证失败只返回失败摘要和下一步建议；不得自动生成 patch、自动再次 apply、commit、push、创建 worktree 或调度 subagent。
-- [x] 默认验证不依赖真实网络、API key、真实模型输出、外部队列或外部数据库。
+- [x] `tests/test_persistent_audit.py` 覆盖 schema、scope、ordering、default limit、missing-store no-create、redaction/capping。
+- [x] AgentLoop tests 覆盖 trace、patch、verification、long task audit event。
+- [x] AgentLoop/API tests 覆盖 recovery routing、no repo RAG、read-only behavior、audit failure non-blocking 和 `/chat` schema unchanged。
+- [x] Security tests 证明 SQLite payload 不包含 full diff、full stdout/stderr、Evidence Pack、provider content、secret、DB path 或本机绝对路径。
 
-## Historical Gates
+## V19 Stage Debt Sweep / Closeout Gate
 
-- V17 Verification Runner 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`。
-- V16 Safe Patch Authoring 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`。
-- V1-V18 active changes 均已归档；历史 review 明细保留在 git history 和 archived OpenSpec change 中。
+- [x] Stage Debt Sweep 已在 V19 commit/archive 前扫描 current docs、harness docs、active OpenSpec、long-term specs、changed runtime paths 和 adjacent older runtime paths。
+- [x] 发现 debt 已修复或记录为 blocker，并沉淀到 `docs/PROGRESS.md` 与 `HANDOFF_TO_NEXT_CHAT.md`，不只留在聊天里。
+- [x] `.harness/review_checklist.md` 已记录 Stage Debt Sweep evidence/gate。
+- [x] `openspec/specs/**/spec.md` 不保留 `TBD`、`TODO`、`created by archiving change` 这类 Purpose 占位。
+- [ ] V19 merge/push 后 durable docs 必须更新真实 `main`/remote 状态、commit hash、验证结果和下一阶段建议。
+- [ ] V19 branch cleanup/retention 必须作为 closeout checklist 显式项执行并记录。
+
+## V19 Stage Debt Sweep Evidence
+
+- [x] Long-term specs placeholder sweep：`openspec/specs/**/spec.md` 未发现 `TBD`、`TODO`、`created by archiving change` 占位 Purpose。
+- [x] Durable docs sweep：`README.md`、`docs/PROGRESS.md`、`docs/ARCHITECTURE.md`、`HANDOFF_TO_NEXT_CHAT.md` 已更新到 V19 active branch/change 状态。
+- [x] Harness docs sweep：`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已同步 V19 allowed files、review gates、post-merge durable docs gate 与 branch retention gate。
+- [x] Active OpenSpec sweep：`openspec/changes/v19-persistent-audit-recovery/` 包含 proposal/design/tasks/stage planning 与所有受影响能力 spec delta。
+- [x] Changed runtime path sweep：`app/audit/**` 与 `app/harness/kernel.py` 已通过 targeted tests、full verify 和 ruff。
+- [x] Adjacent runtime path sweep：patching、verification、longtask、AgentLoop/API tests 已覆盖 V19 audit hook 对既有路径的影响。
+- [x] Additional documentation debt fixed：`docs/FEATURE_LIST.json` 已修复为可解析 JSON，并将 V19 acceptance 更新为通过状态。
+- [x] Historical V18 doc drift fixed：V18 archive merge hash `3c7a8b3...` 已标注为历史归档记录，并由 V18 closeout debt commit `8b93330` supersede。
+
+## V18 Closeout Baseline
+
+- [x] V18 implementation/archive/merge/push 已完成。
+- [x] V18 post-merge/handoff debt remediation 已提交到 `main` commit `8b93330` 并推送到 `agentic-codeops/main`。
+- [x] V18 closeout debt remediation 验证通过：`openspec validate --all` 13 passed, `scripts/verify.ps1` 178 passed/1 skipped, `git diff --check` 无 whitespace error。
+- [x] V18 feature branch retention 决策：保留近期阶段分支用于审计；不在 V19 中自动删除。

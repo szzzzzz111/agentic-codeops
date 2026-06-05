@@ -6,7 +6,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V18 已归档；当前基线为 `main` / `agentic-codeops/main`，HEAD 为 `3c7a8b3`；当前无 active OpenSpec change，V18 Patch + Verify Loop 已实现、review、提交、归档、fast-forward 合并并推送。
+- 当前主线能力：V1-V18 已归档；当前基线为 `main` / `agentic-codeops/main`，HEAD 为 `8b93330`；当前 active OpenSpec change 为 `v19-persistent-audit-recovery`，V19 正在实现 Persistent Audit / Recovery。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -15,8 +15,9 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 当前 Safe Patch Authoring：通过明确 patch 请求基于 repo evidence 生成 pending patch proposal；默认 fake patch provider 不生成真实 diff，显式配置真实 provider 后可返回结构化 unified diff；用户必须明确 `确认 patch <patch_id>` / `应用 patch <patch_id>` 才能通过受控 `patch_apply` 写入。
 - 当前 Verification Runner：通过明确验证请求运行固定白名单标签 `pytest`、`ruff` 或 `verify`，其中 `verify` 映射到 `scripts/verify.ps1`；执行必须经过 `verification_run` 权限/审批边界和 `ToolExecutor`，公开响应只返回截断脱敏摘要。
 - 当前 Patch + Verify Loop：通过明确组合确认请求串联 pending patch apply 与白名单验证；组合请求必须同时包含 patch id 和验证标签，解析失败整体拒绝且不 apply；apply 成功后才使用独立 verification context 运行验证。
+- 当前 Persistent Audit / Recovery：V19 正在加入 repo-local `.repopilot/audit.sqlite3`，持久化脱敏 trace envelope、patch attempt、verification result 和 long task event，并通过现有 `/chat.answer` 提供只读恢复/状态查询；不新增 `/chat` 顶层字段。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolInvocationContext` 和统一 `ToolExecutor`。
-- 当前默认不接真实 LLM，不执行任意 shell，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；V17 仅允许明确验证请求下的白名单验证命令；V18 仅允许明确组合确认下的 apply 后 verify；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
+- 当前默认不接真实 LLM，不执行任意 shell，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；V17 仅允许明确验证请求下的白名单验证命令；V18 仅允许明确组合确认下的 apply 后 verify；V19 recovery/status 只读且不执行 patch、verification、task resume 或 repo mutation；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
 - 当前不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动运行测试或 commit；V16 仅允许用户明确确认后的受控 patch apply。
 

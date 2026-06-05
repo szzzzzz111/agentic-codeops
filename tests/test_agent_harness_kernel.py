@@ -713,7 +713,9 @@ def test_agent_loop_answers_assistant_status_without_repo_rag(tmp_path: Path) ->
         event.event_type != "permission_checked"
         for event in result.trace_events_internal
     )
-    assert not (tmp_path / ".repopilot").exists()
+    assert (tmp_path / ".repopilot" / "audit.sqlite3").exists()
+    assert not (tmp_path / ".repopilot" / "memory.sqlite3").exists()
+    assert not (tmp_path / ".repopilot" / "tasks.sqlite3").exists()
 
 
 def test_agent_loop_handles_memory_command_before_router_and_long_task(

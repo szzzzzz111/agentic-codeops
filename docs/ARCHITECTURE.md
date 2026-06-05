@@ -12,6 +12,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> PatchManager(proposal/apply confirmation)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
+  -> AuditManager(persistent redacted audit / read-only recovery)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -24,10 +25,11 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `CodeAgent` 负责调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
 - `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。Memory command 在 `RequestRouter` / keyword 路由前识别。
 - `LongTaskManager` 负责明确长任务指令、repo-local SQLite task store、deterministic task-type plan、pause/resume、scratch 摘要和 ReAct trace skeleton。Long Task 控制命令在 memory command 之后、`RequestRouter` / keyword 路由前处理；只有显式 resume/run 当前 step 才能调用只读 `repo_rag`。
-- `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、capability-status / repo_search 之前处理，不调用 `repo_rag`，不写状态，不初始化 DB。
+- `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、Patch/Verification/Audit Recovery 之前处理，不调用 `repo_rag`，不写 memory/tasks 状态；V19 会为所有 `/chat` 请求写入轻量 persistent audit trace envelope。
 - `PatchManager` 负责明确 patch proposal 请求和明确 patch apply 确认。Proposal 先走 repo evidence；apply 只接受 `确认 patch <patch_id>` / `应用 patch <patch_id>` 等明确语法，并在权限检查前生成已归一化 `ToolInvocationContext`。
 - `PatchVerifyLoop` 负责明确组合确认请求，例如 `确认 patch <patch_id> 并运行验证`。组合确认在 Patch command 分支内优先于纯 Verification intent 处理；请求必须同时包含 patch id 和白名单 verification label，半解析或不安全 label 会整体拒绝且不 apply。
 - `VerificationRunner` 负责明确验证请求、固定白名单标签、输出截断和脱敏。它在 Patch command / Patch intent 之后、capability-status / repo_search 之前处理，只允许 `pytest`、`ruff` 和 `verify`，并通过 `verification_run` 权限/审批边界执行。
+- `AuditManager` 负责 V19 repo-local `.repopilot/audit.sqlite3` 持久审计与只读恢复。它记录脱敏 trace、patch attempt、verification result 和 long task event 摘要；recovery/status intent 在 patch/verification 之后、capability-status/repo_search 之前处理，命中后不调用 `repo_rag`，不执行 patch、verification、task resume 或 repo mutation。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
 - `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag`、受控写入 `patch_apply` 和受控验证 `verification_run`。
@@ -166,9 +168,9 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 当前实现 Patch + Verify Loop。后续路线调整为 lightweight industrial harness：V19 做 Persistent Audit / Recovery，V20 做 Worktree Isolation。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 当前实现 Persistent Audit / Recovery。后续路线调整为 lightweight industrial harness：V20 做 Worktree Isolation。
 
-V19 及之后仍是未来能力，不是当前架构已实现部分。持久审计、worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
+V20 及之后仍是未来能力，不是当前架构已实现部分。worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 

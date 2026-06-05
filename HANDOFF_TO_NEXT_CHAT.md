@@ -4,10 +4,10 @@
 
 ```text
 当前基线分支：main
-当前工作分支：feature/v18-closeout-debt
-当前活跃 OpenSpec change：无
-最近完成阶段：V18 Patch + Verify Loop（已实现、review、提交、归档、fast-forward 合并并推送）
-当前阶段：V18 closeout debt remediation（修复 post-merge/handoff/Stage Debt Sweep 遗留问题，不实现 V19 runtime）
+当前工作分支：feature/v19-persistent-audit-recovery
+当前活跃 OpenSpec change：v19-persistent-audit-recovery
+最近完成阶段：V18 Patch + Verify Loop 与 V18 closeout debt remediation（均已提交、fast-forward 合并并推送）
+当前阶段：V19 Persistent Audit / Recovery implementation complete，等待提交与后续 archive/merge/push closeout
 ```
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V18 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行。V18 已加入 Patch + Verify Loop：明确组合确认先 apply pending patch，apply 成功后再用独立 verification context 运行白名单验证。
@@ -312,8 +312,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 ## 当前 Harness 状态
 
 - 当前 active change：无。
-- `.harness/allowed_files.md` 当前开放 V18 closeout debt remediation 写入边界；V19 runtime 开始前仍必须另建 OpenSpec change 并重新同步 harness。
-- `.harness/review_checklist.md` 当前加入 V18 post-merge / handoff debt gate。
+- `.harness/allowed_files.md` 当前开放 V19 Persistent Audit / Recovery 写入边界；runtime scope 限定为 persistent audit store、AgentLoop audit/recovery hook、测试和 durable docs。
+- `.harness/review_checklist.md` 当前加入 V19 audit/recovery gates、Stage Debt Sweep evidence gate、post-merge durable docs gate 和 branch retention gate。
 - V18 OpenSpec change 已归档到 `openspec/changes/archive/2026-06-04-v18-patch-verify-loop/`，长期 specs 已同步，新增 `openspec/specs/patch-verify-loop/spec.md`。
 - V18 runtime 新增组合确认解析、verification label parser、AgentLoop Patch + Verify Loop 编排；组合确认必须完整解析 patch id 和 verification label，非法组合请求整体拒绝且不 apply。
 - V18 targeted RED 已确认缺少 `parse_patch_verify_confirmation` 和 `parse_verification_label`；targeted GREEN 8 passed；相关回归 `pytest tests/test_patch_authoring.py tests/test_verification_runner.py tests/test_agent_harness_kernel.py tests/test_chat_api.py -q`：94 passed；`openspec validate --all`：13 passed；默认 `scripts/verify.ps1` 通过，`pytest` 178 passed, 1 skipped，`ruff check .` All checks passed。
@@ -321,10 +321,15 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 - V18 implementation commit：`e76807d Add V18 patch verify loop`。
 - V18 archive：`openspec archive v18-patch-verify-loop -y` 已完成。
 - V18 archive 后验证：`openspec validate --all` 13 passed；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 178 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1` 通过。
-- V18 merge/push：`main`、`agentic-codeops/main` 和本地 `feature/v18-patch-verify-loop` 均指向 `3c7a8b3955bbcb0848ad56f0b074c70d1a506107`（`Archive V18 patch verify loop`），确认 V18 已进入远端主线。
+- V18 archive merge/push：当时 `main`、`agentic-codeops/main` 和本地 `feature/v18-patch-verify-loop` 均指向 `3c7a8b3955bbcb0848ad56f0b074c70d1a506107`（`Archive V18 patch verify loop`），确认 V18 archive 已进入远端主线；该记录随后由 V18 closeout debt remediation commit `8b93330` supersede，当前真实 V19 基线为 `8b93330`。
 - V18 post-merge/handoff audit 发现并修复的流程债：durable docs 残留 archive/merge 前状态；`patch-verify-loop`、`verification-runner` 和 `safe-patch-authoring` 长期 specs 残留 archive 自动生成 Purpose；`scripts/check_stage_docs.ps1` 未拦截这些问题。当前 remediation 已补齐 Purpose、同步 main/remote 状态、强化 docs drift scan，并清理本地未跟踪 `__pycache__` 生成目录。
 - Branch retention：本地 `feature/v18-patch-verify-loop` 已 fully merged 且与 `main` 同 hash；按本仓库历史惯例暂保留，不自动删除。后续若要清理分支，应单独执行并记录。
 - V18 closeout debt remediation 验证：`openspec validate --all` 13 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1` 通过，扫描 23 个文件；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 178 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示。
+- V18 closeout debt remediation commit/merge/push：`8b93330 chore: close v18 post-merge debt` 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`；V18 closeout debt branch 按审计惯例保留，不在 V19 中自动删除。
+- V19 OpenSpec/harness：已创建 `openspec/changes/v19-persistent-audit-recovery/`，新增长期 `openspec/specs/persistent-audit-recovery/spec.md`，并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md` 到 V19 边界；`openspec validate v19-persistent-audit-recovery --strict` 通过，`openspec validate --all` 15 passed, 0 failed。
+- V19 targeted implementation 验证：`pytest tests/test_persistent_audit.py -q`：9 passed；`pytest tests/test_agent_harness_kernel.py tests/test_chat_api.py tests/test_persistent_audit.py -q`：85 passed；`ruff check app/audit app/harness/kernel.py tests/test_persistent_audit.py tests/test_agent_harness_kernel.py tests/test_chat_api.py`：All checks passed。
+- V19 full verification：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`openspec validate --all` 15 passed, 0 failed；`git diff --check` 通过，仅有 CRLF 换行提示。
+- V19 Stage Debt Sweep：已扫描 current docs、harness docs、active OpenSpec、long-term specs、changed runtime paths 和 adjacent older runtime paths；修复额外发现的 `docs/FEATURE_LIST.json` JSON 结构债、V19 passes 状态、V18 archive hash 历史表述和 checklist evidence；长期 specs 未发现 `TBD`、`TODO`、`created by archiving change` Purpose 占位。
 - V17 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`，长期 specs 已同步，新增 `openspec/specs/verification-runner/spec.md`。
 - V17 runtime 新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
@@ -386,8 +391,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 完成并验证当前 V18 closeout debt remediation，确保 durable docs、long-term specs、stage docs drift scan 和 branch retention 记录一致。
-2. 创建 V19 Persistent Audit / Recovery OpenSpec change 前，先确认 `.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已切到 V19 阶段边界。
+1. 提交 V19 Persistent Audit / Recovery 当前 feature branch，提交前保留 full verify、Stage Debt Sweep 和 durable docs 证据。
+2. V19 archive/merge/push 后，必须再次更新 `docs/PROGRESS.md` 与 `HANDOFF_TO_NEXT_CHAT.md`，记录真实 main/remote commit hash、验证结果和 branch cleanup/retention 决策。
 3. 不要把 V20 Worktree Isolation、真实 subagents、connectors、notifications、heartbeat/cron 或 always-on assistant 归入 V19 scope。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。

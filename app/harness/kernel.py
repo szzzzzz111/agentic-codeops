@@ -2,6 +2,14 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 
+from app.audit.manager import (
+    AuditManager,
+    build_event_from_trace,
+    build_trace_event,
+    format_recovery_answer,
+    is_audit_recovery_request,
+    recovery_query,
+)
 from app.answering.grounded_answer import GroundedAnswerGenerator
 from app.assistant.control_surface import AssistantControlSurface, is_assistant_status_request
 from app.longtask.manager import LongTaskManager
@@ -358,6 +366,7 @@ class AgentLoop:
         long_task_manager: LongTaskManager | None = None,
         assistant_control_surface: AssistantControlSurface | None = None,
         patch_manager: PatchManager | None = None,
+        audit_manager: AuditManager | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
@@ -380,9 +389,14 @@ class AgentLoop:
             )
         )
         self.patch_manager = patch_manager or PatchManager()
+        self.audit_manager = audit_manager or AuditManager()
         self.grounded_answer = GroundedAnswerGenerator(provider=provider)
 
     def run(self, request: AgentLoopRequest) -> AgentLoopResult:
+        result = self._run_inner(request)
+        return self._record_audit_and_return(request, result)
+
+    def _run_inner(self, request: AgentLoopRequest) -> AgentLoopResult:
         memory_command = self.memory_manager.handle_command(
             user_id=request.user_id,
             session_id=request.session_id,
@@ -499,6 +513,9 @@ class AgentLoop:
                 request=request,
                 command_label=verification_request.command_label,
             )
+
+        if is_audit_recovery_request(request.message):
+            return self._run_audit_recovery(request)
 
         decision = self.router.route(request.message)
         trace_events = [
@@ -1302,6 +1319,87 @@ class AgentLoop:
             search_plan=search_plan,
         )
 
+    def _run_audit_recovery(self, request: AgentLoopRequest) -> AgentLoopResult:
+        query_type, identifier = recovery_query(request.message)
+        if query_type == "identifier" and identifier:
+            events = self.audit_manager.find_events(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+                identifier=identifier,
+            )
+            empty_label = f"未找到 {identifier}"
+        elif query_type == "verification_result":
+            events = self.audit_manager.recent_events(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+                event_type="verification_result",
+            )
+            empty_label = "当前 scope 没有 verification result"
+        else:
+            events = self.audit_manager.recent_events(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+            )
+            empty_label = "当前 scope 没有历史记录"
+        status = "ok" if events else "empty"
+        return AgentLoopResult(
+            answer=format_recovery_answer(events, empty_label=empty_label),
+            trace_events_internal=[
+                TraceEvent(
+                    event_type="audit_recovery",
+                    status=status,
+                    summary=f"query_type={query_type}; result_count={len(events)}",
+                )
+            ],
+        )
+
+    def _record_audit_and_return(
+        self,
+        request: AgentLoopRequest,
+        result: AgentLoopResult,
+    ) -> AgentLoopResult:
+        if _skip_persistent_audit_for_result(result):
+            return result
+        events = [
+            build_trace_event(
+                status=_result_status(result),
+                route=_route_from_trace(result.trace_events_internal),
+                tool_count=len(result.tool_calls),
+                trace_event_count=len(result.trace_events_internal),
+            )
+        ]
+        for trace_event in result.trace_events_internal:
+            event = build_event_from_trace(
+                event_type=trace_event.event_type,
+                status=trace_event.status,
+                summary=trace_event.summary,
+            )
+            if event is not None:
+                events.append(event)
+        try:
+            self.audit_manager.record_events(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+                session_id=request.session_id,
+                trace_id=request.trace_id,
+                events=events,
+            )
+        except Exception:
+            return AgentLoopResult(
+                answer=result.answer,
+                related_files=result.related_files,
+                tool_calls=result.tool_calls,
+                trace_events_internal=[
+                    *result.trace_events_internal,
+                    TraceEvent(
+                        event_type="audit_persistence_failed",
+                        status="error",
+                        summary="persistent_audit=unavailable",
+                    ),
+                ],
+            )
+        return result
+
 
 def _extract_search_keyword(message: str) -> str | None:
     tokens = TOKEN_PATTERN.findall(message)
@@ -1551,3 +1649,53 @@ def _verification_trace_summary(
 
 def _is_real_provider(provider: ModelProvider) -> bool:
     return getattr(provider, "provider_name", "fake") != "fake"
+
+
+def _result_status(result: AgentLoopResult) -> str:
+    if any(event.status == "error" for event in result.trace_events_internal):
+        return "error"
+    if any(call.get("status") == "error" for call in result.tool_calls):
+        return "error"
+    return "ok"
+
+
+def _route_from_trace(trace_events: list[TraceEvent]) -> str:
+    for event in trace_events:
+        if event.event_type == "audit_recovery":
+            return "audit_recovery"
+        if event.event_type == "memory_command":
+            return "memory_command"
+        if event.event_type == "long_task_command":
+            return "long_task_command"
+        if event.event_type == "assistant_control_surface":
+            return "assistant_control_surface"
+        if event.event_type in {
+            "patch_command",
+            "patch_verify_loop_started",
+            "patch_proposal_summarized",
+        }:
+            return "patch"
+        if event.event_type in {"verification_command", "verification_summarized"}:
+            return "verification"
+        if event.event_type == "request_routed":
+            route = _summary_value(event.summary, "route")
+            if route:
+                return route
+    return "unknown"
+
+
+def _summary_value(summary: str, key: str) -> str:
+    for part in summary.split(";"):
+        if "=" not in part:
+            continue
+        current_key, value = part.split("=", 1)
+        if current_key.strip() == key:
+            return value.strip()
+    return ""
+
+
+def _skip_persistent_audit_for_result(result: AgentLoopResult) -> bool:
+    return any(
+        event.event_type == "audit_recovery" and event.status == "empty"
+        for event in result.trace_events_internal
+    )

@@ -2,408 +2,160 @@
   {
     "id": "v1-chat-api-basic",
     "category": "api",
-    "description": "用户可以通过 POST /chat 发送消息并获得带 trace_id 的 Agent 服务响应结构。",
-    "steps": [
-      "构造包含 user_id、session_id、message、repo_path 的请求",
-      "POST /chat",
-      "检查状态码为 200",
-      "检查响应包含 trace_id、answer、related_files、tool_calls"
-    ],
-    "acceptance_criteria": [
-      "trace_id 以 trace_ 开头",
-      "响应字段保持稳定"
-    ],
+    "description": "POST /chat returns trace_id, answer, related_files, and tool_calls.",
+    "acceptance_criteria": ["stable top-level response fields", "unique trace_id"],
     "passes": true,
-    "notes": "由 tests/test_chat_api.py 覆盖。"
-  },
-  {
-    "id": "v1-trace-id-unique",
-    "category": "observability",
-    "description": "连续两次 /chat 请求生成不同 trace_id。",
-    "steps": [
-      "连续请求两次 POST /chat",
-      "比较两次响应中的 trace_id"
-    ],
-    "acceptance_criteria": [
-      "两次 trace_id 不相同"
-    ],
-    "passes": true,
-    "notes": "由 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by tests/test_chat_api.py."
   },
   {
     "id": "v2-safe-repository-file-tools",
     "category": "tools",
-    "description": "只读仓库文件工具提供 list_files、read_file、search_code，并限制访问 repo_path 内允许读取的普通文本文件。",
-    "steps": [
-      "创建包含普通文件、敏感文件、隐藏目录、忽略目录和二进制文件的临时仓库",
-      "调用 list_files、read_file、search_code",
-      "检查结果只包含允许访问的文本文件"
-    ],
-    "acceptance_criteria": [
-      "拒绝路径逃逸",
-      "跳过敏感文件、隐藏目录、忽略目录和二进制文件",
-      "读取和搜索结果不泄露本机绝对路径"
-    ],
+    "description": "Read-only repository file tools list, read, and search allowed text files inside repo_path.",
+    "acceptance_criteria": ["path traversal rejected", "sensitive and binary files skipped", "no local absolute path leak"],
     "passes": true,
-    "notes": "由 tests/test_file_tools.py 覆盖。"
+    "notes": "Covered by tests/test_file_tools.py."
   },
   {
     "id": "v3-agent-loop-tools",
     "category": "agent",
-    "description": "CodeAgent 通过 ToolExecutor 统一执行只读 search_code，并让 /chat 返回真实 related_files 和 tool_calls。",
-    "steps": [
-      "POST /chat 提供 message 和 repo_path",
-      "AgentLoop 生成 repo_search 路由",
-      "AgentLoop 通过 ToolExecutor 执行只读搜索",
-      "响应返回 related_files 和 tool_calls"
-    ],
-    "acceptance_criteria": [
-      "不接真实 LLM",
-      "不自动修改代码",
-      "tool_calls 记录工具名称、参数摘要、状态和结果数量",
-      "related_files 只包含相对仓库路径"
-    ],
+    "description": "CodeAgent uses ToolExecutor through a minimal deterministic AgentLoop.",
+    "acceptance_criteria": ["tool_calls contain safe summaries", "related_files are repo-relative", "no automatic code modification"],
     "passes": true,
-    "notes": "由 tests/test_chat_api.py 和 tests/test_agent_harness_kernel.py 覆盖。"
+    "notes": "Covered by tests/test_agent_harness_kernel.py and tests/test_chat_api.py."
   },
   {
     "id": "v4-skill-metadata-loader",
     "category": "tools",
-    "description": "Skill Metadata Loader 发现 .agents/skills/*/SKILL.md，并只返回 name、description 和相对仓库 path。",
-    "steps": [
-      "创建包含 .agents/skills/example/SKILL.md 的临时仓库",
-      "在 SKILL.md YAML frontmatter 中写入 name 和 description",
-      "调用 load_skill_metadata(repo_path)",
-      "检查返回 metadata 不包含完整正文或本机绝对路径"
-    ],
-    "acceptance_criteria": [
-      "返回 name、description、path",
-      "不存在 .agents/skills 时返回空列表",
-      "不返回完整 skill 正文",
-      "不接入 /chat 决策",
-      "不执行 skill"
-    ],
+    "description": "Skill metadata loader discovers .agents/skills/*/SKILL.md metadata without reading full skill bodies.",
+    "acceptance_criteria": ["returns name, description, and relative path", "does not execute skills", "does not affect /chat routing"],
     "passes": true,
-    "notes": "由 tests/test_skill_loader.py 覆盖。"
+    "notes": "Covered by tests/test_skill_loader.py."
   },
   {
     "id": "v5-skill-content-loader",
     "category": "tools",
-    "description": "Skill Content Loader 在 metadata-first 之后，按需读取指定 .agents/skills/*/SKILL.md 的完整内容。",
-    "steps": [
-      "先通过 load_skill_metadata(repo_path) 获得相对 path",
-      "调用 content loader 读取该 path 的完整 SKILL.md 内容",
-      "检查路径安全、读取上限和非 /chat 接入边界"
-    ],
-    "acceptance_criteria": [
-      "返回 path 和 content",
-      "拒绝路径逃逸、非 skill 文件、缺失文件和符号链接目录绕过",
-      "内容读取有明确上限",
-      "不接入 /chat 决策",
-      "不执行 skill"
-    ],
+    "description": "Skill content loader reads selected SKILL.md bodies with path and size boundaries.",
+    "acceptance_criteria": ["only .agents/skills paths allowed", "rejects traversal and symlink bypass", "does not execute skills"],
     "passes": true,
-    "notes": "由 tests/test_skill_loader.py 覆盖。"
+    "notes": "Covered by tests/test_skill_loader.py."
   },
   {
     "id": "v6-agent-harness-kernel",
     "category": "agent",
-    "description": "CodeAgent 通过轻量 Agent Harness Kernel 执行只读仓库搜索闭环，并保留 /chat 响应结构。",
-    "steps": [
-      "构造包含可搜索 token 的 /chat 请求",
-      "RequestRouter 生成 repo_search RouteDecision",
-      "AgentLoop 通过 ToolRegistry、ToolExecutor 和 TraceEvent 组织执行",
-      "检查 /chat 响应仍只包含原有顶层字段"
-    ],
-    "acceptance_criteria": [
-      "AgentLoopRequest 包含 message、repo_path、trace_id",
-      "RouteDecision 包含 route、keyword、reason",
-      "TraceEvent 内部记录路由、工具调用、工具结果和拒绝事件",
-      "不实现 ProviderAdapter、ContextBuilder、SkillRegistry 或 SessionStore runtime"
-    ],
+    "description": "Agent Harness Kernel introduces RequestRouter, ToolRegistry, AgentLoop, and TraceEvent.",
+    "acceptance_criteria": ["deterministic routing", "internal trace events", "no future runtime components exposed"],
     "passes": true,
-    "notes": "由 tests/test_agent_harness_kernel.py 覆盖。"
+    "notes": "Covered by tests/test_agent_harness_kernel.py."
   },
   {
     "id": "v7-permission-approval-gate",
     "category": "agent",
-    "description": "AgentLoop 在调用工具前通过 PermissionPolicy 和 ApprovalGate 做确定性的 allow/deny/ask 决策。",
-    "steps": [
-      "通过 ToolRegistry 获取 search_code 的 ToolSpec",
-      "通过 PermissionPolicy 产生 allow、deny 或 ask",
-      "通过 ApprovalGate 阻止 ask 分支执行工具",
-      "检查 /chat 响应不暴露内部 trace"
-    ],
-    "acceptance_criteria": [
-      "默认 repo_rag 为只读、low 风险且 requires_approval=false",
-      "未注册、非只读或非 low 风险工具走 deny 且不调用 executor",
-      "requires_approval=true 的低风险只读工具走 ask 且不调用 executor",
-      "权限和审批审计只保留在 trace_events_internal"
-    ],
+    "description": "Tool calls pass through PermissionPolicy and ApprovalGate before execution.",
+    "acceptance_criteria": ["allow/deny/ask decisions", "unsafe tools blocked", "approval-required tools do not run without valid context"],
     "passes": true,
-    "notes": "由 tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by tests/test_agent_harness_kernel.py and tests/test_chat_api.py."
   },
   {
     "id": "v8-query-understanding-repo-rag",
     "category": "rag",
-    "description": "AgentLoop 在只读权限边界通过后执行 deterministic Query Understanding 和非向量化 lexical repo RAG。",
-    "steps": [
-      "构造包含文件名、路径片段、函数名或错误词的 /chat 请求",
-      "QueryUnderstanding 生成 SearchPlan",
-      "LexicalRepoRetriever 对 repo 文本 chunk 打分并返回 citation",
-      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
-    ],
-    "acceptance_criteria": [
-      "V8 阶段验收时 SearchPlan 包含 question_type、keywords、symbols、path_hints、max_results 和 retrieval_mode=lexical；当前默认检索模式已由 V9 升级为 hybrid，LexicalRepoRetriever 保留为一等通道",
-      "chunk 包含 chunk_id、file_path、start_line、end_line、text",
-      "citation 只使用相对 repo 路径和 1-based 行号",
-      "related_files 来自 citation 文件路径",
-      "V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank 或 memory",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Deterministic query understanding and repo-local lexical RAG.",
+    "acceptance_criteria": ["SearchPlan created", "citations use repo-relative paths", "no vector DB or LLM rewrite"],
     "passes": true,
-    "notes": "V8 历史验收由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖；当前默认 hybrid 口径见 V9/V10 条目。"
+    "notes": "Covered by query understanding, repo RAG, AgentLoop, and chat API tests."
   },
   {
     "id": "v9-embedding-hybrid-search",
     "category": "rag",
-    "description": "AgentLoop 在只读权限边界通过后执行轻量 embedding retrieval 和 hybrid repo RAG，同时保留 lexical retrieval 作为一等通道。",
-    "steps": [
-      "构造包含文件名、路径片段、函数名或语义相近文本的 /chat 请求",
-      "QueryUnderstanding 生成 retrieval_mode=hybrid 的 SearchPlan",
-      "LexicalRepoRetriever 和 EmbeddingRepoRetriever 分别检索 repo chunk",
-      "HybridRepoRetriever 对 lexical 和 embedding 结果做 deterministic fusion",
-      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
-    ],
-    "acceptance_criteria": [
-      "默认 embedding provider 固定维度、稳定输出，且不调用网络、密钥、模型下载或外部服务",
-      "embedding retrieval citation 只使用相对 repo 路径和 1-based 行号",
-      "hybrid fusion 合并重复 chunk 并保持稳定排序",
-      "hybrid fusion 默认使用 min_fused_score=0.35，保留强 embedding-only 命中并过滤弱相关结果",
-      "内部 trace 记录 lexical、embedding、fused 结果数和 min_fused_score",
-      "路径、文件名、符号和 exact token 命中不被 embedding 相似度淹没",
-      "V9 不默认接入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务、LLM rewrite、rerank 或 memory",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Local deterministic embedding retrieval and hybrid fusion while keeping lexical retrieval first-class.",
+    "acceptance_criteria": ["no external embedding service", "stable fusion", "path/symbol anchors preserved"],
     "passes": true,
-    "notes": "由 tests/test_query_understanding.py、tests/test_repo_rag.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by repo RAG and AgentLoop tests."
   },
   {
     "id": "v10-evidence-pack-context-budget",
     "category": "rag",
-    "description": "AgentLoop 在 repo retrieval 后构建可审计 Evidence Pack，并用确定性字符预算限制可进入后续上下文的证据 snippets。",
-    "steps": [
-      "构造触发 repo_search 的 /chat 请求",
-      "HybridRepoRetriever 返回带 citation 的 retrieval results",
-      "Evidence Pack builder 生成 evidence items 和 context budget 摘要",
-      "AgentLoop 内部 trace/audit 记录 Evidence Pack 摘要",
-      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
-    ],
-    "acceptance_criteria": [
-      "Evidence item 包含稳定 evidence_id、相对 file_path、1-based start_line/end_line、score、snippet、source_summary、included 和 truncated",
-      "Evidence Pack 不包含本机绝对路径或完整文件内容",
-      "Context Budget 使用 deterministic character budget，并记录 included、omitted、truncated 和 budget used 字段",
-      "Context Budget 不执行 LLM rerank、query rewrite、semantic merge 或 context compression",
-      "内部 trace/audit 摘要固定包含 evidence_items、included_count、omitted_count、truncated_count、budget_used_chars 和 max_context_chars",
-      "ToolExecutionResult.evidence_pack 不进入 call_summary()、/chat.tool_calls 或 /chat 顶层响应",
-      "V10 不实现 grounded answer、model provider、prompt assembly、memory、SandboxRunner、skill execution 或多 agent orchestration",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Evidence Pack and deterministic character context budget summarize repo evidence internally.",
+    "acceptance_criteria": ["evidence pack stays internal", "budget summary recorded", "no /chat schema change"],
     "passes": true,
-    "notes": "由 tests/test_evidence_pack.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by tests/test_evidence_pack.py and related AgentLoop/API tests."
   },
   {
     "id": "v11-grounded-answer-model-provider-boundary",
     "category": "answering",
-    "description": "AgentLoop 在 Evidence Pack / Context Budget 后生成受证据约束的 grounded answer，并通过 Model Provider 边界支持默认 fake provider 和可选 OpenAI-compatible provider。",
-    "steps": [
-      "构造触发 repo_search 的 /chat 请求",
-      "HybridRepoRetriever 返回证据并构建 Evidence Pack",
-      "GroundedAnswerGenerator 只消费 included evidence snippets",
-      "ModelProvider 生成带合法 citation 的回答",
-      "检查 /chat 响应仍只包含 trace_id、answer、related_files、tool_calls"
-    ],
-    "acceptance_criteria": [
-      "默认 provider 为 deterministic fake provider，默认验证不依赖网络、密钥或真实模型输出",
-      "OpenAI-compatible provider 只能通过环境变量显式启用",
-      "ModelProvider 输入只包含 original query、question type、included evidence snippets 和 citation metadata",
-      "provider 输出 citation 必须匹配 provided evidence，格式为 relative/path.py:start-end",
-      "无证据、无合法 citation、越界 citation、provider error、timeout 或 invalid response 均返回保守 fallback",
-      "provider audit 不进入 /chat 顶层字段或 /chat.tool_calls，且不记录完整 prompt、完整模型输出、完整 Evidence Pack 或 API key",
-      "V11 不实现 query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Grounded answer generator consumes included evidence and optional model provider boundary.",
+    "acceptance_criteria": ["default fake provider", "citation validation", "provider audit does not leak prompt/output/API key"],
     "passes": true,
-    "notes": "由 tests/test_model_provider.py、tests/test_grounded_answer.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by model provider, grounded answer, AgentLoop, and chat API tests."
   },
   {
     "id": "v12-query-rewrite-rerank",
     "category": "rag",
-    "description": "AgentLoop 在 repo retrieval 前执行 bounded deterministic multi-query rewrite，并在 Evidence Pack 前执行 deterministic rerank。",
-    "steps": [
-      "构造触发 repo_search 的 /chat 请求",
-      "QueryUnderstanding 生成 original SearchPlan",
-      "QueryRewriteProvider 生成 original variant 和最多 3 条 Code Evidence variants",
-      "ToolExecutor 对 variants 执行 hybrid retrieval、合并去重并 rerank",
-      "检查 Evidence Pack、grounded answer 和 /chat contract 仍保持既有边界"
-    ],
-    "acceptance_criteria": [
-      "默认 rewrite provider 不调用网络、密钥、真实 LLM 或外部服务",
-      "variant id 固定为 original、definition、usage、configuration、tests，额外 variants 最多 3 条",
-      "rewrite 不改变 route、权限决策或整体 question_type",
-      "rerank 只作用于 retrieval results 层，并最多选择 SearchPlan.max_results 条结果进入 Evidence Pack",
-      "Evidence Pack budget/summary 和 grounded answer citation validation 语义不变",
-      "rewrite/rerank audit 只进入内部 trace，不进入 /chat 顶层字段或完整 tool_calls",
-      "V12 不默认启用真实 LLM rewrite/rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Bounded deterministic query rewrite and deterministic rerank before Evidence Pack.",
+    "acceptance_criteria": ["max 3 variants", "rewrite/rerank audit internal only", "no real LLM rewrite/rerank"],
     "passes": true,
-    "notes": "由 tests/test_query_rewrite.py、tests/test_repo_rerank.py、tests/test_agent_harness_kernel.py、tests/test_chat_api.py 和相关 repo/evidence/grounded answer 回归测试覆盖。"
+    "notes": "Covered by query rewrite, rerank, AgentLoop, and chat API tests."
   },
   {
     "id": "v13-memory",
     "category": "memory",
-    "description": "AgentLoop 支持 repo-local SQLite-backed PREF/LTM、进程内 STM、明确 memory 指令和内部 memory audit。",
-    "steps": [
-      "发送明确 memory 指令，例如 记住：pref:language=中文",
-      "检查 /chat 返回确认回答且不调用 repo_rag",
-      "发送 forget 或 忘记 指令删除 memory",
-      "构造普通 repo_search 请求并检查内部 memory audit 不进入公开响应"
-    ],
-    "acceptance_criteria": [
-      "PREF/LTM 使用 repo-local .repopilot/memory.sqlite3 持久化，STM 使用进程内 user/session 隔离",
-      "stm:/会话: 前缀可写入 STM，并按 user_id + session_id 隔离",
-      "repo_key 使用 resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash",
-      "parser 支持全角/半角冒号和中英文明确指令",
-      "memory command 命中后确认优先，不执行 repo_rag",
-      "Memory audit 不进入 /chat 顶层字段或 tool_calls，且不泄露绝对路径、DB 路径或完整 memory value",
-      "普通 repo_search 的 memory read failure 不阻断检索",
-      "V13 不实现向量 memory、自动模型总结、context compression、SandboxRunner、skill execution 或多 agent orchestration",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Repo-local SQLite PREF/LTM, process-local STM, explicit memory commands, and internal memory audit.",
+    "acceptance_criteria": ["user/session/repo scoping", "explicit commands precede repo search", "no vector memory or auto summary"],
     "passes": true,
-    "notes": "由 tests/test_memory.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by tests/test_memory.py and AgentLoop/API tests."
   },
   {
     "id": "v14-long-task-react-skeleton",
     "category": "agent",
-    "description": "AgentLoop 支持 repo-local Long Task Control Plane、明确长任务指令、任务状态、pause/resume、scratch 摘要和 ReAct trace skeleton。",
-    "steps": [
-      "发送明确长任务指令，例如 创建长任务：分析 AgentLoop",
-      "检查 /chat 返回 task_id 且不调用 repo_rag",
-      "发送 恢复任务 task_xxx",
-      "检查 AgentLoop 通过权限、审批和 ToolExecutor(repo_rag) 推进一个 step",
-      "检查查看、列出、补充、归档和 reopen 命令保持 /chat 顶层 contract 不变"
-    ],
-    "acceptance_criteria": [
-      "Long Task 指令解析优先于 RequestRouter / keyword 路由，task_xxx 不误触发 repo_search",
-      "任务状态写入 repo-local .repopilot/tasks.sqlite3，repo_key 复用 V13 resolved path、POSIX 分隔符、Windows lower-case 和稳定 hash 规则",
-      "创建任务只保存 deterministic task-type plan，不自动执行",
-      "显式 resume/run 每次最多推进一个 step，且 step action 只能调用只读 repo_rag",
-      "resume/run 调用 repo_rag 前必须经过 ToolRegistry、PermissionPolicy 和 ApprovalGate",
-      "Scratch 和 ReAct trace 只保存摘要，不公开完整 prompt、完整 Evidence Pack、完整 provider output、DB 路径或本机绝对路径",
-      "每 user+repo 未归档任务上限为 20，list 默认最近 10 个，archive 只允许 completed/failed 且不物理删除",
-      "V14 不新增 /tasks API，不新增 /chat 必需顶层字段，不执行后台任务、shell、真实 subagent 调度或 worktree 操作"
-    ],
+    "description": "Repo-local Long Task control plane with pause/resume, scratch summaries, and ReAct trace skeleton.",
+    "acceptance_criteria": ["no /tasks API", "resume advances at most one step", "no real subagents or worktree automation"],
     "passes": true,
-    "notes": "由 tests/test_long_task.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by tests/test_long_task.py and AgentLoop/API tests."
   },
   {
     "id": "v15-assistant-control-surface",
     "category": "agent",
-    "description": "AgentLoop 支持只读 Assistant Control Surface，通过现有 /chat answer 返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。",
-    "steps": [
-      "发送明确助手状态请求，例如 助手状态",
-      "检查 /chat 返回当前能力、当前状态和下一步建议",
-      "检查响应保持 trace_id、answer、related_files、tool_calls 顶层字段",
-      "检查控制面请求不调用 repo_rag、不创建 .repopilot 本地状态"
-    ],
-    "acceptance_criteria": [
-      "AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、capability-status、repo_search/chat_only",
-      "控制面请求 related_files=[] 且 tool_calls=[]",
-      "控制面只读聚合 Memory PREF/LTM/STM 计数和最近 Long Task 摘要",
-      "不存在 .repopilot DB 时状态读取不得创建 .repopilot/、memory.sqlite3 或 tasks.sqlite3",
-      "控制面公开回答不得泄露完整 memory value、scratch、ReAct trace、完整 Evidence Pack、完整 provider output、DB 路径或本机绝对路径",
-      "V15 不新增 API，不新增 /chat 顶层字段，不执行 shell，不生成 patch，不运行验证，不创建 worktree 或真实 subagents"
-    ],
+    "description": "Read-only Assistant Control Surface returns current capabilities, Memory counts, Long Task summary, and next commands through /chat.answer.",
+    "acceptance_criteria": ["no repo RAG for status", "no memory/task DB creation", "no public API/schema change"],
     "passes": true,
-    "notes": "由 tests/test_assistant_control_surface.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "V19 later allows audit.sqlite3 creation for all /chat requests while preserving no memory/task DB creation."
   },
   {
     "id": "v16-safe-patch-authoring",
     "category": "agent",
-    "description": "AgentLoop 支持基于 repo evidence 的 Safe Patch Authoring，并在用户明确确认后通过受控 patch_apply 应用 unified diff。",
-    "steps": [
-      "发送明确 patch proposal 请求，例如 请生成 patch 修改 app.py",
-      "检查系统先通过 repo_rag / Evidence Pack 获取仓库证据",
-      "合法 provider 输出创建 pending patch，并通过 answer 返回摘要、目标文件、patch id 和确认方式",
-      "发送明确确认语法，例如 确认 patch patch_xxx",
-      "检查 AgentLoop 通过 ToolInvocationContext、PermissionPolicy、ApprovalGate 和 ToolExecutor.patch_apply 执行受控写入"
-    ],
-    "acceptance_criteria": [
-      "AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、capability-status、repo_search/chat_only",
-      "默认 fake Patch Authoring provider 不生成真实 diff，默认验证不依赖网络、API key 或真实模型输出",
-      "Pending patch 保存到 repo-local .repopilot/patches.sqlite3，并按 user_id + repo_key 隔离，默认 24 小时过期",
-      "确认语法只接受 应用 patch <patch_id>、确认 patch <patch_id>、apply patch <patch_id> 和 confirm patch <patch_id>",
-      "patch_apply 注册为 read_only=false、risk=write、requires_approval=true，只有有效确认上下文才能走 ask -> ApprovalGate pass",
-      "patch_apply 只允许写 unified diff 中声明的 repo 内相对路径，并拒绝路径穿越、敏感文件、隐藏状态目录、二进制文件和 context mismatch",
-      "Patch proposal answer 不泄露完整 diff 文本、完整 Evidence Pack、完整 provider prompt/output、本机绝对路径、DB 路径或 API key",
-      "V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell、不实现 Patch + Verify Loop",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Safe Patch Authoring creates pending patch proposals from repo evidence and applies only after explicit confirmation.",
+    "acceptance_criteria": ["pending patch scoped by user+repo", "patch_apply requires valid context", "no tests/commit/worktree automation"],
     "passes": true,
-    "notes": "由 tests/test_patch_authoring.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by patch authoring, AgentLoop, and chat API tests."
   },
   {
     "id": "v17-verification-runner",
     "category": "agent",
-    "description": "AgentLoop 支持明确验证请求下的 Verification Runner，通过固定白名单标签运行 pytest、ruff 或 verify 并返回截断脱敏摘要。",
-    "steps": [
-      "发送明确验证请求，例如 运行验证",
-      "检查请求被归一化为 verify 标签",
-      "检查 AgentLoop 通过 ToolInvocationContext、PermissionPolicy、ApprovalGate 和 ToolExecutor.verification_run 执行受控验证",
-      "检查 /chat 返回验证状态、退出码、耗时和截断脱敏输出摘要"
-    ],
-    "acceptance_criteria": [
-      "白名单只包含 pytest、ruff 和 verify 三个固定标签",
-      "verify 映射到 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1",
-      "拒绝 pytest tests/x.py、ruff --fix、管道、重定向、环境变量赋值和任何用户附加参数",
-      "verification_run 注册为 read_only=false、risk=write、requires_approval=true，只有有效 verification context 才能走 ask -> ApprovalGate pass",
-      "API handler、AgentLoop 和 parser 不直接调用 subprocess，实际执行只能通过 ToolExecutor.verification_run",
-      "runner 使用 argv list 和 shell=false，cwd 固定为 resolved repo_path",
-      "stdout/stderr 各最多 4000 字符，/chat.answer 验证输出摘要总计最多 6000 字符，并标记 truncated=true/false",
-      "公开响应脱敏本机绝对路径、.repopilot 路径、API_KEY/TOKEN/SECRET/PASSWORD 等 secret，不公开完整 stdout/stderr 或 internal trace",
-      "V17 不自动串联 patch apply，不根据失败生成 patch，不持久化 verification result，不创建 worktree，不 commit/push",
-      "/chat 不新增必需顶层字段"
-    ],
+    "description": "Verification Runner executes fixed whitelisted pytest, ruff, or verify labels through ToolExecutor.",
+    "acceptance_criteria": ["rejects arbitrary shell and extra args", "redacted truncated output", "no persisted verification result in V17"],
     "passes": true,
-    "notes": "由 tests/test_verification_runner.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by verification runner, AgentLoop, and chat API tests."
   },
   {
     "id": "v18-patch-verify-loop",
     "category": "agent",
-    "description": "AgentLoop 支持明确组合确认下的 Patch + Verify Loop，先受控 apply pending patch，再运行白名单验证并返回组合摘要。",
-    "steps": [
-      "创建 pending patch",
-      "发送明确组合确认，例如 确认 patch patch_xxx 并运行验证",
-      "检查 AgentLoop 先通过 patch_apply 权限审批链路应用 patch",
-      "检查 apply 成功后使用独立 verification context 运行 verification_run",
-      "检查 /chat 返回 apply 摘要、验证摘要和安全 tool_calls"
-    ],
+    "description": "Patch + Verify Loop chains explicit pending patch apply and whitelisted verification in one confirmed flow.",
+    "acceptance_criteria": ["combined confirmation requires patch id and verification label", "no verify on apply failure", "no automatic repair/worktree/commit"],
+    "passes": true,
+    "notes": "Covered by patch authoring, verification runner, AgentLoop, and chat API tests."
+  },
+  {
+    "id": "v19-persistent-audit-recovery",
+    "category": "agent",
+    "description": "Persistent Audit / Recovery records redacted audit summaries for all /chat requests and key patch, verification, and long task events, then serves read-only recovery through /chat.answer.",
     "acceptance_criteria": [
-      "AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent（含组合确认）、Verification intent、capability-status、repo_search/chat_only",
-      "组合确认优先级为 组合确认 > 纯 verification intent > capability-status/repo_search",
-      "组合确认必须同时解析 patch_id 和 verification label；缺失 label、半解析或只能解析 patch_id 时不得默认补 verify，不得 apply",
-      "verification label 只接受 verify、pytest 和 ruff，拒绝附加参数、管道、重定向、环境变量赋值、任意 shell 文本和 ruff --fix",
-      "非法组合请求整体拒绝，不执行 patch_apply，不触发 verification_run",
-      "单独 确认 patch <patch_id> 仍保持 apply-only 行为，不自动验证",
-      "apply 成功后才生成独立 verification ToolInvocationContext，不得复用 patch context",
-      "apply 失败、过期、hash mismatch、跨用户、跨 repo 或 scope invalid 时不运行验证",
-      "组合响应不泄露完整 diff、完整 stdout/stderr、本机绝对路径、DB 路径、环境变量、API key、完整 internal trace、Evidence Pack 或 provider output",
-      "V18 不持久化 verification result，不根据失败自动生成 patch，不再次 apply，不创建 worktree，不 commit/push",
-      "/chat 不新增必需顶层字段"
+      "repo-local .repopilot/audit.sqlite3 scoped by user_id + repo_key",
+      "no full diff/stdout/stderr/Evidence Pack/provider content/secrets/DB path/local absolute paths persisted",
+      "missing audit DB recovery query does not create state",
+      "audit write failure does not break primary /chat",
+      "recovery/status does not call repo_rag or mutate state",
+      "no new public API or /chat top-level fields; no automatic retention/pruning"
     ],
     "passes": true,
-    "notes": "由 tests/test_patch_authoring.py、tests/test_verification_runner.py、tests/test_agent_harness_kernel.py 和 tests/test_chat_api.py 覆盖。"
+    "notes": "Covered by tests/test_persistent_audit.py, AgentLoop/API tests, full verify, and V19 Stage Debt Sweep evidence."
   }
 ]
