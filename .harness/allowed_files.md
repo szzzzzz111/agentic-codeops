@@ -1,22 +1,27 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：无。
+当前活跃阶段：V18 closeout debt remediation。
 
-V18 Patch + Verify Loop 已归档到 `openspec/changes/archive/2026-06-04-v18-patch-verify-loop/`。下一阶段开始前必须先创建新的 OpenSpec change，并同步本文件和 `.harness/review_checklist.md`。
+V18 Patch + Verify Loop 已归档、fast-forward 合并到 `main`，并推送到 `agentic-codeops/main`。本次只允许修复 V18 post-merge / handoff / Stage Debt Sweep 遗留问题，不开始 V19 runtime 实现。V19 开始前必须先创建新的 OpenSpec change，并同步本文件和 `.harness/review_checklist.md`。
 
 ## 当前允许修改
 
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
+- `.codex/skills/repo-stage-review-loop/SKILL.md`
+- `.codex/skills/repo-stage-handoff/SKILL.md`
 - `README.md`
 - `docs/ARCHITECTURE.md`
 - `docs/PROGRESS.md`
 - `docs/FEATURE_LIST.json`
 - `HANDOFF_TO_NEXT_CHAT.md`
+- `openspec/specs/**/spec.md`
+- `scripts/check_stage_docs.ps1`
+- `scripts/check_stage_closeout.ps1`
 
 ## 禁止修改
 
-- 未创建并验证新阶段 OpenSpec change 前，不得开始新的运行时代码实现。
+- 未创建并验证新阶段 OpenSpec change 前，不得开始新的运行时代码实现；本次 V18 closeout debt remediation 不得修改 runtime code 或 tests，除非发现必须立即修复的 V18 P0/P1 缺陷并先同步本文件。
 - 不恢复旧 `specs/00x-*` 作为规格入口。
 - 不把 OpenSpec、Superpowers、MCP、plugin 或参考项目写成 RepoPilot runtime 能力。
 - 不绕过 `ToolExecutor(repo_rag / patch_apply / verification_run)`、`PermissionPolicy`、`ApprovalGate` 或安全文件工具边界。

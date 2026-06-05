@@ -7,25 +7,36 @@ function U($escaped) {
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-$targets = @(
+$durableTargets = @(
     "README.md",
     "docs/ARCHITECTURE.md",
     "docs/PROGRESS.md",
     "docs/FEATURE_LIST.json",
     "HANDOFF_TO_NEXT_CHAT.md",
     ".harness/allowed_files.md",
-    ".harness/review_checklist.md"
+    ".harness/review_checklist.md",
+    "openspec/README.md",
+    "openspec/changes/README.md",
+    "openspec/specs/README.md"
 )
+
+$specTargets = @()
+if (Test-Path -LiteralPath "openspec/specs") {
+    $specTargets = Get-ChildItem -LiteralPath "openspec/specs" -Recurse -File -Filter "spec.md" |
+        ForEach-Object { $_.FullName }
+}
+
+$targets = @($durableTargets + $specTargets)
 
 $pendingFinalReview = U "\u5f85\u6700\u7ec8 review"
 $pendingFinalVerify = U "\u5f85\u6700\u7ec8\u9a8c\u8bc1"
 $pendingCommitArchive = U "\u5f85\u63d0\u4ea4\u548c\u5f52\u6863"
 $pendingArchive = U "\u5f85\u5f52\u6863"
-$activeChange = U "\u5f53\u524d\u6d3b\u8dc3 OpenSpec change\uff1a(v12-query-rewrite-rerank|v14-long-task-react-subagents)"
-$activeChangePath = U "openspec/changes/v12-query-rewrite-rerank/"
-$oldRoadmap = U "\u5f53\u524d\u8def\u7ebf\u56fe\u5df2\u66f4\u65b0\u4e3a\u201c\u5df2\u5b8c\u6210\u81f3 V10\uff0c\u540e\u7eed\u4ece V11 \u5f00\u59cb\u201d"
-$readmeV10Roadmap = U "\u5df2\u5b8c\u6210\u81f3 V10\uff1aEvidence Pack \+ Context Budget\u3002\u540e\u7eed\u8def\u7ebf"
-$v16Implemented = U "V16 \u5df2\u5b9e\u73b0|\u5df2\u5b8c\u6210\u81f3 V16|V16 \u5df2\u5b8c\u6210"
+$currentWorkBranch = U "\u5f53\u524d\u5de5\u4f5c\u5206\u652f\uff1a`?feature/v18-patch-verify-loop`?"
+$archiveCloseout = U "archive \u540e\u9a8c\u8bc1 / closeout \u4e2d"
+$v18MergePushDecision = U "\u5b8c\u6210 V18 archive \u540e\u9a8c\u8bc1\u548c closeout gate \u540e\uff0c\u518d\u8fdb\u5165 merge / push \u51b3\u7b56"
+$continueV18Closeout = U "\u7ee7\u7eed V18 closeout"
+$generatedPurpose = "TBD|TODO|created by archiving change"
 $currentDefaultRealLlm = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM|\u5df2\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM"
 $currentDefaultMilvus = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Milvus|\u5df2\u9ed8\u8ba4\u63a5\u5165 Milvus"
 $currentDefaultEs = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Elasticsearch|\u5df2\u9ed8\u8ba4\u63a5\u5165 Elasticsearch"
@@ -38,20 +49,13 @@ $rules = @(
         Reason = "completed stage is still described as pending review, verification, commit, or archive"
     },
     @{
-        Pattern = "$activeChange|$activeChangePath"
-        Reason = "V12 is archived but still described as an active change"
+        Pattern = "$currentWorkBranch|$archiveCloseout|$v18MergePushDecision|$continueV18Closeout"
+        Reason = "V18 has been merged and pushed, but docs still describe the pre-merge closeout state"
     },
     @{
-        Pattern = $oldRoadmap
-        Reason = "roadmap is still using the old V10-to-V11 wording"
-    },
-    @{
-        Pattern = $readmeV10Roadmap
-        Reason = "README roadmap should not stop at V10"
-    },
-    @{
-        Pattern = $v16Implemented
-        Reason = "V16 should be planned, not described as implemented"
+        Pattern = $generatedPurpose
+        Reason = "long-term specs contain generated placeholder debt"
+        SpecOnly = $true
     },
     @{
         Pattern = "$currentDefaultRealLlm|$currentDefaultMilvus|$currentDefaultEs|$currentDefaultPgVector|$currentDefaultQdrant"
@@ -73,6 +77,9 @@ foreach ($target in $targets) {
     }
 
     foreach ($rule in $rules) {
+        if ($rule.SpecOnly -and ($target -notmatch "openspec[\\/]specs")) {
+            continue
+        }
         $matches = Select-String -LiteralPath $target -Pattern $rule.Pattern
         foreach ($match in $matches) {
             $findings += [pscustomobject]@{

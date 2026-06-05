@@ -1,7 +1,7 @@
 # verification-runner Specification
 
 ## Purpose
-TBD - created by archiving change v17-verification-runner. Update Purpose after archive.
+定义 RepoPilot 在明确验证请求下运行固定白名单验证命令的边界。该能力要求验证执行通过 `ToolExecutor.verification_run`、权限审批上下文、固定 cwd、timeout 和输出脱敏完成，不开放任意 shell 或用户自定义命令参数。
 ## Requirements
 ### Requirement: Verification Runner 只执行明确验证请求
 

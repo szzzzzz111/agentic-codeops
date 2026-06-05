@@ -1,6 +1,15 @@
 # 当前 Review 清单
 
-当前活跃阶段：无。
+当前活跃阶段：V18 closeout debt remediation。
+
+## V18 Post-Merge / Handoff Debt Gate
+
+- [x] `README.md`、`docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md` 必须记录 V18 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`，不得继续提示 archive 后 closeout 或 merge / push 决策。
+- [x] `openspec/specs/**/spec.md` 不得保留 `TBD`、`TODO` 或 `created by archiving change...` 这类 Purpose 占位。
+- [x] Stage Debt Sweep 结果必须沉淀到 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`，不得只留在聊天里。
+- [x] `scripts/check_stage_docs.ps1` 必须扫描当前 durable docs、harness docs 和 long-term specs，并能拦截 stale branch、stale merge / push 建议和 archive 生成的 Purpose 占位。
+- [x] branch cleanup / retention 必须显式记录；已合并 feature 分支若保留，必须说明其已 fully merged 且与 `main` 同 hash。
+- [x] 本次不得实现 V19 Persistent Audit / Recovery runtime；V19 必须另起 OpenSpec change 后再开始。
 
 ## V18 Archive Closeout Gate
 

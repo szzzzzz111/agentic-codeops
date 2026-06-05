@@ -1,7 +1,7 @@
 # safe-patch-authoring Specification
 
 ## Purpose
-TBD - created by archiving change v16-safe-patch-authoring. Update Purpose after archive.
+定义 RepoPilot 基于仓库证据生成 pending patch proposal 并在用户明确确认后通过受控 `patch_apply` 写入的边界。该能力要求 pending patch 按 user/repo 隔离、diff 在创建和应用前完成安全校验，并保持公开响应脱敏。
 ## Requirements
 ### Requirement: Patch proposal 由仓库证据约束
 

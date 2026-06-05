@@ -5,8 +5,8 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 ## 当前状态
 
 - 当前基线分支：`main`
-- 当前工作分支：`feature/v18-patch-verify-loop`
-- 当前阶段：V18 Patch + Verify Loop 已实现、review、提交并归档；当前无 active OpenSpec change
+- 当前工作分支：`feature/v18-closeout-debt`
+- 当前阶段：V18 closeout debt remediation；V18 Patch + Verify Loop 已实现、review、提交、归档、fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`；当前无 active OpenSpec change
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、只读 Assistant Control Surface、Safe Patch Authoring、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
@@ -148,6 +148,11 @@ LLMGateway 设计备忘：
 - 2026-06-04，V18 archive 后 OpenSpec 全量验证：`openspec validate --all`：13 passed, 0 failed。
 - 2026-06-04，V18 archive 后默认验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过；`pytest` 178 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - 2026-06-04，V18 archive closeout：`powershell -ExecutionPolicy Bypass -File scripts/check_stage_closeout.ps1`：通过；包含 no active changes、OpenSpec 全量验证、stage docs drift scan 和 `git diff --check`。
+- 2026-06-05，V18 merge/push audit：当前 `main`、`agentic-codeops/main` 和本地 `feature/v18-patch-verify-loop` 均指向 `3c7a8b3955bbcb0848ad56f0b074c70d1a506107`（`Archive V18 patch verify loop`），确认 V18 已进入远端主线。
+- 2026-06-05，V18 post-merge/handoff audit 发现流程债：`README.md`、`docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md` 仍残留 V18 closeout / merge-push 决策前状态；`openspec/specs/patch-verify-loop/spec.md`、`openspec/specs/verification-runner/spec.md` 和 `openspec/specs/safe-patch-authoring/spec.md` 仍残留 archive 自动生成的 Purpose 占位；`scripts/check_stage_docs.ps1` 当时通过但未拦截上述问题。
+- 2026-06-05，V18 closeout debt remediation：已补齐长期 spec Purpose，更新 durable docs 为真实 main/remote 状态，强化 stage docs drift scan 覆盖 long-term specs、stale V18 closeout wording 和 archive Purpose 占位，并清理本地未跟踪 `__pycache__` 生成目录。
+- 2026-06-05，branch retention：本地 `feature/v18-patch-verify-loop` 已 fully merged，且与 `main` 同 hash；按本仓库历史惯例暂保留已合并 feature 分支，不做自动删除。若后续需要清理，应单独执行分支清理并记录。
+- 2026-06-05，V18 closeout debt remediation 验证：`openspec validate --all`：13 passed, 0 failed；`powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1`：通过，扫描 23 个文件；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：通过，`pytest` 178 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示。
 - 2026-05-31，V15 OpenSpec 计划验证：`openspec validate v15-assistant-control-surface`：通过。
 - 2026-05-31，V15 Assistant Control Surface targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：10 passed。
 - 2026-05-31，V15 OpenSpec 全量验证：`openspec validate --all`：10 passed, 0 failed。
@@ -415,7 +420,7 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：完成 V18 archive 后验证和 closeout gate 后，再进入 merge / push 决策。
+- 当前建议：先完成并验证 V18 closeout debt remediation；确认 durable docs、long-term specs、stage docs drift scan 和 branch retention 记录均已同步后，再创建 V19 Persistent Audit / Recovery OpenSpec change。
 - 近期三阶段默认选择：V19 Persistent Audit / Recovery、V20 Worktree Isolation，之后再规划真实 subagents/connectors/notifications。
 - 后续真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；不要写成当前 runtime 已实现能力。
 - 继续保持不执行 skill，除非后续阶段明确开放。

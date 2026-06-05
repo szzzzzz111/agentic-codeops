@@ -1,7 +1,7 @@
 # patch-verify-loop Specification
 
 ## Purpose
-TBD - created by archiving change v18-patch-verify-loop. Update Purpose after archive.
+定义 RepoPilot 在明确组合确认下串联 pending patch apply 与白名单验证的运行时边界。该能力只覆盖 apply 成功后立即执行受控验证并返回脱敏组合摘要，不包含持久审计、自动修复、worktree、commit/push 或 subagent 调度。
 ## Requirements
 ### Requirement: Patch Verify Loop 只由明确组合确认触发
 
