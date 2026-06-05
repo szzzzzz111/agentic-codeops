@@ -6,7 +6,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V19 已归档；当前基线为 `main` / `agentic-codeops/main`，HEAD 为 `633560f5d6020f70897494ee216ad016ccf66328`；V19 Persistent Audit / Recovery 已完成、归档、fast-forward 合并并完成 post-merge handoff 收尾推送。
+- 当前主线能力：V1-V19 已归档；当前基线为 `main` / `agentic-codeops/main`；V19 Persistent Audit / Recovery 已完成、归档、fast-forward 合并并完成 post-merge handoff 收尾推送。V19 runtime/archive merge commit 为 `add702d62bcf737925b6418d3c9b9fb258e7ff35`，后续 handoff docs closeout commits 已进入 `main`/remote 历史。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
