@@ -1,11 +1,9 @@
-# persistent-audit-recovery Specification
+﻿# persistent-audit-recovery Specification
 
 ## Purpose
 
 记录 RepoPilot 的持久审计与只读恢复能力：系统使用 repo-local SQLite 保存脱敏的 trace、patch attempt、verification result 和 long task event 摘要，并通过现有 `/chat.answer` 提供跨 session 的恢复/状态查询。该能力不新增公开 API，不自动执行恢复动作，不创建 worktree，不调度真实 subagents/connectors/notifications/always-on assistant。
-
 ## Requirements
-
 ### Requirement: Persistent Audit Store
 
 系统 SHALL provide a repo-local persistent audit store for redacted audit summaries at `.repopilot/audit.sqlite3`. Audit records MUST be scoped by `user_id` and repo key. Repo key generation MUST reuse the existing normalized repo identity rule used by repo-local memory.

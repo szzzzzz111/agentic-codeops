@@ -1,6 +1,6 @@
 # 当前 Review 清单
 
-当前活跃阶段：V19 Persistent Audit / Recovery。
+当前活跃阶段：V19 Persistent Audit / Recovery archive/merge closeout。
 
 ## V19 Planning / OpenSpec Gate
 
@@ -44,7 +44,7 @@
 - [x] Long-term specs placeholder sweep：`openspec/specs/**/spec.md` 未发现 `TBD`、`TODO`、`created by archiving change` 占位 Purpose。
 - [x] Durable docs sweep：`README.md`、`docs/PROGRESS.md`、`docs/ARCHITECTURE.md`、`HANDOFF_TO_NEXT_CHAT.md` 已更新到 V19 active branch/change 状态。
 - [x] Harness docs sweep：`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已同步 V19 allowed files、review gates、post-merge durable docs gate 与 branch retention gate。
-- [x] Active OpenSpec sweep：`openspec/changes/v19-persistent-audit-recovery/` 包含 proposal/design/tasks/stage planning 与所有受影响能力 spec delta。
+- [x] Archived OpenSpec sweep：`openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/` 包含 proposal/design/tasks/stage planning 与所有受影响能力 spec delta；当前无 active OpenSpec change。
 - [x] Changed runtime path sweep：`app/audit/**` 与 `app/harness/kernel.py` 已通过 targeted tests、full verify 和 ruff。
 - [x] Adjacent runtime path sweep：patching、verification、longtask、AgentLoop/API tests 已覆盖 V19 audit hook 对既有路径的影响。
 - [x] Additional documentation debt fixed：`docs/FEATURE_LIST.json` 已修复为可解析 JSON，并将 V19 acceptance 更新为通过状态。

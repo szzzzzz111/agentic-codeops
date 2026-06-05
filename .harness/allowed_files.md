@@ -1,8 +1,8 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：V19 Persistent Audit / Recovery。
+当前活跃阶段：V19 Persistent Audit / Recovery archive/merge closeout。
 
-V18 Patch + Verify Loop 及 V18 post-merge/handoff debt remediation 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`；当前 V19 基线为 `main` commit `8b93330`。V19 必须聚焦持久审计与只读恢复，不得把 V20 Worktree Isolation、真实 subagents/connectors/notifications/always-on assistant 或流程 skill 写成 runtime 能力。
+V19 Persistent Audit / Recovery 已实现、通过 external review 并归档到 `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/`；当前 closeout 正在准备 merge/push。V19 merge 基线为 `main` commit `8b93330`。V19 必须聚焦持久审计与只读恢复，不得把 V20 Worktree Isolation、真实 subagents/connectors/notifications/always-on assistant 或流程 skill 写成 runtime 能力。
 
 ## 当前允许修改
 
@@ -13,7 +13,7 @@ V18 Patch + Verify Loop 及 V18 post-merge/handoff debt remediation 已 fast-for
 - `docs/PROGRESS.md`
 - `docs/FEATURE_LIST.json`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/changes/v19-persistent-audit-recovery/**`
+- `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/**`
 - `openspec/specs/persistent-audit-recovery/spec.md`
 - `openspec/specs/agent-loop-tool-execution/spec.md`
 - `openspec/specs/chat-api/spec.md`

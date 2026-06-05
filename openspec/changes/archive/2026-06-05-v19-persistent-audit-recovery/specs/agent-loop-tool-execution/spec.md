@@ -29,6 +29,8 @@ Audit recovery/status intent MUST be handled after patch and verification intent
 - **WHEN** the chat message is a patch confirmation, patch proposal, combined patch/verify confirmation, or explicit verification request
 - **THEN** AgentLoop MUST handle that execution intent before checking recovery/status intent
 
+## ADDED Requirements
+
 ### Requirement: Kernel Records Persistent Audit Events
 
 系统 SHALL attempt to record persistent audit summaries for each `/chat` trace envelope and for patch, verification, and long task events. Persistent audit recording MUST be best-effort and MUST NOT change the primary AgentLoop result if audit writing fails.

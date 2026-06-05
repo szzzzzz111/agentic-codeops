@@ -1,4 +1,4 @@
-# verification-runner Specification
+﻿# verification-runner Specification
 
 ## Purpose
 定义 RepoPilot 在明确验证请求下运行固定白名单验证命令的边界。该能力要求验证执行通过 `ToolExecutor.verification_run`、权限审批上下文、固定 cwd、timeout 和输出脱敏完成，不开放任意 shell 或用户自定义命令参数。
@@ -88,3 +88,15 @@ V17 SHALL 提供独立 Verification Runner。系统 MUST NOT 在 patch proposal 
 - **WHEN** 用户确认应用 patch
 - **THEN** 系统 MAY 执行 V16 patch apply
 - **AND** 系统 MUST NOT 自动触发 `verification_run`
+
+### Requirement: Verification Results Produce Persistent Audit Summaries
+
+系统 SHALL record redacted persistent audit summaries for standalone verification runs and patch verify loop verification runs when an audit store is available.
+
+Verification audit summaries MAY include command label, status, exit code, duration, timeout flag, truncation flag, and short redacted excerpts. Verification audit summaries MUST NOT persist or expose full stdout, full stderr, environment variables, DB paths, local absolute paths, API keys, or secrets.
+
+#### Scenario: Verification audit summary is safe
+
+- **WHEN** `verification_run` completes, fails, or times out
+- **THEN** the persistent audit event records command label, status, exit code, duration, and truncation/timeout flags
+- **AND** it MUST NOT contain full stdout or full stderr

@@ -93,3 +93,34 @@ V18 Patch + Verify Loop SHALL 使用现有 `/chat` 入口、明确组合确认�
 - **THEN** 系统通过 `/chat.answer` 返回组合结果摘要
 - **AND** 系统保持 `/chat` contract 和现有 Harness 权限边界
 - **AND** review checklist MUST 检查组合确认优先级、半解析拒绝、命令白名单、独立 verification context、失败门、输出脱敏、contract 和 non-goals
+
+### Requirement: Stage Debt Sweep Is A Checkable Gate
+
+系统 SHALL require an explicit Stage Debt Sweep before a stage is called implementation-complete, ready to commit, archive-ready, merged, pushed, or ready for the next stage.
+
+The Stage Debt Sweep MUST scan current durable docs, harness docs, active OpenSpec artifacts, long-term specs, changed runtime paths, and adjacent older runtime paths. Discoverable debt MUST be fixed in scope or recorded as a blocker in durable docs. It MUST NOT remain only in chat.
+
+#### Scenario: Stage Debt Sweep evidence is durable
+
+- **WHEN** a stage reaches review or closeout
+- **THEN** `docs/PROGRESS.md`, `HANDOFF_TO_NEXT_CHAT.md`, and `.harness/review_checklist.md` include checkable Stage Debt Sweep evidence or blockers
+
+### Requirement: Post-Merge Durable Docs Reflect Actual State
+
+系统 SHALL update durable docs after merge/push with the actual main/remote state, commit hash, validation evidence, next stage recommendation, and feature branch cleanup/retention decision.
+
+#### Scenario: Merge/push closeout does not leave stale next steps
+
+- **WHEN** a stage has been merged and pushed
+- **THEN** durable docs MUST NOT continue to describe merge/push as a future decision for that completed stage
+- **AND** durable docs MUST record whether the feature branch was retained or cleaned up
+
+### Requirement: Process Skills Are Not Runtime Capabilities
+
+系统 SHALL treat local `.codex/skills/**` edits as development process documentation only unless a future stage explicitly makes a runtime capability. V19 MUST NOT describe Stage Debt Sweep, handoff skills, OpenSpec skills, Superpowers, MCP, or plugins as RepoPilot runtime behavior.
+
+#### Scenario: Skill boundary remains process-only
+
+- **WHEN** `.codex/skills/repo-stage-review-loop/SKILL.md` or `.codex/skills/repo-stage-handoff/SKILL.md` is edited during V19
+- **THEN** the change is documented as process discipline only
+- **AND** runtime docs MUST NOT list it as a product feature

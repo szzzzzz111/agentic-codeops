@@ -1,4 +1,4 @@
-# safe-patch-authoring Specification
+﻿# safe-patch-authoring Specification
 
 ## Purpose
 定义 RepoPilot 基于仓库证据生成 pending patch proposal 并在用户明确确认后通过受控 `patch_apply` 写入的边界。该能力要求 pending patch 按 user/repo 隔离、diff 在创建和应用前完成安全校验，并保持公开响应脱敏。
@@ -87,3 +87,15 @@ V18 MAY 支持明确组合确认语法，将 pending patch apply 与白名单 ve
 - **WHEN** `/chat` 返回 patch proposal
 - **THEN** 响应 MUST 继续只包含 `trace_id`、`answer`、`related_files` 和 `tool_calls`
 - **AND** `answer` MUST NOT 包含完整 diff 文本
+
+### Requirement: Patch Attempts Produce Persistent Audit Summaries
+
+系统 SHALL record redacted persistent audit summaries for patch proposal, apply, failure, expiry, and combined patch/verify attempts when an audit store is available.
+
+Patch audit summaries MAY include patch id, operation, status, target files, diff hash, changed-file counts, and safe error class. Patch audit summaries MUST NOT persist or expose the full unified diff, full Evidence Pack, provider prompt/output, DB path, local absolute path, API key, or secret.
+
+#### Scenario: Patch apply audit summary is safe
+
+- **WHEN** a pending patch is applied or fails to apply
+- **THEN** the persistent audit event records safe patch identifiers and status
+- **AND** it MUST NOT contain full diff text

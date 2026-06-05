@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Patch Attempts Produce Persistent Audit Summaries
 

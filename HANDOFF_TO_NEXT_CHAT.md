@@ -5,12 +5,12 @@
 ```text
 当前基线分支：main
 当前工作分支：feature/v19-persistent-audit-recovery
-当前活跃 OpenSpec change：v19-persistent-audit-recovery
-最近完成阶段：V18 Patch + Verify Loop 与 V18 closeout debt remediation（均已提交、fast-forward 合并并推送）
-当前阶段：V19 Persistent Audit / Recovery implementation complete，等待提交与后续 archive/merge/push closeout
+当前活跃 OpenSpec change：无
+最近完成阶段：V19 Persistent Audit / Recovery（已实现、external review 通过并归档，等待 merge/push closeout）
+当前阶段：V19 archive closeout，下一步 merge/push 并更新 post-merge durable docs
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V18 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行。V18 已加入 Patch + Verify Loop：明确组合确认先 apply pending patch，apply 成功后再用独立 verification context 运行白名单验证。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V19 已归档；V16 已加入 Safe Patch Authoring，通过现有 `/chat.answer` 返回 patch proposal、patch id、确认提示和 apply 结果。V17 已加入 Verification Runner：明确验证请求可运行 `pytest`、`ruff` 或 `verify` 三个固定标签，验证通过 `verification_run` 权限/审批边界和 `ToolExecutor` 执行。V18 已加入 Patch + Verify Loop：明确组合确认先 apply pending patch，apply 成功后再用独立 verification context 运行白名单验证。V19 已加入 Persistent Audit / Recovery：通过 repo-local `.repopilot/audit.sqlite3` 持久化脱敏审计摘要，并通过现有 `/chat.answer` 提供只读恢复/状态查询。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V18 只实现明确组合确认下的 apply 后 verify，不代表 Persistent Audit / Recovery、worktree、subagents、connectors 或 always-on 已实现。
 
@@ -332,6 +332,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 - V19 full verification：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`openspec validate --all` 15 passed, 0 failed；`git diff --check` 通过，仅有 CRLF 换行提示。
 - V19 Stage Debt Sweep：已扫描 current docs、harness docs、active OpenSpec、long-term specs、changed runtime paths 和 adjacent older runtime paths；修复额外发现的 `docs/FEATURE_LIST.json` JSON 结构债、V19 passes 状态、V18 archive hash 历史表述和 checklist evidence；长期 specs 未发现 `TBD`、`TODO`、`created by archiving change` Purpose 占位。
 - V19 external review follow-up：runtime/tests 无 P0/P1/P2；已修复文档 P2，将 `AuditManager(persistent redacted audit / read-only recovery)` 补入 `HANDOFF_TO_NEXT_CHAT.md` 与 `README.md` 当前主链路图，使其与 `docs/ARCHITECTURE.md` 一致。
+- V19 archive：`openspec archive v19-persistent-audit-recovery -y` 已完成；长期 specs 已同步，归档路径为 `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/`；archive 后 `openspec validate --all` 14 passed, 0 failed，`scripts/check_stage_docs.ps1` 扫描 24 files 无 drift，long-term specs 未发现 Purpose 占位。
+- V19 archive 后 full verification：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示。
 - V17 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`，长期 specs 已同步，新增 `openspec/specs/verification-runner/spec.md`。
 - V17 runtime 新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
@@ -393,8 +395,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. 提交 V19 Persistent Audit / Recovery 当前 feature branch，提交前保留 full verify、Stage Debt Sweep 和 durable docs 证据。
-2. V19 archive/merge/push 后，必须再次更新 `docs/PROGRESS.md` 与 `HANDOFF_TO_NEXT_CHAT.md`，记录真实 main/remote commit hash、验证结果和 branch cleanup/retention 决策。
+1. 提交 V19 archive closeout 当前 feature branch，提交前保留 archive 后 OpenSpec、Stage Debt Sweep 和 durable docs 证据。
+2. V19 merge/push 后，必须再次更新 `docs/PROGRESS.md` 与 `HANDOFF_TO_NEXT_CHAT.md`，记录真实 main/remote commit hash、验证结果和 branch cleanup/retention 决策。
 3. 不要把 V20 Worktree Isolation、真实 subagents、connectors、notifications、heartbeat/cron 或 always-on assistant 归入 V19 scope。
 
 后续路线已拆分：V10 做 Evidence Pack + Context Budget；V11 做 Grounded Answer / Model Provider Boundary；V12 做 Query Rewrite + Rerank；V13 做 Memory；V14 做 Long Task / ReAct Skeleton；V15 做 Assistant Control Surface；V16 做 Safe Patch Authoring；V17 做 Verification Runner；V18 做 Patch + Verify Loop；V19 做 Persistent Audit / Recovery；V20 做 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。
