@@ -49,7 +49,7 @@
 - [x] Adjacent runtime path sweep：patching、verification、longtask、AgentLoop/API tests 已覆盖 V19 audit hook 对既有路径的影响。
 - [x] Additional documentation debt fixed：`docs/FEATURE_LIST.json` 已修复为可解析 JSON，并将 V19 acceptance 更新为通过状态。
 - [x] Historical V18 doc drift fixed：V18 archive merge hash `3c7a8b3...` 已标注为历史归档记录，并由 V18 closeout debt commit `8b93330` supersede。
-- [x] Post-merge evidence：`main`、`agentic-codeops/main` 和本地 `feature/v19-persistent-audit-recovery` 均指向 `add702d62bcf737925b6418d3c9b9fb258e7ff35`；feature branch fully merged，并按审计惯例保留。
+- [x] Post-merge evidence：`main` 与 `agentic-codeops/main` 指向 `633560f5d6020f70897494ee216ad016ccf66328`；本地 `feature/v19-persistent-audit-recovery` 保留在已 fully merged 的 `add702d62bcf737925b6418d3c9b9fb258e7ff35`，并按审计惯例保留。
 
 ## V18 Closeout Baseline
 

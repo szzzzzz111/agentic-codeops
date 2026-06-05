@@ -2,7 +2,7 @@
 
 当前活跃阶段：无 active implementation stage。
 
-V19 Persistent Audit / Recovery 已实现、通过 external review、归档到 `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/`，并 fast-forward 合并推送到 `agentic-codeops/main` commit `add702d62bcf737925b6418d3c9b9fb258e7ff35`。下一阶段开始前必须重新同步本文件和 `.harness/review_checklist.md`。
+V19 Persistent Audit / Recovery 已实现、通过 external review、归档到 `openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/`，并 fast-forward 合并推送；post-merge handoff 收尾后 `main` 与 `agentic-codeops/main` 指向 `633560f5d6020f70897494ee216ad016ccf66328`。下一阶段开始前必须重新同步本文件和 `.harness/review_checklist.md`。
 
 ## 当前允许修改
 
