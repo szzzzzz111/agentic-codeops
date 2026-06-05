@@ -74,6 +74,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> PatchManager(proposal/apply confirmation)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
+  -> AuditManager(persistent redacted audit / read-only recovery)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
@@ -330,6 +331,7 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 - V19 targeted implementation 验证：`pytest tests/test_persistent_audit.py -q`：9 passed；`pytest tests/test_agent_harness_kernel.py tests/test_chat_api.py tests/test_persistent_audit.py -q`：85 passed；`ruff check app/audit app/harness/kernel.py tests/test_persistent_audit.py tests/test_agent_harness_kernel.py tests/test_chat_api.py`：All checks passed。
 - V19 full verification：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`openspec validate --all` 15 passed, 0 failed；`git diff --check` 通过，仅有 CRLF 换行提示。
 - V19 Stage Debt Sweep：已扫描 current docs、harness docs、active OpenSpec、long-term specs、changed runtime paths 和 adjacent older runtime paths；修复额外发现的 `docs/FEATURE_LIST.json` JSON 结构债、V19 passes 状态、V18 archive hash 历史表述和 checklist evidence；长期 specs 未发现 `TBD`、`TODO`、`created by archiving change` Purpose 占位。
+- V19 external review follow-up：runtime/tests 无 P0/P1/P2；已修复文档 P2，将 `AuditManager(persistent redacted audit / read-only recovery)` 补入 `HANDOFF_TO_NEXT_CHAT.md` 与 `README.md` 当前主链路图，使其与 `docs/ARCHITECTURE.md` 一致。
 - V17 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`，长期 specs 已同步，新增 `openspec/specs/verification-runner/spec.md`。
 - V17 runtime 新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。

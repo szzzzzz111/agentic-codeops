@@ -196,6 +196,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> PatchManager(proposal/apply confirmation)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
+  -> AuditManager(persistent redacted audit / read-only recovery)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
   -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
