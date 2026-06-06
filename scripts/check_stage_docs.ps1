@@ -80,6 +80,11 @@ $requiredMatches = @(
     },
     @{
         Target = "README.md"
+        Pattern = "^### Verification Runner$"
+        Reason = "README current capabilities must include Verification Runner"
+    },
+    @{
+        Target = "README.md"
         Pattern = "^### V19\uff1aPersistent Audit / Recovery$"
         Reason = "README stage history must include V19"
     },

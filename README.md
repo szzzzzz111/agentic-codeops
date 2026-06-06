@@ -87,6 +87,13 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - `patch_apply` 是 V16 唯一写入工具，必须经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`，只写 diff 中的 repo 内相对路径。
 - V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell，不实现 Patch + Verify Loop。
 
+### Verification Runner
+
+- 通过明确验证请求触发，只接受固定标签 `pytest`、`ruff` 或 `verify`；不接受用户附加参数、targeted pytest、`ruff --fix`、管道、重定向或环境变量注入。
+- `verification_run` 必须经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`，使用固定 argv、resolved repo cwd、timeout 和输出上限执行。
+- 公开回答只返回截断脱敏摘要，不暴露完整 stdout/stderr、本机绝对路径、DB 路径、环境变量或 secret。
+- Verification Runner 不自动 apply patch、不根据失败生成新 patch、不创建 worktree、不自动 commit/push。
+
 ### Patch + Verify Loop
 
 - 通过明确组合确认触发，例如 `确认 patch <patch_id> 并运行验证`、`应用 patch <patch_id> 并运行 pytest`、`confirm patch <patch_id> and run verify`。
@@ -223,6 +230,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/longtask/`：提供 Long Task parser、planner、repo-local SQLite store、manager 和 ReAct trace skeleton。
 - `app/assistant/control_surface.py`：提供 Assistant Control Surface 触发词、只读状态聚合和 answer formatter。
 - `app/patching/`：提供 patch 确认解析、Patch Authoring provider 边界、pending patch SQLite store、unified diff preflight/apply 和 Patch manager。
+- `app/verification/`：提供验证请求解析、固定白名单标签、受控 runner、timeout、输出截断和脱敏。
 - `app/audit/`：提供 repo-local SQLite audit store、脱敏事件写入、作用域查询和只读 recovery/status answer formatting。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。

@@ -51,7 +51,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V15：Assistant Control Surface。已实现并归档；把 `/chat`、Memory、Long Task 和 RAG 组织成更好用的助手入口，并提供轻量只读状态聚合；不写代码、不执行 shell、不后台运行。
 - V16：Safe Patch Authoring。已实现并归档；基于 repo evidence 生成 patch proposal / diff，用户明确确认后才通过受控 `patch_apply` apply；不执行测试、不自动 commit、不创建 worktree。
 - V17：Verification Runner。通过白名单验证命令执行 `pytest`、`ruff check .` 或 `scripts/verify.ps1` 等受控验证，并经过权限和审批边界。
-- V18：Patch + Verify Loop。串联 patch、apply、verify、失败摘要、修复建议和再次 patch，让代码改动形成可恢复闭环。
+- V18：Patch + Verify Loop。串联明确确认下的 pending patch apply 与白名单 verify，返回组合结果、失败摘要和下一步建议；不自动生成或再次 apply patch，持久恢复由 V19 提供。
 - V19：Persistent Audit / Recovery。用轻量 SQLite 持久化关键 trace、patch attempt、verification result 和 task event，支持跨 session 恢复。
 - V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
 
@@ -165,6 +165,8 @@ LLMGateway 设计备忘：
 - 2026-06-05，V19 post-merge docs verification：durable docs 已更新真实 main/remote 状态、commit hash、验证结果和 branch retention 决策；stale phrase 与 long-term Purpose 扫描无命中；`openspec validate --all` 14 passed, 0 failed；`scripts/check_stage_docs.ps1` 扫描 24 files 无 drift；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed；`git diff --check` 通过，仅有 CRLF 换行提示。
 - 2026-06-06，V19 post-closeout documentation parity audit：用户发现 README 未完整同步 V19。复核确认 README 缺少 V19 当前能力专章和阶段历史，路线图仍停在 V18，当前非目标误把已实现 persistent audit 列为未来项；PROGRESS/ARCHITECTURE/HANDOFF 也有同类 stale wording。现已修复 durable docs，并强化 `scripts/check_stage_docs.ps1`，要求 README 必须包含 V19 当前能力、V19 阶段历史和已归档至 V19 的路线图标记，同时拦截 V19 未完成及 persistent audit 仍属 Roadmap 的 stale wording。
 - 2026-06-06，V19 documentation parity audit 验证与测试债修复：首次 full verify 发现 `tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent` 仍强制要求旧 V18 archived marker，说明旧测试锁定了陈旧路线图。已将测试更新为正向验证 README 的 V19 当前能力、V19 阶段历史和已归档至 V19 路线图，并显式拒绝旧 V18 marker；targeted test 1 passed，最终 `scripts/verify.ps1` 187 passed, 1 skipped，ruff 与 stage docs drift scan 通过。
+- 2026-06-06，post-closeout semantic parity follow-up：继续复核发现 README 当前能力缺少 Verification Runner 专章及 `app/verification/` 模块说明，ARCHITECTURE 当前能力总览漏写 Patch + Verify Loop / Persistent Audit，PROGRESS 对 V18 过度描述为会再次 patch 的可恢复闭环，HANDOFF 末尾仍使用 V19 未来规划时态。现已修复，并扩展 stage docs checker 与 parity test 覆盖 Verification Runner 当前能力。
+- 2026-06-06，post-closeout semantic parity follow-up 验证：`scripts/check_stage_closeout.ps1` 通过，无 active OpenSpec change，14 specs valid，stage docs 无 drift，diff check 通过；`scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed。
 - 2026-05-31，V15 OpenSpec 计划验证：`openspec validate v15-assistant-control-surface`：通过。
 - 2026-05-31，V15 Assistant Control Surface targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：10 passed。
 - 2026-05-31，V15 OpenSpec 全量验证：`openspec validate --all`：10 passed, 0 failed。

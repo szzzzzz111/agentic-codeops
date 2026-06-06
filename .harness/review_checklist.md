@@ -53,6 +53,7 @@
 - [x] Post-closeout README parity repair：README 已包含 V19 当前能力专章、V19 阶段历史、已归档至 V19 的路线图，并移除把已实现 persistent audit 误写为当前非目标的表述。
 - [x] Post-closeout durable-doc repair：PROGRESS/ARCHITECTURE/HANDOFF 已移除 V19 未完成或 trace 持久化仍属 Roadmap 的 stale wording。
 - [x] Post-closeout parity test repair：`tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent` 已改为正向锁定 V19 README parity，并显式拒绝旧 V18 archived marker。
+- [x] Post-closeout semantic parity follow-up：README/ARCHITECTURE/PROGRESS/HANDOFF 已补齐 Verification Runner、Patch + Verify Loop、Persistent Audit 当前能力语义，并移除 V18/V19 过度或未来时态描述。
 
 ## V18 Closeout Baseline
 

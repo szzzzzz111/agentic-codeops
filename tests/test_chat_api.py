@@ -530,6 +530,7 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "V10：Evidence Pack + Context Budget" in combined
     assert "V11：Grounded Answer / Model Provider Boundary" in combined
     assert "V12：Query Rewrite + Rerank" in combined
+    assert "### Verification Runner" in readme
     assert "### Persistent Audit / Recovery" in readme
     assert "### V19：Persistent Audit / Recovery" in readme
     assert "已归档至 V19：Persistent Audit / Recovery" in readme
