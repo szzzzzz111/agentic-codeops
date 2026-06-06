@@ -336,12 +336,14 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 - V19 archive 后 full verification：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示。
 - V19 merge/push closeout：`feature/v19-persistent-audit-recovery` 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main` at `add702d62bcf737925b6418d3c9b9fb258e7ff35`；随后 post-merge handoff docs closeout commits 已推送到 `main`/remote；本地 feature branch 已 fully merged 并保留在 `add702d62bcf737925b6418d3c9b9fb258e7ff35`，按本仓库审计惯例不自动删除。
 - V19 post-merge docs verification：durable docs 已更新真实 main/remote 状态、commit hash、验证结果和 branch retention 决策；stale phrase 与 long-term Purpose 扫描无命中；`openspec validate --all` 14 passed, 0 failed；`scripts/check_stage_docs.ps1` 扫描 24 files 无 drift；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed；`git diff --check` 通过，仅有 CRLF 换行提示。
+- V19 post-closeout documentation parity audit：用户发现 README 未完整同步 V19。复核确认 README 缺少 V19 当前能力专章和阶段历史，路线图仍停在 V18，当前非目标误把已实现 persistent audit 列为未来项；PROGRESS/ARCHITECTURE/HANDOFF 也有同类 stale wording。现已修复 durable docs，并强化 `scripts/check_stage_docs.ps1`，要求 README 必须包含 V19 当前能力、V19 阶段历史和已归档至 V19 的路线图标记，同时拦截 V19 未完成及 persistent audit 仍属 Roadmap 的 stale wording。
+- V19 documentation parity audit 验证与测试债修复：首次 full verify 发现 `tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent` 仍强制要求旧 V18 archived marker，说明旧测试锁定了陈旧路线图。已将测试更新为正向验证 README 的 V19 当前能力、V19 阶段历史和已归档至 V19 路线图，并显式拒绝旧 V18 marker；targeted test 1 passed，最终 `scripts/verify.ps1` 187 passed, 1 skipped，ruff 与 stage docs drift scan 通过。
 - V17 已归档到 `openspec/changes/archive/2026-06-03-v17-verification-runner/`，长期 specs 已同步，新增 `openspec/specs/verification-runner/spec.md`。
 - V17 runtime 新增 `app/verification/`、扩展 `ToolInvocationContext.command_label`、注册 `verification_run` 并接入 AgentLoop；targeted tests 已通过 11 项，相关回归 78 passed，默认 verify 通过：`pytest` 170 passed, 1 skipped；`ruff check .` All checks passed；stage docs drift scan 无漂移。
 - V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
 - V16 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`，长期 specs 已同步。
 - V15 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，长期 specs 已同步。
-- V1-V18 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景。
+- V1-V19 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景。
 
 ## V10 实现摘要
 

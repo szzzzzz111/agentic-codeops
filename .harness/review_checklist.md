@@ -50,6 +50,9 @@
 - [x] Additional documentation debt fixed：`docs/FEATURE_LIST.json` 已修复为可解析 JSON，并将 V19 acceptance 更新为通过状态。
 - [x] Historical V18 doc drift fixed：V18 archive merge hash `3c7a8b3...` 已标注为历史归档记录，并由 V18 closeout debt commit `8b93330` supersede。
 - [x] Post-merge evidence：V19 runtime/archive merge commit `add702d62bcf737925b6418d3c9b9fb258e7ff35` 与后续 handoff docs closeout commits 已进入 `main`/remote 历史；本地 `feature/v19-persistent-audit-recovery` 保留在已 fully merged 的 `add702d62bcf737925b6418d3c9b9fb258e7ff35`，并按审计惯例保留。
+- [x] Post-closeout README parity repair：README 已包含 V19 当前能力专章、V19 阶段历史、已归档至 V19 的路线图，并移除把已实现 persistent audit 误写为当前非目标的表述。
+- [x] Post-closeout durable-doc repair：PROGRESS/ARCHITECTURE/HANDOFF 已移除 V19 未完成或 trace 持久化仍属 Roadmap 的 stale wording。
+- [x] Post-closeout parity test repair：`tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent` 已改为正向锁定 V19 README parity，并显式拒绝旧 V18 archived marker。
 
 ## V18 Closeout Baseline
 

@@ -524,17 +524,22 @@ def test_docs_keep_stage_route_map_consistent() -> None:
         Path("docs/ARCHITECTURE.md"),
         Path("HANDOFF_TO_NEXT_CHAT.md"),
     ]
+    readme = docs[0].read_text(encoding="utf-8")
     combined = "\n".join(path.read_text(encoding="utf-8") for path in docs)
 
     assert "V10：Evidence Pack + Context Budget" in combined
     assert "V11：Grounded Answer / Model Provider Boundary" in combined
     assert "V12：Query Rewrite + Rerank" in combined
-    assert "已归档至 V18：Patch + Verify Loop" in combined
+    assert "### Persistent Audit / Recovery" in readme
+    assert "### V19：Persistent Audit / Recovery" in readme
+    assert "已归档至 V19：Persistent Audit / Recovery" in readme
     assert "V15：Assistant Control Surface" in combined
     assert "V16：Safe Patch Authoring" in combined
     assert "V17：Verification Runner" in combined
     assert "V18：Patch + Verify Loop" in combined
+    assert "V19：Persistent Audit / Recovery" in combined
     assert "Assistant Control Surface" in combined
+    assert "已归档至 V18：Patch + Verify Loop" not in combined
     assert "V10：Query Rewrite / Rerank / Context Budget" not in combined
     assert "V10 = Query Rewrite / Rerank / Context Budget" not in combined
     assert "V12 不默认启用真实 LLM rewrite/rerank" in combined

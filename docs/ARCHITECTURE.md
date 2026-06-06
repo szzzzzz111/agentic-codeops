@@ -25,7 +25,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `CodeAgent` 负责调用轻量 `AgentLoop` 并适配 `/chat` 响应结构。
 - `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。Memory command 在 `RequestRouter` / keyword 路由前识别。
 - `LongTaskManager` 负责明确长任务指令、repo-local SQLite task store、deterministic task-type plan、pause/resume、scratch 摘要和 ReAct trace skeleton。Long Task 控制命令在 memory command 之后、`RequestRouter` / keyword 路由前处理；只有显式 resume/run 当前 step 才能调用只读 `repo_rag`。
-- `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、Patch/Verification/Audit Recovery 之前处理，不调用 `repo_rag`，不写 memory/tasks 状态；V19 会为所有 `/chat` 请求写入轻量 persistent audit trace envelope。
+- `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、Patch/Verification/Audit Recovery 之前处理，不调用 `repo_rag`，不写 memory/tasks 状态；V19 为所有 `/chat` 请求写入轻量 persistent audit trace envelope。
 - `PatchManager` 负责明确 patch proposal 请求和明确 patch apply 确认。Proposal 先走 repo evidence；apply 只接受 `确认 patch <patch_id>` / `应用 patch <patch_id>` 等明确语法，并在权限检查前生成已归一化 `ToolInvocationContext`。
 - `PatchVerifyLoop` 负责明确组合确认请求，例如 `确认 patch <patch_id> 并运行验证`。组合确认在 Patch command 分支内优先于纯 Verification intent 处理；请求必须同时包含 patch id 和白名单 verification label，半解析或不安全 label 会整体拒绝且不 apply。
 - `VerificationRunner` 负责明确验证请求、固定白名单标签、输出截断和脱敏。它在 Patch command / Patch intent 之后、capability-status / repo_search 之前处理，只允许 `pytest`、`ruff` 和 `verify`，并通过 `verification_run` 权限/审批边界执行。
@@ -41,7 +41,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `GroundedAnswerGenerator` 只消费预算内 included evidence，并负责 provider 调用、citation 校验、fallback 和脱敏 audit 摘要。
 - `ModelProvider` 默认使用本地 deterministic fake provider；显式配置后可调用 OpenAI-compatible provider。
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
-- Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。当前 Trace 仍是请求级标识，不是完整持久化审计系统；hybrid retrieval 的 channel audit summary、Evidence Pack audit summary 和 provider audit summary 只保留在内部 trace，不作为 `/chat` 顶层字段暴露。
+- Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。V19 `AuditManager` 持久化脱敏 trace envelope 和关键事件摘要；完整 raw internal trace、hybrid retrieval channel detail、Evidence Pack content 和 provider content 不持久化，也不作为 `/chat` 顶层字段暴露。
 
 当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring 和 Verification Runner。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 通过现有 `answer` 返回白名单验证摘要，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行任意 shell、不自动 commit、不创建 worktree；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源或 Patch Authoring 结构化 diff 来源。
 
@@ -140,7 +140,7 @@ ChatService
 - 沙箱执行命令。
 - SandboxRunner 的实际实现。
 - 真实审批 UI 或审批持久化。
-- trace 持久化审计。
+- 完整 raw trace 持久化、trace replay 或自动恢复执行；V19 只提供脱敏审计摘要和只读 recovery/status。
 
 ## V8 历史架构补充：Query Understanding + Lexical Repo RAG
 
@@ -168,7 +168,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 当前实现 Persistent Audit / Recovery。后续路线调整为 lightweight industrial harness：V20 做 Worktree Isolation。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery。后续路线调整为 lightweight industrial harness：V20 做 Worktree Isolation。
 
 V20 及之后仍是未来能力，不是当前架构已实现部分。worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
 

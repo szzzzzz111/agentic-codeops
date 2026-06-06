@@ -163,6 +163,8 @@ LLMGateway 设计备忘：
 - 2026-06-05，V19 archive 后 full verification：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed，stage docs drift scan 无漂移；`git diff --check` 通过，仅有 CRLF 换行提示。
 - 2026-06-05，V19 merge/push closeout：`feature/v19-persistent-audit-recovery` 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main` at `add702d62bcf737925b6418d3c9b9fb258e7ff35`；随后 post-merge handoff docs closeout commits 已推送到 `main`/remote；本地 feature branch 已 fully merged 并保留在 `add702d62bcf737925b6418d3c9b9fb258e7ff35`，按本仓库审计惯例不自动删除。
 - 2026-06-05，V19 post-merge docs verification：durable docs 已更新真实 main/remote 状态、commit hash、验证结果和 branch retention 决策；stale phrase 与 long-term Purpose 扫描无命中；`openspec validate --all` 14 passed, 0 failed；`scripts/check_stage_docs.ps1` 扫描 24 files 无 drift；`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过，`pytest` 187 passed, 1 skipped，`ruff check .` All checks passed；`git diff --check` 通过，仅有 CRLF 换行提示。
+- 2026-06-06，V19 post-closeout documentation parity audit：用户发现 README 未完整同步 V19。复核确认 README 缺少 V19 当前能力专章和阶段历史，路线图仍停在 V18，当前非目标误把已实现 persistent audit 列为未来项；PROGRESS/ARCHITECTURE/HANDOFF 也有同类 stale wording。现已修复 durable docs，并强化 `scripts/check_stage_docs.ps1`，要求 README 必须包含 V19 当前能力、V19 阶段历史和已归档至 V19 的路线图标记，同时拦截 V19 未完成及 persistent audit 仍属 Roadmap 的 stale wording。
+- 2026-06-06，V19 documentation parity audit 验证与测试债修复：首次 full verify 发现 `tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent` 仍强制要求旧 V18 archived marker，说明旧测试锁定了陈旧路线图。已将测试更新为正向验证 README 的 V19 当前能力、V19 阶段历史和已归档至 V19 路线图，并显式拒绝旧 V18 marker；targeted test 1 passed，最终 `scripts/verify.ps1` 187 passed, 1 skipped，ruff 与 stage docs drift scan 通过。
 - 2026-05-31，V15 OpenSpec 计划验证：`openspec validate v15-assistant-control-surface`：通过。
 - 2026-05-31，V15 Assistant Control Surface targeted TDD 验证：`pytest tests/test_assistant_control_surface.py tests/test_agent_harness_kernel.py::test_agent_loop_answers_assistant_status_without_repo_rag tests/test_agent_harness_kernel.py::test_agent_loop_memory_command_still_precedes_assistant_status tests/test_agent_harness_kernel.py::test_agent_loop_long_task_command_still_precedes_assistant_status tests/test_chat_api.py::test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state -q`：10 passed。
 - 2026-05-31，V15 OpenSpec 全量验证：`openspec validate --all`：10 passed, 0 failed。
@@ -409,7 +411,7 @@ LLMGateway 设计备忘：
 - V3 只做最小确定性关键词提取，测试使用 `UNIQUE_BUG_TOKEN`。
 - 当前链路通过 `ToolExecutor(repo_rag)` 调用只读 hybrid repo RAG；V9 会读取安全文件工具允许访问的仓库文本文件小段 chunk，但不返回完整文件内容。
 - 当前不接真实 LLM、不自动修改代码、不执行 shell、不做 Reflection、eval、真实外部 embedding 服务、外部向量库、向量 Memory、自动 memory 总结或复杂多 Agent；V16 仅允许用户明确确认后的受控 patch apply。
-- `PermissionPolicy` 和最小 `ApprovalGate` 已实现；真实审批流程、SandboxRunner、trace 持久化审计、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
+- `PermissionPolicy`、最小 `ApprovalGate` 和 V19 脱敏持久审计摘要已实现；真实审批流程、SandboxRunner、完整 raw trace replay、Skill 执行、eval 和 Reflection 仍是 Roadmap，不能写成已实现。
 - 后续接入真实审批、沙箱或高风险工具时，应通过当前权限/审批边界和 `ToolExecutor` 增量加入。
 - 缓存文件已从 git 跟踪中移除，并由 `.gitignore` 忽略。
 - V14 Memory command 与 Long Task 控制命令必须在 `RequestRouter` / keyword 路由前处理，顺序为 Memory command 先识别、Long Task command 后识别；除显式 resume/run 当前 step 外，不得调用 `repo_rag`。
@@ -431,7 +433,7 @@ LLMGateway 设计备忘：
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
 - 当前建议：V19 Persistent Audit / Recovery 已完成、归档、合并并推送；下一步按项目流程开始 V20 Worktree Isolation 规划，规划前先读取 AGENTS/README/PROGRESS/ARCHITECTURE/allowed_files/review_checklist/HANDOFF，并创建新的 OpenSpec change。
-- 近期三阶段默认选择：完成 V19 Persistent Audit / Recovery，下一阶段 V20 Worktree Isolation，之后再规划真实 subagents/connectors/notifications。
+- 近期路线：V19 Persistent Audit / Recovery 已完成；下一阶段 V20 Worktree Isolation，之后再规划真实 subagents/connectors/notifications。
 - 后续真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；不要写成当前 runtime 已实现能力。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 

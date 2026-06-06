@@ -94,7 +94,15 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 单独 `确认 patch <patch_id>` 仍保持 V16 apply-only 行为，不自动验证。
 - apply 成功后才生成独立 `ToolInvocationContext(tool_name="verification_run", intent="verification_run", command_label=..., confirmed=True, scope_valid=...)` 并运行白名单验证。
 - apply 失败、过期、hash mismatch、跨用户或跨 repo 时不运行验证。
-- 验证失败只返回失败摘要和下一步建议；V18 不自动生成新 patch、不再次 apply、不持久化 verification result、不创建 worktree、不 commit/push。
+- 验证失败只返回失败摘要和下一步建议；V18 不自动生成新 patch、不再次 apply、不创建 worktree、不 commit/push。V19 持久化脱敏 verification result 摘要，但不保存完整 stdout/stderr。
+
+### Persistent Audit / Recovery
+
+- `AuditManager` 为所有 `/chat` 请求记录轻量 trace envelope，并为 patch attempt、verification result 和 long task event 记录更详细的脱敏摘要。
+- 审计数据写入 repo-local `.repopilot/audit.sqlite3`，按 `user_id + repo_key` 隔离；默认查询最近 20 条，V19 不自动清理历史记录。
+- 持久化 payload 不保存完整 diff、完整 stdout/stderr、完整 Evidence Pack、provider prompt/output、secret、DB path、环境变量或本机绝对路径。
+- recovery/status intent 在 patch/verification 之后、capability-status/repo_search 之前处理；命中后不调用 `repo_rag`，不执行 patch、verification、task resume 或 repo mutation。
+- 缺失 audit DB 的只读查询不创建 `.repopilot` 或 `audit.sqlite3`；audit 写入失败不影响主 `/chat` 响应。
 
 ### Safe Repository Tools
 
@@ -215,6 +223,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/longtask/`：提供 Long Task parser、planner、repo-local SQLite store、manager 和 ReAct trace skeleton。
 - `app/assistant/control_surface.py`：提供 Assistant Control Surface 触发词、只读状态聚合和 answer formatter。
 - `app/patching/`：提供 patch 确认解析、Patch Authoring provider 边界、pending patch SQLite store、unified diff preflight/apply 和 Patch manager。
+- `app/audit/`：提供 repo-local SQLite audit store、脱敏事件写入、作用域查询和只读 recovery/status answer formatting。
 - `app/rag/query_understanding.py`：提供 deterministic `SearchPlan`。
 - `app/rag/repo_rag.py`：提供 repo chunk、lexical scoring、deterministic embedding、hybrid fusion、dedup 和 citation。
 - `app/rag/query_rewrite.py`：提供 deterministic multi-query rewrite 边界和 Code Evidence variants。
@@ -225,7 +234,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `app/tools/tool_executor.py`：统一包装只读代码搜索、hybrid repo RAG 和 skill loader 工具调用。
 - `app/tools/file_tools.py`：提供安全仓库文件工具。
 - `app/tools/skill_loader.py`：提供 Skill Metadata Loader 和 Skill Content Loader。
-- `app/observability/tracing.py`：生成请求级 `trace_id`；当前不是完整持久化审计系统。
+- `app/observability/tracing.py`：生成请求级 `trace_id`；持久化审计由独立 `app/audit/` 承担。
 
 ## 阶段历史
 
@@ -321,12 +330,18 @@ V18 在 AgentLoop Patch command 分支中加入明确组合确认处理，优先
 
 V18 保持 `/chat` contract 不变，组合结果只进入现有 `answer` 和安全 `tool_calls` 摘要。组合请求缺失验证标签、半解析、非法 label、附加参数或 shell 语法时整体拒绝，不 apply patch。V18 不持久化验证结果、不生成后续 patch、不创建 worktree、不 commit/push。
 
+### V19：Persistent Audit / Recovery
+
+V19 加入 repo-local `.repopilot/audit.sqlite3` 持久审计，记录所有 `/chat` 请求的轻量 trace envelope，以及 patch attempt、verification result 和 long task event 的脱敏摘要。记录按 `user_id + repo_key` 隔离，缺失 DB 的只读恢复查询不创建状态，audit 写入失败不影响主请求。
+
+V19 通过现有 `/chat.answer` 提供只读 recovery/status 查询，保持顶层 response contract 不变。Recovery intent 在 patch/verification 之后、capability-status/repo_search 之前处理，命中后不调用 `repo_rag`，不执行 patch、verification、task resume、repo mutation、commit、push 或 worktree 操作。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
 - 技能执行。
 - SandboxRunner 实现。
-- trace 持久化审计。
+- 完整 raw trace 持久化、trace replay 或自动恢复执行；V19 只保存脱敏审计摘要并提供只读 recovery/status。
 - 反思检查和 eval。
 - 真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant。
 - 真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结和 context compression。
@@ -387,10 +402,8 @@ ChatService
 
 ## 路线图
 
-已归档至 V18：Patch + Verify Loop。当前无 active change。后续路线：
+已归档至 V19：Persistent Audit / Recovery。当前无 active change。下一阶段路线：
 
-- V18：Patch + Verify Loop。串联明确组合确认下的 patch apply 和白名单 verify，返回失败摘要与下一步建议；不做持久恢复或 worktree。
-- V19：Persistent Audit / Recovery。用轻量 SQLite 持久化关键 trace、patch attempt、verification result 和 task event，支持跨 session 恢复。
 - V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
 
 真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；当前不要把这些写成已实现能力。

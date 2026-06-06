@@ -36,6 +36,11 @@ $currentWorkBranch = U "\u5f53\u524d\u5de5\u4f5c\u5206\u652f\uff1a`?feature/v18-
 $archiveCloseout = U "archive \u540e\u9a8c\u8bc1 / closeout \u4e2d"
 $v18MergePushDecision = U "\u5b8c\u6210 V18 archive \u540e\u9a8c\u8bc1\u548c closeout gate \u540e\uff0c\u518d\u8fdb\u5165 merge / push \u51b3\u7b56"
 $continueV18Closeout = U "\u7ee7\u7eed V18 closeout"
+$archivedThroughV18 = U "\u5df2\u5f52\u6863\u81f3 V18"
+$v1ThroughV18ActiveArchived = "V1-V18 active changes"
+$v19CurrentlyImplementing = U "V19 \u5f53\u524d\u5b9e\u73b0"
+$completeV19AsFuture = U "\u5b8c\u6210 V19 Persistent Audit / Recovery"
+$tracePersistenceStillRoadmap = U "trace \u6301\u4e45\u5316\u5ba1\u8ba1"
 $generatedPurpose = "TBD|TODO|created by archiving change"
 $currentDefaultRealLlm = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM|\u5df2\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM"
 $currentDefaultMilvus = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Milvus|\u5df2\u9ed8\u8ba4\u63a5\u5165 Milvus"
@@ -53,6 +58,10 @@ $rules = @(
         Reason = "V18 has been merged and pushed, but docs still describe the pre-merge closeout state"
     },
     @{
+        Pattern = "$archivedThroughV18|$v1ThroughV18ActiveArchived|$v19CurrentlyImplementing|$completeV19AsFuture|$tracePersistenceStillRoadmap"
+        Reason = "V19 has completed, but durable docs still describe V18/V19 or persistent audit as incomplete"
+    },
+    @{
         Pattern = $generatedPurpose
         Reason = "long-term specs contain generated placeholder debt"
         SpecOnly = $true
@@ -60,6 +69,24 @@ $rules = @(
     @{
         Pattern = "$currentDefaultRealLlm|$currentDefaultMilvus|$currentDefaultEs|$currentDefaultPgVector|$currentDefaultQdrant"
         Reason = "default capability should not claim real LLM or heavyweight retrieval infrastructure"
+    }
+)
+
+$requiredMatches = @(
+    @{
+        Target = "README.md"
+        Pattern = "^### Persistent Audit / Recovery$"
+        Reason = "README current capabilities must include Persistent Audit / Recovery"
+    },
+    @{
+        Target = "README.md"
+        Pattern = "^### V19\uff1aPersistent Audit / Recovery$"
+        Reason = "README stage history must include V19"
+    },
+    @{
+        Target = "README.md"
+        Pattern = U "\u5df2\u5f52\u6863\u81f3 V19"
+        Reason = "README roadmap must state that V19 is archived"
     }
 )
 
@@ -88,6 +115,18 @@ foreach ($target in $targets) {
                 Rule = $rule.Reason
                 Text = $match.Line.Trim()
             }
+        }
+    }
+}
+
+foreach ($required in $requiredMatches) {
+    $matches = Select-String -LiteralPath $required.Target -Pattern $required.Pattern
+    if (-not $matches) {
+        $findings += [pscustomobject]@{
+            File = $required.Target
+            Line = 0
+            Rule = $required.Reason
+            Text = "Required stage parity marker is missing."
         }
     }
 }
