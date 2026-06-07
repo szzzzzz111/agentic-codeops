@@ -588,11 +588,12 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "### Verification Runner" in readme
     assert "### Persistent Audit / Recovery" in readme
     assert "### V19：Persistent Audit / Recovery" in readme
-    assert "已归档至 V19：Persistent Audit / Recovery" in readme
+    assert "已归档至 V20：Worktree Isolation" in readme
     assert "## V20 Worktree Isolation" in readme
-    assert "当前 active change 为 `v20-worktree-isolation`" in readme
+    assert "### V20：Worktree Isolation" in readme
     assert "## V20 Worktree Isolation 架构补充" in combined
-    assert "当前 active OpenSpec change：`v20-worktree-isolation`" in combined
+    assert "当前 active OpenSpec change：无" in combined
+    assert "2026-06-07-v20-worktree-isolation" in combined
     assert "V15：Assistant Control Surface" in combined
     assert "V16：Safe Patch Authoring" in combined
     assert "V17：Verification Runner" in combined

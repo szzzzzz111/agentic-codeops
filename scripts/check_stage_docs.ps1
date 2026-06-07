@@ -41,6 +41,7 @@ $v1ThroughV18ActiveArchived = "V1-V18 active changes"
 $v19CurrentlyImplementing = U "V19 \u5f53\u524d\u5b9e\u73b0"
 $completeV19AsFuture = U "\u5b8c\u6210 V19 Persistent Audit / Recovery"
 $tracePersistenceStillRoadmap = U "trace \u6301\u4e45\u5316\u5ba1\u8ba1"
+$v20ActiveChange = "current active change[：:].*v20-worktree-isolation|active OpenSpec change[：:].*v20-worktree-isolation|V20 Worktree Isolation active implementation"
 $generatedPurpose = "TBD|TODO|created by archiving change"
 $currentDefaultRealLlm = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM|\u5df2\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM"
 $currentDefaultMilvus = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Milvus|\u5df2\u9ed8\u8ba4\u63a5\u5165 Milvus"
@@ -58,7 +59,7 @@ $rules = @(
         Reason = "V18 has been merged and pushed, but docs still describe the pre-merge closeout state"
     },
     @{
-        Pattern = "$archivedThroughV18|$v1ThroughV18ActiveArchived|$v19CurrentlyImplementing|$completeV19AsFuture|$tracePersistenceStillRoadmap"
+        Pattern = "$archivedThroughV18|$v1ThroughV18ActiveArchived|$v19CurrentlyImplementing|$completeV19AsFuture|$tracePersistenceStillRoadmap|$v20ActiveChange"
         Reason = "V19 has completed, but durable docs still describe V18/V19 or persistent audit as incomplete"
     },
     @{
@@ -90,8 +91,8 @@ $requiredMatches = @(
     },
     @{
         Target = "README.md"
-        Pattern = U "\u5df2\u5f52\u6863\u81f3 V19"
-        Reason = "README roadmap must state that V19 is archived"
+        Pattern = U "\u5df2\u5f52\u6863\u81f3 V20"
+        Reason = "README roadmap must state that V20 is archived"
     },
     @{
         Target = "README.md"
@@ -104,14 +105,14 @@ $requiredMatches = @(
         Reason = "architecture must include V20 Worktree Isolation"
     },
     @{
-        Target = "docs/PROGRESS.md"
-        Pattern = "v20-worktree-isolation"
-        Reason = "progress must identify the active V20 change"
+        Target = "README.md"
+        Pattern = "^### V20\uff1aWorktree Isolation$"
+        Reason = "README stage history must include V20"
     },
     @{
         Target = "HANDOFF_TO_NEXT_CHAT.md"
-        Pattern = "current active OpenSpec change|v20-worktree-isolation"
-        Reason = "handoff must identify the active V20 change"
+        Pattern = "2026-06-07-v20-worktree-isolation"
+        Reason = "handoff must identify the V20 archive path"
     }
 )
 

@@ -1,12 +1,12 @@
 # 交接给下一轮 Chat
 
-## V20 Active Handoff（2026-06-07）
+## V20 Archived Handoff（2026-06-07）
 
 ```text
 当前基线分支：main
 当前工作分支：feature/v20-worktree-isolation
-当前 active OpenSpec change：v20-worktree-isolation
-当前阶段：V20 Worktree Isolation active implementation；runtime 与验证证据已就绪
+当前 active OpenSpec change：无
+当前阶段：V20 Worktree Isolation 已实现、提交并归档；等待 merge / push 决策
 ```
 
 V20 已实现 `worktree_create -> patch_apply -> optional verification_run` 隔离链路。
@@ -15,25 +15,28 @@ verification 继续使用主工作区。worktree 状态保存在
 `.repopilot/worktrees.sqlite3`，支持 `worktree status <worktree_id>` 只读查询，并
 写入脱敏 persistent audit。
 
-当前验证证据：V20 worktree targeted 14 passed；全量 `pytest -q` 206 passed,
-1 skipped；`openspec validate --all` 16 passed, 0 failed；`scripts/verify.ps1`
-通过；`git diff --check` 通过。Stage Debt Sweep 已完成，未发现长期 spec 占位债。
+当前 archive-after 验证证据：V20 worktree targeted 14 passed；全量 `pytest -q`
+206 passed, 1 skipped；`openspec validate --all` 15 passed, 0 failed；
+`scripts/verify.ps1` 与 `scripts/check_stage_closeout.ps1` 通过；
+`git diff --check` 通过。Stage Debt Sweep 已完成，未发现长期 spec 占位债。
 内部 final review 已修复 metadata failure rollback、locked worktree unlock/remove、
 worktree id collision 保护、README 当前态和 design interface 偏差。external review
-已完成，用户确认无阻塞 findings。下一步进入用户对 commit / archive / merge /
-继续修订的阶段级决策。不要在 V20 增加删除/prune/commit/merge/push/promote/重试能力。
+已完成，用户确认无阻塞 findings。implementation commit 为
+`8be9b37 Add V20 worktree isolation`；archive 路径为
+`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`。下一步进入用户对
+merge / push / 保留分支的阶段级决策。不要在 V20 增加删除/prune/commit/merge/push/promote/重试能力。
 
 ## 当前状态
 
 ```text
 当前基线分支：main
 当前工作分支：feature/v20-worktree-isolation
-当前活跃 OpenSpec change：v20-worktree-isolation
-最近完成阶段：V19 Persistent Audit / Recovery（已归档、合并并推送）
-当前阶段：V20 Worktree Isolation active implementation
+当前活跃 OpenSpec change：无
+最近完成阶段：V20 Worktree Isolation（已实现、提交并归档，尚未 merge / push）
+当前阶段：暂无 active implementation stage
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V19 已归档；V20 正在把明确确认的 standalone patch 与组合 Patch + Verify 放入受控 detached、locked worktree，并保持 standalone verification 的主工作区语义。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V20 已实现并归档；V20 把明确确认的 standalone patch 与组合 Patch + Verify 放入受控 detached、locked worktree，并保持 standalone verification 的主工作区语义。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V18 只实现明确组合确认下的 apply 后 verify，不代表 Persistent Audit / Recovery、worktree、subagents、connectors 或 always-on 已实现。
 
@@ -430,9 +433,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. V20 internal / external review 均已完成且无剩余阻塞。
-2. 根据用户决定执行 commit、archive、merge 或继续修订；不得自动越过该决策点。
+1. V20 internal / external review、implementation commit 与 archive 均已完成。
+2. 根据用户决定执行 merge / push 或保留 feature 分支；不得自动越过该决策点。
 3. 不要把 worktree 清理/commit/merge/push/promote/重试、真实 subagents、connectors、notifications、heartbeat/cron 或 always-on assistant 归入 V20 scope。
 
-已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery。V20 Worktree Isolation 当前正在实现；真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。
+已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

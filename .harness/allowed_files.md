@@ -1,8 +1,9 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：`V20 Worktree Isolation`
+当前活跃阶段：无 active implementation stage。
 
-V20 目标是在不改变 `/chat` 顶层 contract 的前提下，把 RepoPilot 产生的单独 patch apply 与组合 Patch + Verify 放入受控 worktree 执行；独立 verification 继续保持当前工作区语义。
+V20 Worktree Isolation 已实现并归档。以下路径仅用于 archive 后验证与 handoff
+收尾；下一阶段开始前必须重新同步本文件和 `.harness/review_checklist.md`。
 
 ## 当前允许修改
 
@@ -17,7 +18,7 @@ V20 目标是在不改变 `/chat` 顶层 contract 的前提下，把 RepoPilot �
 - `scripts/check_stage_docs.ps1`
 - `scripts/check_stage_closeout.ps1`
 - `scripts/verify.ps1`
-- `openspec/changes/v20-worktree-isolation/**`
+- `openspec/changes/archive/2026-06-07-v20-worktree-isolation/**`
 - `openspec/specs/agent-loop-tool-execution/spec.md`
 - `openspec/specs/chat-api/spec.md`
 - `openspec/specs/harness-development-workflow/spec.md`
@@ -26,19 +27,7 @@ V20 目标是在不改变 `/chat` 顶层 contract 的前提下，把 RepoPilot �
 - `openspec/specs/safe-patch-authoring/spec.md`
 - `openspec/specs/verification-runner/spec.md`
 - `openspec/specs/worktree-isolation/spec.md`
-- `app/harness/kernel.py`
-- `app/tools/tool_executor.py`
-- `app/patching/manager.py`
-- `app/patching/store.py`
-- `app/patching/types.py`
-- `app/audit/manager.py`
-- `app/audit/store.py`
-- `app/worktrees/**`
-- `tests/test_agent_harness_kernel.py`
-- `tests/test_patch_authoring.py`
-- `tests/test_persistent_audit.py`
 - `tests/test_chat_api.py`
-- `tests/test_worktree_isolation.py`
 
 ## 禁止修改 / 禁止行为
 

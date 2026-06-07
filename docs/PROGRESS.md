@@ -3,24 +3,27 @@
 ## V20 当前状态（2026-06-07）
 
 - 当前工作分支：`feature/v20-worktree-isolation`
-- 当前 active OpenSpec change：`v20-worktree-isolation`
+- 当前 active OpenSpec change：无
 - 已实现受控 `worktree_create`、detached/locked Git worktree、内部
   `execution_repo_path` 传播、`applied_in_worktree` patch 状态、worktree 生命周期
   SQLite、持久审计事件和只读状态查询。
 - standalone patch 与组合 Patch + Verify 均在隔离 worktree 内执行；standalone
   verification 保持主工作区语义。
 - 真实 Git 端到端测试确认主工作区文件不变，worktree 内 patch 已应用。
-- 当前验证：V20 worktree targeted 为 14 passed；`pytest -q` 为 206 passed,
-  1 skipped；`openspec validate --all` 为 16 passed, 0 failed；默认
-  `scripts/verify.ps1` 通过；`git diff --check` 通过。
+- 当前 archive-after 验证：V20 worktree targeted 为 14 passed；`pytest -q` 为
+  206 passed, 1 skipped；`openspec validate --all` 为 15 passed, 0 failed；
+  默认 `scripts/verify.ps1` 与 `scripts/check_stage_closeout.ps1` 通过；
+  `git diff --check` 通过。
 - Stage Debt Sweep 已扫描 current docs、harness docs、active OpenSpec、long-term
   specs、changed runtime paths 和 adjacent runtime paths；长期 specs 未发现
   `TBD`、`TODO` 或 archive placeholder Purpose。
 - 内部 final review 已修复两项 runtime P1：metadata 持久化失败时 locked worktree
   未完整回滚，以及 worktree id 冲突时可能误删既有 worktree；同时修复 README
   当前态冲突、design interface 偏差，并补齐创建失败的 AgentLoop 回归测试。
-- external review 已完成，用户确认无阻塞 findings；当前未 commit、archive、merge
-  或 push。
+- external review 已完成，用户确认无阻塞 findings；implementation commit：
+  `8be9b37 Add V20 worktree isolation`。
+- V20 已归档到 `openspec/changes/archive/2026-06-07-v20-worktree-isolation/`，
+  7 个新增 requirements 已同步到长期 specs；当前尚未 merge / push。
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness。它不试图替代通用 AI IDE，而是围绕 Agent 工具调用边界、只读安全工具、执行追踪、可验证测试、review checklist 和 handoff 机制，构建可审计、可扩展的代码智能体执行框架。
 
@@ -28,11 +31,11 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 当前基线分支：`main`
 - 当前工作分支：`feature/v20-worktree-isolation`
-- 当前阶段：V20 Worktree Isolation active implementation；active OpenSpec change 为 `v20-worktree-isolation`
+- 当前阶段：V20 Worktree Isolation 已实现并归档；当前无 active OpenSpec change，等待 merge / push 决策
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> AuditManager -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> WorktreeManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、repo-local Persistent Audit、只读 Assistant Control Surface、Safe Patch Authoring、Worktree Isolation、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；active change 为 `v20-worktree-isolation`；V10-V19 changes 已归档；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；当前无 active change；V10-V20 changes 已归档；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 
@@ -462,9 +465,9 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V20 internal / external review 均已完成且无剩余阻塞，由用户决定
-  commit、archive、merge 或继续修订。
-- 近期路线：V20 Worktree Isolation 当前正在实现；之后再规划真实 subagents/connectors/notifications。
+- 当前建议：V20 implementation commit 与 archive 已完成，由用户决定 merge / push
+  或保留 feature 分支。
+- 近期路线：V20 Worktree Isolation 已实现并归档；之后再规划真实 subagents/connectors/notifications。
 - 后续真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；不要写成当前 runtime 已实现能力。
 - 继续保持不执行 skill，除非后续阶段明确开放。
 

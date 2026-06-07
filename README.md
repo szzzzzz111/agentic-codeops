@@ -2,8 +2,9 @@
 
 ## V20 Worktree Isolation
 
-当前 active change 为 `v20-worktree-isolation`，工作分支为
-`feature/v20-worktree-isolation`。
+V20 已归档到
+`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`。当前工作分支为
+`feature/v20-worktree-isolation`，等待 merge / push 决策。
 
 - 明确确认的 standalone patch 与组合 Patch + Verify 会先创建 detached、locked
   Git worktree，再在同一个内部 `execution_repo_path` 中执行。
@@ -21,7 +22,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前主线能力：V1-V19 已归档；V20 Worktree Isolation 正在 `feature/v20-worktree-isolation` 开发，active change 为 `v20-worktree-isolation`。
+- 当前阶段能力：V1-V20 已实现并归档；当前无 active OpenSpec change，`feature/v20-worktree-isolation` 尚未 merge / push。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -360,6 +361,16 @@ V19 加入 repo-local `.repopilot/audit.sqlite3` 持久审计，记录所有 `/c
 
 V19 通过现有 `/chat.answer` 提供只读 recovery/status 查询，保持顶层 response contract 不变。Recovery intent 在 patch/verification 之后、capability-status/repo_search 之前处理，命中后不调用 `repo_rag`，不执行 patch、verification、task resume、repo mutation、commit、push 或 worktree 操作。
 
+### V20：Worktree Isolation
+
+V20 为明确确认的 standalone patch 与组合 Patch + Verify 创建 detached、locked
+Git worktree，并通过内部 `execution_repo_path` 执行 patch 与组合 verification。
+主工作区保持不变，standalone verification 保持主工作区语义。
+
+V20 新增 repo-local worktree 生命周期 SQLite、`applied_in_worktree` patch 状态、
+脱敏 persistent audit 和只读 worktree status 查询；不提供清理、commit、merge、
+push、promote、继续执行或重试命令。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -426,9 +437,6 @@ ChatService
 
 ## 路线图
 
-已归档至 V19：Persistent Audit / Recovery。当前 active change 为
-`v20-worktree-isolation`：
-
-- V20：Worktree Isolation。正在引入受控 git worktree，隔离 standalone patch 与组合 Patch + Verify，避免污染主工作区。
+已归档至 V20：Worktree Isolation。当前无 active change。
 
 真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；当前不要把这些写成已实现能力。

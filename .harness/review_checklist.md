@@ -1,6 +1,6 @@
 # 当前 Review 清单
 
-当前活跃阶段：`V20 Worktree Isolation`
+当前活跃阶段：无 active implementation stage。
 
 ## V20 Planning / OpenSpec Gate
 
@@ -65,3 +65,16 @@
 - 已修复 worktree id 冲突时可能误删既有 worktree 的问题。
 - 已补 AgentLoop 创建失败时 patch 保持 `pending` 且不运行 apply / verification 的测试。
 - 已修正 README 当前态冲突与 design 中 `WorktreeCreateResult` 字段 / 方法签名偏差。
+
+## V20 Archive / Handoff Gate
+
+- [x] Implementation commit：`8be9b37 Add V20 worktree isolation`。
+- [x] OpenSpec archive：`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`。
+- [x] 7 个 `ADDED Requirements` 已同步到长期 specs，无 `MODIFIED/REMOVED` 同步风险。
+- [x] Archive 后 full verify、closeout gate 与 handoff parity 已完成。
+
+Archive 后验证证据：
+
+- `openspec validate --all`：15 passed, 0 failed。
+- `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：206 passed, 1 skipped；ruff、stage docs drift scan、skill eval structure scan 均通过。
+- `powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过。

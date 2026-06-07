@@ -191,7 +191,7 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery；V20 Worktree Isolation 当前正在实现。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery；V20 Worktree Isolation 已完成并归档。
 
 V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期状态和只读查询。worktree 清理、commit、merge、push、promote、subagents、connectors、notifications 和 always-on assistant 仍须通过后续独立 OpenSpec change、harness 边界和 review 才能进入 runtime。
 
