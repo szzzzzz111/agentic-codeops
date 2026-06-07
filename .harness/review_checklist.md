@@ -55,6 +55,7 @@
 - [x] Post-closeout parity test repair：`tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent` 已改为正向锁定 V19 README parity，并显式拒绝旧 V18 archived marker。
 - [x] Post-closeout semantic parity follow-up：README/ARCHITECTURE/PROGRESS/HANDOFF 已补齐 Verification Runner、Patch + Verify Loop、Persistent Audit 当前能力语义，并移除 V18/V19 过度或未来时态描述。
 - [x] Process skill follow-up：repo-stage-handoff、repo-stage-review-loop、openspec-archive-change 和 stale-state checklist 已沉淀 archive delta 分类、positive documentation parity、stale-test detection、full verify 和 stable post-merge hash wording；这些改动仅属于开发流程纪律。
+- [x] Skill authoring follow-up：关键流程 skill 的 description 已聚焦加载时机，并新增 positive/negative/edge eval references；正文保留高信噪比 gotchas，复杂用例通过 references 渐进加载。
 
 ## V18 Closeout Baseline
 

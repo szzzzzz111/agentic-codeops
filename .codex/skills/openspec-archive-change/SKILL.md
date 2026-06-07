@@ -1,6 +1,6 @@
 ---
 name: openspec-archive-change
-description: Archive a completed change in the experimental workflow. Use when the user wants to finalize and archive a change after implementation is complete.
+description: Use when the user explicitly asks to archive or finalize a completed OpenSpec change after implementation and review are complete.
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:
@@ -119,3 +119,7 @@ All artifacts complete. All tasks complete.
 - Show clear summary of what happened
 - If sync is requested, use openspec-sync-specs approach (agent-driven)
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
+
+**Evals**
+
+Use `references/evals.md` when changing this skill's description, archive preconditions, or sync-failure handling. Keep positive, negative, and edge cases current.

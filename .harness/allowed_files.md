@@ -25,7 +25,10 @@ V19 Persistent Audit / Recovery 已实现、通过 external review、归档到 `
 - `.codex/skills/repo-stage-review-loop/SKILL.md`
 - `.codex/skills/repo-stage-handoff/SKILL.md`
 - `.codex/skills/repo-stage-handoff/references/stale-state-checklist.md`
+- `.codex/skills/repo-stage-handoff/references/evals.md`
+- `.codex/skills/repo-stage-review-loop/references/evals.md`
 - `.codex/skills/openspec-archive-change/SKILL.md`
+- `.codex/skills/openspec-archive-change/references/evals.md`
 
 ## 禁止修改 / 禁止行为
 

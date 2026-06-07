@@ -1,6 +1,6 @@
 ---
 name: repo-stage-handoff
-description: Use when a repo stage is finishing, after merge or push, before switching chats, or when the user asks whether handoff, progress, branch state, or next-step docs are still accurate.
+description: Use when a RepoPilot stage was archived, merged, or pushed; when preparing a handoff; or when durable docs, branch state, validation evidence, or next-step wording may be stale.
 ---
 
 # Repo Stage Handoff
@@ -76,3 +76,4 @@ When a stage has been implemented, committed, merged, or archived:
 ## References
 
 Read `references/stale-state-checklist.md` before finalizing a stage or when the user says the handoff/progress docs look possibly stale.
+Use `references/evals.md` when changing this skill's description, routing boundary, or closeout gotchas; keep positive, negative, and edge cases current.

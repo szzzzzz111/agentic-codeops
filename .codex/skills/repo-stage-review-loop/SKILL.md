@@ -1,6 +1,6 @@
 ---
 name: repo-stage-review-loop
-description: Use when a RepoPilot stage plan, implementation, OpenSpec change, or stage documentation needs iterative review before coding, after coding, before archive, or after external feedback.
+description: Use when a RepoPilot plan, OpenSpec change, implementation, tests, or stage docs need review before implementation, commit, archive, merge, or after external feedback.
 ---
 
 # Repo Stage Review Loop
@@ -171,3 +171,7 @@ Do not accept feedback blindly. Inspect the referenced files first, then make th
 - Codex only reviews new files and misses adjacent pre-existing runtime paths that the stage depends on.
 - Codex leaves remaining debt in chat instead of recording it in `docs/PROGRESS.md` and `HANDOFF_TO_NEXT_CHAT.md`.
 - Codex sees `18/19 tasks`, stale "implementation in progress" handoff wording, or an unchecked final review task and still proceeds toward archive.
+
+## Evals
+
+Use `references/evals.md` when changing this skill's description, stop gates, or common bugs. Keep positive, negative, and edge cases current so review routing does not swallow implementation-only or simple status requests.
