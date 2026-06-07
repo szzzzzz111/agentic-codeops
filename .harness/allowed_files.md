@@ -14,6 +14,10 @@ V19 Persistent Audit / Recovery 已实现、通过 external review、归档到 `
 - `docs/FEATURE_LIST.json`
 - `HANDOFF_TO_NEXT_CHAT.md`
 - `scripts/check_stage_docs.ps1`
+- `scripts/check_skill_evals.ps1`
+- `scripts/check_stage_closeout.ps1`
+- `scripts/verify.ps1`
+- `.harness/test_commands.md`
 - `tests/test_chat_api.py`
 
 上述路径仅用于 post-merge handoff 文档修正。V20 或其他新阶段开始前必须替换为该阶段自己的 allowed files。

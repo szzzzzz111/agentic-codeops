@@ -33,4 +33,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
+Write-Host "== 运行 skill eval structure scan =="
+powershell -ExecutionPolicy Bypass -File scripts/check_skill_evals.ps1
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+Write-Host ""
 Write-Host "== RepoPilot 验证完成 =="

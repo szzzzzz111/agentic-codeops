@@ -56,6 +56,7 @@
 - [x] Post-closeout semantic parity follow-up：README/ARCHITECTURE/PROGRESS/HANDOFF 已补齐 Verification Runner、Patch + Verify Loop、Persistent Audit 当前能力语义，并移除 V18/V19 过度或未来时态描述。
 - [x] Process skill follow-up：repo-stage-handoff、repo-stage-review-loop、openspec-archive-change 和 stale-state checklist 已沉淀 archive delta 分类、positive documentation parity、stale-test detection、full verify 和 stable post-merge hash wording；这些改动仅属于开发流程纪律。
 - [x] Skill authoring follow-up：关键流程 skill 的 description 已聚焦加载时机，并新增 positive/negative/edge eval references；正文保留高信噪比 gotchas，复杂用例通过 references 渐进加载。
+- [x] Skill eval structure gate：`scripts/check_skill_evals.ps1` 已接入默认 verify 和 stage closeout，检查关键 skill description、eval reference 和 Positive/Negative/Edge/Failure Traps；该 gate 不冒充真实模型级 routing eval。
 
 ## V18 Closeout Baseline
 

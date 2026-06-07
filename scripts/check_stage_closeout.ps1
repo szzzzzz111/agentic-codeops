@@ -33,6 +33,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
+Write-Host "== skill eval structure scan =="
+powershell -ExecutionPolicy Bypass -File scripts/check_skill_evals.ps1
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
+}
+
+Write-Host ""
 Write-Host "== git diff --check =="
 git diff --check
 if ($LASTEXITCODE -ne 0) {
