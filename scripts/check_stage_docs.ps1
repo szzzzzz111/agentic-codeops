@@ -92,6 +92,26 @@ $requiredMatches = @(
         Target = "README.md"
         Pattern = U "\u5df2\u5f52\u6863\u81f3 V19"
         Reason = "README roadmap must state that V19 is archived"
+    },
+    @{
+        Target = "README.md"
+        Pattern = "^## V20 Worktree Isolation$"
+        Reason = "README current capabilities must include V20 Worktree Isolation"
+    },
+    @{
+        Target = "docs/ARCHITECTURE.md"
+        Pattern = "^## V20 Worktree Isolation \u67b6\u6784\u8865\u5145$"
+        Reason = "architecture must include V20 Worktree Isolation"
+    },
+    @{
+        Target = "docs/PROGRESS.md"
+        Pattern = "v20-worktree-isolation"
+        Reason = "progress must identify the active V20 change"
+    },
+    @{
+        Target = "HANDOFF_TO_NEXT_CHAT.md"
+        Pattern = "current active OpenSpec change|v20-worktree-isolation"
+        Reason = "handoff must identify the active V20 change"
     }
 )
 

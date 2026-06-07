@@ -157,5 +157,20 @@
     ],
     "passes": true,
     "notes": "Covered by tests/test_persistent_audit.py, AgentLoop/API tests, full verify, and V19 Stage Debt Sweep evidence."
+  },
+  {
+    "id": "v20-worktree-isolation",
+    "category": "agent",
+    "description": "Confirmed patch flows create a controlled detached and locked Git worktree, then apply and optionally verify inside its internal execution path.",
+    "acceptance_criteria": [
+      "standalone patch and combined Patch + Verify leave the main working tree unchanged",
+      "worktree_create requires valid confirmation context and clean non-bare Git repository preconditions",
+      "execution_repo_path remains internal and local absolute paths are not exposed or persisted",
+      "patch success transitions to applied_in_worktree and worktree lifecycle is persisted by user_id + repo_key",
+      "read-only worktree status queries do not call repo_rag or mutate repository files",
+      "no automatic worktree cleanup, commit, merge, push, promote, retry, or continuation"
+    ],
+    "passes": true,
+    "notes": "Covered by tests/test_worktree_isolation.py, AgentLoop/API/audit tests, real Git worktree integration, and V20 validation evidence."
   }
 ]

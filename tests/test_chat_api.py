@@ -14,6 +14,30 @@ def write_text(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def install_fake_worktree_create(monkeypatch, tmp_path: Path) -> None:
+    from app.tools.tool_executor import ToolExecutionResult, ToolExecutor
+    from app.worktrees.manager import WorktreeCreateResult
+
+    def fake_worktree_create(self, repo_path: str, user_id: str, patch_id: str):
+        return ToolExecutionResult(
+            tool_name="worktree_create",
+            parameters={"worktree_id": "wt_20260607_abcdef"},
+            audit_summary={"status": "ready"},
+            worktree_create_result=WorktreeCreateResult(
+                created=True,
+                status="ready",
+                worktree_id="wt_20260607_abcdef",
+                execution_repo_path=str(
+                    tmp_path / ".repopilot" / "worktrees" / "wt_20260607_abcdef"
+                ),
+                base_commit="8c2b0f6",
+                public_summary="worktree_id=wt_20260607_abcdef; status=ready",
+            ),
+        )
+
+    monkeypatch.setattr(ToolExecutor, "worktree_create", fake_worktree_create)
+
+
 def valid_payload(
     repo_path: Path,
     message: str = "帮我分析 UNIQUE_BUG_TOKEN",
@@ -259,9 +283,12 @@ def test_chat_endpoint_patch_proposal_keeps_contract_and_does_not_write(
 
 def test_chat_endpoint_confirm_patch_applies_without_running_verification(
     tmp_path: Path,
+    monkeypatch,
 ) -> None:
     from app.memory.store import compute_repo_key
+    from app.patching.apply import PatchApplyResult
     from app.patching.store import SQLitePatchStore
+    from app.tools.tool_executor import ToolExecutionResult, ToolExecutor
 
     write_text(tmp_path / "app.py", "old\n")
     patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
@@ -271,6 +298,21 @@ def test_chat_endpoint_confirm_patch_applies_without_running_verification(
         diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
         summary="update app",
     )
+    install_fake_worktree_create(monkeypatch, tmp_path)
+
+    def fake_patch_apply(self, repo_path: str, diff_text: str):
+        return ToolExecutionResult(
+            tool_name="patch_apply",
+            parameters={},
+            results=[{"file_path": "app.py", "line_number": 0, "line_text": ""}],
+            audit_summary={"changed_files": 1},
+            patch_apply_result=PatchApplyResult(
+                applied=True,
+                changed_files=["app.py"],
+            ),
+        )
+
+    monkeypatch.setattr(ToolExecutor, "patch_apply", fake_patch_apply)
 
     response = client.post(
         "/chat",
@@ -283,15 +325,21 @@ def test_chat_endpoint_confirm_patch_applies_without_running_verification(
     assert "已应用 patch" in body["answer"]
     assert body["tool_calls"] == [
         {
+            "tool_name": "worktree_create",
+            "worktree_id": "wt_20260607_abcdef",
+            "status": "success",
+            "result_count": "0",
+        },
+        {
             "tool_name": "patch_apply",
             "status": "success",
             "result_count": "1",
-        }
+        },
     ]
-    assert (tmp_path / "app.py").read_text(encoding="utf-8") == "new\n"
+    assert (tmp_path / "app.py").read_text(encoding="utf-8") == "old\n"
     assert "pytest" not in response.text
     assert "commit" not in response.text
-    assert "worktree" not in response.text
+    assert str(tmp_path) not in response.text
 
 
 def test_chat_endpoint_patch_verify_loop_keeps_contract(
@@ -311,6 +359,7 @@ def test_chat_endpoint_patch_verify_loop_keeps_contract(
         diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
         summary="update app",
     )
+    install_fake_worktree_create(monkeypatch, tmp_path)
 
     def fake_patch_apply(self, repo_path: str, diff_text: str):
         return ToolExecutionResult(
@@ -361,6 +410,12 @@ def test_chat_endpoint_patch_verify_loop_keeps_contract(
     assert "验证完成" in body["answer"]
     assert body["related_files"] == []
     assert body["tool_calls"] == [
+        {
+            "tool_name": "worktree_create",
+            "worktree_id": "wt_20260607_abcdef",
+            "status": "success",
+            "result_count": "0",
+        },
         {
             "tool_name": "patch_apply",
             "status": "success",
@@ -534,6 +589,10 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "### Persistent Audit / Recovery" in readme
     assert "### V19：Persistent Audit / Recovery" in readme
     assert "已归档至 V19：Persistent Audit / Recovery" in readme
+    assert "## V20 Worktree Isolation" in readme
+    assert "当前 active change 为 `v20-worktree-isolation`" in readme
+    assert "## V20 Worktree Isolation 架构补充" in combined
+    assert "当前 active OpenSpec change：`v20-worktree-isolation`" in combined
     assert "V15：Assistant Control Surface" in combined
     assert "V16：Safe Patch Authoring" in combined
     assert "V17：Verification Runner" in combined

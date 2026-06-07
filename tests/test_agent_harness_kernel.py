@@ -14,10 +14,11 @@ from app.harness.kernel import (
 )
 from app.memory.store import compute_repo_key
 from app.patching.apply import PatchApplyResult
-from app.patching.store import SQLitePatchStore
+from app.patching.store import PATCH_STATUS_PENDING, SQLitePatchStore
 from app.providers.model_provider import ModelProviderResponse
 from app.rag.repo_rag import LexicalRepoRetriever
 from app.tools.tool_executor import ToolExecutionResult
+from app.worktrees.manager import WorktreeCreateResult
 
 
 class FailingSearchExecutor:
@@ -62,8 +63,10 @@ class FailingVerificationExecutor:
 class SuccessfulVerificationExecutor:
     def __init__(self) -> None:
         self.command_labels: list[str] = []
+        self.repo_paths: list[str] = []
 
     def verification_run(self, repo_path: str, command_label: str) -> ToolExecutionResult:
+        self.repo_paths.append(repo_path)
         self.command_labels.append(command_label)
         return ToolExecutionResult(
             tool_name="verification_run",
@@ -86,13 +89,46 @@ class SuccessfulVerificationExecutor:
 
 
 class RecordingPatchVerifyExecutor:
-    def __init__(self, *, patch_applied: bool = True) -> None:
+    def __init__(
+        self,
+        *,
+        patch_applied: bool = True,
+        worktree_path: str = "",
+    ) -> None:
         self.patch_applied = patch_applied
+        self.worktree_path = worktree_path
         self.calls: list[str] = []
         self.command_labels: list[str] = []
+        self.patch_repo_paths: list[str] = []
+        self.verification_repo_paths: list[str] = []
+        self.created_patch_ids: list[str] = []
+
+    def worktree_create(
+        self,
+        repo_path: str,
+        user_id: str,
+        patch_id: str,
+    ) -> ToolExecutionResult:
+        self.calls.append("worktree_create")
+        self.created_patch_ids.append(patch_id)
+        return ToolExecutionResult(
+            tool_name="worktree_create",
+            parameters={"worktree_id": "wt_20260607_abcdef"},
+            audit_summary={"status": "ready"},
+            worktree_create_result=WorktreeCreateResult(
+                created=True,
+                status="ready",
+                reason="",
+                worktree_id="wt_20260607_abcdef",
+                execution_repo_path=self.worktree_path,
+                base_commit="8c2b0f6",
+                public_summary="worktree_id=wt_20260607_abcdef; status=ready",
+            ),
+        )
 
     def patch_apply(self, repo_path: str, diff_text: str) -> ToolExecutionResult:
         self.calls.append("patch_apply")
+        self.patch_repo_paths.append(repo_path)
         result = PatchApplyResult(
             applied=self.patch_applied,
             changed_files=["app.py"] if self.patch_applied else [],
@@ -113,6 +149,7 @@ class RecordingPatchVerifyExecutor:
 
     def verification_run(self, repo_path: str, command_label: str) -> ToolExecutionResult:
         self.calls.append("verification_run")
+        self.verification_repo_paths.append(repo_path)
         self.command_labels.append(command_label)
         return ToolExecutionResult(
             tool_name="verification_run",
@@ -134,11 +171,45 @@ class RecordingPatchVerifyExecutor:
         )
 
 
+class FailingWorktreeCreateExecutor:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def worktree_create(
+        self,
+        repo_path: str,
+        user_id: str,
+        patch_id: str,
+    ) -> ToolExecutionResult:
+        self.calls.append("worktree_create")
+        return ToolExecutionResult(
+            tool_name="worktree_create",
+            parameters={},
+            error="workspace_not_clean",
+            audit_summary={"status": "create_failed"},
+            worktree_create_result=WorktreeCreateResult(
+                created=False,
+                status="create_failed",
+                reason="workspace_not_clean",
+                public_summary="worktree 创建失败：主工作区必须干净。",
+            ),
+        )
+
+    def patch_apply(self, repo_path: str, diff_text: str) -> None:
+        raise AssertionError("patch_apply must not run after worktree create failure")
+
+    def verification_run(self, repo_path: str, command_label: str) -> None:
+        raise AssertionError("verification_run must not run after worktree create failure")
+
+
 class RecordingVerificationContextPolicy(PermissionPolicy):
     def __init__(self) -> None:
         self.verification_contexts: list[ToolInvocationContext | None] = []
+        self.worktree_contexts: list[ToolInvocationContext | None] = []
 
     def decide(self, tool_spec, tool_name="repo_rag", context=None):
+        if tool_name == "worktree_create":
+            self.worktree_contexts.append(context)
         if tool_name == "verification_run":
             self.verification_contexts.append(context)
         return super().decide(tool_spec, tool_name=tool_name, context=context)
@@ -392,6 +463,40 @@ def test_permission_policy_allows_verification_run_only_via_context() -> None:
         status="deny",
         reason="not_read_only",
     )
+
+
+def test_permission_policy_allows_worktree_create_only_via_context() -> None:
+    policy = PermissionPolicy()
+    gate = ApprovalGate()
+    spec = ToolSpec(
+        name="worktree_create",
+        description="Create an isolated Git worktree for a confirmed patch.",
+        read_only=False,
+        risk="write",
+        requires_approval=True,
+    )
+    context = ToolInvocationContext(
+        tool_name="worktree_create",
+        user_id="u001",
+        repo_key="repo_a",
+        intent="worktree_create",
+        patch_id="patch_20260531_abcdef",
+        confirmed=True,
+        patch_status="pending",
+        diff_hash_match=True,
+        expires_at_valid=True,
+        scope_valid=True,
+    )
+
+    decision = policy.decide(spec, tool_name="worktree_create", context=context)
+
+    assert decision == PermissionDecision(
+        tool_name="worktree_create",
+        status="ask",
+        reason="approval_required",
+    )
+    assert gate.evaluate(decision, context=context) is True
+    assert policy.decide(spec, tool_name="worktree_create").status == "deny"
 
 
 def test_agent_loop_rejects_search_when_tool_is_not_registered(tmp_path: Path) -> None:
@@ -845,6 +950,7 @@ def test_agent_loop_runs_verification_after_patch_and_before_repo_search(
     )
 
     assert executor.command_labels == ["verify"]
+    assert executor.repo_paths == [str(tmp_path)]
     assert "验证完成" in result.answer
     assert result.related_files == []
     assert result.tool_calls == [
@@ -900,7 +1006,8 @@ def test_agent_loop_patch_verify_combination_applies_then_runs_verification(
         diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
         summary="update app",
     )
-    executor = RecordingPatchVerifyExecutor()
+    worktree_path = str(tmp_path / ".repopilot" / "worktrees" / "wt_20260607_abcdef")
+    executor = RecordingPatchVerifyExecutor(worktree_path=worktree_path)
     policy = RecordingVerificationContextPolicy()
     loop = AgentLoop(tool_executor=executor, permission_policy=policy)
 
@@ -914,8 +1021,17 @@ def test_agent_loop_patch_verify_combination_applies_then_runs_verification(
         )
     )
 
-    assert executor.calls == ["patch_apply", "verification_run"]
+    assert executor.calls == ["worktree_create", "patch_apply", "verification_run"]
+    assert executor.patch_repo_paths == [worktree_path]
+    assert executor.verification_repo_paths == [worktree_path]
     assert executor.command_labels == ["verify"]
+    assert executor.created_patch_ids == [patch.patch_id]
+    assert len(policy.worktree_contexts) == 1
+    worktree_context = policy.worktree_contexts[0]
+    assert worktree_context is not None
+    assert worktree_context.tool_name == "worktree_create"
+    assert worktree_context.intent == "worktree_create"
+    assert worktree_context.patch_id == patch.patch_id
     assert len(policy.verification_contexts) == 1
     verification_context = policy.verification_contexts[0]
     assert verification_context is not None
@@ -926,18 +1042,23 @@ def test_agent_loop_patch_verify_combination_applies_then_runs_verification(
     assert verification_context.scope_valid is True
     assert "已应用 patch" in result.answer
     assert "验证完成" in result.answer
-    assert result.tool_calls[0]["tool_name"] == "patch_apply"
-    assert result.tool_calls[1]["tool_name"] == "verification_run"
+    assert result.tool_calls[0]["tool_name"] == "worktree_create"
+    assert result.tool_calls[1]["tool_name"] == "patch_apply"
+    assert result.tool_calls[2]["tool_name"] == "verification_run"
     assert [event.event_type for event in result.trace_events_internal] == [
         "patch_verify_loop_started",
+        "permission_checked",
+        "worktree_create_summarized",
         "patch_command",
         "permission_checked",
         "tool_result",
         "patch_apply_summarized",
+        "worktree_patch_summarized",
         "patch_verify_apply_summarized",
         "permission_checked",
         "tool_result",
         "patch_verify_verification_summarized",
+        "worktree_verification_summarized",
     ]
 
 
@@ -983,7 +1104,11 @@ def test_agent_loop_patch_verify_does_not_run_verification_when_apply_fails(
         diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
         summary="update app",
     )
-    executor = RecordingPatchVerifyExecutor(patch_applied=False)
+    worktree_path = str(tmp_path / ".repopilot" / "worktrees" / "wt_20260607_abcdef")
+    executor = RecordingPatchVerifyExecutor(
+        patch_applied=False,
+        worktree_path=worktree_path,
+    )
     policy = RecordingVerificationContextPolicy()
     loop = AgentLoop(tool_executor=executor, permission_policy=policy)
 
@@ -997,11 +1122,18 @@ def test_agent_loop_patch_verify_does_not_run_verification_when_apply_fails(
         )
     )
 
-    assert executor.calls == ["patch_apply"]
+    assert executor.calls == ["worktree_create", "patch_apply"]
+    assert executor.patch_repo_paths == [worktree_path]
     assert policy.verification_contexts == []
     assert "应用失败" in result.answer
     assert "验证" not in result.answer
     assert result.tool_calls == [
+        {
+            "tool_name": "worktree_create",
+            "worktree_id": "wt_20260607_abcdef",
+            "status": "success",
+            "result_count": "0",
+        },
         {
             "tool_name": "patch_apply",
             "status": "error",
@@ -1009,6 +1141,117 @@ def test_agent_loop_patch_verify_does_not_run_verification_when_apply_fails(
             "error": "context_mismatch",
         }
     ]
+
+
+def test_agent_loop_patch_verify_stops_when_worktree_create_fails(
+    tmp_path: Path,
+) -> None:
+    patch_store = SQLitePatchStore.for_repo(tmp_path)
+    repo_key = compute_repo_key(tmp_path)
+    patch = patch_store.create_pending_patch(
+        user_id="u001",
+        repo_key=repo_key,
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+    executor = FailingWorktreeCreateExecutor()
+
+    result = AgentLoop(tool_executor=executor).run(
+        AgentLoopRequest(
+            message=f"确认 patch {patch.patch_id} 并运行验证",
+            repo_path=str(tmp_path),
+            trace_id="trace_v20_worktree_create_failed",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert executor.calls == ["worktree_create"]
+    assert "worktree 创建失败" in result.answer
+    stored_patch = patch_store.get_patch(
+        patch.patch_id,
+        user_id="u001",
+        repo_key=repo_key,
+    )
+    assert stored_patch is not None
+    assert stored_patch.status == PATCH_STATUS_PENDING
+    assert [call["tool_name"] for call in result.tool_calls] == ["worktree_create"]
+    assert all(
+        event.tool_name != "verification_run" for event in result.trace_events_internal
+    )
+
+
+def test_agent_loop_confirm_patch_runs_apply_inside_worktree(tmp_path: Path) -> None:
+    patch = SQLitePatchStore.for_repo(tmp_path).create_pending_patch(
+        user_id="u001",
+        repo_key=compute_repo_key(tmp_path),
+        target_files=["app.py"],
+        diff_text="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new\n",
+        summary="update app",
+    )
+    worktree_path = str(tmp_path / ".repopilot" / "worktrees" / "wt_20260607_abcdef")
+    executor = RecordingPatchVerifyExecutor(worktree_path=worktree_path)
+    policy = RecordingVerificationContextPolicy()
+    loop = AgentLoop(tool_executor=executor, permission_policy=policy)
+
+    result = loop.run(
+        AgentLoopRequest(
+            message=f"confirm patch {patch.patch_id}",
+            repo_path=str(tmp_path),
+            trace_id="trace_v20_patch_apply",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert executor.calls == ["worktree_create", "patch_apply"]
+    assert executor.patch_repo_paths == [worktree_path]
+    assert executor.verification_repo_paths == []
+    assert len(policy.worktree_contexts) == 1
+    assert policy.verification_contexts == []
+    assert result.tool_calls[0]["tool_name"] == "worktree_create"
+    assert result.tool_calls[1]["tool_name"] == "patch_apply"
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "permission_checked",
+        "worktree_create_summarized",
+        "patch_command",
+        "permission_checked",
+        "tool_result",
+        "patch_apply_summarized",
+        "worktree_patch_summarized",
+    ]
+
+
+def test_agent_loop_worktree_status_query_reads_safe_summary(tmp_path: Path) -> None:
+    from app.worktrees.store import SQLiteWorktreeStore
+
+    store, repo_key = SQLiteWorktreeStore.for_repo(tmp_path)
+    store.create_worktree(
+        user_id="u001",
+        repo_key=repo_key,
+        worktree_id="wt_20260607_abcdef",
+        patch_id="patch_20260607_abcdef",
+        base_commit="8c2b0f6",
+        status="patch_applied",
+        changed_files=["app.py"],
+    )
+
+    result = AgentLoop().run(
+        AgentLoopRequest(
+            message="worktree status wt_20260607_abcdef",
+            repo_path=str(tmp_path),
+            trace_id="trace_v20_worktree_status",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    assert "worktree_id=wt_20260607_abcdef" in result.answer
+    assert "status=patch_applied" in result.answer
+    assert "app.py" in result.answer
+    assert str(tmp_path) not in result.answer
+    assert result.tool_calls == []
 
 
 def test_agent_loop_reports_v16_patch_capability_without_repo_search(

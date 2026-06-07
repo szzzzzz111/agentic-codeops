@@ -16,6 +16,7 @@ from app.rag.repo_rag import HybridRepoRetriever, RetrievalResult
 from app.patching.apply import PatchApplyResult, apply_unified_diff
 from app.tools.file_tools import search_code
 from app.verification.runner import run_whitelisted_verification
+from app.worktrees.manager import WorktreeCreateResult, WorktreeManager
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,7 @@ class ToolExecutionResult:
     audit_summary: dict[str, str | int | float] = field(default_factory=dict)
     evidence_pack: EvidencePack | None = None
     patch_apply_result: PatchApplyResult | None = None
+    worktree_create_result: WorktreeCreateResult | None = None
 
     def call_summary(self) -> dict[str, str]:
         summary = {
@@ -46,12 +48,14 @@ class ToolExecutor:
         repo_retriever: HybridRepoRetriever | None = None,
         query_rewrite_provider: QueryRewriteProvider | None = None,
         reranker: RepoReranker | None = None,
+        worktree_manager: WorktreeManager | None = None,
     ) -> None:
         self.repo_retriever = repo_retriever or HybridRepoRetriever()
         self.query_rewrite_provider = (
             query_rewrite_provider or DeterministicQueryRewriteProvider()
         )
         self.reranker = reranker or DeterministicRepoReranker()
+        self.worktree_manager = worktree_manager or WorktreeManager()
 
     def search_code(
         self,
@@ -202,6 +206,25 @@ class ToolExecutor:
             results=[{"file_path": path, "line_number": 0, "line_text": ""} for path in result.changed_files],
             audit_summary={"changed_files": len(result.changed_files)},
             patch_apply_result=result,
+        )
+
+    def worktree_create(
+        self,
+        repo_path: str,
+        user_id: str,
+        patch_id: str,
+    ) -> ToolExecutionResult:
+        result = self.worktree_manager.create(
+            repo_path=repo_path,
+            user_id=user_id,
+            patch_id=patch_id,
+        )
+        return ToolExecutionResult(
+            tool_name="worktree_create",
+            parameters={"worktree_id": result.worktree_id} if result.worktree_id else {},
+            error=None if result.created else result.reason,
+            audit_summary={"status": result.status},
+            worktree_create_result=result,
         )
 
     def verification_run(self, repo_path: str, command_label: str) -> ToolExecutionResult:

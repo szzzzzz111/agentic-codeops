@@ -11,6 +11,7 @@ from app.patching.provider import (
 )
 from app.patching.store import (
     PATCH_STATUS_APPLIED,
+    PATCH_STATUS_APPLIED_IN_WORKTREE,
     PATCH_STATUS_EXPIRED,
     PATCH_STATUS_FAILED,
     PATCH_STATUS_PENDING,
@@ -114,11 +115,12 @@ class PatchManager:
                 audit_summary="patch_status=error; reason=store_unavailable",
             )
         safe_summary = _redact_public_patch_text(patch.summary)
+        target_files = ", ".join(patch.target_files)
         return PatchCommandResult(
             handled=True,
             answer=(
                 f"已生成 patch proposal：{safe_summary}。"
-                f"目标文件：{', '.join(patch.target_files)}。"
+                f"目标文件：{target_files}。"
                 f"patch_id={patch.patch_id}。"
                 f"如需应用，请发送：确认 patch {patch.patch_id}"
             ),
@@ -186,6 +188,7 @@ class PatchManager:
         user_id: str,
         patch_id: str,
         result: PatchApplyResult,
+        worktree_id: str = "",
     ) -> PatchCommandResult:
         try:
             store, repo_key = store_for_existing_repo(repo_path)
@@ -196,7 +199,14 @@ class PatchManager:
                     answer="patch apply 已执行，但状态更新失败。",
                     audit_summary="patch_status=missing_after_apply",
                 )
-            status = PATCH_STATUS_APPLIED if result.applied else PATCH_STATUS_FAILED
+            if result.applied:
+                status = (
+                    PATCH_STATUS_APPLIED_IN_WORKTREE
+                    if worktree_id
+                    else PATCH_STATUS_APPLIED
+                )
+            else:
+                status = PATCH_STATUS_FAILED
             store.mark_status(patch.patch_id, status)
         except (OSError, ValueError):
             return PatchCommandResult(
@@ -204,15 +214,32 @@ class PatchManager:
                 answer="patch apply 已执行，但状态存储不可用。",
                 audit_summary="patch_status=store_unavailable",
             )
+
         if result.applied:
+            changed_files = ", ".join(result.changed_files)
+            if worktree_id:
+                return PatchCommandResult(
+                    handled=True,
+                    answer=(
+                        f"已应用 patch {patch_id} 于隔离 worktree。"
+                        f"worktree_id={worktree_id}。"
+                        f"修改文件：{changed_files}。"
+                    ),
+                    audit_summary=(
+                        "patch_status=applied_in_worktree; "
+                        f"patch_id={patch_id}; worktree_id={worktree_id}; "
+                        f"changed_files={len(result.changed_files)}"
+                    ),
+                )
             return PatchCommandResult(
                 handled=True,
                 answer=(
                     f"已应用 patch {patch_id}。"
-                    f"修改文件：{', '.join(result.changed_files)}。"
+                    f"修改文件：{changed_files}。"
                 ),
                 audit_summary=f"patch_status=applied; changed_files={len(result.changed_files)}",
             )
+
         return PatchCommandResult(
             handled=True,
             answer=f"patch {patch_id} 应用失败，未静默成功。",

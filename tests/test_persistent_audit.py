@@ -290,3 +290,17 @@ def test_agent_loop_recovery_trace_lookup_is_scoped(tmp_path: Path) -> None:
     assert "route=verification" in result.answer
     assert "other_user" not in result.answer
     assert compute_repo_key(tmp_path) not in result.answer
+
+
+def test_audit_builds_worktree_lifecycle_event_without_paths() -> None:
+    from app.audit.manager import build_event_from_trace
+
+    event = build_event_from_trace(
+        event_type="worktree_create_summarized",
+        status="ok",
+        summary="worktree_id=wt_20260607_abcdef; status=ready",
+    )
+
+    assert event is not None
+    assert event.event_type == "worktree_event"
+    assert event.related_id == "wt_20260607_abcdef"

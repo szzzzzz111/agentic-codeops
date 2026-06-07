@@ -20,6 +20,7 @@ _SECRET_RE = re.compile(
 )
 _PATCH_ID_RE = re.compile(r"\bpatch_[A-Za-z0-9_]+\b")
 _TASK_ID_RE = re.compile(r"\btask_[A-Za-z0-9_]+\b")
+_WORKTREE_ID_RE = re.compile(r"\bwt_[A-Za-z0-9_]+\b")
 _DANGEROUS_PAYLOAD_KEYS = {
     "diff",
     "diff_text",
@@ -158,6 +159,19 @@ def build_event_from_trace(
             summary=summary,
             payload=_parse_summary(summary),
         )
+    if event_type in {
+        "worktree_create_summarized",
+        "worktree_patch_summarized",
+        "worktree_verification_summarized",
+        "worktree_status",
+    }:
+        return AuditRecordInput(
+            event_type="worktree_event",
+            status=status,
+            summary=summary,
+            related_id=related_id,
+            payload=_parse_summary(summary),
+        )
     if event_type == "long_task_command":
         return AuditRecordInput(
             event_type="task_event",
@@ -258,6 +272,9 @@ def _related_id_from_summary(summary: str) -> str:
     task = _TASK_ID_RE.search(summary)
     if task:
         return task.group(0)
+    worktree = _WORKTREE_ID_RE.search(summary)
+    if worktree:
+        return worktree.group(0)
     return ""
 
 

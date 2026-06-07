@@ -1,12 +1,27 @@
 # RepoPilot
 
+## V20 Worktree Isolation
+
+当前 active change 为 `v20-worktree-isolation`，工作分支为
+`feature/v20-worktree-isolation`。
+
+- 明确确认的 standalone patch 与组合 Patch + Verify 会先创建 detached、locked
+  Git worktree，再在同一个内部 `execution_repo_path` 中执行。
+- 主工作区必须干净，且 `.repopilot/` 必须被 Git ignore；patch 成功后主工作区保持不变。
+- worktree 生命周期保存在 `.repopilot/worktrees.sqlite3`，patch 成功状态为
+  `applied_in_worktree`。
+- `worktree status <worktree_id>` / `查看 worktree <worktree_id>` 通过现有
+  `/chat.answer` 返回脱敏只读摘要。
+- standalone verification 仍在用户当前工作区执行。
+- V20 不提供 worktree 删除、prune、commit、merge、push、promote、继续执行或重试命令。
+
 RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。它不是通用 AI IDE 或 AI 编程助手的替代品，而是围绕 Agent 的工具调用、安全边界、执行追踪、评测和交接机制，构建一个可验证、可审计、可扩展的代码智能体执行框架。
 
 当前应用场景包括代码仓库阅读、Bug 定位和修复建议。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
 
 ## 当前快照
 
-- 当前主线能力：V1-V19 已归档；当前基线为 `main` / `agentic-codeops/main`；V19 Persistent Audit / Recovery 已完成、归档、fast-forward 合并并完成 post-merge handoff 收尾推送。V19 runtime/archive merge commit 为 `add702d62bcf737925b6418d3c9b9fb258e7ff35`，后续 handoff docs closeout commits 已进入 `main`/remote 历史。
+- 当前主线能力：V1-V19 已归档；V20 Worktree Isolation 正在 `feature/v20-worktree-isolation` 开发，active change 为 `v20-worktree-isolation`。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -16,10 +31,11 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 当前 Verification Runner：通过明确验证请求运行固定白名单标签 `pytest`、`ruff` 或 `verify`，其中 `verify` 映射到 `scripts/verify.ps1`；执行必须经过 `verification_run` 权限/审批边界和 `ToolExecutor`，公开响应只返回截断脱敏摘要。
 - 当前 Patch + Verify Loop：通过明确组合确认请求串联 pending patch apply 与白名单验证；组合请求必须同时包含 patch id 和验证标签，解析失败整体拒绝且不 apply；apply 成功后才使用独立 verification context 运行验证。
 - 当前 Persistent Audit / Recovery：使用 repo-local `.repopilot/audit.sqlite3` 持久化脱敏 trace envelope、patch attempt、verification result 和 long task event，并通过现有 `/chat.answer` 提供只读恢复/状态查询；不新增 `/chat` 顶层字段。
+- 当前 Worktree Isolation：明确确认的 standalone patch 与组合 Patch + Verify 先创建 detached、locked worktree；patch 与组合 verification 使用同一个内部 `execution_repo_path`，主工作区保持不变；standalone verification 保持主工作区语义。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolInvocationContext` 和统一 `ToolExecutor`。
 - 当前默认不接真实 LLM，不执行任意 shell，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；V17 仅允许明确验证请求下的白名单验证命令；V18 仅允许明确组合确认下的 apply 后 verify；V19 recovery/status 只读且不执行 patch、verification、task resume 或 repo mutation；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
-- 当前不执行后台任务、不创建 worktree、不调度真实 subagents、不执行 shell、不自动运行测试或 commit；V16 仅允许用户明确确认后的受控 patch apply。
+- 当前不执行后台任务、不调度真实 subagents、不执行任意 shell、不自动 commit；V20 仅为明确确认的 patch 流程创建受控 worktree。
 
 ## 当前能力
 
@@ -410,8 +426,9 @@ ChatService
 
 ## 路线图
 
-已归档至 V19：Persistent Audit / Recovery。当前无 active change。下一阶段路线：
+已归档至 V19：Persistent Audit / Recovery。当前 active change 为
+`v20-worktree-isolation`：
 
-- V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
+- V20：Worktree Isolation。正在引入受控 git worktree，隔离 standalone patch 与组合 Patch + Verify，避免污染主工作区。
 
 真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；当前不要把这些写成已实现能力。

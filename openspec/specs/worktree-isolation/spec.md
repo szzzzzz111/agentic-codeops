@@ -1,0 +1,67 @@
+# worktree-isolation Specification
+
+## Purpose
+
+定义 RepoPilot 的 V20 Worktree Isolation 边界：系统通过 repo-local 受控 Git worktree 隔离 RepoPilot 产生的 patch apply 与组合 Patch + Verify 执行，使主工作区保持不变，并通过现有 `/chat.answer` 提供只读 worktree 状态查询。
+
+## Requirements
+
+### Requirement: Worktree Creation Is Approval-Gated
+
+系统 SHALL provide a `worktree_create` tool that is registered as `read_only=False`, `risk="write"`, and `requires_approval=True`. Worktree creation MUST pass through `ToolRegistry`, `PermissionPolicy`, `ApprovalGate`, and `ToolExecutor`.
+
+Worktree creation MUST use fixed Git argv with `shell=False`, MUST create a detached and locked worktree under `.repopilot/worktrees/<worktree_id>`, and MUST NOT accept user-controlled Git arguments, worktree paths, branches, or commit-ish values.
+
+#### Scenario: Approved patch flow creates a detached locked worktree
+
+- **WHEN** a valid confirmed patch flow satisfies worktree preconditions
+- **THEN** the system creates a detached locked worktree
+- **AND** the worktree path is repo-local under `.repopilot/worktrees/`
+
+### Requirement: Worktree Creation Checks Repository Preconditions
+
+系统 SHALL require the target repository to be a non-bare Git repository with a valid `HEAD`, with `.repopilot/` ignored by Git, and with no tracked changes or non-ignored untracked files in the main working tree.
+
+Ignored files MAY exist and MUST NOT block worktree creation.
+
+#### Scenario: Dirty main workspace blocks worktree creation
+
+- **WHEN** the main working tree has tracked changes or non-ignored untracked files
+- **THEN** the system MUST refuse to create a worktree
+- **AND** it MUST NOT apply the patch
+
+### Requirement: Patch Flows Run Inside The Worktree
+
+系统 SHALL route standalone patch apply and combined Patch + Verify through a worktree execution repo path. `patch_apply` and combined `verification_run` MUST execute against the isolated execution repo path, while standalone verification MUST continue to use the original request repo path.
+
+The internal execution repo path MUST NOT be exposed in `/chat` top-level fields, `tool_calls`, `ToolInvocationContext`, or persistent audit payloads.
+
+#### Scenario: Standalone verification keeps current workspace behavior
+
+- **WHEN** the user runs a standalone verification request
+- **THEN** the system MUST use the original request repo path
+- **AND** it MUST NOT create a worktree first
+
+### Requirement: Worktree And Patch State Remain Explicit
+
+系统 SHALL persist repo-local worktree state in `.repopilot/worktrees.sqlite3`, scoped by `user_id + repo_key`. The store MUST keep safe lifecycle metadata including `worktree_id`, `patch_id`, `base_commit`, lifecycle status, verification label/status, changed-file summaries, and timestamps.
+
+Patch apply success inside a worktree MUST transition the patch to `applied_in_worktree`. Worktree creation failure MUST leave the patch `pending`. Patch apply failure inside a worktree MUST transition the patch to `failed`. Verification failure after successful apply MUST leave the patch in `applied_in_worktree`.
+
+#### Scenario: Verification failure preserves applied-in-worktree state
+
+- **WHEN** a patch succeeds inside a worktree and the follow-up verification fails
+- **THEN** the patch remains `applied_in_worktree`
+- **AND** the worktree remains available for inspection
+
+### Requirement: Worktree Status Queries Are Read-Only
+
+系统 SHALL support read-only status lookup for a specific `worktree_id` through existing `/chat.answer`. Missing worktree stores or unknown ids MUST NOT create repo-local state.
+
+Status answers MAY include safe identifiers, base commit, patch id, lifecycle status, verification summary, and changed-file summaries. Status answers MUST NOT expose local absolute paths, `.git` paths, DB paths, full Git stdout/stderr, full diffs, or secrets.
+
+#### Scenario: Missing worktree store query does not create state
+
+- **WHEN** a user asks for a worktree status and `.repopilot/worktrees.sqlite3` does not exist
+- **THEN** the system returns a no-history or not-found answer
+- **AND** it MUST NOT create `.repopilot` or the worktree store

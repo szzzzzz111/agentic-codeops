@@ -12,6 +12,7 @@ PATCH_DIR = ".repopilot"
 PATCH_DB = "patches.sqlite3"
 PATCH_STATUS_PENDING = "pending"
 PATCH_STATUS_APPLIED = "applied"
+PATCH_STATUS_APPLIED_IN_WORKTREE = "applied_in_worktree"
 PATCH_STATUS_FAILED = "failed"
 PATCH_STATUS_EXPIRED = "expired"
 DEFAULT_TTL_HOURS = 24

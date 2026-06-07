@@ -28,12 +28,18 @@ from app.verification.runner import (
     parse_verification_request,
     unsupported_verification_answer,
 )
+from app.worktrees.manager import WorktreeManager
 
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
+WORKTREE_STATUS_PATTERN = re.compile(
+    r"(?:worktree\s+status|查看\s+worktree)\s+(wt_[A-Za-z0-9_]+)",
+    re.IGNORECASE,
+)
 ALLOWED_TOOL_RISK = "low"
 REPO_RAG_TOOL = "repo_rag"
 PATCH_APPLY_TOOL = "patch_apply"
+WORKTREE_CREATE_TOOL = "worktree_create"
 VERIFICATION_RUN_TOOL = "verification_run"
 _ROUTING_STOPWORDS = {
     "hello",
@@ -148,6 +154,14 @@ class _PatchLoopApplyResult:
 
 
 @dataclass(frozen=True)
+class _PatchLoopWorktreeResult:
+    tool_result: ToolExecutionResult
+    trace_events: list[TraceEvent]
+    execution_repo_path: str = ""
+    worktree_id: str = ""
+
+
+@dataclass(frozen=True)
 class _PatchLoopVerificationResult:
     answer: str
     tool_result: ToolExecutionResult
@@ -198,6 +212,13 @@ class ToolRegistry:
                     requires_approval=True,
                 ),
                 ToolSpec(
+                    name=WORKTREE_CREATE_TOOL,
+                    description="Create an isolated Git worktree for a confirmed patch.",
+                    read_only=False,
+                    risk="write",
+                    requires_approval=True,
+                ),
+                ToolSpec(
                     name=VERIFICATION_RUN_TOOL,
                     description="Run a whitelisted repository verification command.",
                     read_only=False,
@@ -226,6 +247,8 @@ class PermissionPolicy:
             )
         if tool_spec.name == PATCH_APPLY_TOOL:
             return _decide_patch_apply(tool_spec, context)
+        if tool_spec.name == WORKTREE_CREATE_TOOL:
+            return _decide_worktree_create(tool_spec, context)
         if tool_spec.name == VERIFICATION_RUN_TOOL:
             return _decide_verification_run(tool_spec, context)
         if not tool_spec.read_only:
@@ -261,6 +284,8 @@ class ApprovalGate:
     ) -> bool:
         if decision.tool_name == PATCH_APPLY_TOOL and decision.status == "ask":
             return _valid_patch_context(context)
+        if decision.tool_name == WORKTREE_CREATE_TOOL and decision.status == "ask":
+            return _valid_worktree_context(context)
         if decision.tool_name == VERIFICATION_RUN_TOOL and decision.status == "ask":
             return _valid_verification_context(context)
         return decision.status == "allow"
@@ -327,6 +352,52 @@ def _decide_verification_run(
     )
 
 
+def _decide_worktree_create(
+    tool_spec: ToolSpec,
+    context: ToolInvocationContext | None,
+) -> PermissionDecision:
+    if not _valid_worktree_context(context):
+        return PermissionDecision(
+            tool_name=tool_spec.name,
+            status="deny",
+            reason=_worktree_context_rejection_reason(context),
+        )
+    return PermissionDecision(
+        tool_name=tool_spec.name,
+        status="ask",
+        reason="approval_required",
+    )
+
+
+def _valid_worktree_context(context: ToolInvocationContext | None) -> bool:
+    return bool(
+        context is not None
+        and context.tool_name == WORKTREE_CREATE_TOOL
+        and context.intent == "worktree_create"
+        and context.confirmed
+        and context.patch_status == "pending"
+        and context.diff_hash_match
+        and context.expires_at_valid
+        and context.scope_valid
+    )
+
+
+def _worktree_context_rejection_reason(
+    context: ToolInvocationContext | None,
+) -> str:
+    if context is None or not context.confirmed:
+        return "missing_confirmation"
+    if context.patch_status != "pending":
+        return "patch_not_pending"
+    if not context.diff_hash_match:
+        return "patch_hash_mismatch"
+    if not context.expires_at_valid:
+        return "patch_expired"
+    if not context.scope_valid:
+        return "patch_scope_invalid"
+    return "worktree_context_invalid"
+
+
 def _valid_verification_context(context: ToolInvocationContext | None) -> bool:
     return bool(
         context is not None
@@ -367,10 +438,15 @@ class AgentLoop:
         assistant_control_surface: AssistantControlSurface | None = None,
         patch_manager: PatchManager | None = None,
         audit_manager: AuditManager | None = None,
+        worktree_manager: WorktreeManager | None = None,
     ) -> None:
         self.router = router or RequestRouter()
         self.tool_registry = tool_registry or ToolRegistry.with_default_tools()
-        self.tool_executor = tool_executor or ToolExecutor(repo_retriever=repo_retriever)
+        self.worktree_manager = worktree_manager or WorktreeManager()
+        self.tool_executor = tool_executor or ToolExecutor(
+            repo_retriever=repo_retriever,
+            worktree_manager=self.worktree_manager,
+        )
         self.permission_policy = permission_policy or PermissionPolicy()
         self.approval_gate = approval_gate or ApprovalGate()
         self.query_understanding = query_understanding or QueryUnderstanding()
@@ -460,6 +536,10 @@ class AgentLoop:
                     )
                 ],
             )
+
+        worktree_id = _worktree_status_id(request.message)
+        if worktree_id:
+            return self._run_worktree_status(request, worktree_id)
 
         patch_verify_confirmation = parse_patch_verify_confirmation(request.message)
         if patch_verify_confirmation.handled:
@@ -875,91 +955,136 @@ class AgentLoop:
             trace_events_internal=trace_events,
         )
 
+    def _create_worktree_for_patch(
+        self,
+        *,
+        request: AgentLoopRequest,
+        command,
+        trace_events: list[TraceEvent],
+    ) -> _PatchLoopWorktreeResult:
+        context = ToolInvocationContext(
+            tool_name=WORKTREE_CREATE_TOOL,
+            user_id=request.user_id,
+            repo_key=command.context.repo_key,
+            intent="worktree_create",
+            patch_id=command.patch_id or "",
+            confirmed=command.context.confirmed,
+            patch_status=command.context.patch_status,
+            diff_hash_match=command.context.diff_hash_match,
+            expires_at_valid=command.context.expires_at_valid,
+            scope_valid=command.context.scope_valid,
+        )
+        tool_spec = self.tool_registry.get(WORKTREE_CREATE_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=WORKTREE_CREATE_TOOL,
+            context=context,
+        )
+        next_events = [
+            *trace_events,
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=WORKTREE_CREATE_TOOL,
+                status="ok" if permission_decision.status == "ask" else "error",
+                summary=(
+                    f"tool={WORKTREE_CREATE_TOOL}; "
+                    f"decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            ),
+        ]
+        if permission_decision.status == "deny" or not self.approval_gate.evaluate(
+            permission_decision,
+            context=context,
+        ):
+            tool_result = ToolExecutionResult(
+                tool_name=WORKTREE_CREATE_TOOL,
+                parameters={},
+                error=permission_decision.reason,
+            )
+            return _PatchLoopWorktreeResult(
+                tool_result=tool_result,
+                trace_events=[
+                    *next_events,
+                    TraceEvent(
+                        event_type="tool_rejected",
+                        tool_name=WORKTREE_CREATE_TOOL,
+                        status="error",
+                        summary=f"reason={permission_decision.reason}",
+                    ),
+                ],
+            )
+
+        tool_result = self.tool_executor.worktree_create(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            patch_id=command.patch_id or "",
+        )
+        worktree_create_result = getattr(tool_result, "worktree_create_result", None)
+        status = (
+            "ok"
+            if worktree_create_result is not None and worktree_create_result.created
+            else "error"
+        )
+        return _PatchLoopWorktreeResult(
+            tool_result=tool_result,
+            trace_events=[
+                *next_events,
+                TraceEvent(
+                    event_type="worktree_create_summarized",
+                    tool_name=WORKTREE_CREATE_TOOL,
+                    status=status,
+                    summary=getattr(worktree_create_result, "public_summary", ""),
+                ),
+            ],
+            execution_repo_path=getattr(
+                worktree_create_result,
+                "execution_repo_path",
+                "",
+            ),
+            worktree_id=getattr(worktree_create_result, "worktree_id", ""),
+        )
+
     def _run_patch_apply(
         self,
         *,
         request: AgentLoopRequest,
         command,
     ) -> AgentLoopResult:
-        context = command.context
-        tool_spec = self.tool_registry.get(PATCH_APPLY_TOOL)
-        permission_decision = self.permission_policy.decide(
-            tool_spec,
-            tool_name=PATCH_APPLY_TOOL,
-            context=context,
+        worktree_result = self._create_worktree_for_patch(
+            request=request,
+            command=command,
+            trace_events=[],
         )
-        trace_events = [
-            TraceEvent(
-                event_type="patch_command",
-                status="ok",
-                summary=command.audit_summary,
-            ),
-            TraceEvent(
-                event_type="permission_checked",
-                tool_name=PATCH_APPLY_TOOL,
-                status="ok" if permission_decision.status == "ask" else "error",
-                summary=(
-                    f"tool={PATCH_APPLY_TOOL}; "
-                    f"decision={permission_decision.status}; "
-                    f"reason={permission_decision.reason}"
-                ),
-            ),
-        ]
-        if permission_decision.status == "deny":
+        if worktree_result.tool_result.error or not worktree_result.execution_repo_path:
+            answer = (
+                getattr(
+                    getattr(worktree_result.tool_result, "worktree_create_result", None),
+                    "public_summary",
+                    "",
+                )
+                or DENY_ANSWER
+            )
             return AgentLoopResult(
-                answer=DENY_ANSWER,
-                trace_events_internal=[
-                    *trace_events,
-                    TraceEvent(
-                        event_type="tool_rejected",
-                        tool_name=PATCH_APPLY_TOOL,
-                        status="error",
-                        summary=f"reason={permission_decision.reason}",
-                    ),
-                ],
+                answer=answer,
+                tool_calls=[worktree_result.tool_result.call_summary()],
+                trace_events_internal=worktree_result.trace_events,
             )
-        if not self.approval_gate.evaluate(permission_decision, context=context):
-            return AgentLoopResult(
-                answer=ASK_ANSWER,
-                trace_events_internal=[
-                    *trace_events,
-                    TraceEvent(
-                        event_type="approval_required",
-                        tool_name=PATCH_APPLY_TOOL,
-                    ),
-                ],
-            )
-        tool_result = self.tool_executor.patch_apply(
-            repo_path=request.repo_path,
-            diff_text=command.diff_text,
-        )
-        trace_events.append(
-            TraceEvent(
-                event_type="tool_result",
-                tool_name=PATCH_APPLY_TOOL,
-                status="error" if tool_result.error else "ok",
-                summary=f"result_count={len(tool_result.results)}",
-            )
-        )
-        apply_result = getattr(tool_result, "patch_apply_result", None)
-        completed = self.patch_manager.complete_apply(
-            repo_path=request.repo_path,
-            user_id=request.user_id,
-            patch_id=command.patch_id or "",
-            result=apply_result,
+
+        patch_result = self._apply_patch_for_loop(
+            request=request,
+            command=command,
+            trace_events=worktree_result.trace_events,
+            execution_repo_path=worktree_result.execution_repo_path,
+            worktree_id=worktree_result.worktree_id,
         )
         return AgentLoopResult(
-            answer=completed.answer,
-            tool_calls=[tool_result.call_summary()],
-            trace_events_internal=[
-                *trace_events,
-                TraceEvent(
-                    event_type="patch_apply_summarized",
-                    tool_name=PATCH_APPLY_TOOL,
-                    status="ok" if tool_result.error is None else "error",
-                    summary=completed.audit_summary,
-                ),
+            answer=patch_result.completed.answer,
+            tool_calls=[
+                worktree_result.tool_result.call_summary(),
+                patch_result.tool_result.call_summary(),
             ],
+            trace_events_internal=patch_result.trace_events,
         )
 
     def _run_patch_verify_loop(
@@ -1005,17 +1130,43 @@ class AgentLoop:
                 ],
             )
 
-        patch_result = self._apply_patch_for_loop(
+        worktree_result = self._create_worktree_for_patch(
             request=request,
             command=patch_command,
             trace_events=trace_events,
+        )
+        if worktree_result.tool_result.error or not worktree_result.execution_repo_path:
+            answer = (
+                getattr(
+                    getattr(worktree_result.tool_result, "worktree_create_result", None),
+                    "public_summary",
+                    "",
+                )
+                or DENY_ANSWER
+            )
+            return AgentLoopResult(
+                answer=answer,
+                tool_calls=[worktree_result.tool_result.call_summary()],
+                trace_events_internal=worktree_result.trace_events,
+            )
+
+        patch_result = self._apply_patch_for_loop(
+            request=request,
+            command=patch_command,
+            trace_events=worktree_result.trace_events,
+            execution_repo_path=worktree_result.execution_repo_path,
+            worktree_id=worktree_result.worktree_id,
+            include_patch_verify_summary=True,
         )
         apply_result = getattr(patch_result.tool_result, "patch_apply_result", None)
         if patch_result.tool_result.error or apply_result is None or not apply_result.applied:
             failed_answer = getattr(patch_result.completed, "answer", "") or DENY_ANSWER
             return AgentLoopResult(
                 answer=failed_answer,
-                tool_calls=[patch_result.tool_result.call_summary()],
+                tool_calls=[
+                    worktree_result.tool_result.call_summary(),
+                    patch_result.tool_result.call_summary(),
+                ],
                 trace_events_internal=patch_result.trace_events,
             )
 
@@ -1023,6 +1174,8 @@ class AgentLoop:
             request=request,
             command_label=command_label,
             trace_events=patch_result.trace_events,
+            execution_repo_path=worktree_result.execution_repo_path,
+            worktree_id=worktree_result.worktree_id,
         )
         return AgentLoopResult(
             answer=_format_patch_verify_answer(
@@ -1031,6 +1184,7 @@ class AgentLoop:
                 verification_result.tool_result.audit_summary,
             ),
             tool_calls=[
+                worktree_result.tool_result.call_summary(),
                 patch_result.tool_result.call_summary(),
                 verification_result.tool_result.call_summary(),
             ],
@@ -1043,6 +1197,9 @@ class AgentLoop:
         request: AgentLoopRequest,
         command,
         trace_events: list[TraceEvent],
+        execution_repo_path: str,
+        worktree_id: str,
+        include_patch_verify_summary: bool = False,
     ):
         context = command.context
         tool_spec = self.tool_registry.get(PATCH_APPLY_TOOL)
@@ -1093,7 +1250,7 @@ class AgentLoop:
             )
 
         tool_result = self.tool_executor.patch_apply(
-            repo_path=request.repo_path,
+            repo_path=execution_repo_path,
             diff_text=command.diff_text,
         )
         apply_result = getattr(tool_result, "patch_apply_result", None)
@@ -1102,32 +1259,53 @@ class AgentLoop:
             user_id=request.user_id,
             patch_id=command.patch_id or "",
             result=apply_result,
+            worktree_id=worktree_id,
+        )
+        self.worktree_manager.record_patch_result(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            worktree_id=worktree_id,
+            applied=bool(apply_result and apply_result.applied),
+            changed_files=list(apply_result.changed_files) if apply_result else [],
         )
         status = "ok" if tool_result.error is None else "error"
-        return _PatchLoopApplyResult(
-            completed=completed,
-            tool_result=tool_result,
-            trace_events=[
-                *next_events,
-                TraceEvent(
-                    event_type="tool_result",
-                    tool_name=PATCH_APPLY_TOOL,
-                    status=status,
-                    summary=f"result_count={len(tool_result.results)}",
+        trace_events_out = [
+            *next_events,
+            TraceEvent(
+                event_type="tool_result",
+                tool_name=PATCH_APPLY_TOOL,
+                status=status,
+                summary=f"result_count={len(tool_result.results)}",
+            ),
+            TraceEvent(
+                event_type="patch_apply_summarized",
+                tool_name=PATCH_APPLY_TOOL,
+                status=status,
+                summary=completed.audit_summary,
+            ),
+            TraceEvent(
+                event_type="worktree_patch_summarized",
+                tool_name=PATCH_APPLY_TOOL,
+                status=status,
+                summary=(
+                    f"worktree_id={worktree_id}; "
+                    f"status={'patch_applied' if status == 'ok' else 'patch_failed'}"
                 ),
-                TraceEvent(
-                    event_type="patch_apply_summarized",
-                    tool_name=PATCH_APPLY_TOOL,
-                    status=status,
-                    summary=completed.audit_summary,
-                ),
+            ),
+        ]
+        if include_patch_verify_summary:
+            trace_events_out.append(
                 TraceEvent(
                     event_type="patch_verify_apply_summarized",
                     tool_name=PATCH_APPLY_TOOL,
                     status=status,
                     summary=completed.audit_summary,
-                ),
-            ],
+                )
+            )
+        return _PatchLoopApplyResult(
+            completed=completed,
+            tool_result=tool_result,
+            trace_events=trace_events_out,
         )
 
     def _verify_after_patch_apply(
@@ -1136,6 +1314,8 @@ class AgentLoop:
         request: AgentLoopRequest,
         command_label: str,
         trace_events: list[TraceEvent],
+        execution_repo_path: str,
+        worktree_id: str,
     ):
         context = ToolInvocationContext(
             tool_name=VERIFICATION_RUN_TOOL,
@@ -1188,7 +1368,7 @@ class AgentLoop:
             )
 
         tool_result = self.tool_executor.verification_run(
-            repo_path=request.repo_path,
+            repo_path=execution_repo_path,
             command_label=command_label,
         )
         answer = _verification_answer_from_tool_result(tool_result)
@@ -1196,6 +1376,13 @@ class AgentLoop:
             "error"
             if tool_result.audit_summary.get("status") not in {"success", ""}
             else "ok"
+        )
+        self.worktree_manager.record_verification_result(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            worktree_id=worktree_id,
+            command_label=command_label,
+            succeeded=status == "ok",
         )
         return _PatchLoopVerificationResult(
             answer=answer,
@@ -1213,6 +1400,16 @@ class AgentLoop:
                     tool_name=VERIFICATION_RUN_TOOL,
                     status=status,
                     summary=_verification_trace_summary(tool_result.audit_summary),
+                ),
+                TraceEvent(
+                    event_type="worktree_verification_summarized",
+                    tool_name=VERIFICATION_RUN_TOOL,
+                    status=status,
+                    summary=(
+                        f"worktree_id={worktree_id}; "
+                        f"status={'verification_succeeded' if status == 'ok' else 'verification_failed'}; "
+                        f"command_label={command_label}"
+                    ),
                 ),
             ],
         )
@@ -1319,6 +1516,41 @@ class AgentLoop:
             search_plan=search_plan,
         )
 
+    def _run_worktree_status(
+        self,
+        request: AgentLoopRequest,
+        worktree_id: str,
+    ) -> AgentLoopResult:
+        record = self.worktree_manager.get_status(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            worktree_id=worktree_id,
+        )
+        if record is None:
+            answer = f"未找到 worktree_id={worktree_id}。"
+            status = "error"
+            summary = f"worktree_id={worktree_id}; status=missing"
+        else:
+            changed_files = ", ".join(record.changed_files) or "none"
+            verification = record.verification_status or "not_run"
+            answer = (
+                f"worktree_id={record.worktree_id}; status={record.status}; "
+                f"patch_id={record.patch_id}; base_commit={record.base_commit[:12]}; "
+                f"changed_files={changed_files}; verification={verification}"
+            )
+            status = "ok"
+            summary = f"worktree_id={record.worktree_id}; status={record.status}"
+        return AgentLoopResult(
+            answer=answer,
+            trace_events_internal=[
+                TraceEvent(
+                    event_type="worktree_status",
+                    status=status,
+                    summary=summary,
+                )
+            ],
+        )
+
     def _run_audit_recovery(self, request: AgentLoopRequest) -> AgentLoopResult:
         query_type, identifier = recovery_query(request.message)
         if query_type == "identifier" and identifier:
@@ -1414,6 +1646,11 @@ def _extract_search_keyword(message: str) -> str | None:
         ):
             return token
     return None
+
+
+def _worktree_status_id(message: str) -> str | None:
+    match = WORKTREE_STATUS_PATTERN.search(message)
+    return match.group(1) if match else None
 
 
 def _should_record_query_understanding(search_plan: SearchPlan) -> bool:

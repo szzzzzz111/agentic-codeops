@@ -1,66 +1,67 @@
 # 当前 Review 清单
 
-当前活跃阶段：无 active implementation stage。
+当前活跃阶段：`V20 Worktree Isolation`
 
-## V19 Planning / OpenSpec Gate
+## V20 Planning / OpenSpec Gate
 
-- [x] V19 plan 已明确 runtime scope：持久审计摘要 + 只读恢复视图。
-- [x] V19 non-goals 已明确：不做 V20 Worktree Isolation，不做真实 subagents/connectors/notifications/heartbeat/always-on assistant。
-- [x] OpenSpec change 包含 `persistent-audit-recovery` 新能力 spec delta。
-- [x] OpenSpec change 覆盖所有被修改或约束的能力：`agent-loop-tool-execution`、`chat-api`、`safe-patch-authoring`、`verification-runner`、`long-task-agent-execution`、`harness-development-workflow`。
-- [x] Recovery intent 路由优先级固定为 patch/verification 之后、capability/status 与 repo_search 之前。
-- [x] `.codex/skills/**` 若修改，只能作为流程文档，不得写成 RepoPilot runtime 能力。
+- [x] V20 plan 已锁定：单独 patch apply 与组合 Patch + Verify 进入 worktree，独立 verification 保持当前工作区语义。
+- [x] OpenSpec change 包含 `worktree-isolation` 新能力与完整 stage planning / proposal / design / tasks。
+- [x] OpenSpec change 覆盖被修改能力：`agent-loop-tool-execution`、`chat-api`、`safe-patch-authoring`、`patch-verify-loop`、`verification-runner`、`persistent-audit-recovery`、`harness-development-workflow`。
+- [x] `execution_repo_path` 的内部传播机制明确，且不会进入公开响应、`ToolInvocationContext` 或持久审计。
+- [x] `applied_in_worktree` 状态机、失败终态与重试语义在 spec / tasks 中明确。
 
-## V19 Runtime Gate
+## V20 Runtime Gate
 
-- [x] 所有 `/chat` 请求记录轻量 trace envelope；patch、verification、long task 记录脱敏摘要。
-- [x] Audit store 使用 repo-local `.repopilot/audit.sqlite3`，并按 `user_id + repo_key` 隔离。
-- [x] Audit record 不保存 full diff、full stdout/stderr、full Evidence Pack、provider prompt/output、secret、DB path、环境变量或本机绝对路径。
-- [x] Recovery/status 是只读能力，不执行 patch、verification、task resume、repo mutation、commit、push 或 worktree 操作。
-- [x] Missing audit DB 查询不创建 `.repopilot` 或 `audit.sqlite3`。
-- [x] Audit persistence failure 不影响主 `/chat` 请求。
-- [x] `/chat` 顶层 response schema 不新增字段；recovery 只通过 `answer` 返回。
-- [x] Recovery intent 命中后不调用 repo RAG。
-- [x] Retention 维持 V19 锁定决策：无限保留，不自动清理；查询默认最近 20 条。
+- [x] `worktree_create` 作为受控高风险工具注册：`read_only=False`、`risk="write"`、`requires_approval=True`。
+- [x] worktree 创建只允许固定 Git argv 和 `shell=False`，不接受用户提供的 Git 参数、路径、分支或 commit。
+- [x] worktree 目录固定在 repo-local `.repopilot/worktrees/<worktree_id>`，成功创建后为 detached 且 locked。
+- [x] 单独 patch apply 与组合 Patch + Verify 使用 worktree `execution_repo_path`；独立 verification 继续使用原始 `repo_path`。
+- [x] worktree 创建前检查：非 bare Git 仓库、有效 `HEAD`、主工作区无 tracked 改动、无非 ignored untracked 文件、`.repopilot/` 被 Git ignore。
+- [x] ignored 文件不阻止创建；非 ignored untracked 文件阻止创建。
+- [x] worktree 创建失败或 metadata 写入失败会尽力回滚未完成创建，patch 保持 `pending`。
+- [x] worktree 内 patch apply 失败时 patch 转 `failed`，不得运行 verification。
+- [x] verification 失败时 patch 保持 `applied_in_worktree`，worktree 保留，V20 不提供重跑。
+- [x] 不修改主工作区文件，不把成功 patch 误报为已写回主工作区。
 
-## V19 Test Gate
+## V20 Audit / Query Gate
 
-- [x] `tests/test_persistent_audit.py` 覆盖 schema、scope、ordering、default limit、missing-store no-create、redaction/capping。
-- [x] AgentLoop tests 覆盖 trace、patch、verification、long task audit event。
-- [x] AgentLoop/API tests 覆盖 recovery routing、no repo RAG、read-only behavior、audit failure non-blocking 和 `/chat` schema unchanged。
-- [x] Security tests 证明 SQLite payload 不包含 full diff、full stdout/stderr、Evidence Pack、provider content、secret、DB path 或本机绝对路径。
+- [x] `.repopilot/worktrees.sqlite3` 按 `user_id + repo_key` 隔离。
+- [x] 支持 `查看 worktree <worktree_id>` / `worktree status <worktree_id>` 只读查询。
+- [x] 缺失 worktree store 查询不创建状态目录或数据库。
+- [x] worktree 生命周期事件写入持久审计，且不持久化绝对路径、`.git` 路径、Git stdout/stderr、完整 diff 或 secret。
+- [x] `/chat` 顶层 schema 保持不变；结果仅通过 `answer`、`related_files`、`tool_calls` 返回。
 
-## V19 Stage Debt Sweep / Closeout Gate
+## V20 Test Gate
 
-- [x] Stage Debt Sweep 已在 V19 commit/archive 前扫描 current docs、harness docs、active OpenSpec、long-term specs、changed runtime paths 和 adjacent older runtime paths。
-- [x] 发现 debt 已修复或记录为 blocker，并沉淀到 `docs/PROGRESS.md` 与 `HANDOFF_TO_NEXT_CHAT.md`，不只留在聊天里。
-- [x] `.harness/review_checklist.md` 已记录 Stage Debt Sweep evidence/gate。
-- [x] `openspec/specs/**/spec.md` 不保留 `TBD`、`TODO`、`created by archiving change` 这类 Purpose 占位。
-- [x] V19 merge/push 后 durable docs 已更新真实 `main`/remote 状态、commit hash、验证结果和下一阶段建议。
-- [x] V19 branch cleanup/retention 已作为 closeout checklist 显式项执行并记录。
+- [x] 新增真实 Git worktree 测试，覆盖 detached + locked 创建。
+- [x] 覆盖 dirty、非 ignored untracked、非 Git、bare、无 `HEAD`、`.repopilot/` 未忽略拒绝路径。
+- [x] 覆盖单独 patch 与组合流程都不污染主工作区。
+- [x] 覆盖 worktree 创建失败 / apply 失败不运行 verification。
+- [x] 覆盖 verification 失败时状态与保留语义。
+- [x] 覆盖独立 verification 仍在主工作区执行。
+- [x] 覆盖跨用户 / 跨 repo worktree 查询隔离与 no-create read。
 
-## V19 Stage Debt Sweep Evidence
+## V20 Stage Debt Sweep / Closeout Gate
 
-- [x] Long-term specs placeholder sweep：`openspec/specs/**/spec.md` 未发现 `TBD`、`TODO`、`created by archiving change` 占位 Purpose。
-- [x] Durable docs sweep：`README.md`、`docs/PROGRESS.md`、`docs/ARCHITECTURE.md`、`HANDOFF_TO_NEXT_CHAT.md` 已更新到 V19 active branch/change 状态。
-- [x] Harness docs sweep：`.harness/allowed_files.md` 和 `.harness/review_checklist.md` 已同步 V19 allowed files、review gates、post-merge durable docs gate 与 branch retention gate。
-- [x] Archived OpenSpec sweep：`openspec/changes/archive/2026-06-05-v19-persistent-audit-recovery/` 包含 proposal/design/tasks/stage planning 与所有受影响能力 spec delta；当前无 active OpenSpec change。
-- [x] Changed runtime path sweep：`app/audit/**` 与 `app/harness/kernel.py` 已通过 targeted tests、full verify 和 ruff。
-- [x] Adjacent runtime path sweep：patching、verification、longtask、AgentLoop/API tests 已覆盖 V19 audit hook 对既有路径的影响。
-- [x] Additional documentation debt fixed：`docs/FEATURE_LIST.json` 已修复为可解析 JSON，并将 V19 acceptance 更新为通过状态。
-- [x] Historical V18 doc drift fixed：V18 archive merge hash `3c7a8b3...` 已标注为历史归档记录，并由 V18 closeout debt commit `8b93330` supersede。
-- [x] Post-merge evidence：V19 runtime/archive merge commit `add702d62bcf737925b6418d3c9b9fb258e7ff35` 与后续 handoff docs closeout commits 已进入 `main`/remote 历史；本地 `feature/v19-persistent-audit-recovery` 保留在已 fully merged 的 `add702d62bcf737925b6418d3c9b9fb258e7ff35`，并按审计惯例保留。
-- [x] Post-closeout README parity repair：README 已包含 V19 当前能力专章、V19 阶段历史、已归档至 V19 的路线图，并移除把已实现 persistent audit 误写为当前非目标的表述。
-- [x] Post-closeout durable-doc repair：PROGRESS/ARCHITECTURE/HANDOFF 已移除 V19 未完成或 trace 持久化仍属 Roadmap 的 stale wording。
-- [x] Post-closeout parity test repair：`tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent` 已改为正向锁定 V19 README parity，并显式拒绝旧 V18 archived marker。
-- [x] Post-closeout semantic parity follow-up：README/ARCHITECTURE/PROGRESS/HANDOFF 已补齐 Verification Runner、Patch + Verify Loop、Persistent Audit 当前能力语义，并移除 V18/V19 过度或未来时态描述。
-- [x] Process skill follow-up：repo-stage-handoff、repo-stage-review-loop、openspec-archive-change 和 stale-state checklist 已沉淀 archive delta 分类、positive documentation parity、stale-test detection、full verify 和 stable post-merge hash wording；这些改动仅属于开发流程纪律。
-- [x] Skill authoring follow-up：关键流程 skill 的 description 已聚焦加载时机，并新增 positive/negative/edge eval references；正文保留高信噪比 gotchas，复杂用例通过 references 渐进加载。
-- [x] Skill eval structure gate：`scripts/check_skill_evals.ps1` 已接入默认 verify 和 stage closeout，检查关键 skill description、eval reference 和 Positive/Negative/Edge/Failure Traps；该 gate 不冒充真实模型级 routing eval。
+- [x] Stage Debt Sweep 扫描 current docs、harness docs、active OpenSpec、long-term specs、changed runtime paths 和 adjacent runtime paths。
+- [x] `README.md`、`docs/ARCHITECTURE.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、`docs/FEATURE_LIST.json` 与 V20 当前状态一致。
+- [x] `openspec/specs/**/spec.md` 不保留 `TBD`、`TODO` 或 archive placeholder Purpose。
+- [x] `scripts/check_stage_docs.ps1` 与相关 docs parity 测试同步覆盖 V20 路线图与边界。
+- [x] 内部 final review 已完成，发现的 runtime / docs / design 问题已修复并重新验证。
+- [x] 外部 review 已完成，用户确认无阻塞 findings。
 
-## V18 Closeout Baseline
+## V20 Verification Evidence
 
-- [x] V18 implementation/archive/merge/push 已完成。
-- [x] V18 post-merge/handoff debt remediation 已提交到 `main` commit `8b93330` 并推送到 `agentic-codeops/main`。
-- [x] V18 closeout debt remediation 验证通过：`openspec validate --all` 13 passed, `scripts/verify.ps1` 178 passed/1 skipped, `git diff --check` 无 whitespace error。
-- [x] V18 feature branch retention 决策：保留近期阶段分支用于审计；不在 V19 中自动删除。
+- `pytest tests\test_worktree_isolation.py -q`：14 passed。
+- `pytest -q`：206 passed, 1 skipped。
+- `openspec validate --all`：16 passed, 0 failed。
+- `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过。
+- `git diff --check`：通过，仅有 CRLF 换行提示。
+
+## V20 Internal Review Findings
+
+- 已修复 metadata 持久化失败未捕获 `sqlite3.Error`，导致 worktree 不回滚的问题。
+- 已修复 locked worktree 回滚前未 unlock，导致 Git 注册残留的问题。
+- 已修复 worktree id 冲突时可能误删既有 worktree 的问题。
+- 已补 AgentLoop 创建失败时 patch 保持 `pending` 且不运行 apply / verification 的测试。
+- 已修正 README 当前态冲突与 design 中 `WorktreeCreateResult` 字段 / 方法签名偏差。

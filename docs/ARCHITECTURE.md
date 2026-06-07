@@ -1,5 +1,28 @@
 # 架构说明
 
+## V20 Worktree Isolation 架构补充
+
+V20 将 RepoPilot 产生的 patch 写入从主仓库当前 `HEAD` 创建的 detached、locked
+Git worktree：
+
+```text
+AgentLoop
+  -> PatchManager.prepare_apply(original repo scope)
+  -> ToolRegistry -> PermissionPolicy -> ApprovalGate
+  -> ToolExecutor.worktree_create -> WorktreeManager
+  -> ToolExecutor.patch_apply(execution_repo_path)
+  -> optional ToolExecutor.verification_run(execution_repo_path)
+  -> PatchManager / WorktreeManager / AuditManager(original repo-local stores)
+```
+
+`execution_repo_path` 仅在当前调用栈内部传播，不进入 `/chat`、`tool_calls`、SQLite
+或 persistent audit。原始 `request.repo_path` 继续承担 patch/worktree/audit scope
+与 repo identity。standalone verification 继续使用原始工作区。
+
+`WorktreeManager` 负责 Git 前置检查、固定 argv 创建、失败回滚、生命周期状态和只读
+查询。成功创建的 worktree 在 V20 保留并锁定；清理、commit、merge、push、promote
+与继续执行均不属于当前 runtime。
+
 RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE 或 AI 编程助手，而是围绕代码仓库分析任务，把 Agent 的工具调用、安全边界、执行追踪、验证和交接机制做成可控、可审计、可扩展的执行框架。
 
 ## 当前主链路
@@ -43,7 +66,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。V19 `AuditManager` 持久化脱敏 trace envelope 和关键事件摘要；完整 raw internal trace、hybrid retrieval channel detail、Evidence Pack content 和 provider content 不持久化，也不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop 和 Persistent Audit / Recovery。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行任意 shell、不自动 commit、不创建 worktree；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源或 Patch Authoring 结构化 diff 来源。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 和 V20 Worktree Isolation。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态；Worktree Isolation 把 standalone patch 与组合 Patch + Verify 放入 detached、locked worktree，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行任意 shell、不自动 commit；显式配置后可通过 OpenAI-compatible provider 生成 grounded answer，并可作为 Long Task plan 字段增强来源或 Patch Authoring 结构化 diff 来源。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -168,9 +191,9 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery。后续路线调整为 lightweight industrial harness：V20 做 Worktree Isolation。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery；V20 Worktree Isolation 当前正在实现。
 
-V20 及之后仍是未来能力，不是当前架构已实现部分。worktree、subagents、connectors、notifications 和 always-on assistant 都必须通过后续独立 OpenSpec change、harness 边界和 review 后才能进入 runtime。
+V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期状态和只读查询。worktree 清理、commit、merge、push、promote、subagents、connectors、notifications 和 always-on assistant 仍须通过后续独立 OpenSpec change、harness 边界和 review 才能进入 runtime。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 
