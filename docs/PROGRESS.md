@@ -2,7 +2,7 @@
 
 ## V20 当前状态（2026-06-07）
 
-- 当前工作分支：`feature/v20-worktree-isolation`
+- 当前工作分支：`main`
 - 当前 active OpenSpec change：无
 - 已实现受控 `worktree_create`、detached/locked Git worktree、内部
   `execution_repo_path` 传播、`applied_in_worktree` patch 状态、worktree 生命周期
@@ -23,15 +23,20 @@
 - external review 已完成，用户确认无阻塞 findings；implementation commit：
   `8be9b37 Add V20 worktree isolation`。
 - V20 已归档到 `openspec/changes/archive/2026-06-07-v20-worktree-isolation/`，
-  7 个新增 requirements 已同步到长期 specs；当前尚未 merge / push。
+  7 个新增 requirements 已同步到长期 specs。
+- `feature/v20-worktree-isolation` 已 fast-forward 合并到 `main` 并推送到
+  `agentic-codeops/main` at `35f9ecc7c1b19a317e5c461a436f7805c09a7743`；本地
+  feature 分支按审计惯例保留。
+- merge 后 `scripts/verify.ps1` 通过，`pytest` 为 206 passed, 1 skipped；
+  `scripts/check_stage_closeout.ps1` 通过。
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness。它不试图替代通用 AI IDE，而是围绕 Agent 工具调用边界、只读安全工具、执行追踪、可验证测试、review checklist 和 handoff 机制，构建可审计、可扩展的代码智能体执行框架。
 
 ## 当前状态
 
 - 当前基线分支：`main`
-- 当前工作分支：`feature/v20-worktree-isolation`
-- 当前阶段：V20 Worktree Isolation 已实现并归档；当前无 active OpenSpec change，等待 merge / push 决策
+- 当前工作分支：`main`
+- 当前阶段：V20 Worktree Isolation 已实现、归档、合并并推送；当前无 active OpenSpec change
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> AuditManager -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> WorktreeManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、repo-local Persistent Audit、只读 Assistant Control Surface、Safe Patch Authoring、Worktree Isolation、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
@@ -465,8 +470,8 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V20 implementation commit 与 archive 已完成，由用户决定 merge / push
-  或保留 feature 分支。
+- 当前建议：V20 已完成 implementation、archive、merge 与 push；开始下一阶段前先按
+  OpenSpec stage planning 流程重新同步 harness 边界。
 - 近期路线：V20 Worktree Isolation 已实现并归档；之后再规划真实 subagents/connectors/notifications。
 - 后续真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；不要写成当前 runtime 已实现能力。
 - 继续保持不执行 skill，除非后续阶段明确开放。

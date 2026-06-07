@@ -4,9 +4,9 @@
 
 ```text
 当前基线分支：main
-当前工作分支：feature/v20-worktree-isolation
+当前工作分支：main
 当前 active OpenSpec change：无
-当前阶段：V20 Worktree Isolation 已实现、提交并归档；等待 merge / push 决策
+当前阶段：V20 Worktree Isolation 已实现、提交、归档、合并并推送
 ```
 
 V20 已实现 `worktree_create -> patch_apply -> optional verification_run` 隔离链路。
@@ -23,16 +23,19 @@ verification 继续使用主工作区。worktree 状态保存在
 worktree id collision 保护、README 当前态和 design interface 偏差。external review
 已完成，用户确认无阻塞 findings。implementation commit 为
 `8be9b37 Add V20 worktree isolation`；archive 路径为
-`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`。下一步进入用户对
-merge / push / 保留分支的阶段级决策。不要在 V20 增加删除/prune/commit/merge/push/promote/重试能力。
+`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`。V20 已 fast-forward
+合并到 `main` 并推送到 `agentic-codeops/main` at
+`35f9ecc7c1b19a317e5c461a436f7805c09a7743`；merge 后 full verify 与 closeout
+gate 均通过。本地 `feature/v20-worktree-isolation` 按审计惯例保留。不要在 V20
+增加删除/prune/commit/merge/push/promote/重试能力。
 
 ## 当前状态
 
 ```text
 当前基线分支：main
-当前工作分支：feature/v20-worktree-isolation
+当前工作分支：main
 当前活跃 OpenSpec change：无
-最近完成阶段：V20 Worktree Isolation（已实现、提交并归档，尚未 merge / push）
+最近完成阶段：V20 Worktree Isolation（已实现、提交、归档、合并并推送）
 当前阶段：暂无 active implementation stage
 ```
 
@@ -433,8 +436,8 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. V20 internal / external review、implementation commit 与 archive 均已完成。
-2. 根据用户决定执行 merge / push 或保留 feature 分支；不得自动越过该决策点。
+1. V20 internal / external review、implementation commit、archive、merge 与 push 均已完成。
+2. 开始下一阶段前，按 OpenSpec stage planning 流程创建 change 并重新同步 harness 边界。
 3. 不要把 worktree 清理/commit/merge/push/promote/重试、真实 subagents、connectors、notifications、heartbeat/cron 或 always-on assistant 归入 V20 scope。
 
 已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。

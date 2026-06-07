@@ -72,6 +72,7 @@
 - [x] OpenSpec archive：`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`。
 - [x] 7 个 `ADDED Requirements` 已同步到长期 specs，无 `MODIFIED/REMOVED` 同步风险。
 - [x] Archive 后 full verify、closeout gate 与 handoff parity 已完成。
+- [x] V20 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`；merge 后验证通过，feature 分支按审计惯例保留。
 
 Archive 后验证证据：
 
