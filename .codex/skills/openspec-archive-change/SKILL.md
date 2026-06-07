@@ -57,6 +57,11 @@ Archive a completed change in the experimental workflow.
    **If delta specs exist:**
    - Compare each delta spec with its corresponding main spec at `openspec/specs/<capability>/spec.md`
    - Determine what changes would be applied (adds, modifications, removals, renames)
+   - Validate operation types before archive:
+     - every requirement under `MODIFIED Requirements` or `REMOVED Requirements` MUST have an exact matching requirement header in the corresponding main spec
+     - every genuinely new requirement MUST be under `ADDED Requirements`
+     - a delta may contain separate `MODIFIED Requirements` and `ADDED Requirements` sections when it both changes an existing requirement and adds a new one
+   - Treat an operation/header mismatch as a blocker to fix before running archive. `openspec validate <change>` passing does not prove archive sync will succeed.
    - Show a combined summary before prompting
 
    **Prompt options:**
@@ -81,6 +86,8 @@ Archive a completed change in the experimental workflow.
    ```bash
    mv openspec/changes/<name> openspec/changes/archive/YYYY-MM-DD-<name>
    ```
+
+   If the archive command aborts during spec sync, confirm no files changed, repair the delta operation/header mismatch, rerun strict change validation, and retry archive. Do not manually move a partially synced change.
 
 6. **Display summary**
 
