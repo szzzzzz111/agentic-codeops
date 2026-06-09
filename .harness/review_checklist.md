@@ -1,6 +1,6 @@
 # 当前 Review 清单
 
-当前活跃阶段：V21 Worktree Inventory / Inspection（implementation 已提交，等待 archive 确认）。
+当前活跃阶段：V21 Worktree Inventory / Inspection（已归档，等待 merge/push 确认）。
 
 ## V21 Planning / OpenSpec Gate
 
@@ -48,3 +48,4 @@
 - [x] Stage Debt Sweep 覆盖 current docs、harness、active OpenSpec、长期 specs、runtime 与 adjacent tests。
 - [x] 内部 final review 已完成并修复有效 findings；预期 external review 完成前，不进入 commit/archive/merge/push。
 - [x] External review 已完成，用户确认无阻塞 findings；commit/archive/merge/push 仍需阶段级确认。
+- [x] V21 已归档；archive 后 full verify、`openspec validate --all`、stage closeout check 与 `git diff --check` 通过。

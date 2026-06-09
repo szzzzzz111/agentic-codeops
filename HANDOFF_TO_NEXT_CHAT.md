@@ -5,8 +5,8 @@
 ```text
 当前基线分支：main
 当前工作分支：feature/v21-worktree-inventory-inspection
-当前 active OpenSpec change：v21-worktree-inventory-inspection
-当前阶段：V21 Worktree Inventory / Inspection implementation 已提交，等待 OpenSpec archive 确认
+当前 active OpenSpec change：无
+当前阶段：V21 Worktree Inventory / Inspection 已归档，等待 merge/push 确认
 ```
 
 V21 已实现 Git-derived preview paths、untracked count-only、bounded safe formatter、
@@ -24,7 +24,14 @@ preview state/DB 路径和空 preview counters、Git/SQLite optional writes，�
 verification/metadata consistency 摘要不完整等 findings；损坏 worktree store 现安全
 降级。当前无未解决 internal findings；external review 已完成，用户确认无阻塞
 findings。implementation commit 已创建：`ca8e299 Add V21 worktree inventory
-inspection`；当前等待 OpenSpec archive 确认，尚未 archive、merge 或 push。
+inspection`。V21 已归档到
+`openspec/changes/archive/2026-06-09-v21-worktree-inventory-inspection/`；当前等待
+merge/push 确认。
+
+Archive-after 验证：`openspec list` 为 No active changes found；
+`openspec validate --all` 为 16 passed, 0 failed；默认 verify 通过，pytest 为
+224 passed, 1 skipped；`scripts/check_stage_closeout.ps1` 与 `git diff --check`
+通过。README 同时保留 V20 历史归档 marker 与 V21 最新归档 marker。
 
 ## V20 Archived Handoff（2026-06-07）
 
@@ -60,9 +67,9 @@ gate 均通过。本地 `feature/v20-worktree-isolation` 按审计惯例保留�
 ```text
 当前基线分支：main
 当前工作分支：feature/v21-worktree-inventory-inspection
-当前活跃 OpenSpec change：v21-worktree-inventory-inspection
+当前活跃 OpenSpec change：无
 最近完成阶段：V20 Worktree Isolation（已实现、提交、归档、合并并推送）
-当前阶段：V21 Worktree Inventory / Inspection implementation 已提交，等待 OpenSpec archive 确认
+当前阶段：V21 Worktree Inventory / Inspection 已归档，等待 merge/push 确认
 ```
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V20 已实现并归档；V20 把明确确认的 standalone patch 与组合 Patch + Verify 放入受控 detached、locked worktree，并保持 standalone verification 的主工作区语义。
