@@ -1,81 +1,50 @@
 # 当前 Review 清单
 
-当前活跃阶段：无 active implementation stage。
+当前活跃阶段：V21 Worktree Inventory / Inspection（external review 完成，等待 commit 确认）。
 
-## V20 Planning / OpenSpec Gate
+## V21 Planning / OpenSpec Gate
 
-- [x] V20 plan 已锁定：单独 patch apply 与组合 Patch + Verify 进入 worktree，独立 verification 保持当前工作区语义。
-- [x] OpenSpec change 包含 `worktree-isolation` 新能力与完整 stage planning / proposal / design / tasks。
-- [x] OpenSpec change 覆盖被修改能力：`agent-loop-tool-execution`、`chat-api`、`safe-patch-authoring`、`patch-verify-loop`、`verification-runner`、`persistent-audit-recovery`、`harness-development-workflow`。
-- [x] `execution_repo_path` 的内部传播机制明确，且不会进入公开响应、`ToolInvocationContext` 或持久审计。
-- [x] `applied_in_worktree` 状态机、失败终态与重试语义在 spec / tasks 中明确。
+- [x] V21 仅提供按 `user_id + repo_key` 隔离的纯只读 inventory / inspection。
+- [x] OpenSpec change 包含 stage planning、proposal、design、tasks 与全部 spec deltas。
+- [x] V21 inspection 明确替代 V20 status 查询；`worktree_status` trace event 替换为 `worktree_inspection`。
+- [x] `/chat` 顶层 contract 保持 `trace_id`、`answer`、`related_files`、`tool_calls`。
+- [x] 非目标明确排除 re-verification、cleanup、discard、promotion、主工作区写入、commit/merge/push、后台任务、subagents、connectors 与前端。
 
-## V20 Runtime Gate
+## V21 Read-Only / Scope Gate
 
-- [x] `worktree_create` 作为受控高风险工具注册：`read_only=False`、`risk="write"`、`requires_approval=True`。
-- [x] worktree 创建只允许固定 Git argv 和 `shell=False`，不接受用户提供的 Git 参数、路径、分支或 commit。
-- [x] worktree 目录固定在 repo-local `.repopilot/worktrees/<worktree_id>`，成功创建后为 detached 且 locked。
-- [x] 单独 patch apply 与组合 Patch + Verify 使用 worktree `execution_repo_path`；独立 verification 继续使用原始 `repo_path`。
-- [x] worktree 创建前检查：非 bare Git 仓库、有效 `HEAD`、主工作区无 tracked 改动、无非 ignored untracked 文件、`.repopilot/` 被 Git ignore。
-- [x] ignored 文件不阻止创建；非 ignored untracked 文件阻止创建。
-- [x] worktree 创建失败或 metadata 写入失败会尽力回滚未完成创建，patch 保持 `pending`。
-- [x] worktree 内 patch apply 失败时 patch 转 `failed`，不得运行 verification。
-- [x] verification 失败时 patch 保持 `applied_in_worktree`，worktree 保留，V20 不提供重跑。
-- [x] 不修改主工作区文件，不把成功 patch 误报为已写回主工作区。
+- [x] Inventory 默认只返回当前 scope 最近 20 条记录，并稳定排序。
+- [x] 缺失 worktree store、目录、Git registry 或 audit DB 的读取不得创建 `.repopilot/`、数据库或修改状态。
+- [x] Inventory / inspection 不调用 `repo_rag`、verification、patch、cleanup 或任何写入工具。
+- [x] 跨用户、跨 repo worktree 不得被列出或检查。
+- [x] Untracked 文件只公开 count，不公开名称、路径前缀或内容。
 
-## V20 Audit / Query Gate
+## V21 Git / Preview Gate
 
-- [x] `.repopilot/worktrees.sqlite3` 按 `user_id + repo_key` 隔离。
-- [x] 支持 `查看 worktree <worktree_id>` / `worktree status <worktree_id>` 只读查询。
-- [x] 缺失 worktree store 查询不创建状态目录或数据库。
-- [x] worktree 生命周期事件写入持久审计，且不持久化绝对路径、`.git` 路径、Git stdout/stderr、完整 diff 或 secret。
-- [x] `/chat` 顶层 schema 保持不变；结果仅通过 `answer`、`related_files`、`tool_calls` 返回。
+- [x] Preview 路径只来自 `git diff --name-only -z --no-ext-diff --no-textconv <base_commit> --`。
+- [x] Diffstat 只来自固定 argv 的 `git diff --numstat -z --no-ext-diff --no-textconv <base_commit> --`。
+- [x] 用户消息和 metadata changed-files 不得驱动 per-file diff。
+- [x] Per-file preview 使用固定 argv，并在执行前通过 repo-relative、非隐藏、非敏感、非二进制校验。
+- [x] Patch body 与 aggregate hunk count 使用流式消费，不通过无界 `capture_output=True` 保留 raw diff；metadata Git 输出有显式上限。
+- [x] Preview 最多 20 文件、总计 6000 字符、每文件 80 行、单行 300 字符。
+- [x] Preview 拒绝二进制、敏感文件、隐藏目录、`.git/**` 与 `.repopilot/**`。
+- [x] Preview 脱敏绝对路径、DB 路径、常见 secret 和 credential 赋值，并报告 omitted/truncated 计数。
+- [x] Raw Git diff 不进入公开模型、trace、tool call 或 persistent audit。
+- [x] Metadata scalar 与 tracked changed-file 摘要经过 bounded public formatter；tracked path 最多公开 20 条并报告 omitted count。
+- [x] Git 读取设置 `GIT_OPTIONAL_LOCKS=0`，SQLite 读取使用 `mode=ro&immutable=1`，损坏 store 安全降级。
+- [x] Preview 为空时仍报告 omitted/truncated counters，diffstat 明确报告 binary file count。
 
-## V20 Test Gate
+## V21 Inspection / Audit Gate
 
-- [x] 新增真实 Git worktree 测试，覆盖 detached + locked 创建。
-- [x] 覆盖 dirty、非 ignored untracked、非 Git、bare、无 `HEAD`、`.repopilot/` 未忽略拒绝路径。
-- [x] 覆盖单独 patch 与组合流程都不污染主工作区。
-- [x] 覆盖 worktree 创建失败 / apply 失败不运行 verification。
-- [x] 覆盖 verification 失败时状态与保留语义。
-- [x] 覆盖独立 verification 仍在主工作区执行。
-- [x] 覆盖跨用户 / 跨 repo worktree 查询隔离与 no-create read。
+- [x] Inspection 返回 lifecycle、patch/base、tracked changed files、diffstat、hunk count、verification summary 与 registry/directory/metadata 一致性结果。
+- [x] `AgentLoop.run()` 统一 wrapper 保持不变；`_skip_persistent_audit_for_result()` 检测 `worktree_inventory` / `worktree_inspection`。
+- [x] Inventory / inspection 保留当前请求内脱敏 trace，但整次请求不写 persistent audit。
+- [x] 已有 audit DB 的记录数在 inspection 后不变；缺失 audit DB 时不创建状态。
+- [x] V21 closeout 记录 audit skip trade-off 与确定性测试证据：targeted regression 证明已有 audit row count 不变且 missing state 不创建 `.repopilot/`。
 
-## V20 Stage Debt Sweep / Closeout Gate
+## V21 Verification / Closeout Gate
 
-- [x] Stage Debt Sweep 扫描 current docs、harness docs、active OpenSpec、long-term specs、changed runtime paths 和 adjacent runtime paths。
-- [x] `README.md`、`docs/ARCHITECTURE.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、`docs/FEATURE_LIST.json` 与 V20 当前状态一致。
-- [x] `openspec/specs/**/spec.md` 不保留 `TBD`、`TODO` 或 archive placeholder Purpose。
-- [x] `scripts/check_stage_docs.ps1` 与相关 docs parity 测试同步覆盖 V20 路线图与边界。
-- [x] 内部 final review 已完成，发现的 runtime / docs / design 问题已修复并重新验证。
-- [x] 外部 review 已完成，用户确认无阻塞 findings。
-
-## V20 Verification Evidence
-
-- `pytest tests\test_worktree_isolation.py -q`：14 passed。
-- `pytest -q`：206 passed, 1 skipped。
-- `openspec validate --all`：16 passed, 0 failed。
-- `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：通过。
-- `git diff --check`：通过，仅有 CRLF 换行提示。
-
-## V20 Internal Review Findings
-
-- 已修复 metadata 持久化失败未捕获 `sqlite3.Error`，导致 worktree 不回滚的问题。
-- 已修复 locked worktree 回滚前未 unlock，导致 Git 注册残留的问题。
-- 已修复 worktree id 冲突时可能误删既有 worktree 的问题。
-- 已补 AgentLoop 创建失败时 patch 保持 `pending` 且不运行 apply / verification 的测试。
-- 已修正 README 当前态冲突与 design 中 `WorktreeCreateResult` 字段 / 方法签名偏差。
-
-## V20 Archive / Handoff Gate
-
-- [x] Implementation commit：`8be9b37 Add V20 worktree isolation`。
-- [x] OpenSpec archive：`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`。
-- [x] 7 个 `ADDED Requirements` 已同步到长期 specs，无 `MODIFIED/REMOVED` 同步风险。
-- [x] Archive 后 full verify、closeout gate 与 handoff parity 已完成。
-- [x] V20 已 fast-forward 合并到 `main` 并推送到 `agentic-codeops/main`；merge 后验证通过，feature 分支按审计惯例保留。
-
-Archive 后验证证据：
-
-- `openspec validate --all`：15 passed, 0 failed。
-- `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：206 passed, 1 skipped；ruff、stage docs drift scan、skill eval structure scan 均通过。
-- `powershell -ExecutionPolicy Bypass -File scripts\check_stage_closeout.ps1`：通过。
+- [x] `docs/FEATURE_LIST.json` 在实现与全量验证完成前保持 V21 `passes: false`，全量验证通过后更新为 `true`。
+- [x] 运行 V21 targeted pytest、`openspec validate --all`、默认 verify 与 `git diff --check`。
+- [x] Stage Debt Sweep 覆盖 current docs、harness、active OpenSpec、长期 specs、runtime 与 adjacent tests。
+- [x] 内部 final review 已完成并修复有效 findings；预期 external review 完成前，不进入 commit/archive/merge/push。
+- [x] External review 已完成，用户确认无阻塞 findings；commit/archive/merge/push 仍需阶段级确认。

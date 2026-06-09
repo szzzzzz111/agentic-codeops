@@ -29,11 +29,16 @@ from app.verification.runner import (
     unsupported_verification_answer,
 )
 from app.worktrees.manager import WorktreeManager
+from app.worktrees.inspection import format_public_changed_files, safe_public_value
 
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
 WORKTREE_STATUS_PATTERN = re.compile(
     r"(?:worktree\s+status|查看\s+worktree)\s+(wt_[A-Za-z0-9_]+)",
+    re.IGNORECASE,
+)
+WORKTREE_INVENTORY_PATTERN = re.compile(
+    r"(?:worktree\s+list|list\s+worktrees|列出\s*worktree)",
     re.IGNORECASE,
 )
 ALLOWED_TOOL_RISK = "low"
@@ -537,9 +542,12 @@ class AgentLoop:
                 ],
             )
 
+        if WORKTREE_INVENTORY_PATTERN.search(request.message):
+            return self._run_worktree_inventory(request)
+
         worktree_id = _worktree_status_id(request.message)
         if worktree_id:
-            return self._run_worktree_status(request, worktree_id)
+            return self._run_worktree_inspection(request, worktree_id)
 
         patch_verify_confirmation = parse_patch_verify_confirmation(request.message)
         if patch_verify_confirmation.handled:
@@ -1516,35 +1524,96 @@ class AgentLoop:
             search_plan=search_plan,
         )
 
-    def _run_worktree_status(
+    def _run_worktree_inventory(self, request: AgentLoopRequest) -> AgentLoopResult:
+        inventory = self.worktree_manager.inventory(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+        )
+        lines = [f"当前 scope worktrees: {len(inventory.records)}"]
+        for record in inventory.records:
+            verification_label = safe_public_value(record.verification_label or "none")
+            verification_status = safe_public_value(
+                record.verification_status or "not_run"
+            )
+            lines.append(
+                f"- worktree_id={safe_public_value(record.worktree_id)}; "
+                f"status={safe_public_value(record.status)}; "
+                f"patch_id={safe_public_value(record.patch_id)}; "
+                f"base_commit={safe_public_value(record.base_commit[:12])}; "
+                f"verification_label={verification_label}; "
+                f"verification_status={verification_status}"
+            )
+        return AgentLoopResult(
+            answer="\n".join(lines),
+            trace_events_internal=[
+                TraceEvent(
+                    event_type="worktree_inventory",
+                    status="ok",
+                    summary=f"result_count={len(inventory.records)}",
+                )
+            ],
+        )
+
+    def _run_worktree_inspection(
         self,
         request: AgentLoopRequest,
         worktree_id: str,
     ) -> AgentLoopResult:
-        record = self.worktree_manager.get_status(
+        inspection = self.worktree_manager.inspect(
             repo_path=request.repo_path,
             user_id=request.user_id,
             worktree_id=worktree_id,
         )
-        if record is None:
+        record = inspection.record
+        if not inspection.found or record is None:
             answer = f"未找到 worktree_id={worktree_id}。"
             status = "error"
             summary = f"worktree_id={worktree_id}; status=missing"
         else:
-            changed_files = ", ".join(record.changed_files) or "none"
-            verification = record.verification_status or "not_run"
+            changed_files, changed_files_omitted = format_public_changed_files(
+                inspection.changed_files or []
+            )
+            verification_label = safe_public_value(record.verification_label or "none")
+            verification_status = safe_public_value(
+                record.verification_status or "not_run"
+            )
+            safe_worktree_id = safe_public_value(record.worktree_id)
+            safe_status = safe_public_value(record.status)
             answer = (
-                f"worktree_id={record.worktree_id}; status={record.status}; "
-                f"patch_id={record.patch_id}; base_commit={record.base_commit[:12]}; "
-                f"changed_files={changed_files}; verification={verification}"
+                f"worktree_id={safe_worktree_id}; status={safe_status}; "
+                f"patch_id={safe_public_value(record.patch_id)}; "
+                f"base_commit={safe_public_value(record.base_commit[:12])}; "
+                f"changed_files={changed_files}; "
+                f"changed_files_omitted={changed_files_omitted}; "
+                f"verification_label={verification_label}; "
+                f"verification_status={verification_status}; "
+                f"diffstat=+{inspection.additions}/-{inspection.deletions}; "
+                f"binary_files={inspection.binary_files}; "
+                f"hunks={inspection.hunk_count}; untracked_count={inspection.untracked_count}; "
+                f"metadata_present=true; "
+                f"metadata_valid={str(inspection.metadata_valid).lower()}; "
+                f"directory_present={str(inspection.directory_present).lower()}; "
+                f"git_registry_present={str(inspection.git_registry_present).lower()}; "
+                f"registry_path_matches_expected={str(inspection.registry_path_matches_expected).lower()}; "
+                f"head_matches_base_commit={str(inspection.head_matches_base_commit).lower()}; "
+                f"partial={str(inspection.partial).lower()}"
+            )
+            if inspection.preview:
+                answer += "\npreview:\n" f"{inspection.preview}"
+            answer += (
+                "\npreview_limits: "
+                f"omitted_files={inspection.omitted_files}; "
+                f"truncated_files={inspection.truncated_files}; "
+                f"truncated_lines={inspection.truncated_lines}; "
+                f"truncated_chars={inspection.truncated_chars}"
             )
             status = "ok"
-            summary = f"worktree_id={record.worktree_id}; status={record.status}"
+            summary = f"worktree_id={safe_worktree_id}; status={safe_status}"
         return AgentLoopResult(
             answer=answer,
             trace_events_internal=[
                 TraceEvent(
-                    event_type="worktree_status",
+                    event_type="worktree_inspection",
                     status=status,
                     summary=summary,
                 )
@@ -1933,6 +2002,7 @@ def _summary_value(summary: str, key: str) -> str:
 
 def _skip_persistent_audit_for_result(result: AgentLoopResult) -> bool:
     return any(
-        event.event_type == "audit_recovery" and event.status == "empty"
+        event.event_type in {"worktree_inventory", "worktree_inspection"}
+        or (event.event_type == "audit_recovery" and event.status == "empty")
         for event in result.trace_events_internal
     )

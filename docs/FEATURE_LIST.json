@@ -172,5 +172,20 @@
     ],
     "passes": true,
     "notes": "Covered by tests/test_worktree_isolation.py, AgentLoop/API/audit tests, real Git worktree integration, and V20 validation evidence."
+  },
+  {
+    "id": "v21-worktree-inventory-inspection",
+    "category": "agent",
+    "description": "Read-only scoped worktree inventory and inspection with consistency checks and bounded redacted preview.",
+    "acceptance_criteria": [
+      "inventory and inspection are isolated by user_id + repo_key and never create or modify state",
+      "preview paths come only from machine-readable fixed Git output; untracked files are count-only",
+      "preview rejects unsafe/binary content and enforces 20 files, 6000 total chars, 80 lines per file, and 300 chars per line",
+      "inventory and inspection skip persistent audit while retaining safe request-local trace",
+      "no re-verification, cleanup, reconciliation, promotion, main-workspace write, commit, merge, or push",
+      "no new public API or /chat top-level fields"
+    ],
+    "passes": true,
+    "notes": "Implemented in the current uncommitted feature workspace; covered by V21 targeted regression, full verify, OpenSpec validation, and Stage Debt Sweep evidence."
   }
 ]

@@ -1223,7 +1223,7 @@ def test_agent_loop_confirm_patch_runs_apply_inside_worktree(tmp_path: Path) -> 
     ]
 
 
-def test_agent_loop_worktree_status_query_reads_safe_summary(tmp_path: Path) -> None:
+def test_agent_loop_worktree_status_query_uses_v21_safe_inspection(tmp_path: Path) -> None:
     from app.worktrees.store import SQLiteWorktreeStore
 
     store, repo_key = SQLiteWorktreeStore.for_repo(tmp_path)
@@ -1249,9 +1249,14 @@ def test_agent_loop_worktree_status_query_reads_safe_summary(tmp_path: Path) -> 
 
     assert "worktree_id=wt_20260607_abcdef" in result.answer
     assert "status=patch_applied" in result.answer
-    assert "app.py" in result.answer
+    assert "changed_files=none" in result.answer
+    assert "partial=true" in result.answer
+    assert "app.py" not in result.answer
     assert str(tmp_path) not in result.answer
     assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "worktree_inspection"
+    ]
 
 
 def test_agent_loop_reports_v16_patch_capability_without_repo_search(

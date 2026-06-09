@@ -1,9 +1,8 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：无 active implementation stage。
+当前活跃阶段：V21 Worktree Inventory / Inspection（external review 完成，等待 commit 确认）。
 
-V20 Worktree Isolation 已实现并归档。以下路径仅用于 archive 后验证与 handoff
-收尾；下一阶段开始前必须重新同步本文件和 `.harness/review_checklist.md`。
+V21 只开放 worktree 只读 inventory / inspection 所需的最小实现、测试、规格与文档边界。
 
 ## 当前允许修改
 
@@ -18,25 +17,29 @@ V20 Worktree Isolation 已实现并归档。以下路径仅用于 archive 后验
 - `scripts/check_stage_docs.ps1`
 - `scripts/check_stage_closeout.ps1`
 - `scripts/verify.ps1`
-- `openspec/changes/archive/2026-06-07-v20-worktree-isolation/**`
+- `openspec/changes/v21-worktree-inventory-inspection/**`
 - `openspec/specs/agent-loop-tool-execution/spec.md`
 - `openspec/specs/chat-api/spec.md`
 - `openspec/specs/harness-development-workflow/spec.md`
-- `openspec/specs/patch-verify-loop/spec.md`
 - `openspec/specs/persistent-audit-recovery/spec.md`
-- `openspec/specs/safe-patch-authoring/spec.md`
-- `openspec/specs/verification-runner/spec.md`
+- `openspec/specs/worktree-inspection/spec.md`
 - `openspec/specs/worktree-isolation/spec.md`
+- `app/worktrees/**`
+- `app/harness/kernel.py`
+- `app/audit/manager.py`
+- `app/tools/file_tools.py`
+- `tests/test_worktree_inspection.py`
+- `tests/test_worktree_isolation.py`
+- `tests/test_agent_harness_kernel.py`
 - `tests/test_chat_api.py`
+- `tests/test_persistent_audit.py`
 
 ## 禁止修改 / 禁止行为
 
 - 不恢复旧 `specs/00x-*` 作为规格入口。
-- 不把 OpenSpec、Superpowers、MCP、plugin、`.codex/skills/**` 写成 RepoPilot runtime 能力。
+- 不把 OpenSpec、Superpowers、MCP、plugin 或 `.codex/skills/**` 写成 RepoPilot runtime 能力。
 - 不新增 `/chat` 顶层字段，不新增公开 audit/status/tasks/verification/worktree API。
-- 不开放任意 shell 或用户自定义 Git / verification 参数。
-- 不让 API handler、AgentLoop parser 或 patch parser 直接调 subprocess；Git / worktree 操作必须经受控工具与统一执行边界。
-- 不绕过 `ToolExecutor`、`PermissionPolicy`、`ApprovalGate`、安全文件工具边界。
-- 不实现 worktree 列表、清理、删除、merge、commit、push、replay、rerun、resume、自动修复或后台任务。
-- 不把完整 diff、完整 stdout/stderr、绝对路径、`.git` 路径、DB 路径、环境变量、API key 或 secret 持久化或暴露到公开响应。
-- 不默认接入真实 LLM、外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant 或持久化向量索引。
+- 不接受用户输入作为 per-file Git diff 路径；preview 路径只能来自固定 Git argv 的机器可解析输出。
+- 不执行 re-verification、cleanup、discard、unlock/remove、reconciliation、promotion、commit、merge 或 push。
+- 不执行任意 shell、后台任务、subagents、connectors 或前端工作。
+- 不公开或持久化 raw diff、完整 stdout/stderr、绝对路径、`.git` 路径、DB 路径、环境变量、API key 或 secret。

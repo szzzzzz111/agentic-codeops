@@ -1,5 +1,22 @@
 # 架构说明
 
+## V21 Worktree Inventory / Inspection 架构补充
+
+V21 已实现并完成 internal/external review，当前等待 commit 确认。当前链路为
+`AgentLoop -> WorktreeManager(read-only inventory / inspection) -> fixed Git argv /
+readonly SQLite -> bounded safe formatter -> /chat.answer`。
+
+V21 inspection 替代 V20 narrow status 行为；preview 路径只来自机器可解析
+`git diff --name-only -z` 输出，diffstat 来自 `--numstat -z`，untracked 只报告 count。
+`AgentLoop.run()` 统一 wrapper 保持不变，`_skip_persistent_audit_for_result()` 通过
+`worktree_inventory` / `worktree_inspection` 事件跳过 persistent audit，保证读取不创建
+或修改状态。
+
+所有 public metadata scalar 和 tracked changed-file 摘要经过统一 bounded formatter；
+tracked path 最多展示 20 条并报告 omitted count。Git inspection 设置
+`GIT_OPTIONAL_LOCKS=0`，worktree SQLite 读取使用 `mode=ro&immutable=1`；损坏 store
+和 Git 错误安全降级为 empty/not-found/partial，不执行修复或写入。
+
 ## V20 Worktree Isolation 架构补充
 
 V20 将 RepoPilot 产生的 patch 写入从主仓库当前 `HEAD` 创建的 detached、locked
@@ -194,6 +211,31 @@ V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界
 V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery；V20 Worktree Isolation 已完成并归档。
 
 V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期状态和只读查询。worktree 清理、commit、merge、push、promote、subagents、connectors、notifications 和 always-on assistant 仍须通过后续独立 OpenSpec change、harness 边界和 review 才能进入 runtime。
+
+V20 后的近期后端路线按 worktree 生命周期风险递增拆分，避免把只读检查、验证执行、
+不可逆清理和主工作区写入放入同一阶段：
+
+1. V21 Worktree Inventory / Inspection 只读提供 scoped inventory、diffstat、changed
+   files、限长脱敏 diff preview、验证摘要和一致性检查。preview 必须使用专用安全
+   formatter，限制总字符、每文件行数和单行长度；不得通过 `diff`、`diff_text` 或
+   `full_diff` audit payload key 持久化，也不得暴露完整 diff。
+2. V22 Worktree Re-verification 只处理明确触发的白名单验证重跑。worktree 使用既有
+   `verification_succeeded` / `verification_failed` 状态表达最新结果，patch 保持
+   `applied_in_worktree`；是否为重跑、次数和每次结果由脱敏 audit 记录，不新增
+   `verification_rerun_*` 状态。
+3. V23 Worktree Disposal / Reconciliation 处理明确确认后的幂等
+   unlock/remove/discard，并协调 Git registry、目录和 metadata 不一致。discard 后
+   worktree 转为 `discarded`，patch 转为 `discarded_in_worktree`，不得回退为
+   `pending` 或自动重新 apply。
+4. V24 Verified Patch Promotion 仅允许 `verification_succeeded` worktree。promotion
+   前必须确认主工作区干净、`HEAD == base_commit`、不存在目标文件之外的额外修改，
+   且目标文件内容与存储的原始受控 patch 预期结果一致；提升操作重新通过
+   `patch_apply` 应用原始 patch，不直接复制或信任 worktree 当前文件。
+
+V21-V24 均保持明确命令、scope 校验、`PermissionPolicy -> ApprovalGate ->
+ToolExecutor` 写入边界和脱敏 persistent audit。V24 归档后再重新评估 Operator
+Control、Durable Execution、Background Worker、subagents、connectors 和
+notifications；不提前锁定公开 API 或后台执行模型。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 

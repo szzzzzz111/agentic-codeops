@@ -150,7 +150,8 @@ def _is_sensitive_file_name(file_name: str) -> bool:
 
 def _is_binary_file(path: Path) -> bool:
     try:
-        sample = path.read_bytes()[:MAX_BINARY_SAMPLE_BYTES]
+        with path.open("rb") as file:
+            sample = file.read(MAX_BINARY_SAMPLE_BYTES)
     except OSError:
         return True
     if b"\0" in sample:

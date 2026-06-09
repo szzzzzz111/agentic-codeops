@@ -1,5 +1,15 @@
 # RepoPilot
 
+## V21 Worktree Inventory / Inspection
+
+当前工作分支为 `feature/v21-worktree-inventory-inspection`，active OpenSpec change 为
+`v21-worktree-inventory-inspection`。V21 已实现，internal/external review 均已完成，
+当前等待 commit 确认。
+
+V21 提供按 `user_id + repo_key` 隔离的纯只读 worktree inventory / inspection：
+preview 路径仅来自机器可解析 Git 输出，untracked 文件只公开 count，inventory /
+inspection 跳过 persistent audit 以保证读取不创建或修改任何状态。
+
 ## V20 Worktree Isolation
 
 V20 已归档到
@@ -22,7 +32,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前阶段能力：V1-V20 已实现、归档并进入远端主线；当前无 active OpenSpec change。
+- 当前阶段能力：V1-V20 已实现、归档并进入远端主线；V21 已实现并完成 review，等待 commit 确认。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -371,6 +381,18 @@ V20 新增 repo-local worktree 生命周期 SQLite、`applied_in_worktree` patch
 脱敏 persistent audit 和只读 worktree status 查询；不提供清理、commit、merge、
 push、promote、继续执行或重试命令。
 
+### V21：Worktree Inventory / Inspection
+
+V21 通过 `worktree list` 和既有 `worktree status <worktree_id>` 命令提供 scoped
+inventory 与详细 inspection。Inspection 返回 lifecycle、patch/base、tracked changed
+files、diffstat、hunk count、verification summary、Git registry/目录/metadata
+一致性结果，以及 bounded redacted preview。
+
+Preview 路径只来自固定 argv 的机器可解析 Git 输出；最多 20 文件、6000 字符、每文件
+80 行、单行 300 字符，并拒绝敏感、隐藏和二进制内容。Untracked 文件只公开 count。
+Inventory / inspection 保留 request-local 安全 trace，但跳过 persistent audit，且读取
+缺失状态时不创建 `.repopilot/` 或数据库。
+
 ## 当前非目标
 
 - 默认接入真实 LLM；真实 provider 仅作为显式配置的 OpenAI-compatible provider。
@@ -437,6 +459,24 @@ ChatService
 
 ## 路线图
 
-已归档至 V20：Worktree Isolation。当前无 active change。
+已归档至 V20：Worktree Isolation。当前 active change 为
+`v21-worktree-inventory-inspection`，处于 review 完成、等待 commit 确认状态。
 
-真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划；当前不要把这些写成已实现能力。
+近期后端路线聚焦补齐 worktree 生命周期闭环，并按只读到受控写入逐阶段推进：
+
+- V21 Worktree Inventory / Inspection：只读列出和检查当前 scope 的 worktree，返回
+  diffstat、changed files、限长脱敏 diff preview、验证摘要和一致性检查结果；不修改
+  worktree、patch 或主工作区。
+- V22 Worktree Re-verification：对保留的 `applied_in_worktree` worktree 明确触发
+  白名单验证；worktree 在既有 `verification_succeeded` / `verification_failed`
+  状态间更新，patch 保持 `applied_in_worktree`，每次结果写入脱敏审计。
+- V23 Worktree Disposal / Reconciliation：明确确认后幂等 unlock/remove/discard，
+  协调 Git registry、目录和 metadata 不一致；worktree 转为 `discarded`，patch
+  转为 `discarded_in_worktree`，不回退为 `pending`。
+- V24 Verified Patch Promotion：仅允许验证成功且内容完整性校验通过的 worktree；
+  要求主工作区干净且 `HEAD == base_commit`，并使用存储的原始受控 patch 提升，
+  不直接复制 worktree 内容，不自动 commit/push。
+
+V24 完成后重新评估 Operator Control、Durable Execution、Background Worker、
+subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 的优先级；
+当前不要把这些候选方向写成已实现能力或提前锁定公开 API。

@@ -165,6 +165,29 @@ class SQLiteWorktreeStore:
             return None
         return _row_to_record(row)
 
+    def list_worktrees(
+        self,
+        *,
+        user_id: str,
+        repo_key: str,
+        limit: int = 20,
+    ) -> list[WorktreeRecord]:
+        limit = max(1, min(int(limit), 20))
+        with self._connect_readonly() as conn:
+            rows = conn.execute(
+                """
+                SELECT worktree_id, user_id, repo_key, patch_id, base_commit, status,
+                       verification_label, verification_status, changed_files_json,
+                       created_at, updated_at
+                FROM worktrees
+                WHERE user_id = ? AND repo_key = ?
+                ORDER BY created_at DESC, worktree_id DESC
+                LIMIT ?
+                """,
+                (user_id, repo_key, limit),
+            ).fetchall()
+        return [_row_to_record(row) for row in rows]
+
     def _ensure_schema(self) -> None:
         with self._connect() as conn:
             conn.execute(
@@ -195,7 +218,7 @@ class SQLiteWorktreeStore:
         return sqlite3.connect(self.db_path)
 
     def _connect_readonly(self) -> sqlite3.Connection:
-        uri = f"file:{self.db_path.as_posix()}?mode=ro"
+        uri = f"file:{self.db_path.as_posix()}?mode=ro&immutable=1"
         return sqlite3.connect(uri, uri=True)
 
 

@@ -6,6 +6,7 @@ import sqlite3
 import subprocess
 from uuid import uuid4
 
+from app.worktrees.inspection import WorktreeInspectionResult, inspect_worktree
 from app.worktrees.store import (
     WORKTREE_STATUS_CREATE_FAILED,
     WORKTREE_STATUS_PATCH_APPLIED,
@@ -27,6 +28,12 @@ class WorktreeCreateResult:
     execution_repo_path: str = ""
     base_commit: str = ""
     public_summary: str = ""
+
+
+@dataclass(frozen=True)
+class WorktreeInventoryResult:
+    store_present: bool
+    records: list[WorktreeRecord]
 
 
 class WorktreeManager:
@@ -120,11 +127,65 @@ class WorktreeManager:
         user_id: str,
         worktree_id: str,
     ) -> WorktreeRecord | None:
-        existing = SQLiteWorktreeStore.for_existing_repo(repo_path)
-        if existing is None:
+        try:
+            existing = SQLiteWorktreeStore.for_existing_repo(repo_path)
+            if existing is None:
+                return None
+            store, repo_key = existing
+            return store.get_worktree(worktree_id, user_id=user_id, repo_key=repo_key)
+        except (sqlite3.Error, TypeError, ValueError):
             return None
-        store, repo_key = existing
-        return store.get_worktree(worktree_id, user_id=user_id, repo_key=repo_key)
+
+    def inventory(
+        self,
+        *,
+        repo_path: str,
+        user_id: str,
+    ) -> WorktreeInventoryResult:
+        try:
+            existing = SQLiteWorktreeStore.for_existing_repo(repo_path)
+            if existing is None:
+                return WorktreeInventoryResult(store_present=False, records=[])
+            store, repo_key = existing
+            return WorktreeInventoryResult(
+                store_present=True,
+                records=store.list_worktrees(user_id=user_id, repo_key=repo_key),
+            )
+        except (sqlite3.Error, TypeError, ValueError):
+            return WorktreeInventoryResult(store_present=True, records=[])
+
+    def inspect(
+        self,
+        *,
+        repo_path: str,
+        user_id: str,
+        worktree_id: str,
+    ) -> WorktreeInspectionResult:
+        record = self.get_status(
+            repo_path=repo_path,
+            user_id=user_id,
+            worktree_id=worktree_id,
+        )
+        if record is None:
+            return WorktreeInspectionResult(found=False, changed_files=[])
+        try:
+            repo_root = Path(repo_path).resolve(strict=True)
+        except (OSError, RuntimeError):
+            return WorktreeInspectionResult(
+                found=True,
+                record=record,
+                partial=True,
+                changed_files=[],
+            )
+        try:
+            return inspect_worktree(repo_root=repo_root, record=record)
+        except (OSError, subprocess.SubprocessError, ValueError):
+            return WorktreeInspectionResult(
+                found=True,
+                record=record,
+                partial=True,
+                changed_files=[],
+            )
 
     def record_patch_result(
         self,

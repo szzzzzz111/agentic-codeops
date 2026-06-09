@@ -98,6 +98,20 @@ def test_chat_endpoint_returns_empty_related_files_when_keyword_is_missing(
     ]
 
 
+def test_chat_endpoint_worktree_inventory_keeps_top_level_contract_and_no_state(
+    tmp_path: Path,
+) -> None:
+    response = client.post("/chat", json=valid_payload(tmp_path, "worktree list"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "当前 scope worktrees: 0" in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+    assert not (tmp_path / ".repopilot").exists()
+
+
 def test_chat_endpoint_does_not_return_sensitive_file_content(
     tmp_path: Path,
 ) -> None:

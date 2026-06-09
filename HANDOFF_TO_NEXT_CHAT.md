@@ -1,5 +1,31 @@
 # 交接给下一轮 Chat
 
+## V21 Implementation Review Handoff（2026-06-09）
+
+```text
+当前基线分支：main
+当前工作分支：feature/v21-worktree-inventory-inspection
+当前 active OpenSpec change：v21-worktree-inventory-inspection
+当前阶段：V21 Worktree Inventory / Inspection review 完成，等待 commit 确认
+```
+
+V21 已实现 Git-derived preview paths、untracked count-only、bounded safe formatter、
+统一 audit wrapper 内事件 skip，以及纯只读 no-create 语义。V20 status 命令继续兼容，
+但 request-local event 已由 `worktree_status` 替换为 `worktree_inspection`。
+
+内部实现 review 修复 metadata 路径穿越/revision option 注入、Git 启动失败安全降级、
+失败 per-file diff 的部分 preview、不受限 metadata drain、异常超长 diff 单行，以及
+`_is_binary_file()` 全文件读取。当前 targeted regression 为 132 passed；当前未提交
+工作区默认 verify 通过，pytest 为 224 passed, 1 skipped，`openspec validate --all`
+为 17 passed, 0 failed。Stage Debt Sweep 未发现未记录阻塞项。
+
+V21 internal final review 已修复 public metadata/tracked-path 摘要未统一限长脱敏、
+preview state/DB 路径和空 preview counters、Git/SQLite optional writes，以及
+verification/metadata consistency 摘要不完整等 findings；损坏 worktree store 现安全
+降级。当前无未解决 internal findings；external review 已完成，用户确认无阻塞
+findings。最终 closeout gates 完成后仍需阶段级确认，才能 commit、archive、merge
+或 push。
+
 ## V20 Archived Handoff（2026-06-07）
 
 ```text
@@ -33,15 +59,32 @@ gate 均通过。本地 `feature/v20-worktree-isolation` 按审计惯例保留�
 
 ```text
 当前基线分支：main
-当前工作分支：main
-当前活跃 OpenSpec change：无
+当前工作分支：feature/v21-worktree-inventory-inspection
+当前活跃 OpenSpec change：v21-worktree-inventory-inspection
 最近完成阶段：V20 Worktree Isolation（已实现、提交、归档、合并并推送）
-当前阶段：暂无 active implementation stage
+当前阶段：V21 Worktree Inventory / Inspection review 完成，等待 commit 确认
 ```
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V20 已实现并归档；V20 把明确确认的 standalone patch 与组合 Patch + Verify 放入受控 detached、locked worktree，并保持 standalone verification 的主工作区语义。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V18 只实现明确组合确认下的 apply 后 verify，不代表 Persistent Audit / Recovery、worktree、subagents、connectors 或 always-on 已实现。
+
+V20 后的近期后端路线已经过内部复核和外部路线 review，按风险拆为：
+
+1. V21 Worktree Inventory / Inspection：纯只读 inventory、diffstat、changed files、
+   限长脱敏 diff preview、验证摘要和一致性检查。
+2. V22 Worktree Re-verification：明确触发白名单验证重跑；复用既有 verification
+   成功/失败状态，patch 保持 `applied_in_worktree`，每次结果进入脱敏 audit。
+3. V23 Worktree Disposal / Reconciliation：明确确认后幂等清理并协调 registry、
+   目录与 metadata；discard 后 worktree/patch 使用独立终态，不回退 `pending`。
+4. V24 Verified Patch Promotion：仅提升验证成功且内容完整性校验通过的原始受控
+   patch；主工作区必须干净且 `HEAD == base_commit`，不直接复制 worktree 文件，
+   不自动 commit/push。
+
+V21 的 diff preview 必须有专用安全 formatter 和确定性长度限制，且不得进入
+persistent audit。V24 完成后重新评估 Operator Control、Durable Execution、
+Background Worker、subagents、connectors、notifications、heartbeat/cron 和
+always-on assistant；不提前锁定后续顺序、公开 API 或后台模型。
 
 新增设计判断：RepoPilot adopts a grep-first, RAG-assisted retrieval stance。deterministic lexical/path/symbol search、exact match、文件树和路径线索是代码仓库分析的主要可审计检索基线；embedding/hybrid retrieval、query rewrite 和 rerank 只作为辅助召回或排序通道。V12 Query Rewrite / Rerank 服务于 grep-first baseline，不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、重型 embedding cache 或真实 LLM rewrite/rerank。
 
@@ -437,8 +480,11 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 ## 下一轮建议
 
 1. V20 internal / external review、implementation commit、archive、merge 与 push 均已完成。
-2. 开始下一阶段前，按 OpenSpec stage planning 流程创建 change 并重新同步 harness 边界。
-3. 不要把 worktree 清理/commit/merge/push/promote/重试、真实 subagents、connectors、notifications、heartbeat/cron 或 always-on assistant 归入 V20 scope。
+2. 下一阶段推荐规划 V21 Worktree Inventory / Inspection；先创建 OpenSpec change，
+   明确 bounded diff preview、安全 formatter、一致性检查和纯只读非目标，再同步
+   harness 边界。
+3. 不要把 re-verification、清理、promotion、commit/push、后台执行、真实 subagents、
+   connectors、notifications、heartbeat/cron 或 always-on assistant 归入 V21 scope。
 
-已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation。真实 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 放在 V20 之后单独规划。
+已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation。近期候选路线为 V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 verified promotion；V24 后重新评估其余方向。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。
