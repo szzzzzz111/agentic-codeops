@@ -186,6 +186,6 @@
       "no new public API or /chat top-level fields"
     ],
     "passes": true,
-    "notes": "Implemented in the current uncommitted feature workspace; covered by V21 targeted regression, full verify, OpenSpec validation, and Stage Debt Sweep evidence."
+    "notes": "Implemented and committed in ca8e299; covered by V21 targeted regression, full verify, OpenSpec validation, and Stage Debt Sweep evidence."
   }
 ]

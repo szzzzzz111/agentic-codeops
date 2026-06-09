@@ -6,7 +6,7 @@
 当前基线分支：main
 当前工作分支：feature/v21-worktree-inventory-inspection
 当前 active OpenSpec change：v21-worktree-inventory-inspection
-当前阶段：V21 Worktree Inventory / Inspection review 完成，等待 commit 确认
+当前阶段：V21 Worktree Inventory / Inspection implementation 已提交，等待 OpenSpec archive 确认
 ```
 
 V21 已实现 Git-derived preview paths、untracked count-only、bounded safe formatter、
@@ -15,16 +15,16 @@ V21 已实现 Git-derived preview paths、untracked count-only、bounded safe fo
 
 内部实现 review 修复 metadata 路径穿越/revision option 注入、Git 启动失败安全降级、
 失败 per-file diff 的部分 preview、不受限 metadata drain、异常超长 diff 单行，以及
-`_is_binary_file()` 全文件读取。当前 targeted regression 为 132 passed；当前未提交
-工作区默认 verify 通过，pytest 为 224 passed, 1 skipped，`openspec validate --all`
+`_is_binary_file()` 全文件读取。当前 targeted regression 为 132 passed；implementation
+commit 前工作区默认 verify 通过，pytest 为 224 passed, 1 skipped，`openspec validate --all`
 为 17 passed, 0 failed。Stage Debt Sweep 未发现未记录阻塞项。
 
 V21 internal final review 已修复 public metadata/tracked-path 摘要未统一限长脱敏、
 preview state/DB 路径和空 preview counters、Git/SQLite optional writes，以及
 verification/metadata consistency 摘要不完整等 findings；损坏 worktree store 现安全
 降级。当前无未解决 internal findings；external review 已完成，用户确认无阻塞
-findings。最终 closeout gates 完成后仍需阶段级确认，才能 commit、archive、merge
-或 push。
+findings。implementation commit 已创建：`ca8e299 Add V21 worktree inventory
+inspection`；当前等待 OpenSpec archive 确认，尚未 archive、merge 或 push。
 
 ## V20 Archived Handoff（2026-06-07）
 
@@ -62,7 +62,7 @@ gate 均通过。本地 `feature/v20-worktree-isolation` 按审计惯例保留�
 当前工作分支：feature/v21-worktree-inventory-inspection
 当前活跃 OpenSpec change：v21-worktree-inventory-inspection
 最近完成阶段：V20 Worktree Isolation（已实现、提交、归档、合并并推送）
-当前阶段：V21 Worktree Inventory / Inspection review 完成，等待 commit 确认
+当前阶段：V21 Worktree Inventory / Inspection implementation 已提交，等待 OpenSpec archive 确认
 ```
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V20 已实现并归档；V20 把明确确认的 standalone patch 与组合 Patch + Verify 放入受控 detached、locked worktree，并保持 standalone verification 的主工作区语义。

@@ -4,7 +4,7 @@
 
 - 当前工作分支：`feature/v21-worktree-inventory-inspection`
 - 当前 active OpenSpec change：`v21-worktree-inventory-inspection`
-- 当前阶段：V21 Worktree Inventory / Inspection internal/external review 完成，等待 commit 确认。
+- 当前阶段：V21 Worktree Inventory / Inspection implementation 已提交，等待 OpenSpec archive 确认。
 - 已创建 stage planning、proposal、design、tasks 与 spec deltas，并同步 V21 harness
   写入边界和 review checklist。
 - 已锁定纯只读/no-create 语义、Git-derived preview paths、untracked count-only、
@@ -20,7 +20,7 @@
   的 skip predicate 禁止 persistent audit 写入。
 - 内部实现 review 修复 metadata 路径穿越/revision option 注入、Git 启动失败安全降级，
   以及失败 per-file diff 的部分 preview 不应被保留等 fail-safe 问题。
-- 当前 targeted regression：132 passed；当前未提交工作区默认
+- 当前 targeted regression：132 passed；implementation commit 前当前工作区默认
   `scripts/verify.ps1` 通过，pytest 为 224 passed, 1 skipped，ruff、stage docs drift
   与 skill structure gates 均通过；`openspec validate --all` 为 17 passed, 0 failed。
 - Stage Debt Sweep 已覆盖 current docs、harness、active OpenSpec、长期 specs、changed
@@ -31,7 +31,8 @@
   Git/SQLite 读取未显式关闭 optional writes、verification/metadata consistency 摘要
   不完整。损坏 worktree store 现安全降级，不打断 `/chat`。
 - V21 external review 已完成，用户确认无阻塞 findings；当前进入最终 closeout gates，
-  尚未 commit、archive、merge 或 push。
+  implementation commit 为 `ca8e299 Add V21 worktree inventory inspection`；尚未
+  archive、merge 或 push。
 
 ## V20 当前状态（2026-06-07）
 
@@ -69,7 +70,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 当前基线分支：`main`
 - 当前工作分支：`feature/v21-worktree-inventory-inspection`
-- 当前阶段：V21 Worktree Inventory / Inspection review 完成，等待 commit 确认；V20 已实现、归档、合并并推送
+- 当前阶段：V21 Worktree Inventory / Inspection implementation 已提交，等待 OpenSpec archive 确认；V20 已实现、归档、合并并推送
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> AuditManager -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> WorktreeManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、repo-local Persistent Audit、只读 Assistant Control Surface、Safe Patch Authoring、Worktree Isolation、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill

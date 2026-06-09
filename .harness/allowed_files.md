@@ -1,6 +1,6 @@
 # 当前 Harness 写入边界
 
-当前活跃阶段：V21 Worktree Inventory / Inspection（external review 完成，等待 commit 确认）。
+当前活跃阶段：V21 Worktree Inventory / Inspection（implementation 已提交，等待 archive 确认）。
 
 V21 只开放 worktree 只读 inventory / inspection 所需的最小实现、测试、规格与文档边界。
 

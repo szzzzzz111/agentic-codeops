@@ -2,7 +2,7 @@
 
 ## V21 Worktree Inventory / Inspection 架构补充
 
-V21 已实现并完成 internal/external review，当前等待 commit 确认。当前链路为
+V21 已实现、完成 internal/external review 并提交，当前等待 OpenSpec archive 确认。当前链路为
 `AgentLoop -> WorktreeManager(read-only inventory / inspection) -> fixed Git argv /
 readonly SQLite -> bounded safe formatter -> /chat.answer`。
 
