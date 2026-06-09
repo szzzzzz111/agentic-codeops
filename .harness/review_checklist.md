@@ -1,6 +1,6 @@
 # 当前 Review 清单
 
-当前活跃阶段：V21 Worktree Inventory / Inspection（已归档，等待 merge/push 确认）。
+当前活跃阶段：V21 Worktree Inventory / Inspection（已合并并推送，等待下一阶段规划）。
 
 ## V21 Planning / OpenSpec Gate
 

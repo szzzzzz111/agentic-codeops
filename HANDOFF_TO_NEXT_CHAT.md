@@ -4,9 +4,9 @@
 
 ```text
 当前基线分支：main
-当前工作分支：feature/v21-worktree-inventory-inspection
+当前工作分支：main
 当前 active OpenSpec change：无
-当前阶段：V21 Worktree Inventory / Inspection 已归档，等待 merge/push 确认
+当前阶段：V21 Worktree Inventory / Inspection 已合并并推送，等待下一阶段规划
 ```
 
 V21 已实现 Git-derived preview paths、untracked count-only、bounded safe formatter、
@@ -26,12 +26,18 @@ verification/metadata consistency 摘要不完整等 findings；损坏 worktree 
 findings。implementation commit 已创建：`ca8e299 Add V21 worktree inventory
 inspection`。V21 已归档到
 `openspec/changes/archive/2026-06-09-v21-worktree-inventory-inspection/`；当前等待
-merge/push 确认。
+下一阶段规划。
 
 Archive-after 验证：`openspec list` 为 No active changes found；
 `openspec validate --all` 为 16 passed, 0 failed；默认 verify 通过，pytest 为
 224 passed, 1 skipped；`scripts/check_stage_closeout.ps1` 与 `git diff --check`
 通过。README 同时保留 V20 历史归档 marker 与 V21 最新归档 marker。
+
+`feature/v21-worktree-inventory-inspection` 已 fast-forward 合并到 `main` 并推送到
+`agentic-codeops/main` at `60c2dc2a8f7fb73e3f1c5fac90c99c54f3b7d106`；本地
+feature branch 按审计惯例保留。Merge 后默认 verify 通过，pytest 为
+224 passed, 1 skipped；stage closeout check、OpenSpec all 与 `git diff --check`
+通过。
 
 ## V20 Archived Handoff（2026-06-07）
 
@@ -66,10 +72,10 @@ gate 均通过。本地 `feature/v20-worktree-isolation` 按审计惯例保留�
 
 ```text
 当前基线分支：main
-当前工作分支：feature/v21-worktree-inventory-inspection
+当前工作分支：main
 当前活跃 OpenSpec change：无
 最近完成阶段：V20 Worktree Isolation（已实现、提交、归档、合并并推送）
-当前阶段：V21 Worktree Inventory / Inspection 已归档，等待 merge/push 确认
+当前阶段：V21 Worktree Inventory / Inspection 已实现、归档、合并并推送；等待下一阶段规划
 ```
 
 RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V20 已实现并归档；V20 把明确确认的 standalone patch 与组合 Patch + Verify 放入受控 detached、locked worktree，并保持 standalone verification 的主工作区语义。
