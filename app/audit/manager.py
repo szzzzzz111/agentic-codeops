@@ -152,11 +152,15 @@ def build_event_from_trace(
     if event_type in {
         "verification_summarized",
         "patch_verify_verification_summarized",
+        "worktree_reverification_summarized",
     }:
         return AuditRecordInput(
             event_type="verification_result",
             status=status,
             summary=summary,
+            related_id=related_id
+            if event_type == "worktree_reverification_summarized"
+            else "",
             payload=_parse_summary(summary),
         )
     if event_type in {

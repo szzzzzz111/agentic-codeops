@@ -1,5 +1,46 @@
 # 交接给下一轮 Chat
 
+## V22 Implementation Review Handoff（2026-06-14）
+
+```text
+当前基线分支：main at 3b7f947 Close V21 merge handoff
+当前工作分支：feature/v22-worktree-re-verification
+当前 active OpenSpec change：v22-worktree-re-verification
+当前阶段：V22 Worktree Re-verification 已实现，等待 full verification 与 review
+```
+
+V22 只允许用户明确对当前 `user_id + repo_key` scope 中的 retained worktree 重跑现有
+`pytest`、`ruff` 或 `verify`。执行前必须 fail closed 核对 metadata scope、expected
+directory、Git registry、registry path 与 HEAD/base；任一失败不运行 verification，
+不修复、不 reconcile、不 cleanup、不重试，并保留原 lifecycle。
+
+实际 verification 只在 trusted retained worktree execution path 内运行，继续复用
+`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolExecutor.verification_run`、
+timeout、输出限长和脱敏。成功/失败只使用 `verification_succeeded` /
+`verification_failed`；patch 始终保持 `applied_in_worktree`。每个识别出的请求尝试写入
+一条 related-to-worktree 的脱敏 `verification_result` audit，matching event count 表达
+rerun 次数，不新增 schema。
+
+内部 plan review 已补强 malformed/unsafe re-verification-like 请求的路由拒绝语义，
+避免其滑落到 standalone verification 或 repo search。规划验证已通过：
+`openspec validate v22-worktree-re-verification --strict`、`openspec validate --all`
+（17 passed, 0 failed）、`scripts/check_stage_docs.ps1` 与 `git diff --check`。
+
+V22 runtime/tests 已按明确实现确认完成：targeted tests 30 passed，相关 V20/V21/
+Verification Runner/audit/AgentLoop/API 回归 158 passed，审查收窄修复后相关回归
+115 passed。长期 specs 已同步；`openspec validate --all` 18 passed，默认 full verify
+通过，`pytest` 254 passed, 1 skipped，ruff、stage docs drift 与 skill eval gate 均通过。
+Internal final review 与 Stage Debt Sweep 未发现剩余阻塞项。当前不得 commit、archive、
+merge 或 push，停在 external review / 阶段级确认门。
+
+最终 review follow-up 修复了非法但已识别 re-verification attempt 丢失安全 worktree
+`related_id` 的审计缺口，并统一了 archive-sync 所需的 worktree-isolation requirement header。
+
+External plan review follow-up 已处理：路由顺序确认满足；新增 lifecycle eligibility
+preflight，只允许 `patch_applied`、`verification_failed`、`verification_succeeded`，
+并在 Git inspection 前拒绝其他状态。Specs 已明确可区分 answer、mandatory
+`attempt_kind` / related worktree audit，以及不入 DB 的 `execution_repo_path` 动态重建方式。
+
 ## V21 Implementation Review Handoff（2026-06-09）
 
 ```text

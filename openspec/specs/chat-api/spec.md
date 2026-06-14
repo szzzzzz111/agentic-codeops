@@ -87,3 +87,15 @@ Public worktree answers MAY include safe `worktree_id`, patch id, status summary
 - **THEN** the response contains only `trace_id`, `answer`, `related_files`, and `tool_calls`
 - **AND** bounded preview may appear only in `answer`
 - **AND** `related_files` and `tool_calls` are empty
+
+### Requirement: Worktree Re-verification Reuses The Existing Chat Contract
+
+系统 SHALL return retained worktree re-verification results through the existing `/chat.answer` and safe `tool_calls` semantics. Re-verification MUST NOT add required or optional top-level `/chat` fields or a standalone verification/worktree API.
+
+`related_files` MUST remain empty. Preflight failures MUST expose no verification tool call. Successful preflight MAY expose only the existing safe `verification_run` tool-call summary.
+
+#### Scenario: Re-verification answer keeps chat schema
+
+- **WHEN** `/chat` returns a retained worktree re-verification result
+- **THEN** the response contains only `trace_id`, `answer`, `related_files`, and `tool_calls`
+- **AND** it MUST NOT expose the trusted worktree execution path

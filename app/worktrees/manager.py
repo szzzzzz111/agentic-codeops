@@ -7,6 +7,10 @@ import subprocess
 from uuid import uuid4
 
 from app.worktrees.inspection import WorktreeInspectionResult, inspect_worktree
+from app.worktrees.reverification import (
+    WorktreeReverificationPreflight,
+    preflight_worktree_reverification,
+)
 from app.worktrees.store import (
     WORKTREE_STATUS_CREATE_FAILED,
     WORKTREE_STATUS_PATCH_APPLIED,
@@ -185,6 +189,33 @@ class WorktreeManager:
                 record=record,
                 partial=True,
                 changed_files=[],
+            )
+
+    def prepare_reverification(
+        self,
+        *,
+        repo_path: str,
+        user_id: str,
+        worktree_id: str,
+    ) -> WorktreeReverificationPreflight:
+        record = self.get_status(
+            repo_path=repo_path,
+            user_id=user_id,
+            worktree_id=worktree_id,
+        )
+        if record is None:
+            return WorktreeReverificationPreflight(
+                accepted=False,
+                reason="worktree_not_found",
+            )
+        try:
+            repo_root = Path(repo_path).resolve(strict=True)
+            return preflight_worktree_reverification(repo_root=repo_root, record=record)
+        except (OSError, RuntimeError, ValueError):
+            return WorktreeReverificationPreflight(
+                accepted=False,
+                reason="preflight_unavailable",
+                record=record,
             )
 
     def record_patch_result(

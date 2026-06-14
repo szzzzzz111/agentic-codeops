@@ -1,5 +1,22 @@
 # 架构说明
 
+## V22 Worktree Re-verification 架构补充
+
+V22 当前链路为
+`AgentLoop -> scoped fail-closed worktree preflight -> ToolRegistry -> PermissionPolicy ->
+ApprovalGate -> ToolExecutor.verification_run(retained worktree) -> lifecycle/audit summary`。
+
+Preflight 只核对 scoped metadata、expected directory、Git registry/path 与 HEAD/base，
+不执行 V21 完整 diff/preview inspection。任一一致性失败均不运行 verification、不修复、
+不 reconcile、不 cleanup、不重试，并保留原 lifecycle。实际执行成功/失败只复用
+`verification_succeeded` / `verification_failed`；patch 始终保持
+`applied_in_worktree`。每次识别出的请求通过 related-to-worktree 的脱敏
+`verification_result` audit 表达 attempt 与 rerun 次数。
+
+V22 preflight 只允许 `patch_applied`、`verification_failed`、`verification_succeeded`
+lifecycle。内部 `execution_repo_path` 不存入 DB，而是从 resolved repo root、固定
+`.repopilot/worktrees` managed root 与 scoped worktree id 动态重建。
+
 ## V21 Worktree Inventory / Inspection 架构补充
 
 V21 已实现、完成 internal/external review、提交、归档、合并并推送。当前链路为

@@ -187,5 +187,21 @@
     ],
     "passes": true,
     "notes": "Implemented in ca8e299 and archived at openspec/changes/archive/2026-06-09-v21-worktree-inventory-inspection/; covered by targeted regression, full verify, OpenSpec validation, and Stage Debt Sweep evidence."
+  },
+  {
+    "id": "v22-worktree-reverification",
+    "category": "agent",
+    "description": "Explicit fail-closed re-verification of an existing scoped retained worktree using the existing verification whitelist and harness boundaries.",
+    "acceptance_criteria": [
+      "only exact worktree re-verification commands with pytest, ruff, or verify are accepted",
+      "scope, directory, Git registry/path, and HEAD/base consistency are checked before execution",
+      "only patch_applied, verification_failed, or verification_succeeded worktree lifecycle states are eligible",
+      "verification runs only inside the retained worktree and the main workspace remains unchanged",
+      "executed results use verification_succeeded or verification_failed while patch remains applied_in_worktree",
+      "every recognized attempt produces a distinguishable redacted persistent audit result",
+      "no cleanup, reconciliation, promotion, patch mutation, arbitrary shell, new API, or /chat top-level fields"
+    ],
+    "passes": true,
+    "notes": "Implemented on feature/v22-worktree-re-verification; covered by V22 targeted tests, adjacent regressions, full verify, OpenSpec validation, internal final review, and Stage Debt Sweep evidence."
   }
 ]

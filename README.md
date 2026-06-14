@@ -1,5 +1,16 @@
 # RepoPilot
 
+## V22 Worktree Re-verification（实现完成，等待 review）
+
+当前工作分支为 `feature/v22-worktree-re-verification`，active OpenSpec change 为
+`v22-worktree-re-verification`。本阶段已实现对现有 retained worktree 的明确白名单验证
+重跑：先按当前 `user_id + repo_key` 做 fail-closed consistency preflight，再复用现有
+`verification_run` 权限审批、timeout、限长与脱敏边界，仅在指定 worktree 内执行。
+
+V22 不新增 verification label、lifecycle、公开 API 或 `/chat` 顶层字段；不修改 patch，
+不执行 cleanup、reconciliation、promotion、commit、merge 或 push。当前停在 external
+review 与阶段级确认门。
+
 ## V21 Worktree Inventory / Inspection
 
 当前工作分支为 `main`，active OpenSpec change 为无。V21 已实现、review、提交并归档
@@ -32,7 +43,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前阶段能力：V1-V21 已实现、归档并进入远端主线；当前等待下一阶段规划。
+- 当前阶段能力：V1-V21 已实现、归档并进入远端主线；V22 Worktree Re-verification 已实现并等待 review。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。

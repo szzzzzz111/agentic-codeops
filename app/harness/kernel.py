@@ -23,13 +23,16 @@ from app.rag.query_understanding import QueryUnderstanding, SearchPlan
 from app.rag.repo_rag import HybridRepoRetriever
 from app.tools.tool_executor import ToolExecutionResult, ToolExecutor
 from app.verification.runner import (
+    VerificationRunResult,
     command_argv,
     format_verification_answer,
     parse_verification_request,
+    redact_verification_output,
     unsupported_verification_answer,
 )
 from app.worktrees.manager import WorktreeManager
 from app.worktrees.inspection import format_public_changed_files, safe_public_value
+from app.worktrees.reverification import parse_worktree_reverification_request
 
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
@@ -548,6 +551,16 @@ class AgentLoop:
         worktree_id = _worktree_status_id(request.message)
         if worktree_id:
             return self._run_worktree_inspection(request, worktree_id)
+
+        reverification = parse_worktree_reverification_request(request.message)
+        if reverification.handled:
+            return self._run_worktree_reverification(
+                request=request,
+                worktree_id=reverification.worktree_id,
+                command_label=reverification.command_label,
+                rejected=reverification.rejected,
+                reason=reverification.reason,
+            )
 
         patch_verify_confirmation = parse_patch_verify_confirmation(request.message)
         if patch_verify_confirmation.handled:
@@ -1654,6 +1667,156 @@ class AgentLoop:
             ],
         )
 
+    def _run_worktree_reverification(
+        self,
+        *,
+        request: AgentLoopRequest,
+        worktree_id: str,
+        command_label: str,
+        rejected: bool,
+        reason: str,
+    ) -> AgentLoopResult:
+        safe_worktree_id = safe_public_value(worktree_id or "unknown")
+        if rejected or not worktree_id or not command_label:
+            summary = (
+                f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
+                f"execution_attempted=false; preflight_status=failed; "
+                f"reason={safe_public_value(reason or 'invalid_request')}"
+            )
+            return AgentLoopResult(
+                answer=f"worktree re-verification preflight_failed: {safe_public_value(reason or 'invalid_request')}",
+                trace_events_internal=[
+                    TraceEvent(
+                        event_type="worktree_reverification_summarized",
+                        status="error",
+                        summary=summary,
+                    )
+                ],
+            )
+
+        preflight = self.worktree_manager.prepare_reverification(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            worktree_id=worktree_id,
+        )
+        if not preflight.accepted or not preflight.execution_repo_path:
+            summary = (
+                f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
+                f"command_label={command_label}; execution_attempted=false; "
+                f"preflight_status=failed; reason={safe_public_value(preflight.reason)}"
+            )
+            return AgentLoopResult(
+                answer=f"worktree re-verification preflight_failed: {safe_public_value(preflight.reason)}",
+                trace_events_internal=[
+                    TraceEvent(
+                        event_type="worktree_reverification_summarized",
+                        status="error",
+                        summary=summary,
+                    )
+                ],
+            )
+
+        context = ToolInvocationContext(
+            tool_name=VERIFICATION_RUN_TOOL,
+            user_id=request.user_id,
+            intent="verification_run",
+            command_label=command_label,
+            confirmed=True,
+            scope_valid=True,
+        )
+        tool_spec = self.tool_registry.get(VERIFICATION_RUN_TOOL)
+        permission_decision = self.permission_policy.decide(
+            tool_spec,
+            tool_name=VERIFICATION_RUN_TOOL,
+            context=context,
+        )
+        trace_events = [
+            TraceEvent(
+                event_type="permission_checked",
+                tool_name=VERIFICATION_RUN_TOOL,
+                status="ok" if permission_decision.status == "ask" else "error",
+                summary=(
+                    f"tool={VERIFICATION_RUN_TOOL}; decision={permission_decision.status}; "
+                    f"reason={permission_decision.reason}"
+                ),
+            )
+        ]
+        if permission_decision.status == "deny" or not self.approval_gate.evaluate(
+            permission_decision,
+            context=context,
+        ):
+            summary = (
+                f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
+                f"command_label={command_label}; execution_attempted=false; "
+                f"preflight_status=passed; reason={safe_public_value(permission_decision.reason)}"
+            )
+            return AgentLoopResult(
+                answer=DENY_ANSWER,
+                trace_events_internal=[
+                    *trace_events,
+                    TraceEvent(
+                        event_type="worktree_reverification_summarized",
+                        status="error",
+                        summary=summary,
+                    ),
+                ],
+            )
+
+        try:
+            tool_result = self.tool_executor.verification_run(
+                repo_path=preflight.execution_repo_path,
+                command_label=command_label,
+            )
+        except Exception:
+            tool_result = ToolExecutionResult(
+                tool_name=VERIFICATION_RUN_TOOL,
+                parameters={"command_label": command_label},
+                error="runner_error",
+                audit_summary={
+                    "command_label": command_label,
+                    "status": "failed",
+                    "exit_code": "",
+                    "duration_ms": 0,
+                    "timed_out": "false",
+                    "truncated": "false",
+                },
+            )
+        succeeded = tool_result.audit_summary.get("status") == "success"
+        self.worktree_manager.record_verification_result(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            worktree_id=worktree_id,
+            command_label=command_label,
+            succeeded=succeeded,
+        )
+        audit = _verification_trace_summary(tool_result.audit_summary)
+        summary = (
+            f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
+            f"execution_attempted=true; preflight_status=passed; {audit}"
+        )
+        return AgentLoopResult(
+            answer=(
+                f"worktree_id={safe_worktree_id}; "
+                f"{_verification_answer_from_tool_result(tool_result, repo_path=preflight.execution_repo_path)}"
+            ),
+            tool_calls=[tool_result.call_summary()],
+            trace_events_internal=[
+                *trace_events,
+                TraceEvent(
+                    event_type="tool_result",
+                    tool_name=VERIFICATION_RUN_TOOL,
+                    status="ok" if succeeded else "error",
+                    summary=f"status={tool_result.audit_summary.get('status', '')}",
+                ),
+                TraceEvent(
+                    event_type="worktree_reverification_summarized",
+                    tool_name=VERIFICATION_RUN_TOOL,
+                    status="ok" if succeeded else "error",
+                    summary=summary,
+                ),
+            ],
+        )
+
     def _record_audit_and_return(
         self,
         request: AgentLoopRequest,
@@ -1905,20 +2068,23 @@ def _valid_repo_scope(repo_path: str) -> bool:
         return False
 
 
-def _verification_answer_from_tool_result(tool_result) -> str:
+def _verification_answer_from_tool_result(tool_result, *, repo_path: str | None = None) -> str:
     audit = tool_result.audit_summary
+    stdout_excerpt = str(audit.get("stdout_excerpt", ""))
+    stderr_excerpt = str(audit.get("stderr_excerpt", ""))
+    if repo_path is not None:
+        stdout_excerpt = redact_verification_output(stdout_excerpt, repo_path=repo_path)
+        stderr_excerpt = redact_verification_output(stderr_excerpt, repo_path=repo_path)
     status = str(audit.get("status", "failed"))
     exit_code_value = audit.get("exit_code")
     exit_code = None if exit_code_value == "" else int(exit_code_value)
-    from app.verification.runner import VerificationRunResult
-
     result = VerificationRunResult(
         command_label=str(audit.get("command_label", "")),
         status=status,
         exit_code=exit_code,
         duration_ms=int(audit.get("duration_ms", 0)),
-        stdout_excerpt=str(audit.get("stdout_excerpt", "")),
-        stderr_excerpt=str(audit.get("stderr_excerpt", "")),
+        stdout_excerpt=stdout_excerpt,
+        stderr_excerpt=stderr_excerpt,
         timed_out=str(audit.get("timed_out", "false")) == "true",
         truncated=str(audit.get("truncated", "false")) == "true",
     )

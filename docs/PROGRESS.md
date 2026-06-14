@@ -1,5 +1,42 @@
 # 项目进度
 
+## V22 当前状态（2026-06-14）
+
+- 当前基线分支：`main` at `3b7f947 Close V21 merge handoff`
+- 当前工作分支：`feature/v22-worktree-re-verification`
+- 当前 active OpenSpec change：`v22-worktree-re-verification`
+- 当前阶段：V22 Worktree Re-verification 已实现，等待 full verification、internal final review 与 external review。
+- 已锁定明确命令、现有 `pytest`/`ruff`/`verify` 白名单、`user_id + repo_key` scope、
+  fail-closed directory/registry/path/HEAD preflight、worktree-only execution、既有 lifecycle、
+  patch `applied_in_worktree` 不变和逐次脱敏 persistent audit。
+- 已确认 preflight failure 不覆盖原 lifecycle；rerun 次数由 scoped matching audit event
+  count 表达，不新增 worktree/audit schema。
+- 内部 plan review 已补强 malformed/unsafe re-verification-like 请求的路由拒绝语义：
+  必须由 V22 整体拒绝，不得滑落到 standalone verification 或 repo search。
+- 规划验证：`openspec validate v22-worktree-re-verification --strict` 通过；
+  `openspec validate --all` 17 passed, 0 failed；`scripts/check_stage_docs.ps1` 与
+  `git diff --check` 通过。
+- 已实现严格 re-verification parser/routing、scoped fail-closed preflight、worktree-only
+  verification 执行、既有 lifecycle 更新和 related redacted persistent audit。
+- V22 targeted tests：`pytest tests/test_worktree_reverification.py -q`，30 passed。
+- 相关回归：V22/V21/V20/Verification Runner/Persistent Audit/AgentLoop/Chat API，158 passed。
+- full verification：`scripts/verify.ps1` 通过，`pytest` 254 passed, 1 skipped，ruff、
+  stage docs drift 与 skill eval structure gate 均通过；`openspec validate --all` 18 passed。
+- internal final review 修复了 V22 related audit 对既有 verification event 的无意扩面；
+  修复后 audit/AgentLoop/API 回归 115 passed。
+- 最终 review 进一步修复非法但已识别 re-verification attempt 丢失安全 worktree
+  `related_id` 的审计缺口，并统一 archive-sync 所需的 worktree-isolation requirement header。
+- Stage Debt Sweep 已扫描 current docs、harness、active OpenSpec、long-term specs、changed
+  runtime paths 与 adjacent tests；未发现剩余阻塞项。
+- 当前仍未 commit、archive、merge 或 push；停在 external review / 阶段级确认门。
+
+### V22 External Plan Review Follow-up（2026-06-14）
+
+- P1 路由顺序已由现有实现与规格确认满足：re-verification 位于 inventory/inspection 之后、Patch + Verify 与 standalone verification 之前。
+- 修复遗漏的 lifecycle eligibility preflight：只允许 `patch_applied`、`verification_failed`、`verification_succeeded`，其他状态在 Git inspection 前 fail closed。
+- Specs 已明确可区分 answer、mandatory `attempt_kind=worktree_reverification` / related worktree audit，以及 `execution_repo_path` 从 trusted repo root、固定 managed root 与 scoped worktree id 动态重建且不存 DB。
+- Follow-up 验证：targeted 30 passed，相关回归 158 passed，full verify 254 passed / 1 skipped，OpenSpec 18 passed。
+
 ## V21 当前状态（2026-06-09）
 
 - 当前工作分支：`main`
