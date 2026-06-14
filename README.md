@@ -1,15 +1,14 @@
 # RepoPilot
 
-## V22 Worktree Re-verification（实现完成，等待 review）
+## V22 Worktree Re-verification
 
-当前工作分支为 `feature/v22-worktree-re-verification`，active OpenSpec change 为
-`v22-worktree-re-verification`。本阶段已实现对现有 retained worktree 的明确白名单验证
+V22 已实现、完成 review，并归档到
+`openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`。本阶段提供对现有 retained worktree 的明确白名单验证
 重跑：先按当前 `user_id + repo_key` 做 fail-closed consistency preflight，再复用现有
 `verification_run` 权限审批、timeout、限长与脱敏边界，仅在指定 worktree 内执行。
 
 V22 不新增 verification label、lifecycle、公开 API 或 `/chat` 顶层字段；不修改 patch，
-不执行 cleanup、reconciliation、promotion、commit、merge 或 push。当前停在 external
-review 与阶段级确认门。
+不执行 cleanup、reconciliation、promotion 或 patch mutation。
 
 ## V21 Worktree Inventory / Inspection
 

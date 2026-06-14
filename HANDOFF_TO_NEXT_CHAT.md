@@ -1,12 +1,12 @@
 # 交接给下一轮 Chat
 
-## V22 Implementation Review Handoff（2026-06-14）
+## V22 Archive Handoff（2026-06-14）
 
 ```text
 当前基线分支：main at 3b7f947 Close V21 merge handoff
 当前工作分支：feature/v22-worktree-re-verification
-当前 active OpenSpec change：v22-worktree-re-verification
-当前阶段：V22 Worktree Re-verification 已实现，等待 full verification 与 review
+当前 active OpenSpec change：无
+当前阶段：V22 Worktree Re-verification 已实现、review 并归档，等待 merge / push
 ```
 
 V22 只允许用户明确对当前 `user_id + repo_key` scope 中的 retained worktree 重跑现有
@@ -30,8 +30,10 @@ V22 runtime/tests 已按明确实现确认完成：targeted tests 30 passed，�
 Verification Runner/audit/AgentLoop/API 回归 158 passed，审查收窄修复后相关回归
 115 passed。长期 specs 已同步；`openspec validate --all` 18 passed，默认 full verify
 通过，`pytest` 254 passed, 1 skipped，ruff、stage docs drift 与 skill eval gate 均通过。
-Internal final review 与 Stage Debt Sweep 未发现剩余阻塞项。当前不得 commit、archive、
-merge 或 push，停在 external review / 阶段级确认门。
+Internal final review 与 Stage Debt Sweep 未发现剩余阻塞项。Implementation commit 为
+`30ae5a6 Add V22 worktree re-verification`；change 已归档到
+`openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`。Archive 后 OpenSpec
+17 passed、stage closeout check 与 full verify 通过；当前等待 merge / push。
 
 最终 review follow-up 修复了非法但已识别 re-verification attempt 丢失安全 worktree
 `related_id` 的审计缺口，并统一了 archive-sync 所需的 worktree-isolation requirement header。

@@ -202,6 +202,6 @@
       "no cleanup, reconciliation, promotion, patch mutation, arbitrary shell, new API, or /chat top-level fields"
     ],
     "passes": true,
-    "notes": "Implemented on feature/v22-worktree-re-verification; covered by V22 targeted tests, adjacent regressions, full verify, OpenSpec validation, internal final review, and Stage Debt Sweep evidence."
+    "notes": "Implemented in 30ae5a6 and archived at openspec/changes/archive/2026-06-14-v22-worktree-re-verification/; covered by targeted tests, adjacent regressions, full verify, OpenSpec validation, internal/external review, and Stage Debt Sweep evidence."
   }
 ]

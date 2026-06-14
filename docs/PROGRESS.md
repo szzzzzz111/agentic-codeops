@@ -4,8 +4,8 @@
 
 - 当前基线分支：`main` at `3b7f947 Close V21 merge handoff`
 - 当前工作分支：`feature/v22-worktree-re-verification`
-- 当前 active OpenSpec change：`v22-worktree-re-verification`
-- 当前阶段：V22 Worktree Re-verification 已实现，等待 full verification、internal final review 与 external review。
+- 当前 active OpenSpec change：无
+- 当前阶段：V22 Worktree Re-verification 已实现、review 并归档，等待合并到 `main`。
 - 已锁定明确命令、现有 `pytest`/`ruff`/`verify` 白名单、`user_id + repo_key` scope、
   fail-closed directory/registry/path/HEAD preflight、worktree-only execution、既有 lifecycle、
   patch `applied_in_worktree` 不变和逐次脱敏 persistent audit。
@@ -28,7 +28,10 @@
   `related_id` 的审计缺口，并统一 archive-sync 所需的 worktree-isolation requirement header。
 - Stage Debt Sweep 已扫描 current docs、harness、active OpenSpec、long-term specs、changed
   runtime paths 与 adjacent tests；未发现剩余阻塞项。
-- 当前仍未 commit、archive、merge 或 push；停在 external review / 阶段级确认门。
+- implementation commit：`30ae5a6 Add V22 worktree re-verification`。
+- archive：`openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`；archive 后
+  OpenSpec 17 passed、stage closeout check 通过、full verify 254 passed / 1 skipped。
+- 当前尚未 merge / push。
 
 ### V22 External Plan Review Follow-up（2026-06-14）
 
