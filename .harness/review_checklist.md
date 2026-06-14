@@ -10,7 +10,7 @@
 - [x] Long-term specs 已同步，archive-sync requirement headers 已对齐。
 - [x] V22 已归档到 `openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`。
 - [x] Archive 后 OpenSpec、stage closeout 与 full verify 通过。
-- [ ] Merge / push 后 durable docs 记录真实 main/remote 状态、验证证据与 branch retention 决策。
+- [x] Merge / push 后 durable docs 记录真实 main/remote 状态、验证证据与 branch retention 决策。
 
 ## 下一阶段 Gate
 

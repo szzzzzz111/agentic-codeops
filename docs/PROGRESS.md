@@ -2,10 +2,10 @@
 
 ## V22 当前状态（2026-06-14）
 
-- 当前基线分支：`main` at `3b7f947 Close V21 merge handoff`
-- 当前工作分支：`feature/v22-worktree-re-verification`
+- 当前基线分支：`main` at `6da406b Archive V22 worktree re-verification`
+- 当前工作分支：`main`
 - 当前 active OpenSpec change：无
-- 当前阶段：V22 Worktree Re-verification 已实现、review 并归档，等待合并到 `main`。
+- 当前阶段：V22 Worktree Re-verification 已实现、review、归档、合并并推送；等待下一阶段规划。
 - 已锁定明确命令、现有 `pytest`/`ruff`/`verify` 白名单、`user_id + repo_key` scope、
   fail-closed directory/registry/path/HEAD preflight、worktree-only execution、既有 lifecycle、
   patch `applied_in_worktree` 不变和逐次脱敏 persistent audit。
@@ -31,7 +31,8 @@
 - implementation commit：`30ae5a6 Add V22 worktree re-verification`。
 - archive：`openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`；archive 后
   OpenSpec 17 passed、stage closeout check 通过、full verify 254 passed / 1 skipped。
-- 当前尚未 merge / push。
+- V22 已 fast-forward 合并并推送到 `agentic-codeops/main` at `6da406b`；本地
+  `feature/v22-worktree-re-verification` fully merged 且暂按审计惯例保留。
 
 ### V22 External Plan Review Follow-up（2026-06-14）
 
@@ -124,7 +125,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 
 - 当前基线分支：`main`
 - 当前工作分支：`main`
-- 当前阶段：V21 Worktree Inventory / Inspection 已实现、归档、合并并推送；等待下一阶段规划
+- 当前阶段：V22 Worktree Re-verification 已实现、归档、合并并推送；等待下一阶段规划
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> AuditManager -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> WorktreeManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、repo-local Persistent Audit、只读 Assistant Control Surface、Safe Patch Authoring、Worktree Isolation、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
@@ -174,7 +175,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
 - V21（计划候选）：Worktree Inventory / Inspection。保持纯只读，提供 scoped
   inventory、diffstat、changed files、限长脱敏 diff preview、验证摘要和一致性检查。
-- V22（计划候选）：Worktree Re-verification。明确触发白名单验证重跑，复用现有
+- V22（已完成）：Worktree Re-verification。明确触发白名单验证重跑，复用现有
   verification 状态，patch 保持 `applied_in_worktree`，每次结果进入脱敏 audit。
 - V23（计划候选）：Worktree Disposal / Reconciliation。明确确认后幂等清理并协调
   Git registry、目录和 metadata；discard 后使用独立终态，不回退为 `pending`。
@@ -571,9 +572,8 @@ LLMGateway 设计备忘：
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
 - 当前建议：V20 已完成 implementation、archive、merge 与 push；开始下一阶段前先按
   OpenSpec stage planning 流程重新同步 harness 边界。
-- 近期路线：先按 V21 inspection、V22 re-verification、V23 disposal/reconciliation、
-  V24 verified promotion 补齐 worktree 生命周期闭环；V21 规划时必须明确 bounded
-  diff preview 安全格式和一致性检查边界。
+- 近期路线：V21 inspection 与 V22 re-verification 已完成；下一阶段推荐按
+  V23 disposal/reconciliation、V24 verified promotion 补齐 worktree 生命周期闭环。
 - V24 完成后重新评估 Operator Control、Durable Execution、Background Worker、
   subagents、connectors、notifications、heartbeat/cron 和 always-on assistant；
   不要写成当前 runtime 已实现能力，也不要提前锁定公开 API。

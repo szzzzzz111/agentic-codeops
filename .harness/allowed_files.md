@@ -7,7 +7,7 @@
 
 ## 当前允许修改
 
-- V22 archive / merge / push 所需 durable docs 与 handoff closeout 文件。
+- V22 post-merge durable docs 与 handoff closeout 文件。
 
 ## 禁止修改 / 禁止行为
 

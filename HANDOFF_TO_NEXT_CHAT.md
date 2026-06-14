@@ -1,12 +1,12 @@
 # 交接给下一轮 Chat
 
-## V22 Archive Handoff（2026-06-14）
+## V22 Merge Handoff（2026-06-14）
 
 ```text
-当前基线分支：main at 3b7f947 Close V21 merge handoff
-当前工作分支：feature/v22-worktree-re-verification
+当前基线分支：main at 6da406b Archive V22 worktree re-verification
+当前工作分支：main
 当前 active OpenSpec change：无
-当前阶段：V22 Worktree Re-verification 已实现、review 并归档，等待 merge / push
+当前阶段：V22 Worktree Re-verification 已实现、review、归档、合并并推送
 ```
 
 V22 只允许用户明确对当前 `user_id + repo_key` scope 中的 retained worktree 重跑现有
@@ -33,7 +33,8 @@ Verification Runner/audit/AgentLoop/API 回归 158 passed，审查收窄修复�
 Internal final review 与 Stage Debt Sweep 未发现剩余阻塞项。Implementation commit 为
 `30ae5a6 Add V22 worktree re-verification`；change 已归档到
 `openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`。Archive 后 OpenSpec
-17 passed、stage closeout check 与 full verify 通过；当前等待 merge / push。
+17 passed、stage closeout check 与 full verify 通过。V22 已 fast-forward 合并并推送到
+`agentic-codeops/main` at `6da406b`；本地 feature branch fully merged 且保留。
 
 最终 review follow-up 修复了非法但已识别 re-verification attempt 丢失安全 worktree
 `related_id` 的审计缺口，并统一了 archive-sync 所需的 worktree-isolation requirement header。
@@ -118,10 +119,10 @@ gate 均通过。本地 `feature/v20-worktree-isolation` 按审计惯例保留�
 当前工作分支：main
 当前活跃 OpenSpec change：无
 最近完成阶段：V20 Worktree Isolation（已实现、提交、归档、合并并推送）
-当前阶段：V21 Worktree Inventory / Inspection 已实现、归档、合并并推送；等待下一阶段规划
+当前阶段：V22 Worktree Re-verification 已实现、归档、合并并推送；等待下一阶段规划
 ```
 
-RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V20 已实现并归档；V20 把明确确认的 standalone patch 与组合 Patch + Verify 放入受控 detached、locked worktree，并保持 standalone verification 的主工作区语义。
+RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harness，不是替代通用 AI IDE 的编程助手。V1-V22 已实现并归档；V22 提供 retained worktree 的明确白名单 re-verification，并保持 patch 与主工作区边界。
 
 后续路线已重排为 lightweight industrial harness：不是企业级平台，也不是玩具 demo；默认使用 SQLite、文件、进程内状态和白名单命令等轻量实现，但逐步交付可确认 patch、受控验证、失败恢复和隔离执行。V18 只实现明确组合确认下的 apply 后 verify，不代表 Persistent Audit / Recovery、worktree、subagents、connectors 或 always-on 已实现。
 
@@ -536,11 +537,11 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 ## 下一轮建议
 
 1. V20 internal / external review、implementation commit、archive、merge 与 push 均已完成。
-2. 下一阶段推荐规划 V21 Worktree Inventory / Inspection；先创建 OpenSpec change，
-   明确 bounded diff preview、安全 formatter、一致性检查和纯只读非目标，再同步
+2. 下一阶段推荐规划 V23 Worktree Disposal / Reconciliation；先创建 OpenSpec change，
+   明确 unlock/remove/discard 的幂等性、registry/目录/metadata 协调与确认边界，再同步
    harness 边界。
-3. 不要把 re-verification、清理、promotion、commit/push、后台执行、真实 subagents、
-   connectors、notifications、heartbeat/cron 或 always-on assistant 归入 V21 scope。
+3. 不要把 promotion、后台执行、真实 subagents、connectors、notifications、
+   heartbeat/cron 或 always-on assistant 归入 V23 scope。
 
-已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation。近期候选路线为 V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 verified promotion；V24 后重新评估其余方向。
+已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation；V21 Worktree Inventory / Inspection；V22 Worktree Re-verification。近期候选路线为 V23 disposal/reconciliation、V24 verified promotion；V24 后重新评估其余方向。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。
