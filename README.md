@@ -3,10 +3,10 @@
 ## V23 Worktree Disposal / Reconciliation
 
 V23 已完成 runtime、tests、内部 review 并归档到
-`openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`，工作分支为
-`feature/v23-worktree-disposal-reconciliation`。本阶段实现 exact confirmed discard、受限
+`openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`，并已合并到
+`main`。本阶段实现 exact confirmed discard、受限
 reconciliation、严格 lifecycle 顺序、persistent audit，以及共享 Git metadata runner 的独立
-timeout / 读取前硬上限；当前进入 merge closeout，active OpenSpec change 为无。
+timeout / 读取前硬上限；当前 active OpenSpec change 为无。
 
 ## V22 Worktree Re-verification
 
@@ -50,7 +50,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 ## 当前快照
 
-- 当前阶段能力：V1-V23 已归档；V23 已实现并进入 merge closeout。
+- 当前阶段能力：V1-V23 已归档；V23 已实现、review、归档并合并。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -480,7 +480,7 @@ ChatService
 
 已归档至 V20：Worktree Isolation。已归档至 V21：Worktree Inventory / Inspection。
 已归档至 V22：Worktree Re-verification。已归档至 V23：Worktree Disposal / Reconciliation。
-当前 active change 为无；V23 正在进入主线。
+当前 active change 为无；V23 已进入主线。
 
 近期后端路线聚焦补齐 worktree 生命周期闭环，并按只读到受控写入逐阶段推进：
 

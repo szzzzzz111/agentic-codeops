@@ -3,9 +3,9 @@
 ## V23 当前状态（2026-06-15）
 
 - 当前基线：`main@27a754a`
-- 当前工作分支：`feature/v23-worktree-disposal-reconciliation`
+- 当前工作分支：`main`
 - 当前 active OpenSpec change：无
-- 当前状态：runtime、tests、内部 review 与 archive 已完成，进入 merge closeout。
+- 当前状态：runtime、tests、内部 review、archive 与 merge 已完成，等待下一阶段规划。
 - 已创建 stage planning、proposal、design、tasks 与 spec deltas，并同步 harness 与
   `docs/FEATURE_LIST.json`（V23 `passes: true`）。
 - 规划锁定 exact confirmed discard/reconcile、V23-before-V22 routing、受限 reconciliation、
@@ -20,12 +20,13 @@
   reconciliation、idempotency、Harness、audit 与 `/chat` contract；相关回归 168 passed。
 - 内部 review 修复 audit related-id 误分类、非终态 patch terminal gate、scoped worktree
   update 确认、V22 控制流插入回归，以及 cleanup/store partial-failure 步骤表达；当前无未记录阻断项。
-- 当前未提交工作区 full verify 通过：`pytest` 283 passed, 1 skipped；`ruff check .`、
+- merge 后 full verify 通过：`pytest` 283 passed, 1 skipped；`ruff check .`、
   stage docs drift scan 与 skill eval structure scan 均通过；`openspec validate --all`
   18 passed, 0 failed；`git diff --check` 通过。
 - implementation commit：`3991d4a Implement V23 worktree disposal reconciliation`。
 - V23 已归档到
   `openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`，长期 specs 已同步。
+- V23 已以 fast-forward 合并到 `main`；archive 后与 merge 后 stage closeout 均通过。
 
 ## V22 当前状态（2026-06-14）
 

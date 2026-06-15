@@ -12,7 +12,7 @@
 - [x] Targeted/adjacent regressions、full verify、OpenSpec validation 与 `git diff --check` 通过。
 - [x] Stage Debt Sweep 与 internal final review 已完成并修复有效 findings。
 - [x] V23 已归档到 `openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`。
-- [ ] Archive 后 stage closeout、full verify 与 merge 后 durable docs 已完成。
+- [x] Archive 后 stage closeout、full verify 与 merge 后 durable docs 已完成。
 
 ## 下一阶段 Gate
 
