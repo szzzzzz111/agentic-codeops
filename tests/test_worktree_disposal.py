@@ -12,7 +12,7 @@ from app.patching.store import (
     SQLitePatchStore,
 )
 from app.worktrees.disposal import parse_worktree_disposal_request
-from app.worktrees.git_metadata import run_git_metadata
+from app.worktrees.git_metadata import git_metadata_text, run_git_metadata
 from app.worktrees.manager import WorktreeManager
 from app.worktrees.store import (
     WORKTREE_STATUS_DISCARDED,
@@ -345,6 +345,100 @@ def test_git_metadata_runner_checks_size_before_reading(
     assert run_git_metadata(tmp_path, "rev-parse", "HEAD", max_bytes=10) is None
 
 
+def test_git_metadata_text_rejects_invalid_utf8(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.worktrees.git_metadata.run_git_metadata",
+        lambda *args, **kwargs: b"locked \xff",
+    )
+
+    assert git_metadata_text(tmp_path, "worktree", "list", "--porcelain", "-z") is None
+
+
+def test_reconcile_rejects_registry_path_mismatch_without_mutation(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    created, patch_store, patch, repo_key = _create_retained_worktree(tmp_path)
+    original = Path(created.execution_repo_path)
+    moved = original.parent / "moved_elsewhere"
+    _git("worktree", "unlock", str(original), cwd=tmp_path)
+    _git("worktree", "move", str(original), str(moved), cwd=tmp_path)
+
+    result = WorktreeManager().dispose(
+        repo_path=str(tmp_path),
+        user_id="u001",
+        worktree_id=created.worktree_id,
+        attempt_kind="reconcile",
+    )
+
+    stored_worktree = SQLiteWorktreeStore.for_existing_repo(tmp_path)[0].get_worktree(
+        created.worktree_id,
+        user_id="u001",
+        repo_key=repo_key,
+    )
+    stored_patch = patch_store.get_patch(patch.patch_id, user_id="u001", repo_key=repo_key)
+    assert result.succeeded is False
+    assert result.reason == "registry_path_mismatch"
+    assert result.mutation_attempted is False
+    assert moved.exists()
+    assert stored_worktree is not None and stored_worktree.status != WORKTREE_STATUS_DISCARDED
+    assert stored_patch is not None and stored_patch.status == PATCH_STATUS_APPLIED_IN_WORKTREE
+
+
+def test_reconcile_rejects_admin_backref_registry_inconsistency(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _init_repo(tmp_path)
+    created, _, _, _ = _create_retained_worktree(tmp_path)
+    monkeypatch.setattr("app.worktrees.disposal.registry_entries", lambda repo_root: {})
+
+    result = WorktreeManager().dispose(
+        repo_path=str(tmp_path),
+        user_id="u001",
+        worktree_id=created.worktree_id,
+        attempt_kind="reconcile",
+    )
+
+    assert result.succeeded is False
+    assert result.reason == "metadata_invalid"
+    assert result.mutation_attempted is False
+    assert Path(created.execution_repo_path).exists()
+
+
+@pytest.mark.parametrize("database_name", ["worktrees.sqlite3", "patches.sqlite3"])
+def test_damaged_scoped_metadata_fails_closed_and_audits_attempt(
+    tmp_path: Path,
+    database_name: str,
+) -> None:
+    _init_repo(tmp_path)
+    created, _, _, repo_key = _create_retained_worktree(tmp_path)
+    (tmp_path / ".repopilot" / database_name).write_bytes(b"not sqlite")
+
+    result = AgentLoop().run(
+        AgentLoopRequest(
+            message=f"confirm discard worktree {created.worktree_id}",
+            repo_path=str(tmp_path),
+            trace_id="trace_damaged_worktree_metadata",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    events = SQLiteAuditStore.for_existing_repo(tmp_path)[0].recent_events(
+        user_id="u001",
+        repo_key=repo_key,
+        limit=20,
+    )
+    attempts = [event for event in events if event.event_type == "worktree_disposal"]
+    assert "failed" in result.answer
+    assert "metadata_invalid" in result.answer
+    assert result.tool_calls == []
+    assert Path(created.execution_repo_path).exists()
+    assert len(attempts) == 1
+
+
 def test_head_mismatch_and_unsupported_lifecycle_fail_before_mutation(tmp_path: Path) -> None:
     first = tmp_path / "first"
     second = tmp_path / "second"
@@ -535,3 +629,28 @@ def test_both_missing_reconciliation_closes_metadata_only(tmp_path: Path) -> Non
     assert result.succeeded is True
     assert result.preflight_classification == "both_missing"
     assert record is not None and record.status == WORKTREE_STATUS_DISCARDED
+
+
+def test_both_missing_reconciliation_ignores_other_registered_worktrees(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    removed, _, _, _ = _create_retained_worktree(tmp_path)
+    retained, _, _, _ = _create_retained_worktree(tmp_path)
+    _git(
+        "worktree",
+        "remove",
+        "--force",
+        "--force",
+        removed.execution_repo_path,
+        cwd=tmp_path,
+    )
+
+    result = WorktreeManager().dispose(
+        repo_path=str(tmp_path),
+        user_id="u001",
+        worktree_id=removed.worktree_id,
+        attempt_kind="reconcile",
+    )
+
+    assert result.succeeded is True
+    assert result.preflight_classification == "both_missing"
+    assert Path(retained.execution_repo_path).exists()

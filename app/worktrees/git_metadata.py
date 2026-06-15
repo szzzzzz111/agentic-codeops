@@ -51,7 +51,12 @@ def run_git_metadata(
 
 def git_metadata_text(cwd: Path, *args: str) -> str | None:
     output = run_git_metadata(cwd, *args)
-    return None if output is None else output.decode("utf-8", errors="replace")
+    if output is None:
+        return None
+    try:
+        return output.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        return None
 
 
 def registry_entries(repo_root: Path) -> dict[str, GitRegistryEntry] | None:

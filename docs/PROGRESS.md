@@ -2,10 +2,15 @@
 
 ## V23 当前状态（2026-06-15）
 
-- merge 后正式 code review 发现两个 P1 与一个 P2，V23 closeout 已恢复为阻断状态，禁止开始下一阶段：
-  - P1：registry path mismatch 会被误判为 `both_missing` 并错误终态化。
-  - P1：损坏 SQLite metadata 会抛出 `DatabaseError`，未安全返回且无法保证 attempt audit。
-  - P2：Git metadata 非法 UTF-8 当前使用 replacement decode，未严格 fail closed。
+- merge 后正式 code review 发现的两个 P1 与一个 P2 已完成 remediation：
+  - registry path mismatch 通过 scoped Git admin back-reference 精确识别并 fail closed。
+  - 损坏 worktree/patch SQLite metadata 返回安全 `metadata_invalid`，并尝试写入 attempt audit。
+  - Git metadata 非法 UTF-8 使用 strict decode 并 fail closed。
+- 定向测试 34 passed；相邻 V20-V22、patch store、AgentLoop、audit/API 回归 163 passed。
+- 正式 re-review 未发现新增 P0/P1/P2；额外修复 admin back-reference 与完整 registry 结果不一致时
+  错误允许 `registry_missing` reconciliation 的相邻 fail-closed 缺口。
+- remediation 最终 full verify 通过：`pytest` 289 passed, 1 skipped；ruff、stage docs drift 与
+  skill eval structure 均通过；正式 review findings 已全部关闭。
 - 本次流程事故已沉淀到 Agent rules、Harness rules/checklist、stage planning template、repo-local review
   skill/evals、长期 harness workflow spec 与 `check_stage_closeout.ps1`。连续执行授权今后只减少中间确认，
   不得替代正式 review；未关闭 P0/P1 将机械阻断 closeout。

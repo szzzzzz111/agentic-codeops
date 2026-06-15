@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import sqlite3
 import subprocess
 
 from app.patching.store import (
@@ -348,6 +349,13 @@ def _preflight(
             return WorktreeDisposalPreflight(False, "git_registry_unavailable", record=record)
         entry = entries.get(normalized_path(expected))
         registry_present = entry is not None
+        if not registry_present and _registry_path_mismatch(
+            repo_root,
+            expected,
+            worktree_id,
+            entries,
+        ):
+            return WorktreeDisposalPreflight(False, "registry_path_mismatch", record=record)
         if attempt_kind == "discard" and not (directory_present and registry_present):
             return WorktreeDisposalPreflight(False, "consistency_mismatch", record=record)
         if directory_present and not _ownership_matches(repo_root, expected, record.base_commit):
@@ -376,8 +384,39 @@ def _preflight(
             directory_present,
             patch.status,
         )
-    except (OSError, RuntimeError, ValueError):
-        return WorktreeDisposalPreflight(False, "preflight_unavailable")
+    except (OSError, RuntimeError, sqlite3.Error, UnicodeError, ValueError):
+        return WorktreeDisposalPreflight(False, "metadata_invalid")
+
+
+def _registry_path_mismatch(
+    repo_root: Path,
+    expected: Path,
+    worktree_id: str,
+    entries: dict[str, object],
+) -> bool:
+    common = git_metadata_text(repo_root, "rev-parse", "--git-common-dir")
+    if common is None:
+        raise RuntimeError("git_common_dir_unavailable")
+    common_path = (repo_root / common.strip()).resolve()
+    admin_root = common_path / "worktrees"
+    admin = admin_root / worktree_id
+    if not admin.exists():
+        return False
+    if not admin.is_dir() or admin.is_symlink() or not _is_within(admin, admin_root):
+        raise RuntimeError("worktree_admin_invalid")
+    backref = admin / "gitdir"
+    if not backref.is_file() or backref.is_symlink():
+        raise RuntimeError("worktree_admin_backref_invalid")
+    target = Path(backref.read_text(encoding="utf-8", errors="strict").strip())
+    if not target.is_absolute():
+        target = (admin / target).resolve()
+    registered = target.resolve().parent
+    registered_key = normalized_path(registered)
+    if registered_key == normalized_path(expected):
+        raise RuntimeError("expected_registry_entry_missing")
+    if registered_key not in entries:
+        raise RuntimeError("worktree_registry_backref_mismatch")
+    return True
 
 
 def _ownership_matches(repo_root: Path, expected: Path, base_commit: str) -> bool:

@@ -2,8 +2,8 @@
 
 ## V23 Worktree Disposal / Reconciliation
 
-> 当前状态：V23 已合并，但 merge 后正式 code review 发现两个 P1 与一个 P2。V23 closeout
-> 已恢复为阻断状态，禁止开始下一阶段，直到 debt remediation、re-review 与 full verification 完成。
+> 当前状态：V23 merge 后正式 code review 发现的两个 P1 与一个 P2 已完成 remediation；
+> 正式 re-review 未发现新增 P0/P1/P2，full verification 与 remediation closeout 已通过。
 
 V23 已完成 runtime、tests、内部 review 并归档到
 `openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`，并已合并到
