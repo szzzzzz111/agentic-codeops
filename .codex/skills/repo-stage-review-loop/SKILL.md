@@ -13,6 +13,11 @@ Final review is a hard gate, not a courtesy pass. If the current OpenSpec change
 
 The human partner owns stage intent and sequencing. Do not turn their confirmation into a code-review burden.
 
+Continuous execution authorization such as “一路实现到合并/推送” authorizes the action sequence only.
+It never authorizes skipping or compressing formal code review, Stage Debt Sweep, validation, archive review,
+or post-merge verification. Passing tests, incremental self-checks, and a checked checklist are not substitutes
+for a visible formal review conclusion.
+
 ## Mandatory Stop Gates
 
 Before saying "ready to commit", "ready to archive", starting archive, or moving to the next stage, run these checks in order:
@@ -24,6 +29,8 @@ Before saying "ready to commit", "ready to archive", starting archive, or moving
 5. Full verification evidence MUST be current for the present uncommitted workspace, or the missing verification must be recorded explicitly.
 6. Long-term `openspec/specs/**/spec.md` MUST NOT contain archive-generated Purpose placeholders such as `TBD`, `TODO`, or `created by archiving change`.
 7. Delta spec operation types MUST be archive-syncable: every `MODIFIED` or `REMOVED` requirement header exists in the corresponding long-term spec, and genuinely new requirements use `ADDED`.
+8. A visible formal code-review conclusion MUST exist after the final runtime/test changes: severity-ordered findings, or an explicit no-findings conclusion with residual risks.
+9. Any P0/P1 found after merge MUST reopen closeout, be recorded in `.harness/review_checklist.md`, `docs/PROGRESS.md`, and `HANDOFF_TO_NEXT_CHAT.md`, and block the next stage until fixed and re-reviewed.
 
 If any gate fails, do not archive and do not ask the user to proceed to archive. Fix or record the issue, rerun the relevant validation, then reassess the gates.
 
@@ -171,6 +178,8 @@ Do not accept feedback blindly. Inspect the referenced files first, then make th
 - Codex only reviews new files and misses adjacent pre-existing runtime paths that the stage depends on.
 - Codex leaves remaining debt in chat instead of recording it in `docs/PROGRESS.md` and `HANDOFF_TO_NEXT_CHAT.md`.
 - Codex sees `18/19 tasks`, stale "implementation in progress" handoff wording, or an unchecked final review task and still proceeds toward archive.
+- Codex interprets “一路实现到合并/推送” as permission to omit formal review or report it only after merge.
+- Codex treats passing tests or scattered self-checks as equivalent to a visible severity-ordered code-review conclusion.
 
 ## Evals
 

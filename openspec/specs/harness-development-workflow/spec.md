@@ -147,6 +147,28 @@ The implementation MUST remain limited to read-only worktree inventory / inspect
 - **THEN** the stage stops at the implementation confirmation gate
 - **AND** runtime code and tests remain unchanged until explicit confirmation
 
+### Requirement: Continuous Authorization Does Not Remove Formal Review
+
+用户对实现、提交、归档、合并或推送的连续执行授权 SHALL reduce only intermediate stage-level
+confirmation prompts. It MUST NOT remove or weaken formal code review, Stage Debt Sweep, deterministic
+validation, archive review, merge review, or post-merge verification.
+
+Formal code review MUST run after the final runtime/test changes and before archive/merge, and MUST produce a
+visible severity-ordered findings report or an explicit no-findings conclusion with residual risks. Passing tests,
+incremental self-checks, and checked task/checklist items MUST NOT be treated as equivalent evidence.
+
+#### Scenario: Merge authorization preserves review gates
+
+- **WHEN** the user authorizes execution through merge or push
+- **THEN** the agent still performs and reports formal code review before archive/merge
+- **AND** unresolved P0/P1 findings block archive/merge or reopen closeout if discovered afterward
+
+#### Scenario: Post-merge P1 reopens closeout
+
+- **WHEN** formal review after merge discovers a P1 finding
+- **THEN** `.harness/review_checklist.md`, `docs/PROGRESS.md`, and `HANDOFF_TO_NEXT_CHAT.md` record the blocker
+- **AND** the next stage remains blocked until remediation, re-review, and verification complete
+
 ### Requirement: V22 Planning And Implementation Remain Separately Confirmed
 
 V22 SHALL complete stage planning, OpenSpec artifacts, harness synchronization, internal plan review, and OpenSpec validation before runtime or test implementation begins.

@@ -28,3 +28,12 @@ Use these as routing and behavior checks after changing the skill.
 - A passing OpenSpec validation does not prove archive sync can apply delta operations.
 - A docs test may encode stale prior-stage wording and fail only after the correct docs fix.
 - Do not call a stage complete while final review or Stage Debt Sweep tasks predate the final changes.
+- Passing tests and incremental self-checks do not replace a visible formal code-review conclusion.
+- Continuous execution authorization never removes review or closeout gates.
+
+## Continuous Authorization Cases
+
+- Query: `一路实现到合并`
+  - Expect: continuous authorization removes intermediate confirmation prompts only; still run and visibly report formal review after final runtime/test changes and before archive/merge.
+- Query: `一路实现到合并，review没有`
+  - Expect: acknowledge the missed gate, run formal review, persist any P0/P1 blockers in harness/progress/handoff, and reopen closeout.

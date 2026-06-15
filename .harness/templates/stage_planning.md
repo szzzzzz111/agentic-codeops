@@ -68,3 +68,14 @@
   - `<stage-level question, not code detail>`
 - Default recommendation:
   - `<recommended option>`
+
+## Formal Review Evidence
+
+- Continuous execution authorization:
+  - `does not replace formal review, Stage Debt Sweep, validation, or closeout gates`
+- Formal code review timing:
+  - `after final runtime/tests changes and before archive/merge`
+- Required visible conclusion:
+  - `<findings ordered by severity / explicit no-findings conclusion with residual risks>`
+- Blocking findings:
+  - `<none / durable blocker locations>`

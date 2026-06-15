@@ -2,6 +2,18 @@
 
 ## V23 Implementation Handoff（2026-06-15）
 
+> Merge 后正式 review 发现未关闭 findings，V23 closeout 已重新阻断，禁止开始 V24：
+> - P1：registry path mismatch 被误判为 `both_missing` 并错误终态化。
+> - P1：损坏 SQLite metadata 抛出 `DatabaseError`，安全结果与 attempt audit 不成立。
+> - P2：Git metadata 非法 UTF-8 未严格 fail closed。
+>
+> 流程修正：连续执行到 merge/push 的授权不替代正式 review。`.harness/review_checklist.md` 和
+> `scripts/check_stage_closeout.ps1` 已增加正式 review 证据门；必须先完成 V23 debt remediation、
+> re-review 与 full verification。
+>
+> 流程沉淀验证：OpenSpec 18/18、stage docs、skill eval structure 与 full verify
+>（283 passed, 1 skipped）通过；stage closeout 按预期因未关闭正式 review/P1 findings 失败。
+
 ```text
 当前基线：main@27a754a
 当前工作分支：main

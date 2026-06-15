@@ -2,6 +2,17 @@
 
 ## V23 当前状态（2026-06-15）
 
+- merge 后正式 code review 发现两个 P1 与一个 P2，V23 closeout 已恢复为阻断状态，禁止开始下一阶段：
+  - P1：registry path mismatch 会被误判为 `both_missing` 并错误终态化。
+  - P1：损坏 SQLite metadata 会抛出 `DatabaseError`，未安全返回且无法保证 attempt audit。
+  - P2：Git metadata 非法 UTF-8 当前使用 replacement decode，未严格 fail closed。
+- 本次流程事故已沉淀到 Agent rules、Harness rules/checklist、stage planning template、repo-local review
+  skill/evals、长期 harness workflow spec 与 `check_stage_closeout.ps1`。连续执行授权今后只减少中间确认，
+  不得替代正式 review；未关闭 P0/P1 将机械阻断 closeout。
+- 流程沉淀验证：`openspec validate --all` 18 passed；stage docs 与 skill eval structure 通过；
+  full verify 为 283 passed, 1 skipped；`check_stage_closeout.ps1` 按预期因未关闭正式 review/P1
+  findings 返回失败。
+
 - 当前基线：`main@27a754a`
 - 当前工作分支：`main`
 - 当前 active OpenSpec change：无

@@ -71,3 +71,10 @@ Review Agent 必须检查：
 - 是否存在无语义 diff，例如只改行尾或无内容变化的文件。
 - 是否更新测试和文档。
 - 是否更新 progress 和 handoff。
+
+## 连续执行授权与正式 Review 门
+
+- 用户对“继续实现到提交 / 归档 / 合并 / 推送”的连续执行授权，只减少阶段级确认次数，不替代任何 review、Stage Debt Sweep、验证或 closeout gate。
+- 正式 code review 必须在最终 runtime / tests 变更之后、archive / merge 之前重新执行，并明确输出 findings，或明确输出“无 findings”及剩余风险。
+- 仅有测试通过、零散自检、任务勾选或口头声称 review 完成，均不构成正式 review 证据。
+- 如果正式 review 在 merge 后发现 P0/P1，必须立即把 finding 记录到 `.harness/review_checklist.md`、`docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`，将 closeout 恢复为阻断状态，并在修复、复核和验证完成前禁止开始下一阶段。

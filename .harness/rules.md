@@ -63,3 +63,10 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - 不把 Roadmap 能力写成已实现。
 - 不提前实现 PermissionPolicy、ApprovalGate、SandboxRunner、Reflection、eval、RAG、Memory 或复杂多 Agent。
 - 不提交缓存文件、虚拟环境、本地环境变量或临时产物。
+
+## 连续执行授权与正式 Review 门
+
+- “一路实现到合并/推送”等连续执行授权只授权动作序列，不授权跳过正式 code review、Stage Debt Sweep、验证或 closeout gate。
+- 正式 code review 必须发生在最终 runtime/tests 变更之后，并在 archive/merge 前给出可见的 findings 或明确的零 findings 结论。
+- 测试通过、零散自检和 checklist 自行勾选不能替代正式 code review 证据。
+- merge 后发现 P0/P1 时，必须恢复 closeout 阻断，持久化 findings，并在修复复核前禁止下一阶段。

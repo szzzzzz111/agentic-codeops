@@ -40,6 +40,28 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host ""
+Write-Host "== formal review evidence gate =="
+$reviewChecklist = Get-Content -LiteralPath ".harness/review_checklist.md" -Raw -Encoding UTF8
+$requiredReviewMarkers = @(
+    "formal_review_evidence_gate",
+    "continuous_authorization_does_not_replace_formal_review",
+    "formal_review_after_final_runtime_tests"
+)
+foreach ($marker in $requiredReviewMarkers) {
+    if ($reviewChecklist -notmatch [regex]::Escape($marker)) {
+        Write-Host "Missing formal review evidence marker: $marker" -ForegroundColor Red
+        exit 1
+    }
+}
+$blockingReviewItems = Select-String -LiteralPath ".harness/review_checklist.md" -Pattern '^- \[ \].*(formal_review|P0_|P1_|P2_|final_review|review_remediation)'
+if ($blockingReviewItems) {
+    Write-Host "Unresolved formal review blockers remain:" -ForegroundColor Red
+    $blockingReviewItems | ForEach-Object { Write-Host "- $($_.Line.Trim())" -ForegroundColor Red }
+    exit 1
+}
+Write-Host "Formal review evidence gate passed."
+
+Write-Host ""
 Write-Host "== git diff --check =="
 git diff --check
 if ($LASTEXITCODE -ne 0) {
