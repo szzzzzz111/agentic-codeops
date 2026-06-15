@@ -8,7 +8,6 @@
 ## 当前允许修改
 
 - V22 post-merge durable docs 与 handoff closeout 文件。
-- V22 post-merge debt remediation：`app/worktrees/reverification.py`、`tests/test_worktree_reverification.py`、`tests/test_chat_api.py`、`scripts/check_stage_docs.ps1`、Harness 与 durable closeout docs。
 
 ## 禁止修改 / 禁止行为
 

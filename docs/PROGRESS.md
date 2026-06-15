@@ -3,7 +3,7 @@
 ## V22 当前状态（2026-06-14）
 
 - 当前基线分支：`main`（V22 archive merge 为 `6da406b`，后续 merge handoff closeout 为 `2843dda`）
-- 当前工作分支：`feature/v22-closeout-debt-remediation`
+- 当前工作分支：`main`
 - 当前 active OpenSpec change：无
 - 当前阶段：V22 Worktree Re-verification 已实现、review、归档、合并并推送；等待下一阶段规划。
 - 已锁定明确命令、现有 `pytest`/`ruff`/`verify` 白名单、`user_id + repo_key` scope、
@@ -46,6 +46,8 @@
   161 passed；`scripts/verify.ps1` 通过，`pytest` 255 passed, 1 skipped；ruff、stage docs
   drift 与 skill eval structure gate 通过；`scripts/check_stage_closeout.ps1` 与 OpenSpec
   17/17 通过。
+- V22 post-merge debt remediation commit `454d145 Fix V22 closeout debt` 已 fast-forward
+  合并并推送到 `main`；本地 remediation feature branch fully merged 且按审计惯例保留。
 
 ### V22 External Plan Review Follow-up（2026-06-14）
 

@@ -5,6 +5,7 @@
 ## V22 Closeout Gate
 
 - [x] V22 post-merge debt remediation 已证明 malformed Git registry output 即使夹带 expected path 仍 fail closed。
+- [x] V22 post-merge debt remediation commit `454d145` 已 fast-forward 合并并推送到 `main`。
 - [x] OpenSpec change tasks 全部完成且 external review 已处理。
 - [x] V22 targeted tests、相关回归、full verify、OpenSpec validation 与 `git diff --check` 通过。
 - [x] Stage Debt Sweep 与 internal final review 已完成并修复有效 findings。

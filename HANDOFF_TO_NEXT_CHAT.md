@@ -4,7 +4,7 @@
 
 ```text
 当前基线分支：main（V22 archive merge 为 6da406b，后续 merge handoff closeout 为 2843dda）
-当前工作分支：feature/v22-closeout-debt-remediation
+当前工作分支：main
 当前 active OpenSpec change：无
 当前阶段：V22 Worktree Re-verification 已实现、review、归档、合并并推送
 ```
@@ -58,6 +58,8 @@ Remediation 验证：新增 RED/GREEN regression 1 passed；V22 targeted 31 pass
 V20/V21/V22/Verification Runner/Persistent Audit/AgentLoop/Chat API 回归 161 passed；
 `scripts/verify.ps1` 通过，`pytest` 255 passed, 1 skipped；ruff、stage docs drift、
 skill eval structure gate、`scripts/check_stage_closeout.ps1` 与 OpenSpec 17/17 均通过。
+Remediation commit `454d145 Fix V22 closeout debt` 已 fast-forward 合并并推送到 `main`；
+本地 `feature/v22-closeout-debt-remediation` fully merged 且按审计惯例保留。
 
 ## V21 Implementation Review Handoff（2026-06-09）
 
