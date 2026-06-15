@@ -27,9 +27,14 @@
 > planning/closeout templates、长期 workflow spec、planning/review/handoff skills/evals 与 closeout marker
 > 已同步；此前仅存在于本地 exclude 的 `openspec-stage-planner` 与 planning reference 已显式纳入 Git；
 > 脚本只能确认结论证据存在，不能替代语义判断。
+>
+> V23 runtime、archive、review remediation、Stage Debt Sweep 与 `Manual Judgment Gates`
+> 流程补强已推送到 `agentic-codeops/main` through `887da54`。本地
+> `feature/v23-worktree-disposal-reconciliation` 与 `feature/v23-review-remediation` fully merged
+> 并按审计惯例保留。
 
 ```text
-V23 runtime/archive merge 基线：ffc691c；后续 remediation 与 handoff closeout commits 已进入本地 main 历史
+V23 runtime/archive merge 基线：ffc691c；后续 remediation 与 handoff closeout commits 已进入 main / remote 历史
 当前工作分支：main
 当前 active OpenSpec change：无
 当前阶段：V23 已实现、review、提交、归档并合并，等待下一阶段规划
