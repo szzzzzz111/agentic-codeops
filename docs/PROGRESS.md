@@ -17,11 +17,13 @@
 - 本次流程事故已沉淀到 Agent rules、Harness rules/checklist、stage planning template、repo-local review
   skill/evals、长期 harness workflow spec 与 `check_stage_closeout.ps1`。连续执行授权今后只减少中间确认，
   不得替代正式 review；未关闭 P0/P1 将机械阻断 closeout。
-- 流程沉淀验证：`openspec validate --all` 18 passed；stage docs 与 skill eval structure 通过；
-  full verify 为 283 passed, 1 skipped；`check_stage_closeout.ps1` 按预期因未关闭正式 review/P1
-  findings 返回失败。
+- 流程沉淀的历史负向 gate 测试确认：`check_stage_closeout.ps1` 在未关闭正式 review/P1
+  findings 时会按预期失败；关闭 findings 后 stage closeout 与 full verify 均通过。
+- 最终独立 review 未发现新增 P0/P1/P2。人工 Stage Debt Sweep 额外识别两项相邻旧路径的
+  非阻塞硬化债并记录到“已知剩余代码债”；脚本通过不替代该人工审查。
 
-- 当前基线：`main@27a754a`
+- V23 runtime/archive merge 基线：`ffc691c`；后续 remediation 与 handoff closeout commits
+  已进入本地 `main` 历史。
 - 当前工作分支：`main`
 - 当前 active OpenSpec change：无
 - 当前状态：runtime、tests、内部 review、archive 与 merge 已完成，等待下一阶段规划。
@@ -620,6 +622,12 @@ LLMGateway 设计备忘：
 
 ## 已知剩余代码债
 
+- `app/worktrees/inspection.py`：V21 流式 hunk count / preview 仍使用直接 `Popen` 并在流消费后
+  无 timeout 等待；恶意或异常 Git 进程可能让只读 inspection 长时间挂起。应在独立 hardening
+  阶段设计可中止的 bounded streaming runner，并保持 preview 限长与脱敏语义。
+- `app/worktrees/manager.py`：V20 create、workspace preflight 与 rollback 的 Git subprocess
+  尚无独立 timeout，capture output 也无读取前硬上限。应在独立 worktree-create hardening
+  阶段统一固定 argv、timeout、bounded output 与失败/rollback 语义。
 - `app/rag/evidence.py`：空 `snippet` 当前会被计为 `included=True` 且预算消耗为 `0`。真实 retriever 通常不会产空 chunk，但后续可改为空 snippet 直接 omitted 或跳过，以让 audit summary 更清晰。
 - `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
 - `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前 symbol/path 查询已要求 lexical anchor，后续如需更细粒度召回策略或审计，应把权重、阈值和 anchor 策略显式参数化。
@@ -632,10 +640,10 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V20 已完成 implementation、archive、merge 与 push；开始下一阶段前先按
+- 当前建议：V23 已完成 implementation、review remediation、archive 与 merge；开始下一阶段前先按
   OpenSpec stage planning 流程重新同步 harness 边界。
-- 近期路线：V21 inspection 与 V22 re-verification 已完成；下一阶段推荐按
-  V23 disposal/reconciliation、V24 verified promotion 补齐 worktree 生命周期闭环。
+- 近期路线：V21 inspection、V22 re-verification 与 V23 disposal/reconciliation 已完成；
+  下一阶段推荐规划 V24 verified promotion。
 - V24 完成后重新评估 Operator Control、Durable Execution、Background Worker、
   subagents、connectors、notifications、heartbeat/cron 和 always-on assistant；
   不要写成当前 runtime 已实现能力，也不要提前锁定公开 API。

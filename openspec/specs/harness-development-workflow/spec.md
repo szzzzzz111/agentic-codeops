@@ -98,12 +98,22 @@ V18 Patch + Verify Loop SHALL 使用现有 `/chat` 入口、明确组合确认�
 
 系统 SHALL require an explicit Stage Debt Sweep before a stage is called implementation-complete, ready to commit, archive-ready, merged, pushed, or ready for the next stage.
 
-The Stage Debt Sweep MUST scan current durable docs, harness docs, active OpenSpec artifacts, long-term specs, changed runtime paths, and adjacent older runtime paths. Discoverable debt MUST be fixed in scope or recorded as a blocker in durable docs. It MUST NOT remain only in chat.
+The Stage Debt Sweep MUST scan current durable docs, harness docs, active OpenSpec artifacts, long-term specs, changed runtime paths, and adjacent older runtime paths. Discoverable debt MUST be fixed in scope or recorded in durable docs with severity, deferral rationale, and intended follow-up. Blocking debt MUST stop closeout or the next stage. Debt MUST NOT remain only in chat.
+
+Deterministic scripts SHALL cover mechanically searchable debt where practical, but passing scripts, tests, or
+checklists MUST NOT be treated as evidence that the manual code/test debt review of changed and adjacent paths
+has completed.
 
 #### Scenario: Stage Debt Sweep evidence is durable
 
 - **WHEN** a stage reaches review or closeout
 - **THEN** `docs/PROGRESS.md`, `HANDOFF_TO_NEXT_CHAT.md`, and `.harness/review_checklist.md` include checkable Stage Debt Sweep evidence or blockers
+
+#### Scenario: Script gates do not replace manual debt review
+
+- **WHEN** deterministic stage checks pass
+- **THEN** the reviewer still manually inspects changed runtime/tests and adjacent older paths
+- **AND** remaining findings are fixed in scope or recorded in durable docs
 
 ### Requirement: Post-Merge Durable Docs Reflect Actual State
 

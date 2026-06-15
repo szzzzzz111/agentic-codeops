@@ -70,3 +70,10 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - 正式 code review 必须发生在最终 runtime/tests 变更之后，并在 archive/merge 前给出可见的 findings 或明确的零 findings 结论。
 - 测试通过、零散自检和 checklist 自行勾选不能替代正式 code review 证据。
 - merge 后发现 P0/P1 时，必须恢复 closeout 阻断，持久化 findings，并在修复复核前禁止下一阶段。
+
+## 人工 Stage Debt Sweep 边界
+
+- Stage Debt Sweep 必须人工复核 changed runtime/tests 与 adjacent older paths。
+- 脚本只负责机械可搜索的漂移、marker、结构和确定性 gate；脚本通过不得解释为人工代码债审查已完成。
+- 人工发现但不在当前 scope 内安全修复的债务，必须写入 `docs/PROGRESS.md` 与
+  `HANDOFF_TO_NEXT_CHAT.md`，并在后续阶段重新评估。

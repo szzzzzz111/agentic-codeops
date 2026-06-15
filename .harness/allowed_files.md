@@ -8,7 +8,10 @@
 
 ## 当前允许修改
 
-- V23 remediation merge durable docs 与 handoff closeout 文件。
+- V23 remediation merge durable docs、handoff closeout 与 review-process hardening 文件。
+- 允许更新 `docs/AGENT_RULES.md`、`.harness/rules.md`、`.harness/review_checklist.md`、
+  `openspec/specs/harness-development-workflow/spec.md`、`docs/PROGRESS.md` 与
+  `HANDOFF_TO_NEXT_CHAT.md`，用于沉淀最终 review / Stage Debt Sweep 结论。
 
 ## 禁止修改 / 禁止行为
 

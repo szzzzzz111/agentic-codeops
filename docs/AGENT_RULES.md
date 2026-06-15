@@ -72,6 +72,14 @@ Review Agent 必须检查：
 - 是否更新测试和文档。
 - 是否更新 progress 和 handoff。
 
+## Stage Debt Sweep 规则
+
+- 每个阶段收口前必须人工复核 changed runtime/tests 以及它依赖的 adjacent older paths，不能只检查新增文件。
+- `scripts/check_stage_docs.ps1`、`scripts/check_stage_closeout.ps1` 等脚本只覆盖机械可搜索、可确定性表达的债务。
+- 脚本、测试和 checklist 通过不能替代人工代码/测试债审查，也不能单独证明 Stage Debt Sweep 完成。
+- 人工发现的债务必须在当前 scope 内修复，或记录到 `docs/PROGRESS.md` 与
+  `HANDOFF_TO_NEXT_CHAT.md`；不得只留在聊天中。
+
 ## 连续执行授权与正式 Review 门
 
 - 用户对“继续实现到提交 / 归档 / 合并 / 推送”的连续执行授权，只减少阶段级确认次数，不替代任何 review、Stage Debt Sweep、验证或 closeout gate。

@@ -1,25 +1,29 @@
 # 交接给下一轮 Chat
 
-## V23 Implementation Handoff（2026-06-15）
+## V23 Closeout Handoff（2026-06-15）
 
 > Merge 后正式 review 发现的两个 P1 与一个 P2 已完成 remediation：
 > - registry path mismatch 通过 scoped Git admin back-reference 精确识别并 fail closed。
 > - 损坏 worktree/patch SQLite metadata 返回安全 `metadata_invalid`，并尝试写入 attempt audit。
 > - Git metadata 非法 UTF-8 使用 strict decode 并 fail closed。
 >
-> 定向测试 34 passed；相邻回归 163 passed；正式 re-review 未发现新增 P0/P1/P2。当前进入
-> remediation closeout；最终 full verification 为 289 passed, 1 skipped，ruff、stage docs 与
+> 定向测试 34 passed；相邻回归 163 passed；正式 re-review 未发现新增 P0/P1/P2。
+> remediation closeout 已完成；最终 full verification 为 289 passed, 1 skipped，ruff、stage docs 与
 > skill eval structure 均通过，正式 review findings 已全部关闭。
 >
 > Remediation commit `8cf5f51 Fix V23 review findings` 已 fast-forward 合并到 `main`；
 > `feature/v23-review-remediation` fully merged 并保留。合并后 stage closeout 与 full verify
 > 再次通过，formal review evidence gate 明确通过。
 >
-> 流程沉淀验证：OpenSpec 18/18、stage docs、skill eval structure 与 full verify
->（283 passed, 1 skipped）通过；stage closeout 按预期因未关闭正式 review/P1 findings 失败。
+> 流程沉淀的历史负向 gate 测试确认 stage closeout 在未关闭正式 review/P1 findings 时按预期失败；
+> findings 关闭后 stage closeout 与 full verify 均通过。
+>
+> 最终独立 review 未发现新增 P0/P1/P2。人工 Stage Debt Sweep 记录两项非阻塞相邻硬化债：
+> V21 inspection 流式 Git 子进程缺少 timeout；V20 create/rollback Git 子进程缺少 timeout 与
+> 读取前硬上限。脚本只覆盖机械可搜索项，不能替代人工代码/测试债审查。
 
 ```text
-当前基线：main@27a754a
+V23 runtime/archive merge 基线：ffc691c；后续 remediation 与 handoff closeout commits 已进入本地 main 历史
 当前工作分支：main
 当前 active OpenSpec change：无
 当前阶段：V23 已实现、review、提交、归档并合并，等待下一阶段规划
@@ -600,7 +604,7 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 
 ## 下一轮建议
 
-1. V20 internal / external review、implementation commit、archive、merge 与 push 均已完成。
+1. V23 implementation、review remediation、archive 与 merge 均已完成；开始 V24 前重新同步 harness 边界。
 2. 下一阶段推荐规划 V24 Verified Patch Promotion；先创建 OpenSpec change，再同步 harness 边界。
 3. 不要把后台执行、真实 subagents、connectors、notifications、heartbeat/cron 或
    always-on assistant 归入 V24 scope。
