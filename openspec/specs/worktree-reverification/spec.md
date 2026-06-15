@@ -3,9 +3,7 @@
 ## Purpose
 
 定义 RepoPilot 对现有 retained worktree 的明确白名单验证重跑边界：仅在当前 `user_id + repo_key` scope 内通过 fail-closed consistency preflight 后，复用现有 Verification Runner 在指定 worktree 中执行，并保持 patch 状态与公开 contract 稳定。
-
 ## Requirements
-
 ### Requirement: Retained Worktree Re-verification Is Explicit And Whitelisted
 
 系统 SHALL accept only explicit `worktree verify <worktree_id> <command_label>` and `重新验证 worktree <worktree_id> <command_label>` requests for retained worktree re-verification.
@@ -85,3 +83,15 @@ Executed answers MUST identify the safe worktree id and command label without ex
 - **WHEN** worktree re-verification executes
 - **THEN** the answer identifies the retained worktree and verification command
 - **AND** it MUST NOT be formatted as an unqualified standalone verification result
+
+### Requirement: Re-verification Uses Hardened Metadata And Rejects Disposal States
+
+系统 SHALL use the shared timeout-aware pre-read-bounded Git metadata runner for re-verification preflight.
+
+`disposal_failed` and `discarded` worktrees MUST be ineligible for re-verification. Metadata timeout, oversize, malformed output, or exception MUST fail closed without retry or verification execution.
+
+#### Scenario: Disposed worktree cannot be re-verified
+
+- **WHEN** a user requests re-verification for a scoped `discarded` worktree
+- **THEN** preflight rejects the request
+- **AND** verification MUST NOT run

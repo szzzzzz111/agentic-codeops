@@ -616,7 +616,7 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "Assistant Control Surface" in combined
     assert "WorktreeManager(scoped create / inventory / inspection / re-verification preflight)" in combined
     assert "ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run)" in combined
-    assert "V10-V22 changes 已归档" in combined
+    assert "V10-V23 changes 已归档" in combined
     assert "当前工作分支为 `main`，active OpenSpec change 为无" not in readme
     assert "已归档至 V18：Patch + Verify Loop" not in combined
     assert "V10：Query Rewrite / Rerank / Context Budget" not in combined

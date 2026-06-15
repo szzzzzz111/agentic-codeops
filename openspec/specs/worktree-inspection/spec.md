@@ -3,9 +3,7 @@
 ## Purpose
 
 定义 RepoPilot 按 `user_id + repo_key` 隔离的只读 worktree inventory / inspection，以及 bounded redacted preview、no-create 和 audit-skip 安全边界。
-
 ## Requirements
-
 ### Requirement: Worktree Inventory Is Scoped And Read-Only
 
 系统 SHALL list at most the latest 20 worktree metadata records for the current `user_id + repo_key` scope, ordered deterministically by creation time and worktree id.
@@ -79,3 +77,15 @@ Read-only Git inspection MUST disable optional Git locks, and read-only SQLite a
 - **WHEN** repo-local worktree metadata contains secrets, state paths, control whitespace, or oversized values
 - **THEN** inventory and inspection return bounded redacted summaries
 - **AND** no raw metadata value enters the public answer or request-local trace summary
+
+### Requirement: Worktree Git Metadata Reads Use A Hardened Shared Runner
+
+系统 SHALL use a shared fixed-argv Git metadata runner for V21 inspection metadata reads. The runner MUST use `shell=False`, `GIT_OPTIONAL_LOCKS=0`, an independent timeout, and an output byte hard limit enforced before reading content.
+
+Timeout, oversize, non-zero exit, malformed output, or exception MUST safely degrade inspection without retry or mutation.
+
+#### Scenario: Oversize metadata safely degrades inspection
+
+- **WHEN** Git metadata output exceeds the hard limit
+- **THEN** inspection reports a safe partial result
+- **AND** it MUST NOT read or expose the oversized content

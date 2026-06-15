@@ -3,9 +3,7 @@
 ## Purpose
 
 定义 RepoPilot 的 V20 Worktree Isolation 边界：系统通过 repo-local 受控 Git worktree 隔离 RepoPilot 产生的 patch apply 与组合 Patch + Verify 执行，使主工作区保持不变，并通过现有 `/chat.answer` 提供只读 worktree 状态查询。
-
 ## Requirements
-
 ### Requirement: Worktree Creation Is Approval-Gated
 
 系统 SHALL provide a `worktree_create` tool that is registered as `read_only=False`, `risk="write"`, and `requires_approval=True`. Worktree creation MUST pass through `ToolRegistry`, `PermissionPolicy`, `ApprovalGate`, and `ToolExecutor`.
@@ -77,3 +75,15 @@ Executed success SHALL use `verification_succeeded`; executed non-success SHALL 
 - **WHEN** a retained worktree fails consistency preflight
 - **THEN** verification does not run
 - **AND** the previous worktree lifecycle and patch state remain unchanged
+
+### Requirement: Retained Worktrees Have Explicit Disposal Terminal States
+
+系统 SHALL use `disposal_failed` to represent a partially completed disposal requiring explicit reconciliation and `discarded` to represent confirmed worktree cleanup terminal state.
+
+Eligible retained worktrees MAY transition to these states only through V23 confirmed disposal/reconciliation. A disposed worktree MUST NOT be treated as eligible for inspection-derived execution, re-verification, patch mutation, or promotion.
+
+#### Scenario: Disposed worktree is terminal
+
+- **WHEN** a worktree reaches `discarded`
+- **THEN** repeated disposal/reconciliation is idempotent
+- **AND** re-verification MUST reject the worktree

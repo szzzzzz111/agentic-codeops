@@ -134,6 +134,7 @@ V20 SHALL isolate RepoPilot-owned patch mutation from the user's main working tr
 - **WHEN** the user sends an explicit standalone verification request
 - **THEN** the system runs verification against the request repo path
 - **AND** it MUST NOT create a worktree first
+
 ### Requirement: V21 Planning And Implementation Remain Separately Confirmed
 
 V21 SHALL complete stage planning, OpenSpec artifacts, harness synchronization, internal plan review, and OpenSpec validation before runtime or test implementation begins.
@@ -155,5 +156,17 @@ The implementation MUST remain limited to retained worktree re-verification and 
 #### Scenario: Planning stops before runtime implementation
 
 - **WHEN** the V22 planning artifacts validate successfully
+- **THEN** the stage stops at the implementation confirmation gate
+- **AND** runtime code and tests remain unchanged until explicit confirmation
+
+### Requirement: V23 Planning And Implementation Remain Separately Confirmed
+
+V23 SHALL complete stage planning, OpenSpec artifacts, harness synchronization, internal plan review, and strict OpenSpec validation before runtime or test implementation begins.
+
+The implementation MUST remain limited to explicit worktree disposal/reconciliation and blocking adjacent metadata/store hardening. It MUST NOT include promotion, patch mutation/reapply, implicit repair, automatic retry, commit, merge, push, arbitrary shell, background tasks, subagents, connectors, or frontend behavior.
+
+#### Scenario: Planning stops before implementation
+
+- **WHEN** V23 planning artifacts pass internal review and validation
 - **THEN** the stage stops at the implementation confirmation gate
 - **AND** runtime code and tests remain unchanged until explicit confirmation

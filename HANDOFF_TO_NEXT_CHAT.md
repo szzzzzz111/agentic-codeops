@@ -5,8 +5,8 @@
 ```text
 当前基线：main@27a754a
 当前工作分支：feature/v23-worktree-disposal-reconciliation
-当前 active OpenSpec change：v23-worktree-disposal-reconciliation
-当前阶段：V23 已实现并完成内部 review，进入 archive / merge closeout
+当前 active OpenSpec change：无
+当前阶段：V23 已实现、review、提交并归档，进入 merge closeout
 ```
 
 V23 已创建 stage planning、proposal、design、tasks 与 spec deltas，并同步 harness
@@ -25,7 +25,9 @@ Strict V23 change validation 通过；V23 与相关 V20-V22/patch-store/AgentLoo
 168 passed；当前未提交工作区 full verify 通过，`pytest` 283 passed, 1 skipped，ruff、stage docs
 drift 与 skill eval structure scan 均通过，`openspec validate --all` 18 passed，`git diff --check`
 通过。内部 review 已修复审计 related-id、terminal gate、scoped update、控制流回归与
-cleanup/store partial-failure 步骤表达；当前进入 archive 与 merge。
+cleanup/store partial-failure 步骤表达。implementation commit 为
+`3991d4a Implement V23 worktree disposal reconciliation`；V23 已归档到
+`openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`，当前进入 merge。
 
 ## V22 Merge Handoff（2026-06-14）
 
@@ -582,11 +584,9 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 ## 下一轮建议
 
 1. V20 internal / external review、implementation commit、archive、merge 与 push 均已完成。
-2. 下一阶段推荐规划 V23 Worktree Disposal / Reconciliation；先创建 OpenSpec change，
-   明确 unlock/remove/discard 的幂等性、registry/目录/metadata 协调与确认边界，再同步
-   harness 边界。
-3. 不要把 promotion、后台执行、真实 subagents、connectors、notifications、
-   heartbeat/cron 或 always-on assistant 归入 V23 scope。
+2. 下一阶段推荐规划 V24 Verified Patch Promotion；先创建 OpenSpec change，再同步 harness 边界。
+3. 不要把后台执行、真实 subagents、connectors、notifications、heartbeat/cron 或
+   always-on assistant 归入 V24 scope。
 
-已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation；V21 Worktree Inventory / Inspection；V22 Worktree Re-verification。近期候选路线为 V23 disposal/reconciliation、V24 verified promotion；V24 后重新评估其余方向。
+已完成路线：V10 Evidence Pack + Context Budget；V11 Grounded Answer / Model Provider Boundary；V12 Query Rewrite + Rerank；V13 Memory；V14 Long Task / ReAct Skeleton；V15 Assistant Control Surface；V16 Safe Patch Authoring；V17 Verification Runner；V18 Patch + Verify Loop；V19 Persistent Audit / Recovery；V20 Worktree Isolation；V21 Worktree Inventory / Inspection；V22 Worktree Re-verification；V23 Worktree Disposal / Reconciliation。近期候选路线为 V24 verified promotion；V24 后重新评估其余方向。
 旧 V8 archive 中保留的是当时路线记录，已被后续 V9/V10 路线重排 supersede；当前长期 docs/specs 以 README、PROGRESS、ARCHITECTURE 和长期 OpenSpec specs 为准。

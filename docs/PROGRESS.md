@@ -4,8 +4,8 @@
 
 - 当前基线：`main@27a754a`
 - 当前工作分支：`feature/v23-worktree-disposal-reconciliation`
-- 当前 active OpenSpec change：`v23-worktree-disposal-reconciliation`
-- 当前状态：runtime、tests 与内部 review 已完成，进入 archive / merge closeout。
+- 当前 active OpenSpec change：无
+- 当前状态：runtime、tests、内部 review 与 archive 已完成，进入 merge closeout。
 - 已创建 stage planning、proposal、design、tasks 与 spec deltas，并同步 harness 与
   `docs/FEATURE_LIST.json`（V23 `passes: true`）。
 - 规划锁定 exact confirmed discard/reconcile、V23-before-V22 routing、受限 reconciliation、
@@ -23,6 +23,9 @@
 - 当前未提交工作区 full verify 通过：`pytest` 283 passed, 1 skipped；`ruff check .`、
   stage docs drift scan 与 skill eval structure scan 均通过；`openspec validate --all`
   18 passed, 0 failed；`git diff --check` 通过。
+- implementation commit：`3991d4a Implement V23 worktree disposal reconciliation`。
+- V23 已归档到
+  `openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`，长期 specs 已同步。
 
 ## V22 当前状态（2026-06-14）
 
@@ -168,7 +171,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> AuditManager -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> WorktreeManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、repo-local Persistent Audit、只读 Assistant Control Surface、Safe Patch Authoring、Worktree Isolation、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；active change 为无；V10-V22 changes 已归档；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；active change 为无；V10-V23 changes 已归档；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 

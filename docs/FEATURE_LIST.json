@@ -218,6 +218,6 @@
       "no promotion, patch mutation/reapply, implicit repair, automatic retry, prune, arbitrary shell, new API, or /chat top-level fields"
     ],
     "passes": true,
-    "notes": "Implemented on feature/v23-worktree-disposal-reconciliation; covered by V23 targeted tests, adjacent V20-V22/patch-store/AgentLoop/API/audit regressions, OpenSpec validation, and Stage Debt Sweep evidence."
+    "notes": "Implemented in 3991d4a and archived at openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/; covered by V23 targeted tests, adjacent regressions, full verify, OpenSpec validation, and Stage Debt Sweep evidence."
   }
 ]
