@@ -34,6 +34,16 @@ Before closing any version/stage:
 4. Record remaining debt in durable docs, at minimum `docs/PROGRESS.md` and `HANDOFF_TO_NEXT_CHAT.md`.
 5. Re-run validation after fixes.
 
+## Manual Judgment Gates
+
+Even when validation passes, manually confirm:
+
+- durable docs express the same semantic state, not merely matching markers
+- stage intent/non-goals and next-stage wording remain accurate
+- archived delta meaning and long-term specs agree
+- actual branch, commit, remote, merge, push, and branch-retention claims are true
+- validation evidence describes the workspace/commit it actually tested
+
 ## Files To Check
 
 - `HANDOFF_TO_NEXT_CHAT.md`

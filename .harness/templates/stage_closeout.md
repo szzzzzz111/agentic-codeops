@@ -32,6 +32,17 @@
 - Remaining debt:
   - `<record durable debt or "none">`
 
+## Manual Judgment Gates
+
+- `manual_judgment_gates_completed`: `<yes / blockers>`
+- Stage intent / scope: `<conclusion>`
+- Safety / architecture: `<conclusion>`
+- Test adequacy: `<conclusion>`
+- Review triage: `<conclusion>`
+- Semantic parity: `<conclusion>`
+- Archive / merge / handoff truth: `<conclusion>`
+- Residual risks / deferred findings: `<durable locations or none>`
+
 ## Archive Closeout
 
 - Active change moved to archive.

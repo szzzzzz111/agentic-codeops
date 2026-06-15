@@ -80,6 +80,22 @@ Review Agent 必须检查：
 - 人工发现的债务必须在当前 scope 内修复，或记录到 `docs/PROGRESS.md` 与
   `HANDOFF_TO_NEXT_CHAT.md`；不得只留在聊天中。
 
+## Manual Judgment Gates
+
+以下判断不能由脚本、测试通过、OpenSpec validation 或 checklist marker 单独替代：
+
+- **Stage intent / scope**：阶段目标、non-goals、路线顺序和用户确认边界是否正确。
+- **Safety / architecture**：安全威胁面、fail-closed 行为、权限/工具边界和架构归属是否正确。
+- **Test adequacy**：测试是否真正证明 requirements、non-goals、错误路径和安全边界，而不只是通过。
+- **Review triage**：正式 review 是否完整；外部 finding 应分类为 `fix / clarify / reject / defer`。
+- **Semantic parity**：README、ARCHITECTURE、PROGRESS、FEATURE_LIST、HANDOFF、Harness 与 specs
+  是否表达同一个真实状态，而不只是包含相同 marker。
+- **Archive / merge / handoff truth**：delta operation、长期 spec 同步、真实分支/remote/commit、
+  branch retention 和下一步表述是否准确。
+
+每个阶段 closeout 必须在 `.harness/review_checklist.md` 留下上述人工判断门的可见结论；
+脚本只能检查证据是否存在，不能证明判断本身正确。
+
 ## 连续执行授权与正式 Review 门
 
 - 用户对“继续实现到提交 / 归档 / 合并 / 推送”的连续执行授权，只减少阶段级确认次数，不替代任何 review、Stage Debt Sweep、验证或 closeout gate。

@@ -77,3 +77,11 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - 脚本只负责机械可搜索的漂移、marker、结构和确定性 gate；脚本通过不得解释为人工代码债审查已完成。
 - 人工发现但不在当前 scope 内安全修复的债务，必须写入 `docs/PROGRESS.md` 与
   `HANDOFF_TO_NEXT_CHAT.md`，并在后续阶段重新评估。
+
+## Manual Judgment Gates
+
+- 每个阶段必须人工判断：stage intent/scope、safety/architecture、test adequacy、review triage、
+  semantic parity、archive/merge/handoff truth。
+- OpenSpec validation、测试、docs scan、closeout script 和 marker 只能提供确定性证据，不能替代上述判断。
+- `.harness/review_checklist.md` 必须记录 `manual_judgment_gates_completed` 及各类结论；存在未解决
+  blocking finding 时不得 closeout 或开始下一阶段。

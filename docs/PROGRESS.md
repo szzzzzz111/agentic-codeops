@@ -21,6 +21,11 @@
   findings 时会按预期失败；关闭 findings 后 stage closeout 与 full verify 均通过。
 - 最终独立 review 未发现新增 P0/P1/P2。人工 Stage Debt Sweep 额外识别两项相邻旧路径的
   非阻塞硬化债并记录到“已知剩余代码债”；脚本通过不替代该人工审查。
+- 流程补强进一步统一为 `Manual Judgment Gates`：stage intent/scope、safety/architecture、
+  test adequacy、review triage、semantic parity、archive/merge/handoff truth 均要求可见人工结论。
+  planning/closeout templates、repo-local planning/review/handoff skills/evals、长期 workflow spec 与
+  closeout evidence marker 已同步；此前仅存在于本地 exclude 的 `openspec-stage-planner` 及其
+  planning reference 已显式纳入 Git；脚本仅验证证据存在，不替代语义判断。
 
 - V23 runtime/archive merge 基线：`ffc691c`；后续 remediation 与 handoff closeout commits
   已进入本地 `main` 历史。

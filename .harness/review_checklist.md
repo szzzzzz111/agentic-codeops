@@ -8,6 +8,7 @@ remediation closeout 与最终独立 Stage Debt Sweep 已完成。
 - Gate marker: `formal_review_evidence_gate`
 - Policy marker: `continuous_authorization_does_not_replace_formal_review`
 - Timing marker: `formal_review_after_final_runtime_tests`
+- Manual judgment marker: `manual_judgment_gates_completed`
 - [x] 连续执行授权不替代正式 review、Stage Debt Sweep、验证或 closeout gate。
 - [x] 正式 code review 必须在最终 runtime/tests 变更之后执行，并明确报告 findings 或无 findings。
 - [x] `manual_stage_debt_sweep_completed`：人工复核 changed runtime 与 adjacent older paths；
@@ -30,6 +31,17 @@ remediation closeout 与最终独立 Stage Debt Sweep 已完成。
 - [x] `review_remediation_closed`：Merge 后 review remediation、stage closeout、full verify 与 durable docs 已完成。
 - [x] 最终独立 review 无新增 P0/P1/P2；V21 inspection 流式 Git 子进程与 V20 create/rollback
   Git 子进程硬化债已记录到 durable docs，留待独立阶段处理。
+
+## Manual Judgment Gates
+
+- [x] Stage intent / scope：V23 保持 disposal/reconciliation 边界，未扩入 promotion 或隐式修复。
+- [x] Safety / architecture：scope、ownership、fail-closed、固定工具链与脱敏边界经正式 review 复核。
+- [x] Test adequacy：requirements、non-goals、错误路径、安全边界与相邻回归均有验证证据。
+- [x] Review triage：内部与外部 findings 已逐项核实、分类、修复或拒绝，并完成 re-review。
+- [x] Semantic parity：durable docs、Harness、长期 specs 与当前无 active stage 状态一致。
+- [x] Archive / merge / handoff truth：V23 archive、main 历史、feature branch retention 与 handoff
+  表述已对照真实 Git 状态复核。
+- [x] 脚本只检查人工判断门证据 marker；上述语义结论由人工 review 承担。
 
 ## 下一阶段 Gate
 

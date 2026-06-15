@@ -79,3 +79,19 @@
   - `<findings ordered by severity / explicit no-findings conclusion with residual risks>`
 - Blocking findings:
   - `<none / durable blocker locations>`
+
+## Manual Judgment Gates
+
+- `manual_judgment_gates_planning_completed`: `<yes / blockers>`
+- Stage intent / scope:
+  - `<goal, non-goals, roadmap order, confirmation boundary>`
+- Safety / architecture:
+  - `<threat model, fail-closed behavior, permission/tool/ownership boundaries>`
+- Test adequacy:
+  - `<why planned tests prove requirements, non-goals, error paths, and safety boundaries>`
+- Review triage:
+  - `<internal plan findings and external feedback classification approach>`
+- Semantic parity:
+  - `<which durable docs/specs must describe the same planned state>`
+- Archive / merge / handoff truth:
+  - `<delta operation, long-term spec, branch/remote/handoff risks to review later>`

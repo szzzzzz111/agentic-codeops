@@ -115,6 +115,26 @@ has completed.
 - **THEN** the reviewer still manually inspects changed runtime/tests and adjacent older paths
 - **AND** remaining findings are fixed in scope or recorded in durable docs
 
+### Requirement: Manual Judgment Gates Remain Human-Reasoned
+
+系统 SHALL require visible manual judgment conclusions before implementation confirmation and before stage
+closeout. The required judgment categories are stage intent/scope, safety/architecture, test adequacy, review
+triage, semantic documentation parity, and archive/merge/handoff truth.
+
+Deterministic validation, tests, scans, and checklist markers MAY prove that evidence exists, but MUST NOT be
+treated as proof that these semantic judgments are correct.
+
+#### Scenario: Planning validation does not prove plan quality
+
+- **WHEN** an OpenSpec change passes validation
+- **THEN** the reviewer still assesses intent, scope, non-goals, safety boundaries, and planned test adequacy
+
+#### Scenario: Closeout scripts do not prove semantic correctness
+
+- **WHEN** tests and closeout scripts pass
+- **THEN** the reviewer still records visible conclusions for all manual judgment categories
+- **AND** unresolved blocking findings stop closeout or the next stage
+
 ### Requirement: Post-Merge Durable Docs Reflect Actual State
 
 系统 SHALL update durable docs after merge/push with the actual main/remote state, commit hash, validation evidence, next stage recommendation, and feature branch cleanup/retention decision.

@@ -28,3 +28,9 @@ Use these as routing and behavior checks after changing the skill.
 - Do not treat a version mention in README snapshot as full parity.
 - Do not write an exact current-HEAD claim inside the uncommitted docs update that will create a newer commit.
 - Do not stop after docs grep; run closeout and full verification after parity/test/checker changes.
+- Passing docs scans and closeout scripts do not prove semantic parity or actual branch/remote/handoff truth.
+
+## Manual Judgment Cases
+
+- Query: `closeout 脚本过了，handoff 肯定没问题。`
+  - Expect: manually compare durable docs with actual Git/archive/remote state before concluding.

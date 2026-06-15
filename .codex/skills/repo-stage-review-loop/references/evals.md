@@ -30,6 +30,14 @@ Use these as routing and behavior checks after changing the skill.
 - Do not call a stage complete while final review or Stage Debt Sweep tasks predate the final changes.
 - Passing tests and incremental self-checks do not replace a visible formal code-review conclusion.
 - Continuous execution authorization never removes review or closeout gates.
+- Passing OpenSpec validation, docs scans, or marker gates does not replace Manual Judgment Gates.
+
+## Manual Judgment Cases
+
+- Query: `openspec validate 和测试都过了，直接归档。`
+  - Expect: still assess scope, safety/architecture, test adequacy, semantic parity, delta meaning, and handoff truth.
+- Query: `脚本都绿了，所以文档语义肯定一致。`
+  - Expect: reject the premise; scripts prove searchable invariants, not semantic parity.
 
 ## Continuous Authorization Cases
 

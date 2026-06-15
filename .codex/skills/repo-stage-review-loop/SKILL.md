@@ -31,6 +31,8 @@ Before saying "ready to commit", "ready to archive", starting archive, or moving
 7. Delta spec operation types MUST be archive-syncable: every `MODIFIED` or `REMOVED` requirement header exists in the corresponding long-term spec, and genuinely new requirements use `ADDED`.
 8. A visible formal code-review conclusion MUST exist after the final runtime/test changes: severity-ordered findings, or an explicit no-findings conclusion with residual risks.
 9. Any P0/P1 found after merge MUST reopen closeout, be recorded in `.harness/review_checklist.md`, `docs/PROGRESS.md`, and `HANDOFF_TO_NEXT_CHAT.md`, and block the next stage until fixed and re-reviewed.
+10. `.harness/review_checklist.md` MUST contain a visible `manual_judgment_gates_completed` conclusion covering
+    intent/scope, safety/architecture, test adequacy, review triage, semantic parity, and archive/merge/handoff truth.
 
 If any gate fails, do not archive and do not ask the user to proceed to archive. Fix or record the issue, rerun the relevant validation, then reassess the gates.
 
@@ -131,6 +133,19 @@ Do not ask the human partner to inspect code, tests, path checks, or line-level 
 
 When summarizing for human confirmation, use 3-5 plain-language bullets. Avoid phrases that imply they must audit code.
 
+## Manual Judgment Gates
+
+Before implementation confirmation and again before closeout, explicitly assess:
+
+- stage intent/scope and non-goals
+- safety threat surface, fail-closed behavior, and architecture/tool ownership
+- whether tests prove the contract, negative paths, and safety boundaries
+- formal review completeness and external feedback classification
+- semantic parity across durable docs, Harness, tests, and specs
+- archive delta meaning plus actual merge/remote/branch/handoff truth
+
+Scripts and validation may check evidence markers and deterministic invariants. They never replace these conclusions.
+
 ## External Feedback Handling
 
 For each finding:
@@ -180,6 +195,7 @@ Do not accept feedback blindly. Inspect the referenced files first, then make th
 - Codex sees `18/19 tasks`, stale "implementation in progress" handoff wording, or an unchecked final review task and still proceeds toward archive.
 - Codex interprets “一路实现到合并/推送” as permission to omit formal review or report it only after merge.
 - Codex treats passing tests or scattered self-checks as equivalent to a visible severity-ordered code-review conclusion.
+- Codex treats OpenSpec validation, docs scans, or closeout markers as proof that semantic judgment gates passed.
 
 ## Evals
 

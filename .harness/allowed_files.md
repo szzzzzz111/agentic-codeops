@@ -12,6 +12,9 @@
 - 允许更新 `docs/AGENT_RULES.md`、`.harness/rules.md`、`.harness/review_checklist.md`、
   `openspec/specs/harness-development-workflow/spec.md`、`docs/PROGRESS.md` 与
   `HANDOFF_TO_NEXT_CHAT.md`，用于沉淀最终 review / Stage Debt Sweep 结论。
+- 允许更新 `.harness/templates/stage_planning.md`、`.harness/templates/stage_closeout.md`、
+  `scripts/check_stage_closeout.ps1` 与相关 repo-local planning/review/handoff skill/evals，用于统一
+  `Manual Judgment Gates`。
 
 ## 禁止修改 / 禁止行为
 

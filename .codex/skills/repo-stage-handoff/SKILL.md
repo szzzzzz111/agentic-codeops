@@ -29,6 +29,8 @@ Handoff docs must describe the state a new session will see, not the state that 
 8. After merge or push, update durable docs again with the actual branch, remote, commit hash, validation evidence, next stage, and branch cleanup/retention decision.
 9. Run validation before claiming the handoff is ready.
 10. After documentation parity fixes, run full verification, not only a docs grep: tests may encode and enforce stale stage wording.
+11. Record the Manual Judgment Gates conclusion: semantic parity and actual archive/merge/remote/branch/handoff
+    truth require manual confirmation even when scripts pass.
 
 ## Stage Debt Sweep
 
@@ -72,6 +74,7 @@ When a stage has been implemented, committed, merged, or archived:
 - Current long-term spec entrypoint is `openspec/specs/`.
 - Old `specs/00x-*` are retired and must not be reintroduced as the current entrypoint.
 - If no active stage exists, `.harness/allowed_files.md` and `.harness/review_checklist.md` should say so and require the next stage to update them first.
+- Passing docs scans and closeout scripts do not prove semantic parity or actual Git/remote/handoff truth.
 
 ## References
 

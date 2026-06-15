@@ -45,7 +45,8 @@ $reviewChecklist = Get-Content -LiteralPath ".harness/review_checklist.md" -Raw 
 $requiredReviewMarkers = @(
     "formal_review_evidence_gate",
     "continuous_authorization_does_not_replace_formal_review",
-    "formal_review_after_final_runtime_tests"
+    "formal_review_after_final_runtime_tests",
+    "manual_judgment_gates_completed"
 )
 foreach ($marker in $requiredReviewMarkers) {
     if ($reviewChecklist -notmatch [regex]::Escape($marker)) {
@@ -53,7 +54,7 @@ foreach ($marker in $requiredReviewMarkers) {
         exit 1
     }
 }
-$blockingReviewItems = Select-String -LiteralPath ".harness/review_checklist.md" -Pattern '^- \[ \].*(formal_review|P0_|P1_|P2_|final_review|review_remediation)'
+$blockingReviewItems = Select-String -LiteralPath ".harness/review_checklist.md" -Pattern '^- \[ \].*(formal_review|manual_judgment|P0_|P1_|P2_|final_review|review_remediation)'
 if ($blockingReviewItems) {
     Write-Host "Unresolved formal review blockers remain:" -ForegroundColor Red
     $blockingReviewItems | ForEach-Object { Write-Host "- $($_.Line.Trim())" -ForegroundColor Red }
