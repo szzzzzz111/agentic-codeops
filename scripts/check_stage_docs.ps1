@@ -43,6 +43,8 @@ $completeV19AsFuture = U "\u5b8c\u6210 V19 Persistent Audit / Recovery"
 $tracePersistenceStillRoadmap = U "trace \u6301\u4e45\u5316\u5ba1\u8ba1"
 $v20ActiveChange = "current active change[：:].*v20-worktree-isolation|active OpenSpec change[：:].*v20-worktree-isolation|V20 Worktree Isolation active implementation"
 $generatedPurpose = "TBD|TODO|created by archiving change"
+$staleV22ArchiveRange = "V10-V21 changes"
+$staleReadmeCurrentBranch = U "\u5f53\u524d\u5de5\u4f5c\u5206\u652f\u4e3a `main`\uff0cactive OpenSpec change \u4e3a\u65e0"
 $currentDefaultRealLlm = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM|\u5df2\u9ed8\u8ba4\u63a5\u5165\u771f\u5b9e LLM"
 $currentDefaultMilvus = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Milvus|\u5df2\u9ed8\u8ba4\u63a5\u5165 Milvus"
 $currentDefaultEs = U "\u5f53\u524d\u9ed8\u8ba4\u63a5\u5165 Elasticsearch|\u5df2\u9ed8\u8ba4\u63a5\u5165 Elasticsearch"
@@ -61,6 +63,10 @@ $rules = @(
     @{
         Pattern = "$archivedThroughV18|$v1ThroughV18ActiveArchived|$v19CurrentlyImplementing|$completeV19AsFuture|$tracePersistenceStillRoadmap|$v20ActiveChange"
         Reason = "V19 has completed, but durable docs still describe V18/V19 or persistent audit as incomplete"
+    },
+    @{
+        Pattern = "$staleV22ArchiveRange|$staleReadmeCurrentBranch"
+        Reason = "V22 closeout docs contain stale archive range or historical current-branch wording"
     },
     @{
         Pattern = $generatedPurpose
@@ -113,6 +119,21 @@ $requiredMatches = @(
         Target = "HANDOFF_TO_NEXT_CHAT.md"
         Pattern = "2026-06-07-v20-worktree-isolation"
         Reason = "handoff must identify the V20 archive path"
+    },
+    @{
+        Target = "README.md"
+        Pattern = "WorktreeManager\(scoped create / inventory / inspection / re-verification preflight\)"
+        Reason = "README current chain must include WorktreeManager"
+    },
+    @{
+        Target = "docs/ARCHITECTURE.md"
+        Pattern = "ToolExecutor\(repo_rag / worktree_create / patch_apply / verification_run\)"
+        Reason = "architecture current chain must include worktree_create"
+    },
+    @{
+        Target = "HANDOFF_TO_NEXT_CHAT.md"
+        Pattern = "ToolExecutor\(repo_rag / worktree_create / patch_apply / verification_run\)"
+        Reason = "handoff current chain must include worktree_create"
     }
 )
 

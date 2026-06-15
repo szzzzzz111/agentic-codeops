@@ -3,8 +3,8 @@
 ## V22 Merge Handoff（2026-06-14）
 
 ```text
-当前基线分支：main at 6da406b Archive V22 worktree re-verification
-当前工作分支：main
+当前基线分支：main（V22 archive merge 为 6da406b，后续 merge handoff closeout 为 2843dda）
+当前工作分支：feature/v22-closeout-debt-remediation
 当前 active OpenSpec change：无
 当前阶段：V22 Worktree Re-verification 已实现、review、归档、合并并推送
 ```
@@ -30,7 +30,8 @@ V22 runtime/tests 已按明确实现确认完成：targeted tests 30 passed，�
 Verification Runner/audit/AgentLoop/API 回归 158 passed，审查收窄修复后相关回归
 115 passed。长期 specs 已同步；`openspec validate --all` 18 passed，默认 full verify
 通过，`pytest` 254 passed, 1 skipped，ruff、stage docs drift 与 skill eval gate 均通过。
-Internal final review 与 Stage Debt Sweep 未发现剩余阻塞项。Implementation commit 为
+Initial internal final review 与 Stage Debt Sweep 当时报告未发现剩余阻塞项；该结论已被下方
+post-merge 独立复核补充。Implementation commit 为
 `30ae5a6 Add V22 worktree re-verification`；change 已归档到
 `openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`。Archive 后 OpenSpec
 17 passed、stage closeout check 与 full verify 通过。V22 已 fast-forward 合并并推送到
@@ -43,6 +44,20 @@ External plan review follow-up 已处理：路由顺序确认满足；新增 lif
 preflight，只允许 `patch_applied`、`verification_failed`、`verification_succeeded`，
 并在 Git inspection 前拒绝其他状态。Specs 已明确可区分 answer、mandatory
 `attempt_kind` / related worktree audit，以及不入 DB 的 `execution_repo_path` 动态重建方式。
+
+Post-merge 独立 Stage Debt Sweep 发现初次“无剩余阻塞项”结论不完整：malformed Git
+registry output 若夹带 expected path，旧 parser 会继续执行 HEAD 检查。当前 remediation
+已改为严格解析完整 porcelain record，unknown/malformed field 立即 fail closed，并新增
+回归证明不运行第二次 Git 或 verification。同时修正 durable docs 的 stale baseline、
+V21 历史 current-branch 措辞、`V10-V22` archive 范围，以及当前主链路遗漏的
+`WorktreeManager` / `worktree_create`。非阻塞相邻硬化债为 V21/V22 Git metadata subprocess
+尚无独立 timeout，且 metadata output 上限在读取/capture 后判定；后续 worktree hardening
+阶段统一处理。
+
+Remediation 验证：新增 RED/GREEN regression 1 passed；V22 targeted 31 passed；相关
+V20/V21/V22/Verification Runner/Persistent Audit/AgentLoop/Chat API 回归 161 passed；
+`scripts/verify.ps1` 通过，`pytest` 255 passed, 1 skipped；ruff、stage docs drift、
+skill eval structure gate、`scripts/check_stage_closeout.ps1` 与 OpenSpec 17/17 均通过。
 
 ## V21 Implementation Review Handoff（2026-06-09）
 
@@ -201,12 +216,13 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
   -> PatchManager(proposal/apply confirmation)
+  -> WorktreeManager(scoped create / inventory / inspection / re-verification preflight)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
   -> AuditManager(persistent redacted audit / read-only recovery)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -480,7 +496,7 @@ V8 不实现 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrit
 - V17 self-review 和外部 review 已覆盖 runtime、tests 和 OpenSpec change set，未发现 P0/P1/P2 问题。
 - V16 已归档到 `openspec/changes/archive/2026-05-31-v16-safe-patch-authoring/`，长期 specs 已同步。
 - V15 已归档到 `openspec/changes/archive/2026-05-31-v15-assistant-control-surface/`，长期 specs 已同步。
-- V1-V19 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景。
+- V1-V22 active changes 均已归档；历史实现摘要保留在本 handoff 后续章节，仅作为阶段背景。
 
 ## V10 实现摘要
 

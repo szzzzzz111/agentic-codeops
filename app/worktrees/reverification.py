@@ -131,11 +131,57 @@ def _registry_paths(repo_root: Path) -> set[str] | None:
     if text is None:
         return None
     paths: set[str] = set()
+    record: list[str] = []
     for token in text.split("\0"):
-        for line in token.splitlines():
-            if line.startswith("worktree "):
-                paths.add(_normalized_path(Path(line[9:])))
+        if not token:
+            continue
+        if "\r" in token or "\n" in token:
+            return None
+        if token.startswith("worktree ") and record:
+            path = _registry_record_path(record)
+            if path is None:
+                return None
+            paths.add(path)
+            record = []
+        record.append(token)
+    if record:
+        path = _registry_record_path(record)
+        if path is None:
+            return None
+        paths.add(path)
     return paths
+
+
+def _registry_record_path(record: list[str]) -> str | None:
+    if len(record) < 2 or not record[0].startswith("worktree "):
+        return None
+    path = record[0][9:]
+    if not path or not record[1].startswith("HEAD "):
+        return None
+    if not _OBJECT_ID_RE.fullmatch(record[1][5:]):
+        return None
+    mode = ""
+    seen_flags: set[str] = set()
+    for field in record[2:]:
+        if field in {"detached", "bare"} or (
+            field.startswith("branch ") and len(field) > len("branch ")
+        ):
+            if mode:
+                return None
+            mode = field
+            continue
+        if field in {"locked", "prunable"} or field.startswith(
+            ("locked ", "prunable ")
+        ):
+            flag = field.split(" ", 1)[0]
+            if flag in seen_flags:
+                return None
+            seen_flags.add(flag)
+            continue
+        return None
+    if not mode:
+        return None
+    return _normalized_path(Path(path))
 
 
 def _bounded_git_text(cwd: Path, *args: str) -> str | None:

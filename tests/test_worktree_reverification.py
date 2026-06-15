@@ -339,6 +339,33 @@ def test_git_preflight_failure_does_not_retry_or_run_verification(
     assert calls == 1
 
 
+def test_malformed_registry_with_expected_path_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _init_repo(tmp_path)
+    created, _, _, _ = _create_applied_worktree(tmp_path)
+    expected = Path(created.execution_repo_path).resolve().as_posix()
+    calls = 0
+
+    def malformed_registry(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return f"worktree {expected}\0HEAD {'a' * 40}\0detached\0malformed-field\0"
+
+    monkeypatch.setattr(
+        "app.worktrees.reverification._bounded_git_text",
+        malformed_registry,
+    )
+    result = AgentLoop(tool_executor=ForbiddenExecutor()).run(
+        _request(tmp_path, f"worktree verify {created.worktree_id} verify")
+    )
+
+    assert "preflight_failed" in result.answer
+    assert result.tool_calls == []
+    assert calls == 1
+
+
 @pytest.mark.parametrize(
     "loop_kwargs",
     [

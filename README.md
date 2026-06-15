@@ -12,7 +12,7 @@ V22 不新增 verification label、lifecycle、公开 API 或 `/chat` 顶层字�
 
 ## V21 Worktree Inventory / Inspection
 
-当前工作分支为 `main`，active OpenSpec change 为无。V21 已实现、review、提交并归档
+V21 已实现、review、提交并归档
 到 `openspec/changes/archive/2026-06-09-v21-worktree-inventory-inspection/`，并已
 fast-forward 合并、推送到 `agentic-codeops/main`。
 
@@ -246,12 +246,13 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
   -> PatchManager(proposal/apply confirmation)
+  -> WorktreeManager(scoped create / inventory / inspection / re-verification preflight)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
   -> AuditManager(persistent redacted audit / read-only recovery)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```

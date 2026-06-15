@@ -2,8 +2,8 @@
 
 ## V22 当前状态（2026-06-14）
 
-- 当前基线分支：`main` at `6da406b Archive V22 worktree re-verification`
-- 当前工作分支：`main`
+- 当前基线分支：`main`（V22 archive merge 为 `6da406b`，后续 merge handoff closeout 为 `2843dda`）
+- 当前工作分支：`feature/v22-closeout-debt-remediation`
 - 当前 active OpenSpec change：无
 - 当前阶段：V22 Worktree Re-verification 已实现、review、归档、合并并推送；等待下一阶段规划。
 - 已锁定明确命令、现有 `pytest`/`ruff`/`verify` 白名单、`user_id + repo_key` scope、
@@ -26,13 +26,26 @@
   修复后 audit/AgentLoop/API 回归 115 passed。
 - 最终 review 进一步修复非法但已识别 re-verification attempt 丢失安全 worktree
   `related_id` 的审计缺口，并统一 archive-sync 所需的 worktree-isolation requirement header。
-- Stage Debt Sweep 已扫描 current docs、harness、active OpenSpec、long-term specs、changed
-  runtime paths 与 adjacent tests；未发现剩余阻塞项。
+- 初次 Stage Debt Sweep 已扫描 current docs、harness、active OpenSpec、long-term specs、changed
+  runtime paths 与 adjacent tests；post-merge 独立复核随后发现并修复 malformed Git registry
+  output 夹带 expected path 时仍继续 HEAD 检查的 fail-closed 缺口，以及 durable docs parity 债。
 - implementation commit：`30ae5a6 Add V22 worktree re-verification`。
 - archive：`openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`；archive 后
   OpenSpec 17 passed、stage closeout check 通过、full verify 254 passed / 1 skipped。
 - V22 已 fast-forward 合并并推送到 `agentic-codeops/main` at `6da406b`；本地
   `feature/v22-worktree-re-verification` fully merged 且暂按审计惯例保留。
+- V22 post-merge debt remediation：严格解析 `git worktree list --porcelain -z` record，
+  malformed/unknown field 即使夹带 expected path 也在 registry preflight 立即 fail closed；
+  同步修正 README/ARCHITECTURE/HANDOFF 当前链路遗漏 `WorktreeManager` / `worktree_create`、
+  README V21 历史段落的 current-branch 措辞、PROGRESS 的 stale archive 范围和 baseline 表述。
+- 非阻塞相邻硬化债：V21/V22 Git metadata subprocess 尚无独立 timeout，且 metadata
+  output 上限在读取/capture 后判定；后续 worktree hardening 阶段应统一处理，不在本次
+  post-merge remediation 中扩展执行模型。
+- V22 post-merge debt remediation 验证：新增 RED/GREEN regression 1 passed；V22 targeted
+  31 passed；V20/V21/V22/Verification Runner/Persistent Audit/AgentLoop/Chat API 相关回归
+  161 passed；`scripts/verify.ps1` 通过，`pytest` 255 passed, 1 skipped；ruff、stage docs
+  drift 与 skill eval structure gate 通过；`scripts/check_stage_closeout.ps1` 与 OpenSpec
+  17/17 通过。
 
 ### V22 External Plan Review Follow-up（2026-06-14）
 
@@ -129,7 +142,7 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - 当前主流程：`/chat` 已通过 `CodeAgent -> AgentLoop -> AuditManager -> MemoryManager -> LongTaskManager -> AssistantControlSurface -> PatchManager -> WorktreeManager -> PatchVerifyLoop -> VerificationRunner -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget -> GroundedAnswerGenerator -> ModelProvider` 使用 repo-local SQLite-backed Memory、repo-local Long Task 状态、repo-local Persistent Audit、只读 Assistant Control Surface、Safe Patch Authoring、Worktree Isolation、Patch + Verify Loop、Verification Runner、只读 hybrid repo RAG、deterministic rewrite/rerank、内部证据预算层和 grounded answer 边界；`/chat` 顶层响应结构保持不变
 - 当前文件工具层：`list_files`、`read_file`、`search_code` 已实现；当前检索链路通过 `ToolExecutor(repo_rag) -> HybridRepoRetriever` 复用安全文件工具读取 repo 文本 chunk，且保留 `LexicalRepoRetriever` 作为一等检索通道
 - Skill 相关状态：V4/V5 已实现 Skill Metadata Loader、Skill Content Loader；skill-aware loop 仅作为历史 draft/偏差记录，不作为当前主线；仍不执行 skill
-- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；active change 为无；V10-V21 changes 已归档；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
+- 当前 OpenSpec 状态：长期规格入口为 `openspec/specs/`；active change 为无；V10-V22 changes 已归档；不安装 Codex 全局 prompts；不保留 `.github` OpenSpec 生成物
 
 ## 流程偏差记录
 

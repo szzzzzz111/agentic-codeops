@@ -67,12 +67,13 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
   -> PatchManager(proposal/apply confirmation)
+  -> WorktreeManager(scoped create / inventory / inspection / re-verification preflight)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
   -> AuditManager(persistent redacted audit / read-only recovery)
   -> QueryUnderstanding/SearchPlan -> QueryRewriteProvider
   -> ToolRegistry -> PermissionPolicy -> ApprovalGate
-  -> ToolExecutor(repo_rag / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
+  -> ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run) -> HybridRepoRetriever -> Reranker -> EvidencePack/ContextBudget
      -> GroundedAnswerGenerator -> ModelProvider
      -> LexicalRepoRetriever + EmbeddingRepoRetriever -> file_tools
 ```
@@ -89,7 +90,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `AuditManager` 负责 V19 repo-local `.repopilot/audit.sqlite3` 持久审计与只读恢复。它记录脱敏 trace、patch attempt、verification result 和 long task event 摘要；recovery/status intent 在 patch/verification 之后、capability-status/repo_search 之前处理，命中后不调用 `repo_rag`，不执行 patch、verification、task resume 或 repo mutation。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
-- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag`、受控写入 `patch_apply` 和受控验证 `verification_run`。
+- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag`、受控 `worktree_create`、受控写入 `patch_apply` 和受控验证 `verification_run`。
 - `LexicalRepoRetriever` 负责 repo-local chunk、lexical scoring、dedup 和 citation。
 - `EmbeddingRepoRetriever` 使用本地确定性 embedding provider 对 repo chunk 做轻量 embedding retrieval。
 - `HybridRepoRetriever` 负责合并 lexical 与 embedding retrieval 结果。
