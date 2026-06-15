@@ -11,6 +11,9 @@
   错误允许 `registry_missing` reconciliation 的相邻 fail-closed 缺口。
 - remediation 最终 full verify 通过：`pytest` 289 passed, 1 skipped；ruff、stage docs drift 与
   skill eval structure 均通过；正式 review findings 已全部关闭。
+- remediation commit `8cf5f51 Fix V23 review findings` 已 fast-forward 合并到 `main`；
+  `feature/v23-review-remediation` fully merged 并按审计惯例保留。合并后 stage closeout 与
+  full verify 再次通过，formal review evidence gate 明确通过。
 - 本次流程事故已沉淀到 Agent rules、Harness rules/checklist、stage planning template、repo-local review
   skill/evals、长期 harness workflow spec 与 `check_stage_closeout.ps1`。连续执行授权今后只减少中间确认，
   不得替代正式 review；未关闭 P0/P1 将机械阻断 closeout。

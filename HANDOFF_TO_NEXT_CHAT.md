@@ -11,6 +11,10 @@
 > remediation closeout；最终 full verification 为 289 passed, 1 skipped，ruff、stage docs 与
 > skill eval structure 均通过，正式 review findings 已全部关闭。
 >
+> Remediation commit `8cf5f51 Fix V23 review findings` 已 fast-forward 合并到 `main`；
+> `feature/v23-review-remediation` fully merged 并保留。合并后 stage closeout 与 full verify
+> 再次通过，formal review evidence gate 明确通过。
+>
 > 流程沉淀验证：OpenSpec 18/18、stage docs、skill eval structure 与 full verify
 >（283 passed, 1 skipped）通过；stage closeout 按预期因未关闭正式 review/P1 findings 失败。
 
