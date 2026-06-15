@@ -1,5 +1,29 @@
 # 项目进度
 
+## V23 当前状态（2026-06-15）
+
+- 当前基线：`main@27a754a`
+- 当前工作分支：`feature/v23-worktree-disposal-reconciliation`
+- 当前 active OpenSpec change：`v23-worktree-disposal-reconciliation`
+- 当前状态：runtime、tests 与内部 review 已完成，进入 archive / merge closeout。
+- 已创建 stage planning、proposal、design、tasks 与 spec deltas，并同步 harness 与
+  `docs/FEATURE_LIST.json`（V23 `passes: true`）。
+- 规划锁定 exact confirmed discard/reconcile、V23-before-V22 routing、受限 reconciliation、
+  lifecycle transition table、strict ordered failure behavior 和 scoped persistent audit。
+- Shared Git metadata runner timeout 与读取前硬上限被列为 blocking；patch store 规划新增 true
+  no-create lookup 与 scoped status update，并保留 legacy `mark_status`。
+- 内部 plan review 补强 exact linked-worktree ownership attestation、destructive action 前的
+  scoped patch existence/status gate、true no-create patch store，以及按实际步骤表达的部分失败终态。
+- Planning validation：strict V23 change validation 通过；`openspec validate --all` 18 passed；
+  `scripts/check_stage_docs.ps1` 与 `git diff --check` 通过。
+- TDD 与相关回归已覆盖 parser、scope、store、Git metadata hardening、normal disposal、
+  reconciliation、idempotency、Harness、audit 与 `/chat` contract；相关回归 168 passed。
+- 内部 review 修复 audit related-id 误分类、非终态 patch terminal gate、scoped worktree
+  update 确认、V22 控制流插入回归，以及 cleanup/store partial-failure 步骤表达；当前无未记录阻断项。
+- 当前未提交工作区 full verify 通过：`pytest` 283 passed, 1 skipped；`ruff check .`、
+  stage docs drift scan 与 skill eval structure scan 均通过；`openspec validate --all`
+  18 passed, 0 failed；`git diff --check` 通过。
+
 ## V22 当前状态（2026-06-14）
 
 - 当前基线分支：`main`（V22 archive merge 为 `6da406b`，后续 merge handoff closeout 为 `2843dda`）

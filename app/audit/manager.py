@@ -149,6 +149,15 @@ def build_event_from_trace(
             related_id=related_id,
             payload=_parse_summary(summary),
         )
+    if event_type == "worktree_disposal_summarized":
+        worktree = _WORKTREE_ID_RE.search(summary)
+        return AuditRecordInput(
+            event_type="worktree_disposal",
+            status=status,
+            summary=summary,
+            related_id="" if worktree is None else worktree.group(0),
+            payload=_parse_summary(summary),
+        )
     if event_type in {
         "verification_summarized",
         "patch_verify_verification_summarized",

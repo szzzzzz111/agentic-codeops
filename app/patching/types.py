@@ -9,6 +9,7 @@ class ToolInvocationContext:
     intent: str = ""
     command_label: str = ""
     patch_id: str = ""
+    worktree_id: str = ""
     confirmed: bool = False
     patch_status: str = ""
     diff_hash_match: bool = False

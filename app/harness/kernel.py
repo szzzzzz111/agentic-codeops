@@ -31,6 +31,7 @@ from app.verification.runner import (
     unsupported_verification_answer,
 )
 from app.worktrees.manager import WorktreeManager
+from app.worktrees.disposal import parse_worktree_disposal_request
 from app.worktrees.inspection import format_public_changed_files, safe_public_value
 from app.worktrees.reverification import parse_worktree_reverification_request
 
@@ -48,6 +49,7 @@ ALLOWED_TOOL_RISK = "low"
 REPO_RAG_TOOL = "repo_rag"
 PATCH_APPLY_TOOL = "patch_apply"
 WORKTREE_CREATE_TOOL = "worktree_create"
+WORKTREE_DISPOSE_TOOL = "worktree_dispose"
 VERIFICATION_RUN_TOOL = "verification_run"
 _ROUTING_STOPWORDS = {
     "hello",
@@ -227,6 +229,13 @@ class ToolRegistry:
                     requires_approval=True,
                 ),
                 ToolSpec(
+                    name=WORKTREE_DISPOSE_TOOL,
+                    description="Dispose or reconcile a confirmed scoped worktree.",
+                    read_only=False,
+                    risk="write",
+                    requires_approval=True,
+                ),
+                ToolSpec(
                     name=VERIFICATION_RUN_TOOL,
                     description="Run a whitelisted repository verification command.",
                     read_only=False,
@@ -257,6 +266,8 @@ class PermissionPolicy:
             return _decide_patch_apply(tool_spec, context)
         if tool_spec.name == WORKTREE_CREATE_TOOL:
             return _decide_worktree_create(tool_spec, context)
+        if tool_spec.name == WORKTREE_DISPOSE_TOOL:
+            return _decide_worktree_dispose(tool_spec, context)
         if tool_spec.name == VERIFICATION_RUN_TOOL:
             return _decide_verification_run(tool_spec, context)
         if not tool_spec.read_only:
@@ -294,6 +305,8 @@ class ApprovalGate:
             return _valid_patch_context(context)
         if decision.tool_name == WORKTREE_CREATE_TOOL and decision.status == "ask":
             return _valid_worktree_context(context)
+        if decision.tool_name == WORKTREE_DISPOSE_TOOL and decision.status == "ask":
+            return _valid_worktree_dispose_context(context)
         if decision.tool_name == VERIFICATION_RUN_TOOL and decision.status == "ask":
             return _valid_verification_context(context)
         return decision.status == "allow"
@@ -374,6 +387,34 @@ def _decide_worktree_create(
         tool_name=tool_spec.name,
         status="ask",
         reason="approval_required",
+    )
+
+
+def _decide_worktree_dispose(
+    tool_spec: ToolSpec,
+    context: ToolInvocationContext | None,
+) -> PermissionDecision:
+    if not _valid_worktree_dispose_context(context):
+        return PermissionDecision(
+            tool_name=tool_spec.name,
+            status="deny",
+            reason="worktree_disposal_context_invalid",
+        )
+    return PermissionDecision(
+        tool_name=tool_spec.name,
+        status="ask",
+        reason="approval_required",
+    )
+
+
+def _valid_worktree_dispose_context(context: ToolInvocationContext | None) -> bool:
+    return bool(
+        context is not None
+        and context.tool_name == WORKTREE_DISPOSE_TOOL
+        and context.intent in {"worktree_discard", "worktree_reconcile"}
+        and context.confirmed
+        and context.scope_valid
+        and re.fullmatch(r"wt_[A-Za-z0-9_]+", context.worktree_id)
     )
 
 
@@ -551,6 +592,17 @@ class AgentLoop:
         worktree_id = _worktree_status_id(request.message)
         if worktree_id:
             return self._run_worktree_inspection(request, worktree_id)
+
+        disposal = parse_worktree_disposal_request(request.message)
+        if disposal.handled:
+            return self._run_worktree_disposal(
+                request=request,
+                worktree_id=disposal.worktree_id,
+                attempt_kind=disposal.attempt_kind,
+                confirmed=disposal.confirmed,
+                rejected=disposal.rejected,
+                reason=disposal.reason,
+            )
 
         reverification = parse_worktree_reverification_request(request.message)
         if reverification.handled:
@@ -1699,6 +1751,7 @@ class AgentLoop:
             user_id=request.user_id,
             worktree_id=worktree_id,
         )
+
         if not preflight.accepted or not preflight.execution_repo_path:
             summary = (
                 f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
@@ -1814,6 +1867,151 @@ class AgentLoop:
                     status="ok" if succeeded else "error",
                     summary=summary,
                 ),
+            ],
+        )
+
+    def _run_worktree_disposal(
+        self,
+        *,
+        request: AgentLoopRequest,
+        worktree_id: str,
+        attempt_kind: str,
+        confirmed: bool,
+        rejected: bool,
+        reason: str,
+    ) -> AgentLoopResult:
+        safe_id = safe_public_value(worktree_id or "unknown")
+        if rejected or not confirmed or not worktree_id or not attempt_kind:
+            return self._worktree_disposal_result(
+                worktree_id=safe_id,
+                attempt_kind=attempt_kind or "unknown",
+                status="error",
+                reason=reason or "invalid_request",
+                confirmation=False,
+            )
+        preflight = self.worktree_manager.prepare_disposal(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            worktree_id=worktree_id,
+            attempt_kind=attempt_kind,
+        )
+        if not preflight.accepted:
+            return self._worktree_disposal_result(
+                worktree_id=safe_id,
+                attempt_kind=attempt_kind,
+                status="error",
+                reason=preflight.reason,
+                preflight=preflight.classification or "failed",
+            )
+        context = ToolInvocationContext(
+            tool_name=WORKTREE_DISPOSE_TOOL,
+            user_id=request.user_id,
+            repo_key=preflight.repo_key,
+            intent=f"worktree_{attempt_kind}",
+            worktree_id=worktree_id,
+            confirmed=True,
+            scope_valid=True,
+        )
+        decision = self.permission_policy.decide(
+            self.tool_registry.get(WORKTREE_DISPOSE_TOOL),
+            tool_name=WORKTREE_DISPOSE_TOOL,
+            context=context,
+        )
+        if decision.status == "deny" or not self.approval_gate.evaluate(
+            decision,
+            context=context,
+        ):
+            return self._worktree_disposal_result(
+                worktree_id=safe_id,
+                attempt_kind=attempt_kind,
+                status="error",
+                reason=decision.reason,
+                preflight=preflight.classification,
+            )
+        try:
+            tool_result = self.tool_executor.worktree_dispose(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+                worktree_id=worktree_id,
+                attempt_kind=attempt_kind,
+            )
+        except Exception:
+            return self._worktree_disposal_result(
+                worktree_id=safe_id,
+                attempt_kind=attempt_kind,
+                status="error",
+                reason="runner_error",
+                preflight=preflight.classification,
+                execution_attempted=True,
+            )
+        result = tool_result.worktree_disposal_result
+        if result is None:
+            return self._worktree_disposal_result(
+                worktree_id=safe_id,
+                attempt_kind=attempt_kind,
+                status="error",
+                reason="runner_error",
+                preflight=preflight.classification,
+                execution_attempted=True,
+            )
+        answer = self._worktree_disposal_result(
+            worktree_id=safe_id,
+            attempt_kind=attempt_kind,
+            status="ok" if result.succeeded else "error",
+            reason=result.reason,
+            preflight=result.preflight_classification,
+            execution_attempted=True,
+            completed_step=result.completed_step,
+            failed_step=result.failed_step,
+            worktree_status=result.worktree_status,
+            patch_status=result.patch_status,
+        )
+        return AgentLoopResult(
+            answer=answer.answer,
+            related_files=[],
+            tool_calls=[tool_result.call_summary()],
+            trace_events_internal=answer.trace_events_internal,
+        )
+
+    def _worktree_disposal_result(
+        self,
+        *,
+        worktree_id: str,
+        attempt_kind: str,
+        status: str,
+        reason: str,
+        preflight: str = "failed",
+        execution_attempted: bool = False,
+        completed_step: str = "",
+        failed_step: str = "",
+        worktree_status: str = "",
+        patch_status: str = "",
+        confirmation: bool = True,
+    ) -> AgentLoopResult:
+        summary = (
+            f"attempt_kind={safe_public_value(attempt_kind)}; worktree_id={worktree_id}; "
+            f"confirmation={str(confirmation).lower()}; preflight={safe_public_value(preflight)}; "
+            f"execution_attempted={str(execution_attempted).lower()}; "
+            f"completed_step={safe_public_value(completed_step or 'none')}; "
+            f"failed_step={safe_public_value(failed_step or 'none')}; "
+            f"worktree_status={safe_public_value(worktree_status or 'unchanged')}; "
+            f"patch_status={safe_public_value(patch_status or 'unchanged')}; "
+            f"reason={safe_public_value(reason)}"
+        )
+        return AgentLoopResult(
+            answer=(
+                f"worktree disposal {'succeeded' if status == 'ok' else 'failed'}: "
+                f"worktree_id={worktree_id}; kind={safe_public_value(attempt_kind)}; "
+                f"reason={safe_public_value(reason)}"
+            ),
+            related_files=[],
+            trace_events_internal=[
+                TraceEvent(
+                    event_type="worktree_disposal_summarized",
+                    tool_name=WORKTREE_DISPOSE_TOOL if execution_attempted else None,
+                    status=status,
+                    summary=summary,
+                )
             ],
         )
 

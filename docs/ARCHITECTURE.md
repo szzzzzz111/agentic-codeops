@@ -1,5 +1,16 @@
 # 架构说明
 
+## V23 Worktree Disposal / Reconciliation
+
+V23 当前实现链路为
+`AgentLoop -> scoped disposal/reconciliation preflight -> ToolRegistry -> PermissionPolicy ->
+ApprovalGate -> ToolExecutor.worktree_dispose -> lifecycle/audit summary`。
+
+V23 route 位于 inventory/inspection 之后、V22 re-verification 之前；共享 Git metadata
+runner 的独立 timeout 与读取前硬上限属于 destructive disposal 开放前的 blocking 工作。V23
+只允许明确 confirmed disposal 与安全残缺集 reconciliation，不执行 promotion、隐式修复、自动重试
+或 `git worktree prune`。
+
 ## V22 Worktree Re-verification 架构补充
 
 V22 当前链路为
@@ -243,7 +254,7 @@ V20 后的近期后端路线按 worktree 生命周期风险递增拆分，避免
    `verification_rerun_*` 状态。
 3. V23 Worktree Disposal / Reconciliation 处理明确确认后的幂等
    unlock/remove/discard，并协调 Git registry、目录和 metadata 不一致。discard 后
-   worktree 转为 `discarded`，patch 转为 `discarded_in_worktree`，不得回退为
+   worktree 转为 `discarded`，patch 转为 `discarded`，不得回退为
    `pending` 或自动重新 apply。
 4. V24 Verified Patch Promotion 仅允许 `verification_succeeded` worktree。promotion
    前必须确认主工作区干净、`HEAD == base_commit`、不存在目标文件之外的额外修改，

@@ -5,6 +5,7 @@ import re
 import subprocess
 
 from app.tools import file_tools
+from app.worktrees.git_metadata import run_git_metadata
 from app.worktrees.store import WorktreeRecord
 
 
@@ -354,15 +355,7 @@ def _bounded_git_text(cwd: Path, *args: str) -> str | None:
 
 
 def _bounded_git_bytes(cwd: Path, *args: str) -> bytes | None:
-    process = _popen_git(cwd, *args)
-    assert process.stdout is not None
-    output = process.stdout.read(MAX_METADATA_BYTES + 1)
-    exceeded = len(output) > MAX_METADATA_BYTES
-    _drain_stream(process.stdout)
-    return_code = process.wait()
-    if exceeded or return_code != 0:
-        return None
-    return output
+    return run_git_metadata(cwd, *args, max_bytes=MAX_METADATA_BYTES)
 
 
 def _popen_git(cwd: Path, *args: str) -> subprocess.Popen[bytes]:

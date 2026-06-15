@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-import os
 from pathlib import Path, PureWindowsPath
 import re
-import subprocess
 
 from app.verification.runner import parse_verification_label
+from app.worktrees.git_metadata import git_metadata_text
 from app.worktrees.store import (
     WORKTREE_STATUS_PATCH_APPLIED,
     WORKTREE_STATUS_VERIFICATION_FAILED,
@@ -185,23 +184,7 @@ def _registry_record_path(record: list[str]) -> str | None:
 
 
 def _bounded_git_text(cwd: Path, *args: str) -> str | None:
-    env = os.environ.copy()
-    env["GIT_OPTIONAL_LOCKS"] = "0"
-    try:
-        result = subprocess.run(
-            ["git", *args],
-            cwd=cwd,
-            env=env,
-            capture_output=True,
-            text=False,
-            shell=False,
-            check=False,
-        )
-    except OSError:
-        return None
-    if result.returncode != 0 or len(result.stdout) > _MAX_GIT_OUTPUT_BYTES:
-        return None
-    return result.stdout.decode("utf-8", errors="replace")
+    return git_metadata_text(cwd, *args)
 
 
 def _rejected(

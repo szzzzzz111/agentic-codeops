@@ -17,6 +17,7 @@ from app.patching.apply import PatchApplyResult, apply_unified_diff
 from app.tools.file_tools import search_code
 from app.verification.runner import run_whitelisted_verification
 from app.worktrees.manager import WorktreeCreateResult, WorktreeManager
+from app.worktrees.disposal import WorktreeDisposalResult
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class ToolExecutionResult:
     evidence_pack: EvidencePack | None = None
     patch_apply_result: PatchApplyResult | None = None
     worktree_create_result: WorktreeCreateResult | None = None
+    worktree_disposal_result: WorktreeDisposalResult | None = None
 
     def call_summary(self) -> dict[str, str]:
         summary = {
@@ -227,6 +229,34 @@ class ToolExecutor:
             worktree_create_result=result,
         )
 
+    def worktree_dispose(
+        self,
+        repo_path: str,
+        user_id: str,
+        worktree_id: str,
+        attempt_kind: str,
+    ) -> ToolExecutionResult:
+        result = self.worktree_manager.dispose(
+            repo_path=repo_path,
+            user_id=user_id,
+            worktree_id=worktree_id,
+            attempt_kind=attempt_kind,
+        )
+        return ToolExecutionResult(
+            tool_name="worktree_dispose",
+            parameters={
+                "worktree_id": result.worktree_id,
+                "attempt_kind": result.attempt_kind,
+                "completed_step": result.completed_step or "none",
+            },
+            error=None if result.succeeded else result.reason,
+            audit_summary={
+                "preflight_classification": result.preflight_classification,
+                "completed_step": result.completed_step,
+                "failed_step": result.failed_step,
+            },
+            worktree_disposal_result=result,
+        )
     def verification_run(self, repo_path: str, command_label: str) -> ToolExecutionResult:
         result = run_whitelisted_verification(repo_path, command_label)
         parameters = {

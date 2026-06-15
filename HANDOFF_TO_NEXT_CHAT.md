@@ -1,5 +1,32 @@
 # 交接给下一轮 Chat
 
+## V23 Implementation Handoff（2026-06-15）
+
+```text
+当前基线：main@27a754a
+当前工作分支：feature/v23-worktree-disposal-reconciliation
+当前 active OpenSpec change：v23-worktree-disposal-reconciliation
+当前阶段：V23 已实现并完成内部 review，进入 archive / merge closeout
+```
+
+V23 已创建 stage planning、proposal、design、tasks 与 spec deltas，并同步 harness
+边界与 feature list。规划锁定四种 exact confirmed disposal/reconciliation 命令，V23 route 位于
+inventory/inspection 后、V22 re-verification 前；讨论文本与缺少 confirmation 的请求不会执行或
+落入其他路由。
+
+Shared Git metadata runner 的独立 timeout 与读取前硬上限已作为 V23 blocking 工作实现。Reconciliation
+只允许安全残缺收尾；path/HEAD/metadata/scope/ownership 不可信时永久 fail closed，禁止
+`git worktree prune`、隐式修复和自动重试。Patch store 已新增 true no-create lookup 与 scoped
+status update，同时保留 legacy `mark_status`。
+
+内部 plan review 已补强 exact linked-worktree ownership attestation、destructive action 前的
+scoped patch existence/status gate、true no-create patch store，以及按实际步骤表达的部分失败终态。
+Strict V23 change validation 通过；V23 与相关 V20-V22/patch-store/AgentLoop/API/audit 回归
+168 passed；当前未提交工作区 full verify 通过，`pytest` 283 passed, 1 skipped，ruff、stage docs
+drift 与 skill eval structure scan 均通过，`openspec validate --all` 18 passed，`git diff --check`
+通过。内部 review 已修复审计 related-id、terminal gate、scoped update、控制流回归与
+cleanup/store partial-failure 步骤表达；当前进入 archive 与 merge。
+
 ## V22 Merge Handoff（2026-06-14）
 
 ```text

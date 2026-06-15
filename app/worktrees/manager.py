@@ -7,6 +7,12 @@ import subprocess
 from uuid import uuid4
 
 from app.worktrees.inspection import WorktreeInspectionResult, inspect_worktree
+from app.worktrees.disposal import (
+    WorktreeDisposalPreflight,
+    WorktreeDisposalResult,
+    dispose_worktree,
+    preflight_worktree_disposal,
+)
 from app.worktrees.reverification import (
     WorktreeReverificationPreflight,
     preflight_worktree_reverification,
@@ -41,6 +47,36 @@ class WorktreeInventoryResult:
 
 
 class WorktreeManager:
+    def prepare_disposal(
+        self,
+        *,
+        repo_path: str,
+        user_id: str,
+        worktree_id: str,
+        attempt_kind: str,
+    ) -> WorktreeDisposalPreflight:
+        return preflight_worktree_disposal(
+            repo_path=repo_path,
+            user_id=user_id,
+            worktree_id=worktree_id,
+            attempt_kind=attempt_kind,
+        )
+
+    def dispose(
+        self,
+        *,
+        repo_path: str,
+        user_id: str,
+        worktree_id: str,
+        attempt_kind: str,
+    ) -> WorktreeDisposalResult:
+        return dispose_worktree(
+            repo_path=repo_path,
+            user_id=user_id,
+            worktree_id=worktree_id,
+            attempt_kind=attempt_kind,
+        )
+
     def create(
         self,
         *,

@@ -15,6 +15,7 @@ PATCH_STATUS_APPLIED = "applied"
 PATCH_STATUS_APPLIED_IN_WORKTREE = "applied_in_worktree"
 PATCH_STATUS_FAILED = "failed"
 PATCH_STATUS_EXPIRED = "expired"
+PATCH_STATUS_DISCARDED = "discarded"
 DEFAULT_TTL_HOURS = 24
 
 
@@ -34,9 +35,10 @@ class PendingPatch:
 
 
 class SQLitePatchStore:
-    def __init__(self, db_path: Path) -> None:
+    def __init__(self, db_path: Path, *, initialize: bool = True) -> None:
         self.db_path = db_path
-        self._ensure_schema()
+        if initialize:
+            self._ensure_schema()
 
     @classmethod
     def for_repo(cls, repo_path: str | Path) -> "SQLitePatchStore":
@@ -44,6 +46,17 @@ class SQLitePatchStore:
         patch_dir = root / PATCH_DIR
         patch_dir.mkdir(parents=True, exist_ok=True)
         return cls(patch_dir / PATCH_DB)
+
+    @classmethod
+    def for_existing_repo(
+        cls,
+        repo_path: str | Path,
+    ) -> tuple["SQLitePatchStore", str] | None:
+        root = Path(repo_path)
+        db_path = root / PATCH_DIR / PATCH_DB
+        if not db_path.exists():
+            return None
+        return cls(db_path, initialize=False), compute_repo_key(root)
 
     def create_pending_patch(
         self,
@@ -113,6 +126,24 @@ class SQLitePatchStore:
                 "UPDATE patches SET status = ?, updated_at = ? WHERE patch_id = ?",
                 (status, _dump_dt(_utc_now()), patch_id),
             )
+
+    def mark_status_scoped(
+        self,
+        patch_id: str,
+        *,
+        user_id: str,
+        repo_key: str,
+        status: str,
+    ) -> bool:
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE patches SET status = ?, updated_at = ?
+                WHERE patch_id = ? AND user_id = ? AND repo_key = ?
+                """,
+                (status, _dump_dt(_utc_now()), patch_id, user_id, repo_key),
+            )
+        return cursor.rowcount == 1
 
     def _ensure_schema(self) -> None:
         with self._connect() as conn:

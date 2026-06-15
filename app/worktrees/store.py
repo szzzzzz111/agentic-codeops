@@ -15,6 +15,8 @@ WORKTREE_STATUS_PATCH_APPLIED = "patch_applied"
 WORKTREE_STATUS_PATCH_FAILED = "patch_failed"
 WORKTREE_STATUS_VERIFICATION_SUCCEEDED = "verification_succeeded"
 WORKTREE_STATUS_VERIFICATION_FAILED = "verification_failed"
+WORKTREE_STATUS_DISPOSAL_FAILED = "disposal_failed"
+WORKTREE_STATUS_DISCARDED = "discarded"
 
 
 @dataclass(frozen=True)
@@ -109,12 +111,12 @@ class SQLiteWorktreeStore:
         verification_label: str | None = None,
         verification_status: str | None = None,
         changed_files: list[str] | None = None,
-    ) -> None:
+    ) -> bool:
         existing = self.get_worktree(worktree_id, user_id=user_id, repo_key=repo_key)
         if existing is None:
-            return
+            return False
         with self._connect() as conn:
-            conn.execute(
+            cursor = conn.execute(
                 """
                 UPDATE worktrees
                 SET status = ?,
@@ -142,6 +144,7 @@ class SQLiteWorktreeStore:
                     repo_key,
                 ),
             )
+        return cursor.rowcount == 1
 
     def get_worktree(
         self,
