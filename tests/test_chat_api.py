@@ -295,6 +295,31 @@ def test_chat_endpoint_patch_capability_status_reports_current_truth(
     assert body["tool_calls"] == []
 
 
+def test_chat_endpoint_v11_v12_capability_status_reports_current_truth(
+    tmp_path: Path,
+) -> None:
+    response = client.post(
+        "/chat",
+        json=valid_payload(
+            tmp_path,
+            "Does RepoPilot support grounded answer or model provider?",
+        ),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "V11 提供 Grounded Answer 和 Model Provider Boundary" in body["answer"]
+    assert "V12 提供 deterministic query rewrite 和 rerank" in body["answer"]
+    assert "V13 提供 SQLite-backed Memory（PREF/LTM 和进程内 STM）" in body["answer"]
+    assert "当前未实现 query rewrite、rerank、memory" not in body["answer"]
+    assert "真实 LLM rewrite/rerank" in body["answer"]
+    assert "向量 memory" in body["answer"]
+    assert "context compression" in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+
+
 def test_chat_endpoint_patch_proposal_keeps_contract_and_does_not_write(
     tmp_path: Path,
 ) -> None:
