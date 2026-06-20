@@ -21,8 +21,8 @@
 - Focused external review 已由 OpenCode 免费 DeepSeek reviewer 只读执行，结论为
   `No in-scope findings`。其关于 archive 后 HANDOFF marker 的 residual concern 已判为
   `reject`：checker 要求的是稳定字段名，归档后可写 `Active OpenSpec change: none`。
-- Implementation、internal/external review、Stage Debt Sweep、验证与 archive gate 均已完成；
-  当前等待 Git closeout。
+- Implementation、internal/external review、Stage Debt Sweep、验证、archive 与 `main` integration
+  均已完成；精确 remote 同步状态以 Git 查询为准。
 
 ## 开发工作流收束（2026-06-20）
 

@@ -2,9 +2,8 @@
 
 ## 当前状态
 
-- 当前分支：`codex/fix-capability-provider-truth`。
+- 当前基线：`main`。
 - Active OpenSpec change：`none`。
-- 本轮不开发 V24；只修 capability-status 与 Patch Authoring provider 事实漂移。
 - 精确 Git/OpenSpec 状态先运行：
 
 ```powershell
@@ -15,25 +14,20 @@ openspec list
 
 ## 已完成
 
-- OpenSpec proposal/design/spec/tasks 与 Harness 边界已同步，strict validation 通过。
-- RED/GREEN 与 provider 装配 characterization 已完成：定向测试 3 passed。
-- patch capability-status 已承认 V19 Persistent Audit 与 V20-V23 worktree lifecycle。
-- README、ARCHITECTURE 和长期 specs 已明确默认应用未装配真实 patch provider。
-- Full verify：291 passed、1 skipped；ruff、stage docs、skill checks 与 OpenSpec all strict 均通过。
-- Formal internal review 与 Stage Debt Sweep 已完成；发现的 V11/V12 同类历史状态漂移已记录到
-  `docs/PROGRESS.md`，不在本 change 扩 scope。
-- Focused external review 已由 OpenCode 免费 DeepSeek reviewer 完成，结论
-  `No in-scope findings`；有效 finding 为零。
-- OpenSpec change 已归档至
+- Capability / Provider Truth Fix 已完成 internal/external review、Stage Debt Sweep、归档并合并。
+- Patch capability-status 已反映 V16-V23 当前事实；默认应用仍未装配真实 patch provider。
+- 合并态 full verify：291 passed、1 skipped；ruff、stage docs、skill checks 通过。
+- OpenSpec all strict：18 passed；当前无 active change。
+- 归档位于
   `openspec/changes/archive/2026-06-20-fix-capability-provider-truth/`。
 
 ## 当前阻塞
 
-- 无实现阻塞。
-- Commit/merge/push 尚未完成。
+- 无阻塞。
+- 已知后续债务：V11/V12 capability-status 仍保留已被 V12/V13 推翻的历史 non-goal，详见
+  `docs/PROGRESS.md`。
 
 ## 下一步
 
-1. 对归档后的最终状态复验。
-2. 提交当前分支。
-3. 获得用户授权后 merge/push。
+1. 若修复 V11/V12 状态漂移，创建独立小型 OpenSpec change。
+2. 若暂不继续代码 hardening，回到 Portfolio Readiness 的演示与面试准备。
