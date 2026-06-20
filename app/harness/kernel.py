@@ -77,12 +77,16 @@ CAPABILITY_STATUS_KEYWORD = "capability_status"
 V11_CAPABILITY_STATUS_ANSWER = (
     "V11 提供 Grounded Answer 和 Model Provider Boundary；"
     "默认 fake provider 保持离线可验证，显式配置后可使用 OpenAI-compatible provider；"
-    "当前未实现 query rewrite、rerank、memory 或 context compression。"
+    "V12 提供 deterministic query rewrite 和 rerank；"
+    "V13 提供 SQLite-backed Memory（PREF/LTM 和进程内 STM）；"
+    "当前仍未实现真实 LLM rewrite/rerank、向量 memory、自动 memory 总结、"
+    "跨 repo 智能召回或 context compression。"
 )
 V12_CAPABILITY_STATUS_ANSWER = (
     "V12 提供 deterministic query rewrite 和 rerank；"
-    "默认不启用真实 LLM rewrite/rerank；"
-    "当前未实现 memory 或 context compression。"
+    "V13 已实现 Memory；"
+    "当前仍未实现真实 LLM rewrite/rerank、向量 memory、自动 memory 总结、"
+    "跨 repo 智能召回或 context compression。"
 )
 V13_CAPABILITY_STATUS_ANSWER = (
     "V13 提供 SQLite-backed PREF/LTM 和进程内 STM；"

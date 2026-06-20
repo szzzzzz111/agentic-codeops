@@ -1,5 +1,23 @@
 # 项目进度
 
+## V11/V12 Capability Truth Fix（2026-06-20）
+
+- Change `fix-v11-v12-capability-truth` 已于 2026-06-20 归档至
+  `openspec/changes/archive/2026-06-20-fix-v11-v12-capability-truth/`；当前无 active change。
+- V11 capability-status 现承认 V12 deterministic query rewrite/rerank 与 V13 Memory 已实现；
+  V12 capability-status 不再声称 Memory 未实现。
+- 回答继续明确真实 LLM rewrite/rerank、向量 memory、自动 memory 总结、跨 repo 智能召回和
+  context compression 尚未实现。
+- 变更只涉及两个静态回答常量、Kernel/API tests 与统一 capability-status spec；不修改路由、
+  执行链、存储、API contract 或 README/ARCHITECTURE 的历史阶段边界。
+- TDD RED 为 4 failed，最终 focused GREEN 为 4 passed；full verification 为 292 passed、
+  1 skipped，ruff、stage docs 与 skill checks 通过；OpenSpec all strict 为 19 passed。
+- Internal review 修复 API 测试命中错误 capability 分支的问题。OpenCode 免费 DeepSeek
+  external review 发现 standalone V12 缺少覆盖，以及 V11 仅用 PREF/LTM/STM 隐式表达 Memory；
+  两项均已修复，re-review 确认无剩余 in-scope finding。
+- Focused Stage Debt Sweep 覆盖 V11/V12/V13 constants、capability router、Kernel/API tests、
+  统一 spec、历史 README/ARCHITECTURE 与 allowed files；无新增债务。当前等待 Git closeout。
+
 ## Capability / Provider Truth Fix（2026-06-20）
 
 - Change `fix-capability-provider-truth` 已于 2026-06-20 归档至

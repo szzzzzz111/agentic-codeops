@@ -1687,7 +1687,12 @@ def test_agent_loop_answers_english_capability_status_without_repo_search(
     )
 
     assert "V11 提供 Grounded Answer 和 Model Provider Boundary" in result.answer
+    assert "V12 提供 deterministic query rewrite 和 rerank" in result.answer
+    assert "V13 提供 SQLite-backed Memory（PREF/LTM 和进程内 STM）" in result.answer
     assert "默认 fake provider" in result.answer
+    assert "当前未实现 query rewrite、rerank、memory" not in result.answer
+    assert "真实 LLM rewrite/rerank" in result.answer
+    assert "context compression" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
     assert [event.event_type for event in result.trace_events_internal] == [
@@ -1710,7 +1715,10 @@ def test_agent_loop_reports_v11_capability_status_without_repo_search(
     )
 
     assert "V11 提供 Grounded Answer 和 Model Provider Boundary" in result.answer
+    assert "V12 提供 deterministic query rewrite 和 rerank" in result.answer
+    assert "V13 提供 SQLite-backed Memory（PREF/LTM 和进程内 STM）" in result.answer
     assert "未实现 grounded answer" not in result.answer
+    assert "当前未实现 query rewrite、rerank、memory" not in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 
@@ -1723,7 +1731,7 @@ def test_agent_loop_reports_v12_capability_status_without_repo_search(
 
     result = loop.run(
         AgentLoopRequest(
-            message="query rewrite、rerank、真实 LLM rewrite、memory 实现了吗?",
+            message="query rewrite、rerank、真实 LLM rewrite 实现了吗?",
             repo_path=str(tmp_path),
             trace_id="trace_v12_status",
         )
@@ -1731,7 +1739,10 @@ def test_agent_loop_reports_v12_capability_status_without_repo_search(
 
     assert "V12 提供 deterministic query rewrite 和 rerank" in result.answer
     assert "真实 LLM rewrite/rerank" in result.answer
-    assert "V13 提供 SQLite-backed PREF/LTM 和进程内 STM" in result.answer
+    assert "V13 已实现 Memory" in result.answer
+    assert "当前未实现 memory" not in result.answer
+    assert "向量 memory" in result.answer
+    assert "context compression" in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
 
