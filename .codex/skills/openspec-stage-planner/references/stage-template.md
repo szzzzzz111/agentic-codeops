@@ -32,6 +32,7 @@
 
 ## Design Checklist
 
+- Risk level and reason
 - Current behavior
 - Target behavior
 - Non-goals
@@ -39,19 +40,14 @@
 - Error behavior
 - Security and path boundaries
 - Trace/audit implications if relevant
+- Internal review target and external-review expectation
 
-## Planning Manual Judgment Gates
+## Planning Judgment
 
-Before implementation confirmation, record visible conclusions for:
-
-- stage intent/scope and confirmation boundary
-- safety/architecture and fail-closed behavior
-- planned test adequacy for requirements, non-goals, errors, and security
-- internal review findings and external feedback triage approach
-- semantic parity targets across durable docs, Harness, and specs
-- archive/merge/handoff risks to verify at closeout
-
-OpenSpec validation checks artifact structure; it does not prove these judgments are correct.
+Before implementation confirmation, explain the stage intent, non-goals, risk,
+safety boundaries, planned RED cases, review target, and which durable facts
+will change. OpenSpec validation checks structure; it does not prove these
+judgments are correct.
 
 ## Tasks Checklist
 
@@ -73,7 +69,7 @@ Use TDD-shaped tasks:
 
 ## 4. Docs and Verification
 
-- [ ] 4.1 Update README/PROGRESS/HANDOFF as needed.
+- [ ] 4.1 Update only documents whose owned facts changed.
 - [ ] 4.2 Run `openspec validate <change>`.
 - [ ] 4.3 Run `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`.
 - [ ] 4.4 Run `git diff --check`.

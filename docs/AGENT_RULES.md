@@ -1,104 +1,60 @@
 # Agent 工作规则
 
-本项目使用 Harness Engineering 思路管理 AI 辅助开发：让 Agent 通过规则、文档、验证和交接机制稳定工作。RepoPilot 的定位是可控 Code Agent Harness，不是替代通用 AI 编程助手；实现时应优先保护工具调用边界、审计字段、验证规则和跨 session 交接质量。
+本仓库使用 Harness Engineering 管理 AI 辅助开发。详细运行时架构见
+`docs/ARCHITECTURE.md`，具体执行约束见 `.harness/rules.md`。
 
-## 分支规则
+## 分支与修改
 
-- `main` 只保留稳定可运行版本。
-- `dev` 用于集成已完成阶段。
-- 当前功能必须在 `feature/*` 分支开发。
-- 每轮实现前先确认当前分支。
-- 如果当前不在正确 feature 分支，先暂停并提醒用户，不直接修改代码。
-
-## 修改规则
-
+- `main` 保留稳定版本；阶段开发使用独立 feature/worktree。
+- 修改前确认分支、工作树、最近提交和 active OpenSpec change。
+- 不覆盖无关未提交修改，不混入下一阶段功能，不提交临时产物。
 - 严格遵守 `.harness/allowed_files.md`。
-- 新阶段开始前必须先更新 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，再修改 specs 或代码。
-- 不要跨阶段实现未来功能。
-- 不要把所有逻辑堆进 `main.py`。
-- 不要提交缓存文件、虚拟环境、本地环境变量或临时产物。
-- 文档、注释和用户可见文案优先使用中文。
-- 函数名、类名、接口字段和命令保持英文工程约定。
-- 不要把上一阶段收尾文档和下一阶段功能实现混在同一个 commit。
-- 如果 handoff、progress、specs 或 harness 仍指向旧分支/旧阶段，先同步文档再继续实现。
+- 新阶段先同步 allowed files 和 review checklist，再修改 specs、tests 或 runtime。
+- 文档和用户可见文字优先中文；代码标识符和 API 字段使用英文工程约定。
 
-## 验证规则
+## 风险与流程
 
-优先使用确定性检查，不要只靠 LLM review。
+- `low`：文档、本地 skill、确定性流程检查；内部 review 为主。
+- `medium`：局部 runtime 行为，公开 contract 基本稳定；增加聚焦外部 review。
+- `high`：Git/subprocess、持久化、权限、patch 生命周期、公开 API；要求完整独立对抗式 review。
+- 风险分级只调整 review 深度，不取消 TDD、验证和安全边界。
+- 端到端阶段使用 `repo-stage-workflow`；planning、review、handoff skill 各自只承担单一职责。
+- 实现确认前必须对 proposal、design、tasks、spec deltas、测试计划和 Harness 边界做一次内部
+  plan review；OpenSpec validation 不替代该语义检查。
 
-当前最低验证：
+## 验证与 Review
+
+- 行为变更先写失败测试，再做最小实现。
+- 默认完整验证：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
-该脚本至少应运行：
+- 正式 review 必须针对最终 runtime/test 状态，并在 archive/merge 前完成。
+- 测试、OpenSpec validation、checklist marker 和零散自检不能替代正式 review。
+- 外部 reviewer 应寻找独立反例；finding 按 `fix / clarify / reject / defer` 处理。
+- archive 后如再改 runtime，必须重新验证、review，并重新判断 archive readiness。
 
-- `pytest`
-- `ruff check .`，如果当前环境已安装 ruff
+## Stage Debt Sweep
 
-如果某个检查无法运行，最终说明必须写清楚原因。
+- 复核 changed paths 和它们直接依赖、共享状态或调用的 older paths。
+- 记录真实检查范围、findings、处理方式和剩余风险，不进行无目标全仓扫描。
+- 脚本只证明可机械搜索的约束，不证明语义判断正确。
+- 长期债务记录在 `docs/PROGRESS.md`；只有会影响下一轮行动时才同时进入 HANDOFF。
 
-## 交接规则
+## 文档职责
 
-每轮结束必须更新：
+- `.harness/review_checklist.md`：过程步骤和 gate 证据。
+- `docs/PROGRESS.md`：长期能力、重要决策、验证和未清债务。
+- `HANDOFF_TO_NEXT_CHAT.md`：下一轮必须知道的当前上下文、阻塞和安全下一步。
+- Git/OpenSpec 命令：实时 branch、HEAD、remote、active change 状态。
 
-- `docs/PROGRESS.md`
-- `HANDOFF_TO_NEXT_CHAT.md`
-- 必要时更新 `docs/FEATURE_LIST.json`
+不是每个 session 都必须修改 PROGRESS 和 HANDOFF。只有各自拥有的事实发生变化时才更新；
+archive、merge、push 和分支清理完成后合并为一次 final handoff，不在多份文档重复动态 hash。
 
-交接内容至少包含：
+## 连续执行授权
 
-- 当前分支。
-- 本轮完成内容。
-- 修改文件。
-- 验证命令和结果。
-- 未完成事项。
-- 下一轮建议。
-
-## Review 规则
-
-Review Agent 必须检查：
-
-- 是否符合当前阶段 scope。
-- 是否修改了不该改的文件。
-- 是否真的运行了验证命令。
-- 是否存在假实现或过度设计。
-- 是否破坏架构边界。
-- 是否把 Roadmap 能力写成已实现。
-- 是否让工具调用绕过 `ToolExecutor` 或堆到 API 层。
-- 是否 handoff、progress、specs、harness 与当前分支和阶段一致。
-- 是否存在无语义 diff，例如只改行尾或无内容变化的文件。
-- 是否更新测试和文档。
-- 是否更新 progress 和 handoff。
-
-## Stage Debt Sweep 规则
-
-- 每个阶段收口前必须人工复核 changed runtime/tests 以及它依赖的 adjacent older paths，不能只检查新增文件。
-- `scripts/check_stage_docs.ps1`、`scripts/check_stage_closeout.ps1` 等脚本只覆盖机械可搜索、可确定性表达的债务。
-- 脚本、测试和 checklist 通过不能替代人工代码/测试债审查，也不能单独证明 Stage Debt Sweep 完成。
-- 人工发现的债务必须在当前 scope 内修复，或记录到 `docs/PROGRESS.md` 与
-  `HANDOFF_TO_NEXT_CHAT.md`；不得只留在聊天中。
-
-## Manual Judgment Gates
-
-以下判断不能由脚本、测试通过、OpenSpec validation 或 checklist marker 单独替代：
-
-- **Stage intent / scope**：阶段目标、non-goals、路线顺序和用户确认边界是否正确。
-- **Safety / architecture**：安全威胁面、fail-closed 行为、权限/工具边界和架构归属是否正确。
-- **Test adequacy**：测试是否真正证明 requirements、non-goals、错误路径和安全边界，而不只是通过。
-- **Review triage**：正式 review 是否完整；外部 finding 应分类为 `fix / clarify / reject / defer`。
-- **Semantic parity**：README、ARCHITECTURE、PROGRESS、FEATURE_LIST、HANDOFF、Harness 与 specs
-  是否表达同一个真实状态，而不只是包含相同 marker。
-- **Archive / merge / handoff truth**：delta operation、长期 spec 同步、真实分支/remote/commit、
-  branch retention 和下一步表述是否准确。
-
-每个阶段 closeout 必须在 `.harness/review_checklist.md` 留下上述人工判断门的可见结论；
-脚本只能检查证据是否存在，不能证明判断本身正确。
-
-## 连续执行授权与正式 Review 门
-
-- 用户对“继续实现到提交 / 归档 / 合并 / 推送”的连续执行授权，只减少阶段级确认次数，不替代任何 review、Stage Debt Sweep、验证或 closeout gate。
-- 正式 code review 必须在最终 runtime / tests 变更之后、archive / merge 之前重新执行，并明确输出 findings，或明确输出“无 findings”及剩余风险。
-- 仅有测试通过、零散自检、任务勾选或口头声称 review 完成，均不构成正式 review 证据。
-- 如果正式 review 在 merge 后发现 P0/P1，必须立即把 finding 记录到 `.harness/review_checklist.md`、`docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`，将 closeout 恢复为阻断状态，并在修复、复核和验证完成前禁止开始下一阶段。
+用户授权“一路做到 merge/push”时，可以减少中间确认，但不得跳过 TDD、验证、正式 review、
+Stage Debt Sweep、archive 检查或高风险 Git 操作的授权边界。发现 P0/P1 或 Git 状态异常时立即
+停止 closeout，修复并重新验证、review。

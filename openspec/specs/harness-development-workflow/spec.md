@@ -40,14 +40,21 @@
 - **WHEN** 变更准备 review 或合并
 - **THEN** 运行 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，或记录无法运行的原因
 
-### Requirement: handoff 和 progress 保持最新
+### Requirement: Progress And Handoff Have Separate Ownership
 
-仓库 SHALL 在有意义的工作结束时更新 `docs/PROGRESS.md` 和 `HANDOFF_TO_NEXT_CHAT.md`。
+仓库 SHALL 只在文档拥有的事实发生变化时更新文档。`docs/PROGRESS.md` MUST 记录长期能力、
+重要决策、验证证据和未清债务；`HANDOFF_TO_NEXT_CHAT.md` MUST 只记录下一 session 安全行动所需的
+当前上下文、阻塞和下一步。
 
-#### Scenario: 工作 session 结束
+#### Scenario: Session does not change durable or handoff facts
 
-- **WHEN** 阶段状态变化或实现完成
-- **THEN** progress 和 handoff 文档记录分支、完成内容、验证、未完成事项和下一步建议
+- **WHEN** a work session does not change facts owned by PROGRESS or HANDOFF
+- **THEN** the agent MUST NOT update those documents only to satisfy a ritual
+
+#### Scenario: Stage reaches final integrated state
+
+- **WHEN** archive, merge, push, and optional branch cleanup are complete
+- **THEN** the repository records one final handoff instead of separate near-duplicate updates after each action
 
 ### Requirement: OpenSpec 是项目级开发流程
 
@@ -94,11 +101,16 @@ V18 Patch + Verify Loop SHALL 使用现有 `/chat` 入口、明确组合确认�
 - **AND** 系统保持 `/chat` contract 和现有 Harness 权限边界
 - **AND** review checklist MUST 检查组合确认优先级、半解析拒绝、命令白名单、独立 verification context、失败门、输出脱敏、contract 和 non-goals
 
-### Requirement: Stage Debt Sweep Is A Checkable Gate
+### Requirement: Stage Debt Sweep Is Focused And Checkable
 
-系统 SHALL require an explicit Stage Debt Sweep before a stage is called implementation-complete, ready to commit, archive-ready, merged, pushed, or ready for the next stage.
+系统 SHALL require an explicit Stage Debt Sweep before archive readiness. The sweep MUST inspect changed runtime
+and test paths, older paths they directly call or share state with, and documents whose owned facts changed.
+It MUST record inspected paths, findings, dispositions, and residual risks. The sweep MUST NOT require an
+unbounded repository-wide scan without a concrete dependency or finding.
 
-The Stage Debt Sweep MUST scan current durable docs, harness docs, active OpenSpec artifacts, long-term specs, changed runtime paths, and adjacent older runtime paths. Discoverable debt MUST be fixed in scope or recorded in durable docs with severity, deferral rationale, and intended follow-up. Blocking debt MUST stop closeout or the next stage. Debt MUST NOT remain only in chat.
+Discoverable debt MUST be fixed in scope or recorded in `docs/PROGRESS.md` with severity, deferral rationale,
+and intended follow-up. A debt item belongs in `HANDOFF_TO_NEXT_CHAT.md` only when it affects the next session's
+safe action. Blocking debt MUST stop closeout or the next stage. Debt MUST NOT remain only in chat.
 
 Deterministic scripts SHALL cover mechanically searchable debt where practical, but passing scripts, tests, or
 checklists MUST NOT be treated as evidence that the manual code/test debt review of changed and adjacent paths
@@ -107,7 +119,8 @@ has completed.
 #### Scenario: Stage Debt Sweep evidence is durable
 
 - **WHEN** a stage reaches review or closeout
-- **THEN** `docs/PROGRESS.md`, `HANDOFF_TO_NEXT_CHAT.md`, and `.harness/review_checklist.md` include checkable Stage Debt Sweep evidence or blockers
+- **THEN** `.harness/review_checklist.md` includes checkable scope and disposition evidence
+- **AND** unresolved durable debt is recorded in `docs/PROGRESS.md`
 
 #### Scenario: Script gates do not replace manual debt review
 
@@ -135,15 +148,53 @@ treated as proof that these semantic judgments are correct.
 - **THEN** the reviewer still records visible conclusions for all manual judgment categories
 - **AND** unresolved blocking findings stop closeout or the next stage
 
-### Requirement: Post-Merge Durable Docs Reflect Actual State
+### Requirement: Final Handoff Uses Live Repository Facts
 
-系统 SHALL update durable docs after merge/push with the actual main/remote state, commit hash, validation evidence, next stage recommendation, and feature branch cleanup/retention decision.
+系统 SHALL verify actual branch, remote, commit, archive, and active-change state using Git and OpenSpec commands.
+Durable docs MUST NOT duplicate volatile current-HEAD or remote hash claims across multiple files.
 
 #### Scenario: Merge/push closeout does not leave stale next steps
 
 - **WHEN** a stage has been merged and pushed
-- **THEN** durable docs MUST NOT continue to describe merge/push as a future decision for that completed stage
-- **AND** durable docs MUST record whether the feature branch was retained or cleaned up
+- **THEN** one final handoff MUST NOT continue to describe merge/push as a future decision
+- **AND** exact repository state is queried live when the next session needs it
+
+### Requirement: Stage Workflow Is Risk-Scaled
+
+系统 SHALL classify each stage as low, medium, or high risk before implementation. Risk level MUST control review
+depth and external-review expectations, but MUST NOT remove TDD, deterministic validation, or safety boundaries.
+
+#### Scenario: High-risk stateful stage
+
+- **WHEN** a stage changes Git/subprocess execution, persistence, permissions, patch lifecycle, or public API contracts
+- **THEN** the workflow requires internal review and independent adversarial external review
+
+#### Scenario: Low-risk process-only stage
+
+- **WHEN** a stage changes only development documentation, local skills, or deterministic process checks
+- **THEN** internal review and relevant structural validation are sufficient unless external review is requested
+
+### Requirement: External Review Seeks Independent Counterexamples
+
+外部 review SHALL target failure modes not already covered by task completion reporting. Findings SHOULD include
+severity, location, trigger, consequence, and a suggested regression test. External feedback MUST be classified as
+`fix`, `clarify`, `reject`, or `defer` against repository evidence.
+
+#### Scenario: External review repeats implementation status
+
+- **WHEN** external feedback only repeats tasks or passing tests without an independent failure hypothesis
+- **THEN** it MUST NOT be treated as meaningful diversity evidence
+
+### Requirement: Archive Freezes Reviewed Runtime
+
+Archive readiness SHALL apply to the reviewed runtime/test state. A runtime or test correction after formal review
+or archive MUST invalidate stale review evidence and reopen affected verification and review gates.
+
+#### Scenario: Runtime changes after archive
+
+- **WHEN** a runtime defect is discovered and fixed after archive
+- **THEN** the repository reruns affected verification and formal review
+- **AND** the change is not treated as handoff-only cleanup
 
 ### Requirement: Process Skills Are Not Runtime Capabilities
 
@@ -196,7 +247,8 @@ incremental self-checks, and checked task/checklist items MUST NOT be treated as
 #### Scenario: Post-merge P1 reopens closeout
 
 - **WHEN** formal review after merge discovers a P1 finding
-- **THEN** `.harness/review_checklist.md`, `docs/PROGRESS.md`, and `HANDOFF_TO_NEXT_CHAT.md` record the blocker
+- **THEN** `.harness/review_checklist.md` and `docs/PROGRESS.md` record the blocker
+- **AND** `HANDOFF_TO_NEXT_CHAT.md` records it when it changes the next session's safe action
 - **AND** the next stage remains blocked until remediation, re-review, and verification complete
 
 ### Requirement: V22 Planning And Implementation Remain Separately Confirmed

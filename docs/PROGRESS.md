@@ -1,5 +1,32 @@
 # 项目进度
 
+## 开发工作流收束（2026-06-20）
+
+- 本轮为独立 process-only maintenance，不创建 V24，不修改 runtime、tests、FEATURE_LIST 或
+  `/chat` contract。
+- 新增 repo-local `repo-stage-workflow`，统一编排 OpenSpec planning、TDD、verification、
+  internal review、独立 external review、focused Stage Debt Sweep、archive、merge/push 和一次
+  final handoff；现有 planning/review/handoff skills 已收束为单一职责。
+- 阶段按 `low / medium / high` 风险分级。Git/subprocess、持久化、权限、patch 生命周期和公开
+  API 属于高风险，要求独立对抗式 external review；低风险流程文档不再机械套用完整外部链路。
+- External review 的目标改为寻找独立反例，finding 需说明 severity、位置、触发条件、后果和建议
+  regression test；反馈按 `fix / clarify / reject / defer` 分类。
+- Stage Debt Sweep 聚焦 changed paths 和直接依赖/共享状态的 older paths，记录实际范围和 disposition，
+  不再以无目标全仓扫描或单一 marker 代表完成。
+- Archive 冻结正式 review 过的 runtime/test 状态；archive 后再改 runtime/test 会使旧 review 证据失效。
+- 文档职责已拆分：review checklist 记录 gate 证据，PROGRESS 记录长期事实，HANDOFF 只记录下一轮行动
+  上下文，Git/OpenSpec 命令提供实时 branch、HEAD、remote 和 active-change 状态。
+- 历史失败基线已写入 skill eval：V19 动态 hash 导致自失效 closeout 循环，V22 在已勾选任务和内部
+  final review 后仍发现 late runtime debt，外部 review 若仅重复 tasks/tests 不构成独立证据。
+- 正式 review 修复两项流程缺口：实现确认前缺少显式 internal plan review；Windows PowerShell 5.1
+  无 BOM UTF-8 脚本中的中文字符串导致 checker 解析失败，现已将 checker 保持为 ASCII。
+- 最终验证：四个相关 skill 的 official quick validation 通过；skill eval structure scan 通过；
+  `openspec validate --all` 18 passed, 0 failed；stage docs responsibility scan 通过；
+  `scripts/verify.ps1` 通过，pytest 289 passed, 1 skipped，ruff 通过；
+  `scripts/check_stage_closeout.ps1` 与 `git diff --check` 通过。
+- 人工 Stage Debt Sweep 覆盖本轮 `.codex/skills/**`、Harness rules/templates/checkers、workflow spec、
+  PROGRESS 与 HANDOFF；未修改 runtime/tests，因此没有 runtime adjacent path 或剩余代码债。
+
 ## V23 当前状态（2026-06-15）
 
 - merge 后正式 code review 发现的两个 P1 与一个 P2 已完成 remediation：

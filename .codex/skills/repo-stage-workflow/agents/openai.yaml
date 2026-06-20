@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repo Stage Workflow"
+  short_description: "Run a risk-scaled RepoPilot stage workflow"
+  default_prompt: "Use $repo-stage-workflow to run this RepoPilot stage from planning through final handoff."

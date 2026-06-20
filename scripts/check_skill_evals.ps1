@@ -4,6 +4,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
 $skills = @(
+    ".codex/skills/repo-stage-workflow",
     ".codex/skills/repo-stage-handoff",
     ".codex/skills/repo-stage-review-loop",
     ".codex/skills/openspec-archive-change"

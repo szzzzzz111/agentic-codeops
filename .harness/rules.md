@@ -1,87 +1,73 @@
 # 执行约束规则
 
-本文件记录当前仓库通用 Harness 约束，不绑定单一历史版本。阶段级允许文件和 review 项以 `.harness/allowed_files.md`、`.harness/review_checklist.md` 为准。
+本文件记录仓库通用 Harness 开发约束。当前运行时能力以
+`docs/ARCHITECTURE.md` 为准；阶段级写入边界和 review 证据分别以
+`.harness/allowed_files.md`、`.harness/review_checklist.md` 为准。
 
-## 当前定位
+## 基本边界
 
-RepoPilot 是面向代码仓库分析任务的可控 Code Agent Harness。项目目标不是替代通用 AI 编程助手，而是让 Agent 的工具调用、安全边界、执行追踪、测试、review 和 handoff 可验证、可审计、可交接。
+- RepoPilot 是可控 Code Agent Harness，不是通用 AI IDE。
+- 一次只推进一个小阶段，不把 Roadmap 能力写成已实现。
+- OpenSpec、Superpowers、MCP、plugin 和 `.codex/skills/**` 默认是开发流程，
+  不是 RepoPilot runtime 能力。
+- 不绕过既有工具、权限、审批、审计和验证边界。
+- 不覆盖与当前阶段无关的用户修改。
 
-## 当前已实现边界
+## 阶段开始
 
-当前稳定主链路：
+1. 检查当前分支、工作树、最近提交和 active OpenSpec change。
+2. 按风险将阶段标为 `low`、`medium` 或 `high`，写明判断依据。
+3. 创建或更新一个 OpenSpec change，明确 scope、non-goals、失败行为和验收证据。
+4. 先同步 allowed files 和 review checklist，再修改 specs、tests 或 runtime。
+5. 只列出事实所有权发生变化的 durable docs，不默认更新所有文档。
 
-```text
-API -> ChatService(trace_id) -> CodeAgent -> ToolExecutor -> file_tools
-```
+## TDD 与验证
 
-- API 只处理 HTTP 请求和响应。
-- `ChatService` 创建请求级 `trace_id` 并编排 Agent。
-- `CodeAgent` 做最小确定性决策和结果组织。
-- `ToolExecutor` 统一收口工具调用，当前只包装只读 `search_code`。
-- `file_tools` 提供安全只读仓库工具，不处理 HTTP 或 Agent 决策。
-- Trace 当前是请求级 `trace_id`，不是持久化审计系统。
-
-## 阶段推进规则
-
-- 每次开始新阶段前，先确认当前分支、工作区状态和最近提交。
-- 每次进入新阶段前，先更新 `.harness/allowed_files.md` 和 `.harness/review_checklist.md`，再写 specs 或代码。
-- 每次提交前，检查 `git status --short --branch`、`git diff --name-only` 和 `git diff --check`。
-- 每次提交后，如要进入下一阶段，先确认 handoff、progress、specs、harness 是否同步。
-- 不要在一个 commit 中混入上一阶段收尾和下一阶段实现。
-- 如果发现 handoff、progress、specs、harness 任一文件仍指向旧分支或旧阶段，先修文档，再继续实现。
-
-## 项目级 OpenSpec 使用原则
-
-- 本仓库可以使用 OpenSpec 作为项目级 SDD 工作流，用于 proposal、design、tasks、spec delta 和 archive。
-- OpenSpec 只约束 RepoPilot 的开发流程，不是 RepoPilot runtime 功能。
-- Codex 仅使用本仓库内 `.codex/skills` 和仓库文档执行 OpenSpec 流程；不要要求安装 `C:\Users\...\ .codex\prompts` 等全局 prompts。
-- OpenCode 可以使用仓库内 `.opencode`。
-- GitHub Copilot 当前不保留仓库内 `.github` OpenSpec 提示文件；如需启用，必须单独说明原因并更新 allowed files。
-- 不要因为接入 OpenSpec 而引入 MCP server、plugin runtime、skill 执行、动态工具注册或 `/chat` 决策变更。
-- Superpowers 只作为 Codex 开发本仓库的项目级能力卡片，不是 RepoPilot 对外暴露的 skill 系统。
-
-## TDD 与验证规则
-
-- 先写规格、任务和验收标准，再开放实现文件。
-- 实现阶段必须配套测试；不能只靠手动检查或 LLM review。
-- 默认验证命令：
+- 行为变更遵循 RED-GREEN-REFACTOR；先看到测试因缺少目标行为而失败。
+- 优先运行最小相关测试，runtime/tests 最终变化后运行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
-- 验证至少应覆盖 `pytest` 和 `ruff check .`。
-- 如果验证无法运行，最终说明必须写清楚原因。
+- 验证无法运行时，必须说明原因和未覆盖风险。
+- 测试通过只证明已执行断言，不证明 contract、风险判断或 review 正确。
 
-## 禁止项
+## Review
 
-- 不接真实 LLM，除非当前阶段明确开放。
-- 不自动修改代码，除非当前阶段明确开放。
-- 不执行 shell 工具，除非当前阶段明确开放并经过新的安全设计。
-- 不绕过 `ToolExecutor` 增加高风险工具。
-- 不把工具逻辑堆到 API 层、`main.py` 或具体 router 中。
-- 不把 Roadmap 能力写成已实现。
-- 不提前实现 PermissionPolicy、ApprovalGate、SandboxRunner、Reflection、eval、RAG、Memory 或复杂多 Agent。
-- 不提交缓存文件、虚拟环境、本地环境变量或临时产物。
+- 正式 review 必须晚于最后一次 runtime/test 变更，早于 archive/merge。
+- finding 应包含 severity、位置、触发条件、后果和缺失测试。
+- 外部 review 应寻找独立反例；不得只是重复 tasks 和测试状态。
+- 外部 finding 按 `fix / clarify / reject / defer` 分类，并以仓库事实为准。
+- `medium/high` 风险阶段默认需要独立外部 review；`low` 风险阶段按需进行。
+- runtime 在正式 review 或 archive 后再次变化，旧 review/verification 证据失效。
 
-## 连续执行授权与正式 Review 门
+## Stage Debt Sweep
 
-- “一路实现到合并/推送”等连续执行授权只授权动作序列，不授权跳过正式 code review、Stage Debt Sweep、验证或 closeout gate。
-- 正式 code review 必须发生在最终 runtime/tests 变更之后，并在 archive/merge 前给出可见的 findings 或明确的零 findings 结论。
-- 测试通过、零散自检和 checklist 自行勾选不能替代正式 code review 证据。
-- merge 后发现 P0/P1 时，必须恢复 closeout 阻断，持久化 findings，并在修复复核前禁止下一阶段。
+- 只检查 changed runtime/tests、其直接依赖或共享状态的 older paths，以及事实发生变化的文档。
+- 在 checklist 中记录实际检查路径、finding、处理方式和 residual risk。
+- 脚本只覆盖可机械检查的漂移，不得替代人工代码和测试债审查。
+- 不在当前 scope 内修复的真实债务写入 `docs/PROGRESS.md`；只有影响下一轮操作时才写入
+  `HANDOFF_TO_NEXT_CHAT.md`。
 
-## 人工 Stage Debt Sweep 边界
+## Archive、Merge 与 Handoff
 
-- Stage Debt Sweep 必须人工复核 changed runtime/tests 与 adjacent older paths。
-- 脚本只负责机械可搜索的漂移、marker、结构和确定性 gate；脚本通过不得解释为人工代码债审查已完成。
-- 人工发现但不在当前 scope 内安全修复的债务，必须写入 `docs/PROGRESS.md` 与
-  `HANDOFF_TO_NEXT_CHAT.md`，并在后续阶段重新评估。
+- archive 冻结已经 review 的 runtime 状态；archive 后 runtime 修复必须重新打开 review gate。
+- 连续执行授权只减少中间确认，不跳过 TDD、验证、review、archive 或授权边界。
+- commit、merge、push 等操作仍需遵守用户授权和仓库规则。
+- merge/push 完成后只做一次 final handoff。
+- `docs/PROGRESS.md` 记录长期能力、决策、验证和债务；
+  `HANDOFF_TO_NEXT_CHAT.md` 只记录下一轮安全行动所需上下文。
+- branch、HEAD、remote 和精确 hash 通过 Git 命令查询，不复制成多份会自失效的文档事实。
+- closeout 不创建或暗示下一产品阶段。
 
-## Manual Judgment Gates
+## 完成前检查
 
-- 每个阶段必须人工判断：stage intent/scope、safety/architecture、test adequacy、review triage、
-  semantic parity、archive/merge/handoff truth。
-- OpenSpec validation、测试、docs scan、closeout script 和 marker 只能提供确定性证据，不能替代上述判断。
-- `.harness/review_checklist.md` 必须记录 `manual_judgment_gates_completed` 及各类结论；存在未解决
-  blocking finding 时不得 closeout 或开始下一阶段。
+```powershell
+git status --short --branch
+git diff --name-only
+git diff --check
+openspec validate --all
+```
+
+再运行当前阶段要求的测试、skill eval、stage docs 或 closeout 检查。

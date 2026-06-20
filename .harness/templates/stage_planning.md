@@ -1,97 +1,54 @@
 # Stage Planning Template
 
-用于创建新阶段 OpenSpec change 前的轻量规划。先填这个模板，再写 `proposal.md`、`design.md`、`tasks.md` 和 spec delta。
+用于创建 OpenSpec change 前的轻量规划。按风险填写，不把所有文档和 gate 机械复制进每个阶段。
 
 ## Stage
 
-- Stage: `<Vx stage name>`
-- Proposed branch: `<feature branch>`
-- Capability owner:
-  - New capability: `<name or none>`
-  - Modified capabilities: `<names>`
-- Previous completed stage: `<Vx-1>`
+- Name: `<Vx or process-only name>`
+- Branch/worktree: `<name>`
+- Risk: `<low / medium / high>`
+- Risk reason: `<blast radius, uncertainty, security or persistence boundary>`
+- Previous baseline: `<completed stage>`
 
-## Intent
+## Intent And Scope
 
-- Problem:
-  - `<what is missing or unsafe today>`
-- Why now:
-  - `<why this is the next slice>`
-- User-visible outcome:
-  - `<what changes for /chat or docs>`
+- Problem: `<current gap>`
+- Outcome: `<observable result>`
+- In scope: `<small vertical slice>`
+- Non-goals: `<explicit exclusions>`
+- Public/runtime contract: `<unchanged or exact change>`
 
-## Scope
+## Boundaries And Failures
 
-- In scope:
-  - `<one small vertical slice>`
-- Out of scope:
-  - `<future stage capability>`
-- API contract:
-  - `<unchanged / changed with exact fields>`
-- Runtime dependency changes:
-  - `<none / dependency and reason>`
+- Owned modules/state: `<paths and stores>`
+- Trust boundaries: `<identity, path, permission, lifecycle, content>`
+- Failure behavior: `<fail closed, retry, rollback, partial state>`
+- Audit/privacy implications: `<none or exact fields>`
 
-## Boundaries
+## TDD And Verification
 
-- Harness boundaries preserved:
-  - `<ToolExecutor / PermissionPolicy / ApprovalGate / provider / audit>`
-- Security and audit:
-  - `<what must not leak>`
-- Retrieval stance:
-  - `grep-first, RAG-assisted`; rewrite/rerank must serve lexical/path/symbol baseline.
+- First RED cases: `<tests and expected failure>`
+- Positive/negative/safety cases: `<brief matrix>`
+- Focused verification: `<commands>`
+- Full verification trigger: `<runtime/tests changed or not>`
 
-## Tests
+## Review Plan
 
-- Unit tests:
-  - `<test file and behavior>`
-- API / contract tests:
-  - `<top-level fields / redaction / fallback>`
-- Docs / route-map tests:
-  - `<docs assertions>`
+- Internal review target: `<highest-risk assumptions>`
+- External review: `<required / optional / not requested>`
+- Independent counterexamples requested: `<failure modes>`
+- Stage Debt Sweep paths: `<changed and directly dependent older paths>`
 
-## Docs And Harness
+## Files And Durable Facts
 
-- Allowed files to update:
-  - `<paths>`
-- Review checklist additions:
-  - `<gates>`
-- Durable docs to update:
-  - `README.md`
-  - `docs/ARCHITECTURE.md`
-  - `docs/PROGRESS.md`
-  - `docs/FEATURE_LIST.json`
-  - `HANDOFF_TO_NEXT_CHAT.md`
+- Allowed files: `<paths>`
+- Review checklist additions: `<gates>`
+- Durable docs whose owned facts change: `<paths or none>`
+- Facts intentionally queried live: `<branch / HEAD / remote / active change>`
 
-## Human Decisions
+## Human Confirmation
 
-- Decision needed:
-  - `<stage-level question, not code detail>`
-- Default recommendation:
-  - `<recommended option>`
-
-## Formal Review Evidence
-
-- Continuous execution authorization:
-  - `does not replace formal review, Stage Debt Sweep, validation, or closeout gates`
-- Formal code review timing:
-  - `after final runtime/tests changes and before archive/merge`
-- Required visible conclusion:
-  - `<findings ordered by severity / explicit no-findings conclusion with residual risks>`
-- Blocking findings:
-  - `<none / durable blocker locations>`
-
-## Manual Judgment Gates
-
-- `manual_judgment_gates_planning_completed`: `<yes / blockers>`
-- Stage intent / scope:
-  - `<goal, non-goals, roadmap order, confirmation boundary>`
-- Safety / architecture:
-  - `<threat model, fail-closed behavior, permission/tool/ownership boundaries>`
-- Test adequacy:
-  - `<why planned tests prove requirements, non-goals, error paths, and safety boundaries>`
-- Review triage:
-  - `<internal plan findings and external feedback classification approach>`
-- Semantic parity:
-  - `<which durable docs/specs must describe the same planned state>`
-- Archive / merge / handoff truth:
-  - `<delta operation, long-term spec, branch/remote/handoff risks to review later>`
+- Internal plan review: `<findings closed / blockers>`
+- Decision: `<goal, non-goals or sequence question>`
+- Recommendation: `<one option and reason>`
+- Implementation starts only after: `<confirmation>`

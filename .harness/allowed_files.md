@@ -1,20 +1,27 @@
 # 当前 Harness 写入边界
 
-当前无 active development stage。V23 merge 后 review findings 已完成 remediation、正式 re-review
-与 full verification。
-
-开始下一阶段前，必须创建对应 OpenSpec change，并重新同步本文件与
-`.harness/review_checklist.md`。
+当前无 active product development stage。本轮是独立的 process-only workflow maintenance，
+用于精简阶段规划、review、Stage Debt Sweep、archive、merge/push 与最终 handoff；不创建 V24，
+不修改 RepoPilot runtime。
 
 ## 当前允许修改
 
-- V23 remediation merge durable docs、handoff closeout 与 review-process hardening 文件。
-- 允许更新 `docs/AGENT_RULES.md`、`.harness/rules.md`、`.harness/review_checklist.md`、
-  `openspec/specs/harness-development-workflow/spec.md`、`docs/PROGRESS.md` 与
-  `HANDOFF_TO_NEXT_CHAT.md`，用于沉淀最终 review / Stage Debt Sweep 结论。
-- 允许更新 `.harness/templates/stage_planning.md`、`.harness/templates/stage_closeout.md`、
-  `scripts/check_stage_closeout.ps1` 与相关 repo-local planning/review/handoff skill/evals，用于统一
-  `Manual Judgment Gates`。
+- `.harness/allowed_files.md`
+- `.harness/review_checklist.md`
+- `.harness/rules.md`
+- `.harness/templates/stage_planning.md`
+- `.harness/templates/stage_closeout.md`
+- `docs/AGENT_RULES.md`
+- `docs/PROGRESS.md`
+- `HANDOFF_TO_NEXT_CHAT.md`
+- `openspec/specs/harness-development-workflow/spec.md`
+- `scripts/check_skill_evals.ps1`
+- `scripts/check_stage_docs.ps1`
+- `scripts/check_stage_closeout.ps1`
+- `.codex/skills/repo-stage-workflow/**`
+- `.codex/skills/openspec-stage-planner/**`
+- `.codex/skills/repo-stage-review-loop/**`
+- `.codex/skills/repo-stage-handoff/**`
 
 ## 禁止修改 / 禁止行为
 
@@ -22,3 +29,6 @@
 - 不恢复旧 `specs/00x-*` 作为规格入口。
 - 不把 OpenSpec、Superpowers、MCP、plugin 或 `.codex/skills/**` 写成 RepoPilot runtime 能力。
 - 不新增 `/chat` 顶层字段或公开 API。
+- 不修改 `app/**`、`tests/**`、`docs/FEATURE_LIST.json` 或 runtime capability specs。
+- 不创建 V24 或其他产品功能 change。
+- 不把动态 Git HEAD/remote hash 复制到多份 durable docs。

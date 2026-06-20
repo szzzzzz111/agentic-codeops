@@ -1,51 +1,42 @@
 # Stage Closeout Template
 
-用于每个阶段 archive 前后更新 `docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md` 和 `.harness/*`。只填真实发生的状态，不把下一阶段写成已实现。
+用于最终 runtime/test 状态已经验证和 review 后的收口。archive、merge、push 完成后只写一次
+final handoff；不要为每个动作复制近似状态。
 
-## Stage
+## Stage Result
 
-- Stage: `<Vx stage name>`
-- Branch: `<feature branch>`
-- Archive path: `openspec/changes/archive/<date-change-name>/`
-- Next stage: `<Vy stage name>`
-
-## Completion Summary
-
-- Implemented:
-  - `<runtime or docs capability>`
-- Preserved boundaries:
-  - `<API contract / provider / audit / retrieval / safety boundary>`
-- Non-goals still not implemented:
-  - `<future capabilities>`
+- Stage: `<name>`
+- Risk: `<low / medium / high>`
+- Delivered: `<capability or process change>`
+- Preserved boundaries: `<contracts and non-goals>`
+- Archive: `<path or not applicable>`
 
 ## Verification
 
-- `openspec validate --all`: `<result>`
-- `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`: `<result>`
-- `git diff --check`: `<result>`
-- `powershell -ExecutionPolicy Bypass -File scripts\check_stage_docs.ps1`: `<result>`
+- Focused checks: `<commands and results>`
+- Full verify: `<result / not required with reason>`
+- OpenSpec validation: `<result>`
+- Git diff checks: `<result>`
 
-## Review State
+## Review Evidence
 
-- Internal review: `<done / findings>`
-- External review: `<done / findings / not requested>`
-- Remaining debt:
-  - `<record durable debt or "none">`
+- Final runtime/test change: `<identifier or not applicable>`
+- Internal review: `<findings / no findings and residual risk>`
+- External review: `<findings / not required / not requested>`
+- Remediation and re-review: `<result>`
+- Stage Debt Sweep paths: `<actual paths inspected>`
+- Remaining debt: `<PROGRESS location or none>`
 
-## Manual Judgment Gates
+## Archive And Integration
 
-- `manual_judgment_gates_completed`: `<yes / blockers>`
-- Stage intent / scope: `<conclusion>`
-- Safety / architecture: `<conclusion>`
-- Test adequacy: `<conclusion>`
-- Review triage: `<conclusion>`
-- Semantic parity: `<conclusion>`
-- Archive / merge / handoff truth: `<conclusion>`
-- Residual risks / deferred findings: `<durable locations or none>`
+- Archive froze reviewed runtime: `<yes / not applicable>`
+- Runtime changed after archive: `<no / reopened gates>`
+- Merge/push authorization and result: `<result>`
+- Live Git/OpenSpec state checked by: `<commands, not copied hashes>`
 
-## Archive Closeout
+## Final Documentation
 
-- Active change moved to archive.
-- Long-term specs synced before archive.
-- `openspec list` shows no active changes.
-- `README.md`, `docs/PROGRESS.md`, `HANDOFF_TO_NEXT_CHAT.md`, `.harness/allowed_files.md`, and `.harness/review_checklist.md` no longer describe the completed stage as active.
+- PROGRESS updates: `<durable facts only>`
+- HANDOFF updates: `<next-session context only>`
+- Harness reset: `<done / active stage remains>`
+- Next safe action: `<planning or blocker; do not create V-next here>`
