@@ -1,7 +1,7 @@
 # 当前 Review 清单
 
-当前无 active product development stage。本轮对象是 low-risk、process-only workflow maintenance，
-不包含 runtime、tests、公开 API 或 V24。
+当前无 active product development stage。low-risk、process-only workflow maintenance 已完成、
+验证并本地合并到 `main`；不包含 runtime、tests、公开 API 或 V24。
 
 ## Process-Only Workflow Maintenance
 

@@ -3,8 +3,9 @@
 ## 当前状态
 
 - V23 已完成、归档、合并并推送；当前无 active product OpenSpec change。
-- 独立的 process-only workflow maintenance 已完成内容修改、正式 review 和验证，但尚未提交：
-  新增 `repo-stage-workflow`，并精简 planning、review、Stage Debt Sweep、archive 与 handoff 职责。
+- 独立的 process-only workflow maintenance 已完成内容修改、正式 review、验证并本地合并到
+  `main`：新增 `repo-stage-workflow`，并精简 planning、review、Stage Debt Sweep、archive 与
+  handoff 职责。
 - 本轮不开发 V24，不修改 runtime、tests、FEATURE_LIST 或 `/chat` contract。
 - 精确分支、HEAD、remote 和 active change 状态不要从本文猜测，先运行：
 
@@ -26,9 +27,9 @@ openspec list
 ## 当前阻塞
 
 - 无产品功能阻塞。
-- 本轮流程维护已完成正式 review 和完整验证，尚未提交、合并或推送。
+- 本轮流程维护已本地合并，尚未 push。
 
 ## 下一步
 
-1. 由用户决定是否提交、合并或推送本次 process-only maintenance。
+1. 由用户决定是否 push 本次 process-only maintenance。
 2. 下一产品阶段开始前，重新创建 OpenSpec change 并同步 Harness 边界。

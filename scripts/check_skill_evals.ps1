@@ -57,7 +57,7 @@ foreach ($skillDir in $skills) {
     }
 
     foreach ($section in $requiredSections) {
-        if ($evalText -notmatch "(?m)^$([regex]::Escape($section))$") {
+        if ($evalText -notmatch "(?m)^$([regex]::Escape($section))\r?$") {
             $findings += "$evalPath is missing $section"
         }
     }
