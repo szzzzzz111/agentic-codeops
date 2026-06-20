@@ -14,6 +14,7 @@ from app.harness.kernel import (
 )
 from app.memory.store import compute_repo_key
 from app.patching.apply import PatchApplyResult
+from app.patching.provider import FakePatchAuthoringProvider
 from app.patching.store import PATCH_STATUS_PENDING, SQLitePatchStore
 from app.providers.model_provider import ModelProviderResponse
 from app.rag.repo_rag import LexicalRepoRetriever
@@ -1259,7 +1260,7 @@ def test_agent_loop_worktree_status_query_uses_v21_safe_inspection(tmp_path: Pat
     ]
 
 
-def test_agent_loop_reports_v16_patch_capability_without_repo_search(
+def test_agent_loop_reports_current_patch_capability_without_repo_search(
     tmp_path: Path,
 ) -> None:
     loop = AgentLoop(
@@ -1276,12 +1277,30 @@ def test_agent_loop_reports_v16_patch_capability_without_repo_search(
     )
 
     assert "V16 提供 Safe Patch Authoring" in result.answer
-    assert "明确确认后受控 apply" in result.answer
     assert "V17 提供独立 Verification Runner" in result.answer
     assert "V18 提供明确组合确认下的 Patch + Verify Loop" in result.answer
-    assert "当前未实现 Persistent Audit / Recovery" in result.answer
+    assert "V19 提供 Persistent Audit / Recovery" in result.answer
+    assert "V20-V23 提供隔离 worktree 生命周期" in result.answer
+    assert "Verified Patch Promotion" in result.answer
+    assert "自动 commit/push" in result.answer
+    assert "默认不生成真实 diff" in result.answer
+    assert "当前未实现 Persistent Audit / Recovery" not in result.answer
+    assert "Worktree Isolation 未实现" not in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
+
+
+def test_agent_loop_model_provider_env_does_not_enable_real_patch_authoring(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("REPOPILOT_MODEL_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("REPOPILOT_MODEL_BASE_URL", "https://model.example/v1")
+    monkeypatch.setenv("REPOPILOT_MODEL_API_KEY", "test-key")
+    monkeypatch.setenv("REPOPILOT_MODEL_NAME", "test-model")
+
+    loop = AgentLoop()
+
+    assert isinstance(loop.patch_manager.provider, FakePatchAuthoringProvider)
 
 
 def test_agent_loop_resumes_one_long_task_step_through_repo_rag(

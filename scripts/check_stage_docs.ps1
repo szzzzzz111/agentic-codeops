@@ -40,8 +40,7 @@ $requiredHandoffMarkers = @(
     "git status --short --branch",
     "git log -5 --oneline --decorate",
     "openspec list",
-    "process-only workflow maintenance",
-    "PROGRESS"
+    "Active OpenSpec change"
 )
 foreach ($required in $requiredHandoffMarkers) {
     if (-not $handoff.Contains($required)) {

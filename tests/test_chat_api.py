@@ -275,6 +275,26 @@ def test_chat_endpoint_assistant_status_keeps_contract_and_does_not_create_state
     assert not (tmp_path / ".repopilot" / "tasks.sqlite3").exists()
 
 
+def test_chat_endpoint_patch_capability_status_reports_current_truth(
+    tmp_path: Path,
+) -> None:
+    response = client.post(
+        "/chat",
+        json=valid_payload(tmp_path, "is patch supported?"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body) == {"trace_id", "answer", "related_files", "tool_calls"}
+    assert "V19 提供 Persistent Audit / Recovery" in body["answer"]
+    assert "V20-V23 提供隔离 worktree 生命周期" in body["answer"]
+    assert "Verified Patch Promotion" in body["answer"]
+    assert "默认不生成真实 diff" in body["answer"]
+    assert "当前未实现 Persistent Audit / Recovery" not in body["answer"]
+    assert body["related_files"] == []
+    assert body["tool_calls"] == []
+
+
 def test_chat_endpoint_patch_proposal_keeps_contract_and_does_not_write(
     tmp_path: Path,
 ) -> None:

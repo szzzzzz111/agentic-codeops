@@ -97,7 +97,9 @@ V16_CAPABILITY_STATUS_ANSWER = (
     "V16 提供 Safe Patch Authoring：可基于仓库证据生成 patch proposal，"
     "并在明确确认后受控 apply；V17 提供独立 Verification Runner；"
     "V18 提供明确组合确认下的 Patch + Verify Loop；"
-    "当前未实现 Persistent Audit / Recovery 或 Worktree Isolation。"
+    "V19 提供 Persistent Audit / Recovery；"
+    "V20-V23 提供隔离 worktree 生命周期，包括创建、检查、重验证和丢弃/对账；"
+    "当前未实现 Verified Patch Promotion 或自动 commit/push，默认不生成真实 diff。"
 )
 
 

@@ -2,12 +2,10 @@
 
 ## 当前状态
 
-- V23 已完成、归档、合并并推送；当前无 active product OpenSpec change。
-- 独立的 process-only workflow maintenance 已完成内容修改、正式 review、验证并本地合并到
-  `main`：新增 `repo-stage-workflow`，并精简 planning、review、Stage Debt Sweep、archive 与
-  handoff 职责。
-- 本轮不开发 V24，不修改 runtime、tests、FEATURE_LIST 或 `/chat` contract。
-- 精确分支、HEAD、remote 和 active change 状态不要从本文猜测，先运行：
+- 当前分支：`codex/fix-capability-provider-truth`。
+- Active OpenSpec change：`none`。
+- 本轮不开发 V24；只修 capability-status 与 Patch Authoring provider 事实漂移。
+- 精确 Git/OpenSpec 状态先运行：
 
 ```powershell
 git status --short --branch
@@ -15,21 +13,27 @@ git log -5 --oneline --decorate
 openspec list
 ```
 
-## 已确认决策
+## 已完成
 
-- OpenSpec 生命周期保留，但流程按 `low / medium / high` 风险分级。
-- 高风险状态型变更要求独立对抗式 external review；低风险流程文档不机械套完整链路。
-- Stage Debt Sweep 只扩展到 changed paths 的直接依赖或共享状态路径。
-- Archive 后 runtime/test 发生变化，必须重新验证和 review。
-- PROGRESS 记录长期事实；HANDOFF 只记录下一轮安全行动上下文。
-- Merge/push 完成后只做一次 final handoff，不在多份文档复制动态 hash。
+- OpenSpec proposal/design/spec/tasks 与 Harness 边界已同步，strict validation 通过。
+- RED/GREEN 与 provider 装配 characterization 已完成：定向测试 3 passed。
+- patch capability-status 已承认 V19 Persistent Audit 与 V20-V23 worktree lifecycle。
+- README、ARCHITECTURE 和长期 specs 已明确默认应用未装配真实 patch provider。
+- Full verify：291 passed、1 skipped；ruff、stage docs、skill checks 与 OpenSpec all strict 均通过。
+- Formal internal review 与 Stage Debt Sweep 已完成；发现的 V11/V12 同类历史状态漂移已记录到
+  `docs/PROGRESS.md`，不在本 change 扩 scope。
+- Focused external review 已由 OpenCode 免费 DeepSeek reviewer 完成，结论
+  `No in-scope findings`；有效 finding 为零。
+- OpenSpec change 已归档至
+  `openspec/changes/archive/2026-06-20-fix-capability-provider-truth/`。
 
 ## 当前阻塞
 
-- 无产品功能阻塞。
-- 本轮流程维护已本地合并，尚未 push。
+- 无实现阻塞。
+- Commit/merge/push 尚未完成。
 
 ## 下一步
 
-1. 由用户决定是否 push 本次 process-only maintenance。
-2. 下一产品阶段开始前，重新创建 OpenSpec change 并同步 Harness 边界。
+1. 对归档后的最终状态复验。
+2. 提交当前分支。
+3. 获得用户授权后 merge/push。

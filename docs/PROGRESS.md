@@ -1,5 +1,29 @@
 # 项目进度
 
+## Capability / Provider Truth Fix（2026-06-20）
+
+- Change `fix-capability-provider-truth` 已于 2026-06-20 归档至
+  `openspec/changes/archive/2026-06-20-fix-capability-provider-truth/`；当前无 active change。
+- 风险级别：medium。只修改用户可见 capability-status、对应 tests、provider 事实文档与长期 spec；
+  不修改 patch/worktree/verification/audit 执行行为，不创建 V24。
+- RED 已证明旧 patch capability-status 错误声称 Persistent Audit / Recovery 和 Worktree Isolation
+  未实现；GREEN 已更新为 V16-V23 当前能力，并保留 Verified Patch Promotion、自动 commit/push、
+  默认真实 diff generation 尚未实现的边界。
+- Patch Authoring provider 事实已澄清：默认应用始终使用 fake provider；
+  `ModelPatchAuthoringProvider` 目前只能通过依赖注入用于测试或自定义装配，现有 Model Provider
+  环境变量不会把它接入默认 `AgentLoop`。
+- 最终定向验证：Kernel/API/provider 装配 3 passed；full verify 为 291 passed、1 skipped，ruff、
+  stage docs 与 skill checks 通过；OpenSpec all strict validation 为 19 passed。
+- Formal internal review 修复了 capability-status 与 V19 trace envelope 的规格冲突，并补充默认
+  provider 装配的 characterization test。Focused Stage Debt Sweep 另发现 `V11` / `V12`
+  capability-status 仍保留已被 V12/V13 推翻的 query rewrite、rerank、memory 历史 non-goal；
+  该相邻债务不在本 patch-status change 内扩 scope，后续应独立修正或统一能力事实来源。
+- Focused external review 已由 OpenCode 免费 DeepSeek reviewer 只读执行，结论为
+  `No in-scope findings`。其关于 archive 后 HANDOFF marker 的 residual concern 已判为
+  `reject`：checker 要求的是稳定字段名，归档后可写 `Active OpenSpec change: none`。
+- Implementation、internal/external review、Stage Debt Sweep、验证与 archive gate 均已完成；
+  当前等待 Git closeout。
+
 ## 开发工作流收束（2026-06-20）
 
 - 本轮为独立 process-only maintenance，不创建 V24，不修改 runtime、tests、FEATURE_LIST 或
