@@ -16,7 +16,9 @@
   external review 发现 standalone V12 缺少覆盖，以及 V11 仅用 PREF/LTM/STM 隐式表达 Memory；
   两项均已修复，re-review 确认无剩余 in-scope finding。
 - Focused Stage Debt Sweep 覆盖 V11/V12/V13 constants、capability router、Kernel/API tests、
-  统一 spec、历史 README/ARCHITECTURE 与 allowed files；无新增债务。当前等待 Git closeout。
+  统一 spec、历史 README/ARCHITECTURE 与 allowed files；无新增债务。
+- Change 已合并到 `main`；合并态 full verification 为 292 passed、1 skipped，OpenSpec all strict
+  为 18 passed。精确 remote 同步状态以 Git 查询为准。
 
 ## Capability / Provider Truth Fix（2026-06-20）
 
