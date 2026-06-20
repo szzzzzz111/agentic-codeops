@@ -59,7 +59,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
 - 当前 Long Task：repo-local `.repopilot/tasks.sqlite3`、明确长任务指令、任务状态、pause/resume、scratch 摘要、quota/archive 和摘要级 ReAct trace；不新增 `/tasks` API 或 `/chat` 必需顶层字段。
 - 当前 Assistant Control Surface：通过现有 `/chat.answer` 返回只读助手状态，聚合当前能力、Memory 计数和 Long Task 摘要；不新增 API、不新增 `/chat` 顶层字段、不调用 `repo_rag`、不写 memory、不创建任务。
-- 当前 Safe Patch Authoring：通过明确 patch 请求基于 repo evidence 生成 pending patch proposal；默认 fake patch provider 不生成真实 diff，显式配置真实 provider 后可返回结构化 unified diff；用户必须明确 `确认 patch <patch_id>` / `应用 patch <patch_id>` 才能通过受控 `patch_apply` 写入。
+- 当前 Safe Patch Authoring：通过明确 patch 请求基于 repo evidence 生成 pending patch proposal；默认应用固定使用 fake patch provider，不生成真实 diff，因此默认 API 不能生成真实 pending patch。仓库保留可供自定义应用装配依赖注入的 `ModelPatchAuthoringProvider` 边界，但当前环境变量配置不会把它接入默认 `AgentLoop`；已有合法 pending patch 仍必须经过明确 `确认 patch <patch_id>` / `应用 patch <patch_id>` 才能通过受控 `patch_apply` 写入。
 - 当前 Verification Runner：通过明确验证请求运行固定白名单标签 `pytest`、`ruff` 或 `verify`，其中 `verify` 映射到 `scripts/verify.ps1`；执行必须经过 `verification_run` 权限/审批边界和 `ToolExecutor`，公开响应只返回截断脱敏摘要。
 - 当前 Patch + Verify Loop：通过明确组合确认请求串联 pending patch apply 与白名单验证；组合请求必须同时包含 patch id 和验证标签，解析失败整体拒绝且不 apply；apply 成功后才使用独立 verification context 运行验证。
 - 当前 Persistent Audit / Recovery：使用 repo-local `.repopilot/audit.sqlite3` 持久化脱敏 trace envelope、patch attempt、verification result 和 long task event，并通过现有 `/chat.answer` 提供只读恢复/状态查询；不新增 `/chat` 顶层字段。
@@ -129,7 +129,7 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 - 通过明确 patch 请求触发，例如 `请生成 patch 修改 app.py`。
 - AgentLoop 前置顺序为 Memory command、Long Task command、Assistant Control Surface、Patch command / Patch intent、capability-status、repo_search/chat_only。
 - Patch proposal 先通过现有 `repo_rag` / Evidence Pack 获取仓库证据，再由 Patch Authoring provider 生成结构化 proposal。
-- 默认 fake Patch Authoring provider 保持离线确定性，不生成真实 diff；OpenAI-compatible provider 只有显式配置后才可返回结构化 diff。
+- 默认 fake Patch Authoring provider 保持离线确定性，不生成真实 diff；`ModelPatchAuthoringProvider` 可通过依赖注入用于测试或自定义装配，但当前默认应用没有环境变量驱动的真实 patch provider 接线。
 - Pending patch 写入 repo-local `.repopilot/patches.sqlite3`，按 `user_id + repo_key` 隔离，默认 24 小时过期。
 - Apply 只接受明确确认语法：`确认 patch <patch_id>`、`应用 patch <patch_id>`、`confirm patch <patch_id>`、`apply patch <patch_id>`。
 - `patch_apply` 是 V16 唯一写入工具，必须经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`，只写 diff 中的 repo 内相对路径。

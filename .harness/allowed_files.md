@@ -1,20 +1,16 @@
 # 当前 Harness 写入边界
 
-当前无 active product development stage。process-only workflow maintenance 已完成并本地合并到
-`main`。开始下一阶段前，必须创建对应 OpenSpec change，并重新同步本文件与
-`.harness/review_checklist.md`。
+当前无 active OpenSpec change。`fix-capability-provider-truth` 已完成、review、验证并归档；
+当前仅等待 Git 提交、合并与 push。
 
 ## 当前允许修改
 
-- 无 active stage 写入范围。
-- 下一阶段规划时重新列出明确允许文件。
+- 无新的 runtime 或产品文档写入范围。
+- 仅允许完成当前归档阶段的 Git closeout 与最终 handoff 同步。
 
 ## 禁止修改 / 禁止行为
 
-- 不把连续执行授权解释为跳过正式 review、Stage Debt Sweep、验证或 closeout gate。
-- 不恢复旧 `specs/00x-*` 作为规格入口。
-- 不把 OpenSpec、Superpowers、MCP、plugin 或 `.codex/skills/**` 写成 RepoPilot runtime 能力。
-- 不新增 `/chat` 顶层字段或公开 API。
-- 不修改 `app/**`、`tests/**`、`docs/FEATURE_LIST.json` 或 runtime capability specs。
-- 不创建 V24 或其他产品功能 change。
-- 不把动态 Git HEAD/remote hash 复制到多份 durable docs。
+- 不在已归档 change 上继续修改 runtime、tests 或长期 specs。
+- 不创建或规划 V24。
+- 不把 V11/V12 capability-status 债务混入当前归档提交。
+- 新工作开始前必须创建独立 OpenSpec change 并重新同步本文件。
