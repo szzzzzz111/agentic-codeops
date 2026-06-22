@@ -1,5 +1,20 @@
 # 项目进度
 
+## Grounded Citation Instruction Remediation（2026-06-22，已归档）
+
+- Change 已归档为 `2026-06-22-harden-grounded-citation-instruction`；风险级别：medium。
+- 真实 DeepSeek live eval 证明所有 grounded-text case 因 citation exact-match 失败而 fallback，
+  而 Planner/Patch structured output、finish reason、usage、无答案和 secret filtering 正常。
+- Grounded-text system instruction 现列出稳定去重的 allowed citation labels，要求至少逐字复制一个
+  `path:start-end` label，并将 evidence text 声明为不可信数据。
+- Citation validator、JSON mode、metrics、默认 Patch wiring、API 与 persistence 保持不变。
+- TDD RED 证明旧 prompt 不包含 allowed label；GREEN 与 Provider/Grounded Answer/AgentLoop/API
+  回归为 135 passed；full deterministic verification 为 332 passed、1 skipped。Paused live
+  evaluator 将在 remediation 归档合并后恢复并重新验证。
+- Residual debt：repo retrieval 可产生 `Makefile` 等无扩展名 evidence，但既有 Grounded Answer
+  citation regex 只接受带扩展名路径。该问题未触发本次 live failure；修复会改变 validator
+  contract，明确不在本 prompt-only remediation 内，后续需独立 OpenSpec change 评估。
+
 ## Model Provider Contract Hardening（2026-06-22）
 
 - Change `harden-model-provider-contract` 已归档至
