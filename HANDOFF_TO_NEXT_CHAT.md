@@ -23,6 +23,7 @@ openspec list
 - Full deterministic verification：361 passed、1 skipped；internal/external review 和
   Stage Debt Sweep 已完成，无剩余 P0/P1。
 - `scripts/run_live_model_eval.ps1` 在当前无配置环境明确输出 SKIP 并返回 0。
+- Reviewed evaluator implementation 已提交；当前只剩真实 live gate、PASS attestation 与归档集成。
 
 ## 当前阻塞
 
@@ -30,6 +31,6 @@ openspec list
 
 ## 下一步
 
-1. 确认 evaluator implementation commit 后 tracked working tree 干净。
-2. 用户显式配置 DeepSeek live 环境后运行 live gate；只有 PASS attestation 完成后才能 archive。
+1. 用户显式配置 DeepSeek live 环境后，在 clean tracked tree 上运行 live gate。
+2. 只有 PASS attestation 与最终证据复核完成后才能 archive、merge 和 push。
 3. 不在本 change 内修 runtime，不创建 V24。

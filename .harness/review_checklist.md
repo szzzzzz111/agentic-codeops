@@ -40,7 +40,8 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 
 ## Closeout
 
-- [ ] Evaluator implementation is committed before live execution.
+- [x] Evaluator implementation is committed before live execution；clean-tree live entry returned
+  SKIP because all five required environment variables were absent.
 - [ ] Real DeepSeek hard gates PASS on the recorded clean commit.
 - [ ] PASS attestation and final evidence review are complete.
 - [ ] Change is archived, integrated and pushed.

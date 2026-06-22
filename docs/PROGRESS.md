@@ -15,6 +15,8 @@
   OpenSpec 19/19、ruff、stage docs、skill checks 与 `git diff --check` 通过。
 - Internal review 修复 usage/model consistency、300 秒 deadline、secret 正对照、负 token 和
   attestation Git TOCTOU；独立 external re-review 确认无剩余 P0/P1。
+- Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
+  必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 当前环境未提供五个必需 live 变量，因此真实 DeepSeek gate 尚未执行；在真实 PASS 和 attestation
   产生前，本 change 不得归档或合并。
 - 本阶段不修改 Model Provider runtime、默认 Patch wiring、`/chat` contract，不创建 V24。
