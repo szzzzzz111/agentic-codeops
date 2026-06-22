@@ -1,5 +1,27 @@
 # 项目进度
 
+## Live Model Provider Integration / Eval（2026-06-22）
+
+- Active change：`add-live-model-provider-eval`；开发分支：
+  `codex/add-live-model-provider-eval`；风险级别：high。
+- 已实现独立 Python evaluator、DeepSeek `deepseek-v4-flash` profile、固定 `x/5` 质量
+  baseline、安全/结构/provider hard gates、8 次调用预算、成本计算、脱敏本地报告和
+  PASS-only tracked attestation。
+- 已实现 fresh subprocess `/chat` 默认 wiring smoke、Grounded Answer、Long Task Planner、
+  显式注入 Patch Authoring、无答案零调用、prompt injection 和 secret filtering。
+- 默认 pytest、`scripts/verify.ps1` 与 CI 保持离线 deterministic；薄 PowerShell 入口缺少 live
+  配置时明确 SKIP。
+- 最终 deterministic verification：361 passed、1 skipped；evaluator tests 30 passed；
+  OpenSpec 19/19、ruff、stage docs、skill checks 与 `git diff --check` 通过。
+- Internal review 修复 usage/model consistency、300 秒 deadline、secret 正对照、负 token 和
+  attestation Git TOCTOU；独立 external re-review 确认无剩余 P0/P1。
+- 当前环境未提供五个必需 live 变量，因此真实 DeepSeek gate 尚未执行；在真实 PASS 和 attestation
+  产生前，本 change 不得归档或合并。
+- 本阶段不修改 Model Provider runtime、默认 Patch wiring、`/chat` contract，不创建 V24。
+- 已知非阻断 residual：Patch smoke 的临时 SQLite DB 在 Windows 清理前依赖 CPython
+  `gc.collect()` 释放短生命周期连接；当前 Windows regression 通过，若未来引入其他 Python
+  runtime，应在独立 store-lifecycle hardening change 中增加显式 close 边界。
+
 ## Model Provider Contract Hardening（2026-06-22）
 
 - Change `harden-model-provider-contract` 已归档至
