@@ -27,10 +27,12 @@ openspec list
 
 ## 当前阻塞
 
-- 当前进程未设置五个必需 live 环境变量，无法执行真实 DeepSeek gate。
+- 真实 DeepSeek gate 已完成 8 次调用，但全部 grounded-text case 因 citation exact-match
+  contract 失败；eval change 已 paused，不得在其中修改 runtime。
 
 ## 下一步
 
-1. 用户显式配置 DeepSeek live 环境后，在 clean tracked tree 上运行 live gate。
-2. 只有 PASS attestation 与最终证据复核完成后才能 archive、merge 和 push。
-3. 不在本 change 内修 runtime，不创建 V24。
+1. 独立完成并归档/合并 `harden-grounded-citation-instruction` remediation。
+2. 恢复 eval change 到新的 `main`，使旧 live/review 证据失效并重新验证。
+3. 重新提供 DeepSeek 配置并运行完整 live gate；只有 PASS attestation 后才能 archive。
+4. 不创建 V24。

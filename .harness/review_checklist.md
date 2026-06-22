@@ -42,6 +42,12 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 
 - [x] Evaluator implementation is committed before live execution；clean-tree live entry returned
   SKIP because all five required environment variables were absent.
+- [x] Real DeepSeek run attempted on commit `a842ca1`：8 calls、finish reason/usage complete；
+  Planner、Patch、no-answer、secret filtering PASS；all grounded-text cases failed citation gate。
+  Sanitized local report SHA-256:
+  `3d90c478b4cc91cefc74c6d22436be6589dfc8b8dcc58a93834e64733924bc2a`。
+- [x] `paused_exception_recorded`：runtime prompt 未明确要求逐字复制 provided
+  `path:start-end` label，而 citation validator 要求精确匹配；本 change 不修 runtime。
 - [ ] Real DeepSeek hard gates PASS on the recorded clean commit.
 - [ ] PASS attestation and final evidence review are complete.
 - [ ] Change is archived, integrated and pushed.

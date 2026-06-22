@@ -17,8 +17,13 @@
   attestation Git TOCTOU；独立 external re-review 确认无剩余 P0/P1。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
-- 当前环境未提供五个必需 live 变量，因此真实 DeepSeek gate 尚未执行；在真实 PASS 和 attestation
-  产生前，本 change 不得归档或合并。
+- 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`
+  上完成 8 次调用：Planner、Patch、无答案和 secret filtering PASS；6 个 grounded-text 路径均
+  因 citation gate 失败。所有 provider response 均为 `finish_reason=stop` 且 usage 完整。
+- 根因是 runtime grounded-text system prompt 只要求“引用 citation”，未明确要求逐字复制 provided
+  `path:start-end` label，而 validator 要求 exact match。Eval change 已按 paused exception 冻结，
+  等待独立 `harden-grounded-citation-instruction` remediation。
+- 真实 PASS 和 attestation 产生前，本 change 不得归档或合并。
 - 本阶段不修改 Model Provider runtime、默认 Patch wiring、`/chat` contract，不创建 V24。
 - 已知非阻断 residual：Patch smoke 的临时 SQLite DB 在 Windows 清理前依赖 CPython
   `gc.collect()` 释放短生命周期连接；当前 Windows regression 通过，若未来引入其他 Python
