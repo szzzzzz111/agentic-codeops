@@ -1,7 +1,11 @@
 import json
 
 from app.longtask.types import ACTION_REPO_RAG, LongTaskStep, PlanResult
-from app.providers.model_provider import ModelProvider, ModelProviderRequest
+from app.providers.model_provider import (
+    ModelProvider,
+    ModelProviderRequest,
+    StructuredOutputInstruction,
+)
 from app.rag.query_understanding import (
     QUESTION_CALL_RELATIONSHIP,
     QUESTION_CODE_LOCATION,
@@ -15,6 +19,14 @@ from app.rag.query_understanding import (
 PLAN_SOURCE_TEMPLATE = "deterministic_template"
 PLAN_SOURCE_FALLBACK = "deterministic_fallback"
 PLAN_SOURCE_PROVIDER = "provider_assisted"
+_PLAN_OUTPUT_INSTRUCTION = StructuredOutputInstruction(
+    name="long_task_plan",
+    json_example=(
+        '{"steps":[{"title":"...","query_hint":"...",'
+        '"expected_outcome":"...","acceptance_hint":"..."}]}'
+    ),
+    max_output_tokens=2000,
+)
 
 
 class LongTaskPlanner:
@@ -56,16 +68,18 @@ class LongTaskPlanner:
                             ),
                         }
                     ],
+                    output_mode="json_object",
+                    structured_output=_PLAN_OUTPUT_INSTRUCTION,
                 )
             )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            return _fallback_plan(task_type, template)
+        if response.audit_summary.get("status") != "success":
+            return _fallback_plan(task_type, template)
+        try:
             enhanced = _apply_provider_json(template, response.answer)
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
-            return PlanResult(
-                task_type=task_type,
-                plan_source=PLAN_SOURCE_FALLBACK,
-                steps=template,
-                provider_status="fallback",
-            )
+            return _fallback_plan(task_type, template)
         return PlanResult(
             task_type=task_type,
             plan_source=PLAN_SOURCE_PROVIDER,
@@ -186,14 +200,21 @@ def _provider_template_prompt(
     )
     memory_hint = _limit_text(memory_summary, 500) if memory_summary else "(none)"
     return (
-        "Return JSON only with shape "
-        '{"steps":[{"title":"...","query_hint":"...",'
-        '"expected_outcome":"...","acceptance_hint":"..."}]}.\n'
-        "Do not change step count, order, step_id, or action_type. "
-        "Only refine title, query_hint, expected_outcome, and acceptance_hint.\n"
         f"task_type={task_type}\n"
         f"memory_summary={memory_hint}\n"
         f"template_steps:\n{step_rows}"
+    )
+
+
+def _fallback_plan(
+    task_type: str,
+    template: list[LongTaskStep],
+) -> PlanResult:
+    return PlanResult(
+        task_type=task_type,
+        plan_source=PLAN_SOURCE_FALLBACK,
+        steps=template,
+        provider_status="fallback",
     )
 
 

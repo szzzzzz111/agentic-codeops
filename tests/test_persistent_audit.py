@@ -4,6 +4,7 @@ from app.audit.manager import AuditManager, AuditRecordInput
 from app.audit.store import DEFAULT_RECENT_LIMIT, SQLiteAuditStore
 from app.harness.kernel import AgentLoop, AgentLoopRequest
 from app.memory.store import compute_repo_key
+from app.providers.model_provider import ModelProviderResponse, ProviderCallMetrics
 from app.tools.tool_executor import ToolExecutionResult
 
 
@@ -39,6 +40,34 @@ class SuccessfulVerificationExecutor:
 class FailingAuditManager(AuditManager):
     def record_events(self, **kwargs) -> None:
         raise OSError("audit unavailable")
+
+
+class MetricsModelProvider:
+    def generate(self, request):
+        evidence = request.evidence[0]
+        citation = (
+            f"{evidence['file_path']}:{evidence['start_line']}-{evidence['end_line']}"
+        )
+        return ModelProviderResponse(
+            answer=f"证据位于 {citation}",
+            audit_summary={
+                "provider": "metrics",
+                "model": "test",
+                "status": "success",
+            },
+            metrics=ProviderCallMetrics(
+                availability="available",
+                latency_ms=9,
+                requested_model="test",
+                returned_model="test",
+                system_fingerprint="SECRET_FINGERPRINT",
+                finish_reason="stop",
+                finish_reason_status="complete",
+                prompt_tokens=11,
+                completion_tokens=3,
+                total_tokens=14,
+            ),
+        )
 
 
 def test_audit_store_scopes_events_by_user_and_repo(tmp_path: Path) -> None:
@@ -164,6 +193,31 @@ def test_agent_loop_persists_trace_and_verification_events(tmp_path: Path) -> No
     assert "trace" in event_types
     assert "verification_result" in event_types
     assert all(str(tmp_path) not in event.summary for event in events)
+
+
+def test_provider_metrics_do_not_enter_persistent_audit(tmp_path: Path) -> None:
+    (tmp_path / "app.py").write_text(
+        "UNIQUE_METRICS_TOKEN = True\n",
+        encoding="utf-8",
+    )
+    loop = AgentLoop(model_provider=MetricsModelProvider())
+
+    loop.run(
+        AgentLoopRequest(
+            message="UNIQUE_METRICS_TOKEN 在哪里",
+            repo_path=str(tmp_path),
+            trace_id="trace_metrics",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+
+    store, repo_key = SQLiteAuditStore.for_existing_repo(tmp_path)
+    events = store.recent_events(user_id="u001", repo_key=repo_key, limit=20)
+    stored_text = " ".join(f"{event.summary} {event.payload}" for event in events)
+    assert "SECRET_FINGERPRINT" not in stored_text
+    assert "prompt_tokens" not in stored_text
+    assert "total_tokens" not in stored_text
 
 
 def test_agent_loop_recovery_query_reads_without_repo_rag_or_new_schema(

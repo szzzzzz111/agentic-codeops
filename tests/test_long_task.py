@@ -17,15 +17,10 @@ class InvalidPlanProvider:
 
 class SchemaAwarePlanProvider:
     def __init__(self) -> None:
-        self.prompt = ""
+        self.request = None
 
     def generate(self, request):
-        self.prompt = request.evidence[0]["snippet"]
-        if "Return JSON only" not in self.prompt or "title" not in self.prompt:
-            return ModelProviderResponse(
-                answer="{not-json",
-                audit_summary={"provider": "schema_aware", "status": "success"},
-            )
+        self.request = request
         return ModelProviderResponse(
             answer=(
                 '{"steps": ['
@@ -38,6 +33,14 @@ class SchemaAwarePlanProvider:
                 "]}"
             ),
             audit_summary={"provider": "schema_aware", "status": "success"},
+        )
+
+
+class ErrorPlanProvider:
+    def generate(self, request):
+        return ModelProviderResponse(
+            answer='{"steps":[]}',
+            audit_summary={"provider": "error", "status": "error"},
         )
 
 
@@ -125,17 +128,40 @@ def test_planner_uses_task_type_templates_and_provider_fallback() -> None:
     assert all(step.expected_outcome for step in plan.steps)
 
 
-def test_planner_sends_json_schema_prompt_for_provider_enhancement() -> None:
+def test_planner_sends_single_source_structured_output_instruction() -> None:
     provider = SchemaAwarePlanProvider()
     planner = LongTaskPlanner(provider=provider, provider_enabled=True)
 
     plan = planner.plan("定位 MissingSymbol", memory_summary="偏好中文")
 
+    request = provider.request
+    assert request is not None
     assert plan.plan_source == "provider_assisted"
     assert plan.steps[0].title == "增强定位"
     assert plan.steps[0].action_type == "repo_rag"
-    assert "Return JSON only" in provider.prompt
-    assert "Do not change step count, order, step_id, or action_type" in provider.prompt
+    assert request.output_mode == "json_object"
+    assert request.structured_output is not None
+    assert request.structured_output.name == "long_task_plan"
+    assert request.structured_output.max_output_tokens == 2000
+    assert '"steps"' in request.structured_output.json_example
+    prompt = request.evidence[0]["snippet"]
+    assert "Return JSON only" not in prompt
+    assert '{"steps"' not in prompt
+    assert "task_type=code_location" in prompt
+    assert "template_steps:" in prompt
+
+
+def test_planner_checks_provider_status_before_parsing(monkeypatch) -> None:
+    def fail_if_called(raw_json: str):
+        raise AssertionError("json parser must not run for provider errors")
+
+    monkeypatch.setattr("app.longtask.planner.json.loads", fail_if_called)
+    planner = LongTaskPlanner(provider=ErrorPlanProvider(), provider_enabled=True)
+
+    plan = planner.plan("定位 MissingSymbol")
+
+    assert plan.plan_source == "deterministic_fallback"
+    assert plan.provider_status == "fallback"
 
 
 def test_manager_create_supplement_reopen_and_redaction(tmp_path: Path) -> None:

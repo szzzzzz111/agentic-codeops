@@ -1,5 +1,29 @@
 # 项目进度
 
+## Model Provider Contract Hardening（2026-06-22）
+
+- Change `harden-model-provider-contract` 已归档至
+  `openspec/changes/archive/2026-06-22-harden-model-provider-contract/`；风险级别：high；
+  当前无 active OpenSpec change。
+- 本阶段把共享 Model Provider 拆分为向后兼容的 `grounded_text` 与显式 `json_object` request
+  contract；结构化 instruction 在 HTTP 前校验，Provider 不按 `question_type` 猜业务 schema。
+- Long Task Planner 与 Model Patch AuthoringProvider 已删除重复 JSON instruction 拼接；Planner
+  在解析前检查 provider status，Planner/Patch 保留各自业务 schema 与安全校验。
+- OpenAI-compatible provider 已支持显式 `thinking=disabled`、基础 JSON object response 校验、
+  已知非完成 finish reason fail-closed，以及 response-local 脱敏 metrics；metrics 不进入公开或
+  持久化 contract。
+- TDD focused provider/Planner/Patch/Grounded Answer/persistent audit 为 75 passed；加入 AgentLoop
+  与 API 回归及 review remediation 后为 165 passed。最终 full verification 为 331 passed、
+  1 skipped；ruff、stage docs、skill checks、实现完成时 OpenSpec 19/19 与 `git diff --check`
+  通过；归档后长期 specs validation 为 18/18。
+- 独立 external review 初审 0 P0/P1、3 P2；已增加 `json_example` 4096 字符上限、instruction
+  深度/response 深度 fail-closed、malformed evidence 与 JSON missing-finish 回归。最终 re-review
+  无剩余 P0/P1/P2。Focused Stage Debt Sweep 未发现新增具体债务。
+- Runtime/test 最终状态已完成 internal review、独立 adversarial external review、Stage Debt Sweep
+  与 archive；归档后没有 runtime/test 变更。
+- 本 change 不执行真实网络或 live eval，不修改默认 Patch wiring，不创建 V24。后续
+  `add-live-model-provider-eval` 必须在本 change 归档合并后独立创建。
+
 ## V11/V12 Capability Truth Fix（2026-06-20）
 
 - Change `fix-v11-v12-capability-truth` 已于 2026-06-20 归档至

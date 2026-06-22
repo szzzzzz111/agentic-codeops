@@ -108,11 +108,13 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `Reranker` 负责在 Evidence Pack 前对 merged retrieval results 做 deterministic rerank，并最多选择 `SearchPlan.max_results` 条结果。
 - `EvidencePack` / `ContextBudget` 在 retrieval 后生成内部证据输入层和字符级预算摘要。
 - `GroundedAnswerGenerator` 只消费预算内 included evidence，并负责 provider 调用、citation 校验、fallback 和脱敏 audit 摘要。
-- `ModelProvider` 默认使用本地 deterministic fake provider；显式配置后可调用 OpenAI-compatible provider。
+- `ModelProvider` 默认使用本地 deterministic fake provider；显式配置后可调用 OpenAI-compatible
+  provider。共享 request 默认使用 `grounded_text`，结构化调用必须由 Planner/Patch 显式提供
+  `json_object` instruction，Provider 不按 `question_type` 推断业务 schema。
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。V19 `AuditManager` 持久化脱敏 trace envelope 和关键事件摘要；完整 raw internal trace、hybrid retrieval channel detail、Evidence Pack content 和 provider content 不持久化，也不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 和 V20-V23 worktree 生命周期。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态；Worktree Isolation 把 standalone patch 与组合 Patch + Verify 放入 detached、locked worktree，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行任意 shell、不自动 commit；显式环境配置只会把 OpenAI-compatible provider 接入 grounded answer 和 Long Task planner。`ModelPatchAuthoringProvider` 当前仅可通过依赖注入用于测试或自定义装配，默认 `AgentLoop` 不会因环境变量配置而启用真实 patch diff generation。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 和 V20-V23 worktree 生命周期。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态；Worktree Isolation 把 standalone patch 与组合 Patch + Verify 放入 detached、locked worktree，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行任意 shell、不自动 commit；显式环境配置只会把 OpenAI-compatible provider 接入 grounded answer 和 Long Task planner。共享 provider 可选记录 request-local latency、finish reason、model/fingerprint 和 token usage，但这些 metrics 不进入业务结果、公开响应或持久化 audit。`ModelPatchAuthoringProvider` 当前仅可通过依赖注入用于测试或自定义装配，默认 `AgentLoop` 不会因环境变量配置而启用真实 patch diff generation。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -325,9 +327,20 @@ AgentLoop
 
 - `GroundedAnswerGenerator` 只消费预算内 included evidence snippets 和 citation metadata，不直接读仓库、不执行工具、不修改代码。
 - 默认 `FakeModelProvider` 是本地 deterministic provider；默认验证不需要网络、API key 或真实模型输出。
-- `OpenAICompatibleModelProvider` 只在显式环境变量配置后启用，使用 `httpx` 调用 chat completions 兼容接口。
+- `OpenAICompatibleModelProvider` 只在显式环境变量配置后启用，使用 `httpx` 调用 chat completions
+  兼容接口。`REPOPILOT_MODEL_THINKING=disabled` 会显式发送关闭 thinking 的 provider 扩展；未配置
+  时不发送该字段，其他值 fail closed。
+- 共享 request 默认使用 `grounded_text`；`json_object` 必须携带调用方定义的名称、JSON object
+  example 和 `1..16384` output token 上限，并在 HTTP 前完成基础校验。
+- Provider 对 JSON mode 只校验非空、合法且顶层为 object；Long Task/Patch 分别负责自己的业务
+  schema、step、citation、路径与 diff 校验。
+- `stop` 视为正常完成；`length`、`content_filter`、`tool_calls` 与
+  `insufficient_system_resource` fail closed。缺失或未知 finish reason 只标记 metrics 状态，以
+  保留 OpenAI-compatible 端点兼容性。
 - provider 输出必须引用 provided evidence citation，格式为 `relative/path.py:start-end`；无 citation、越界 citation、provider error 或 timeout 均返回保守 fallback。
-- provider audit 只记录 provider name、model、status、error class 或 fallback reason，不记录完整 prompt、完整模型输出、完整 Evidence Pack、API key 或本机绝对路径。
+- provider audit 只记录 provider name、model、status、error class 或 fallback reason，不记录完整
+  prompt、完整模型输出、完整 Evidence Pack、API key、本机绝对路径、system fingerprint 或 token
+  明细；response-local metrics 不穿透 Grounded Answer、Planner 或 Patch 业务结果。
 - `/chat` 顶层响应仍只要求 `trace_id`、`answer`、`related_files` 和 `tool_calls`；provider audit 不进入 `tool_calls`。
 - V11 不实现 query rewrite、rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
 
@@ -455,7 +468,10 @@ AgentLoop
 边界约束：
 
 - Patch proposal 只通过明确 patch 请求触发，并在 capability-status / repo_search 前处理。
-- 默认 fake Patch Authoring provider 不生成真实 diff；`ModelPatchAuthoringProvider` 仅提供可注入实现边界，当前默认应用没有环境变量驱动的真实 patch provider 装配。任何自定义注入 provider 的输出仍必须通过结构化 schema、citation 和 diff 校验。
+- 默认 fake Patch Authoring provider 不生成真实 diff；`ModelPatchAuthoringProvider` 仅提供可注入
+  实现边界，当前默认应用没有环境变量驱动的真实 patch provider 装配。注入模型时 Patch provider
+  显式提供独立 JSON output instruction，query 只表达用户修改意图；任何输出仍必须通过业务字段、
+  citation、路径和 diff 校验。
 - Pending patch 存入 `.repopilot/patches.sqlite3`，按 `user_id + repo_key` 隔离，默认 24 小时过期。
 - Apply 只接受 `确认 patch <patch_id>`、`应用 patch <patch_id>`、`confirm patch <patch_id>` 和 `apply patch <patch_id>`。
 - `ToolInvocationContext` 由 Patch manager 预校验生成；`PermissionPolicy` 和 `ApprovalGate` 不读 patch store、不解析用户消息、不重新计算 hash。

@@ -2,7 +2,22 @@ from dataclasses import dataclass, field
 import json
 from typing import Protocol
 
-from app.providers.model_provider import ModelProvider, ModelProviderRequest
+from app.providers.model_provider import (
+    ModelProvider,
+    ModelProviderRequest,
+    StructuredOutputInstruction,
+)
+
+
+_PATCH_OUTPUT_INSTRUCTION = StructuredOutputInstruction(
+    name="patch_proposal",
+    json_example=(
+        '{"summary":"...","target_files":["relative/path.py"],'
+        '"diff":"--- a/relative/path.py\\n+++ b/relative/path.py\\n",'
+        '"citations":["relative/path.py:1-2"]}'
+    ),
+    max_output_tokens=8000,
+)
 
 
 @dataclass(frozen=True)
@@ -55,9 +70,11 @@ class ModelPatchAuthoringProvider:
     ) -> PatchAuthoringProviderResponse:
         provider_response = self.provider.generate(
             ModelProviderRequest(
-                original_query=_format_patch_query(request.original_query),
+                original_query=request.original_query,
                 question_type=request.question_type,
                 evidence=request.evidence,
+                output_mode="json_object",
+                structured_output=_PATCH_OUTPUT_INSTRUCTION,
             )
         )
         audit = dict(provider_response.audit_summary)
@@ -84,12 +101,3 @@ class ModelPatchAuthoringProvider:
             citations=citations,
             audit_summary=audit,
         )
-
-
-def _format_patch_query(original_query: str) -> str:
-    return (
-        "请只返回 JSON："
-        '{"summary": "...", "target_files": ["relative/path.py"], '
-        '"diff": "unified diff", "citations": ["relative/path.py:1-2"]}。'
-        f"用户请求：{original_query}"
-    )

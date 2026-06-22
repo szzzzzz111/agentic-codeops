@@ -3,7 +3,7 @@ from app.answering.grounded_answer import (
     GroundedAnswerGenerator,
     validate_answer_citations,
 )
-from app.providers.model_provider import ModelProviderResponse
+from app.providers.model_provider import ModelProviderResponse, ProviderCallMetrics
 from app.rag.evidence import build_evidence_pack
 
 
@@ -37,6 +37,30 @@ class LeakyAuditProvider:
                 "raw_output": "SECRET_OUTPUT",
                 "fallback_reason": "unused",
             },
+        )
+
+
+class MetricsProvider:
+    def generate(self, request):
+        return ModelProviderResponse(
+            answer="PaymentService 实现了 capture_invoice。 app/service.py:10-12",
+            audit_summary={
+                "provider": "metrics",
+                "model": "test",
+                "status": "success",
+            },
+            metrics=ProviderCallMetrics(
+                availability="available",
+                latency_ms=7,
+                requested_model="test",
+                returned_model="test",
+                system_fingerprint="SECRET_FINGERPRINT",
+                finish_reason="stop",
+                finish_reason_status="complete",
+                prompt_tokens=10,
+                completion_tokens=5,
+                total_tokens=15,
+            ),
         )
 
 
@@ -142,6 +166,19 @@ def test_grounded_answer_redacts_unapproved_provider_audit_fields() -> None:
         "status": "success",
     }
     assert "SECRET" not in str(result.audit_summary)
+
+
+def test_grounded_answer_does_not_copy_provider_metrics_into_business_result() -> None:
+    generator = GroundedAnswerGenerator(provider=MetricsProvider())
+
+    result = generator.generate(evidence_pack())
+
+    assert result.audit_summary == {
+        "provider": "metrics",
+        "model": "test",
+        "status": "success",
+    }
+    assert "SECRET_FINGERPRINT" not in str(result)
 
 
 def test_grounded_answer_accepts_valid_citation_followed_by_punctuation() -> None:

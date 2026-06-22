@@ -4,6 +4,8 @@ from app.providers.model_provider import (
     ModelProviderRequest,
     ModelProviderResponse,
     OpenAICompatibleModelProvider,
+    ProviderCallMetrics,
+    StructuredOutputInstruction,
     load_model_provider_from_env,
 )
 
@@ -13,5 +15,7 @@ __all__ = [
     "ModelProviderRequest",
     "ModelProviderResponse",
     "OpenAICompatibleModelProvider",
+    "ProviderCallMetrics",
+    "StructuredOutputInstruction",
     "load_model_provider_from_env",
 ]

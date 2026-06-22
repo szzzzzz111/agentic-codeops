@@ -4,8 +4,13 @@ from pathlib import Path
 from app.patching.apply import apply_unified_diff
 from app.patching.manager import PatchManager
 from app.patching.parser import parse_patch_confirmation, parse_patch_verify_confirmation
-from app.patching.provider import PatchAuthoringProviderResponse
+from app.patching.provider import (
+    ModelPatchAuthoringProvider,
+    PatchAuthoringProviderRequest,
+    PatchAuthoringProviderResponse,
+)
 from app.patching.store import SQLitePatchStore
+from app.providers.model_provider import ModelProviderResponse
 
 
 def write_text(path: Path, content: str) -> None:
@@ -21,6 +26,16 @@ class StaticPatchProvider:
         return self.response
 
 
+class RecordingModelProvider:
+    def __init__(self, response: ModelProviderResponse) -> None:
+        self.response = response
+        self.request = None
+
+    def generate(self, request):
+        self.request = request
+        return self.response
+
+
 def test_parse_patch_confirmation_accepts_only_explicit_syntax() -> None:
     assert parse_patch_confirmation("应用 patch patch_20260531_abcdef") == (
         "patch_20260531_abcdef"
@@ -30,6 +45,46 @@ def test_parse_patch_confirmation_accepts_only_explicit_syntax() -> None:
     )
     assert parse_patch_confirmation("可以") is None
     assert parse_patch_confirmation("继续 patch_20260531_abcdef") is None
+
+
+def test_model_patch_provider_uses_single_source_structured_instruction() -> None:
+    model_provider = RecordingModelProvider(
+        ModelProviderResponse(
+            answer=(
+                '{"summary":"update app","target_files":["app.py"],'
+                '"diff":"--- a/app.py\\n+++ b/app.py\\n",'
+                '"citations":["app.py:1-1"]}'
+            ),
+            audit_summary={"provider": "recording", "status": "success"},
+        )
+    )
+    provider = ModelPatchAuthoringProvider(model_provider)
+
+    response = provider.generate_patch(
+        PatchAuthoringProviderRequest(
+            original_query="请修改 app.py",
+            question_type="implementation_explanation",
+            evidence=[
+                {
+                    "file_path": "app.py",
+                    "start_line": 1,
+                    "end_line": 1,
+                    "snippet": "old",
+                }
+            ],
+        )
+    )
+
+    request = model_provider.request
+    assert request is not None
+    assert request.output_mode == "json_object"
+    assert request.structured_output is not None
+    assert request.structured_output.name == "patch_proposal"
+    assert request.structured_output.max_output_tokens == 8000
+    assert '"target_files"' in request.structured_output.json_example
+    assert request.original_query == "请修改 app.py"
+    assert "请只返回 JSON" not in request.original_query
+    assert response.summary == "update app"
 
 
 def test_parse_patch_verify_confirmation_requires_patch_id_and_label() -> None:

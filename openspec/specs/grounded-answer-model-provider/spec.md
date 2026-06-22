@@ -3,9 +3,7 @@
 ## Purpose
 
 记录 V11 引入的 grounded answer 和 model provider boundary：系统只基于 V10 Evidence Pack / Context Budget 中预算内 included evidence 生成回答，默认使用本地 deterministic fake provider，显式配置后可使用 OpenAI-compatible provider。该能力继承 grep-first, RAG-assisted 检索立场，优先基于可审计的 lexical/path/symbol evidence 进行 citation 约束回答，不让模型参与检索规划、query rewrite、rerank、工具调用、代码修改、memory 或多步 agent 决策。
-
 ## Requirements
-
 ### Requirement: 系统基于预算内证据生成 grounded answer
 
 系统 SHALL 在 repo-local retrieval 成功并产生 Evidence Pack 后，使用预算内 included evidence snippets 生成 grounded answer。Grounded answer MUST 优先基于可审计的 deterministic lexical/path/symbol evidence 和对应 citation metadata 组织回答。Grounded answer MUST NOT 直接读取仓库文件、执行工具、修改代码、执行 shell、执行 skill、访问 omitted/truncated snippets 或让模型自由编造未被 evidence 支撑的结论。
@@ -63,11 +61,54 @@ OpenAI-compatible provider MUST 使用运行时依赖 `httpx`。Provider 配置 
 
 ### Requirement: Provider audit 必须脱敏
 
-系统 SHALL 为 provider 调用记录内部 audit summary。该 summary MUST 只记录 provider name、model、status、latency 或 error class、fallback reason。Provider audit MUST NOT 记录完整 prompt、完整模型输出、完整 Evidence Pack、API key、本机绝对路径或内部 trace 细节。Provider audit MUST NOT 进入 `/chat` 顶层字段或 `/chat.tool_calls`。
+系统 SHALL 为 provider 调用记录内部 audit summary。该 summary MUST 只记录 provider name、model、
+status、latency 或 error class、fallback reason。Provider response MAY 额外携带 request-local
+`ProviderCallMetrics`，包含 latency、requested/returned model、system fingerprint、finish reason
+和 token usage；缺失 usage 或 metrics MUST NOT 破坏合法业务输出。
+
+`stop` SHALL 视为正常完成。`length`、`content_filter`、`tool_calls` 和
+`insufficient_system_resource` MUST 视为 provider error。缺失或未知 finish reason MUST 在 metrics
+中标记为 unavailable/unknown，但共享兼容层 MUST NOT 仅因此拒绝合法 content。
+
+Provider audit、公开响应和持久化 audit MUST NOT 记录完整 prompt、完整模型输出、完整 Evidence Pack、
+API key、reasoning content、本机绝对路径、system fingerprint 或 token 明细。Provider metrics MUST
+NOT 进入 `/chat` 顶层字段或 `/chat.tool_calls`。
+
+#### Scenario: Provider metrics 缺失不破坏回答
+
+- **WHEN** provider 返回合法 content 但缺少 usage、system fingerprint 或 finish reason
+- **THEN** 合法业务输出 SHALL 保持可用
+- **AND** 缺失指标 SHALL 标记为 partial 或 unavailable
+
+#### Scenario: 已知非完成 finish reason 安全失败
+
+- **WHEN** provider 返回 `length`、`content_filter`、`tool_calls` 或
+  `insufficient_system_resource`
+- **THEN** provider MUST 返回空业务输出和安全 error class
+- **AND** response-local metrics MAY 保留脱敏 finish reason 与 usage
 
 #### Scenario: Provider audit 不泄露敏感内容
 
 - **WHEN** 系统调用 fake provider 或 OpenAI-compatible provider
-- **THEN** 内部 trace MAY 记录 provider 调用摘要
-- **AND** `/chat` 顶层响应 MUST NOT 包含 provider audit 字段
-- **AND** `/chat.tool_calls` MUST NOT 包含 prompt、API key、完整模型输出或完整 Evidence Pack
+- **THEN** 内部 trace MAY 记录允许的 provider 调用摘要
+- **AND** `/chat` 顶层响应和 `tool_calls` MUST NOT 包含 metrics、prompt、API key、完整模型输出或
+  完整 Evidence Pack
+
+### Requirement: Provider 结构化输出与业务 schema 分层
+
+OpenAI-compatible provider 在 `json_object` mode 下 SHALL 发送 JSON object response format、
+调用方提供的 JSON example 和 output token 上限。Provider MUST 只校验 response content 非空、
+可解析且顶层为 JSON object；Provider MUST NOT 校验 Long Task 或 Patch 业务字段。调用方 MUST
+继续负责业务 schema、step、citation、路径和 diff 校验。
+
+#### Scenario: Provider 接受基础合法 JSON object
+
+- **WHEN** JSON mode response content 是可解析的顶层 JSON object
+- **THEN** provider SHALL 返回 success 和原始 content
+- **AND** 业务字段正确性 MUST 由调用方判断
+
+#### Scenario: Provider 拒绝非 object JSON
+
+- **WHEN** JSON mode response 是 array、scalar、空 content 或非法 JSON
+- **THEN** provider MUST 返回安全 error
+- **AND** 调用方 MUST NOT 把该 response 当作有效业务结果
