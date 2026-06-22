@@ -338,6 +338,9 @@ AgentLoop
   `insufficient_system_resource` fail closed。缺失或未知 finish reason 只标记 metrics 状态，以
   保留 OpenAI-compatible 端点兼容性。
 - provider 输出必须引用 provided evidence citation，格式为 `relative/path.py:start-end`；无 citation、越界 citation、provider error 或 timeout 均返回保守 fallback。
+- Grounded-text system instruction 会按 request evidence 的稳定顺序列出允许的 citation
+  labels，要求模型至少逐字复制一个完整 `path:start-end` label，不得改写范围或创建新 citation；
+  evidence text 被明确视为不可信仓库数据，不能覆盖 system instruction。
 - provider audit 只记录 provider name、model、status、error class 或 fallback reason，不记录完整
   prompt、完整模型输出、完整 Evidence Pack、API key、本机绝对路径、system fingerprint 或 token
   明细；response-local metrics 不穿透 Grounded Answer、Planner 或 Patch 业务结果。

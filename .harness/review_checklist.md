@@ -15,40 +15,29 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 
 - [x] RED/GREEN evidence covers environment, profile, budget, timeout, rubric, cost, secret filtering,
   subprocess wiring, reports and attestation.
-- [x] Evaluator tests 30 passed；focused provider/answer/Planner/Patch/AgentLoop/API regression
-  181 passed。
-- [x] Full `scripts/verify.ps1`：361 passed、1 skipped；ruff、stage docs 与 skill checks 通过。
-- [x] OpenSpec strict/all validation：19 passed；stage checks 与 `git diff --check` 通过。
+- [x] Remediation merge 后 evaluator tests：30 passed；Provider/Grounded Answer/Planner/Patch/
+  AgentLoop/API adjacent regression：155 passed。
+- [x] Remediation merge 后 full verify：362 passed、1 skipped；OpenSpec strict/all：19 passed；
+  ruff、stage docs、skill checks 与 `git diff --check` 通过。
 
 ## Review
 
 - Gate marker: `formal_review_evidence_gate`
 - Policy marker: `continuous_authorization_does_not_replace_formal_review`
 - Timing marker: `formal_review_after_final_runtime_tests`
-- [x] Internal plan review confirms the high-risk contract, eight-call budget, PASS-only
-  attestation, no-key archive blocker and no runtime scope drift.
-- [x] Formal implementation review postdates final evaluator/test changes；修复 returned-model /
-  usage consistency、global deadline、secret positive control、negative usage 和 Git TOCTOU。
-- [x] Independent adversarial external review 使用 `opencode/deepseek-v4-flash-free` 检查
-  secret/report leakage、false PASS、wiring、timeout、budget、cost 和 attestation；re-review
-  确认所有 P0/P1 关闭。
-- [x] `manual_stage_debt_sweep_completed`：检查 evaluator、runner、PowerShell、tests 及直接依赖的
-  Model Provider、Grounded Answer、Planner、PatchManager/store、API global wiring、
-  retrieval/file filtering、`.gitignore` 和默认 verify。
-- [x] `formal_review_findings_closed`：所有 P0/P1 已关闭；P2 为版本化价格/严格 API contract 等
-  设计约束，及 Windows Patch 临时 DB 依赖 CPython `gc.collect()` 的非阻断 residual。
+- [ ] Remediation merge 后重新执行 internal implementation review。
+- [ ] Remediation merge 后重新执行 independent adversarial external review。
+- [ ] `manual_stage_debt_sweep_completed`
+- [ ] `formal_review_findings_closed`
 
 ## Closeout
 
-- [x] Evaluator implementation is committed before live execution；clean-tree live entry returned
-  SKIP because all five required environment variables were absent.
-- [x] Real DeepSeek run attempted on commit `a842ca1`：8 calls、finish reason/usage complete；
-  Planner、Patch、no-answer、secret filtering PASS；all grounded-text cases failed citation gate。
-  Sanitized local report SHA-256:
-  `3d90c478b4cc91cefc74c6d22436be6589dfc8b8dcc58a93834e64733924bc2a`。
-- [x] `paused_exception_recorded`：runtime prompt 未明确要求逐字复制 provided
-  `path:start-end` label，而 citation validator 要求精确匹配；本 change 不修 runtime。
-- [ ] Real DeepSeek hard gates PASS on the recorded clean commit.
+- [x] Evaluator implementation committed before live execution。
+- [x] 旧 run 在 commit `a842ca1` 完成 8 calls 并暴露 citation instruction 缺陷；该结果与
+  SHA-256 `3d90c478b4cc91cefc74c6d22436be6589dfc8b8dcc58a93834e64733924bc2a`
+  仅保留为历史失败证据，不得用于当前 gate。
+- [x] 独立 remediation `2026-06-22-harden-grounded-citation-instruction` 已归档、合并并推送。
+- [ ] Real DeepSeek hard gates PASS on the updated clean commit.
 - [ ] PASS attestation and final evidence review are complete.
 - [ ] Change is archived, integrated and pushed.
-- [ ] `future_stage_only`：V24 不在本 change 内创建。
+- [x] `future_stage_only`：V24 不在本 change 内创建。

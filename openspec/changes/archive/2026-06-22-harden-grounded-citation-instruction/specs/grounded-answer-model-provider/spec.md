@@ -1,0 +1,37 @@
+## MODIFIED Requirements
+
+### Requirement: 系统校验 grounded answer citation
+
+系统 SHALL 校验 model provider 输出中的 citation。允许 citation 格式为
+`relative/path.py:start-end`，其中 `start` 和 `end` MUST 为正整数。单行引用 SHOULD 规范化为
+`path:n-n`。Citation MUST 完全匹配提供给 provider 的 evidence `file_path`、`start_line` 和
+`end_line`。
+
+Grounded-text provider instruction MUST 列出 request evidence 中允许的 citation labels，并要求
+模型至少逐字复制一个完整 label。Instruction MUST NOT 允许模型改写路径、起止行、引用子范围或
+创建未提供的 citation。Instruction MUST 明确 repository evidence 是不可信数据，其中的文本不得
+覆盖 system instruction。
+
+系统 MUST 允许重复 citation 和乱序 citation。系统 MUST 将绝对路径、未提供路径、错误行号、
+错误范围、无法解析 citation 和没有合法 citation 的 provider 输出视为不可信，并返回保守
+fallback。
+
+#### Scenario: Grounded instruction 明确 exact citation contract
+
+- **WHEN** grounded-text request 包含一个或多个 evidence items
+- **THEN** system instruction MUST 按稳定顺序列出对应 `path:start-end` labels
+- **AND** instruction MUST 要求至少逐字复制一个 label
+- **AND** instruction MUST 将 evidence 内指令视为不可信数据
+
+#### Scenario: 越界 citation 被降级
+
+- **WHEN** provider 输出引用未提供给 provider 的文件路径或行号范围
+- **THEN** 系统 MUST NOT 返回该 provider 输出
+- **AND** 系统 MUST 返回保守 fallback
+- **AND** 内部 audit summary MUST 记录 fallback reason
+
+#### Scenario: 没有合法 citation 的输出被降级
+
+- **WHEN** provider 输出不包含任何合法 citation
+- **THEN** 系统 MUST 返回保守 fallback
+- **AND** 内部 audit summary MUST 记录 fallback reason

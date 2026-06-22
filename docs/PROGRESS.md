@@ -11,23 +11,41 @@
   显式注入 Patch Authoring、无答案零调用、prompt injection 和 secret filtering。
 - 默认 pytest、`scripts/verify.ps1` 与 CI 保持离线 deterministic；薄 PowerShell 入口缺少 live
   配置时明确 SKIP。
-- 最终 deterministic verification：361 passed、1 skipped；evaluator tests 30 passed；
-  OpenSpec 19/19、ruff、stage docs、skill checks 与 `git diff --check` 通过。
-- Internal review 修复 usage/model consistency、300 秒 deadline、secret 正对照、负 token 和
-  attestation Git TOCTOU；独立 external re-review 确认无剩余 P0/P1。
+- Remediation 合入前的 deterministic verification 为 361 passed、1 skipped，evaluator tests
+  30 passed；旧 internal/external review 无剩余 P0/P1。由于 runtime 已变化，这些证据必须重跑，
+  不作为当前 archive gate。
+- Remediation 合入后的新 deterministic evidence：evaluator tests 30 passed、直接相邻回归
+  155 passed、full verify 362 passed、1 skipped、OpenSpec strict/all 19 passed；等待基于新
+  commit 的 formal review 与 live gate。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`
   上完成 8 次调用：Planner、Patch、无答案和 secret filtering PASS；6 个 grounded-text 路径均
   因 citation gate 失败。所有 provider response 均为 `finish_reason=stop` 且 usage 完整。
 - 根因是 runtime grounded-text system prompt 只要求“引用 citation”，未明确要求逐字复制 provided
-  `path:start-end` label，而 validator 要求 exact match。Eval change 已按 paused exception 冻结，
-  等待独立 `harden-grounded-citation-instruction` remediation。
+  `path:start-end` label，而 validator 要求 exact match。独立
+  `harden-grounded-citation-instruction` remediation 已归档、合并、推送并合入本分支；旧
+  live/review 证据全部失效，当前等待完整重验。
 - 真实 PASS 和 attestation 产生前，本 change 不得归档或合并。
 - 本阶段不修改 Model Provider runtime、默认 Patch wiring、`/chat` contract，不创建 V24。
 - 已知非阻断 residual：Patch smoke 的临时 SQLite DB 在 Windows 清理前依赖 CPython
   `gc.collect()` 释放短生命周期连接；当前 Windows regression 通过，若未来引入其他 Python
   runtime，应在独立 store-lifecycle hardening change 中增加显式 close 边界。
+
+## Grounded Citation Instruction Remediation（2026-06-22，已归档）
+
+- Change 已归档为 `2026-06-22-harden-grounded-citation-instruction`；风险级别：medium。
+- 真实 DeepSeek live eval 证明所有 grounded-text case 因 citation exact-match 失败而 fallback，
+  而 Planner/Patch structured output、finish reason、usage、无答案和 secret filtering 正常。
+- Grounded-text system instruction 现列出稳定去重的 allowed citation labels，要求至少逐字复制一个
+  `path:start-end` label，并将 evidence text 声明为不可信数据。
+- Citation validator、JSON mode、metrics、默认 Patch wiring、API 与 persistence 保持不变。
+- TDD RED 证明旧 prompt 不包含 allowed label；GREEN 与 Provider/Grounded Answer/AgentLoop/API
+  回归为 135 passed；full deterministic verification 为 332 passed、1 skipped。Paused live
+  evaluator 已在 remediation 归档合并后恢复，正在重新验证。
+- Residual debt：repo retrieval 可产生 `Makefile` 等无扩展名 evidence，但既有 Grounded Answer
+  citation regex 只接受带扩展名路径。该问题未触发本次 live failure；修复会改变 validator
+  contract，明确不在本 prompt-only remediation 内，后续需独立 OpenSpec change 评估。
 
 ## Model Provider Contract Hardening（2026-06-22）
 
