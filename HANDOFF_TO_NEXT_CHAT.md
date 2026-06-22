@@ -2,9 +2,8 @@
 
 ## 当前状态
 
-- Change `harden-model-provider-contract` 已归档；Active OpenSpec change：无。
-- Model Provider contract hardening 已完成实现、review、Stage Debt Sweep 与归档；精确 Git
-  分支、提交和 remote 状态以命令查询为准。
+- Active OpenSpec change：无；`harden-grounded-citation-instruction` 已归档。
+- `add-live-model-provider-eval` 在独立分支 paused；remediation 必须先归档、合并和推送。
 - 精确 Git/OpenSpec 状态先运行：
 
 ```powershell
@@ -15,19 +14,19 @@ openspec list
 
 ## 已完成
 
-- Provider request contract、Planner/Patch JSON instruction 分层、thinking、finish reason 和
-  response-local metrics 已按 TDD 实现并通过正式 review。
-- 最终 full deterministic verification：331 passed、1 skipped；归档后 OpenSpec 长期 specs
-  validation：18 passed。
-- 默认 CI 仍离线 deterministic；默认 Patch wiring 仍使用 fake provider；未创建 V24。
+- Grounded citation instruction 已按 TDD 收紧：列出 exact labels、要求逐字复制、evidence 视为
+  untrusted data。
+- Focused Provider/Grounded Answer/AgentLoop/API regression：135 passed。
+- Full deterministic verification：332 passed、1 skipped；OpenSpec strict/all：19 passed。
+- Internal/focused external review 与 Stage Debt Sweep 已完成，无本 change 内阻断项。
+- Validator、JSON mode、metrics、API 和默认 Patch wiring 未修改。
 
 ## 当前阻塞
 
-- 无已知阻塞。
+- Remediation 尚待 merge/push；完成后才能恢复 live eval。
 
 ## 下一步
 
-1. 若开始真实 provider integration/eval，先创建独立 change：
-   `add-live-model-provider-eval`。
-2. 该 change 保持 eval-only；硬门失败时另建 remediation change，不顺手修改 runtime。
-3. 不创建 V24，不把默认 CI 改成依赖网络。
+1. Merge、push remediation。
+2. 恢复 `add-live-model-provider-eval` 并重新运行完整 deterministic/live gate。
+3. 不创建 V24。
