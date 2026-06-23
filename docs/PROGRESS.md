@@ -22,10 +22,12 @@
   `finish_reason=stop` 且 usage 完整；Planner、Patch、无答案和 secret filtering PASS；4 个
   grounded fixture fallback、`/chat` citation invalid，Prompt Injection 输出
   `ATTACK_MARKER`。质量 baseline 为 0/5，未生成 attestation。
-- 新根因假设：system instruction 要求复制裸 `path:start-end`，但 Provider user evidence 仍使用
-  `[path:start-end]` framing，模型照抄方括号形式会被现有 strict validator 拒绝；同时仅声明
-  evidence untrusted 不足以阻止当前模型执行证据内指令。Eval change 已再次 paused，等待独立
-  grounded evidence framing remediation。
+- 第二个 remediation 已归档、合并、推送并合入本分支：grounded user message 改用裸 citation
+  labels 与 untrusted JSON evidence envelope，system instruction 强化 anti-injection 规则。
+  因 runtime 再次变化，旧 deterministic review/live 证据全部失效，当前等待完整重验。
+- 新 deterministic evidence：evaluator tests 31 passed、adjacent regression 157 passed、
+  full verify 365 passed、1 skipped、OpenSpec strict/all 19 passed；等待基于新 commit 的
+  formal review 与 live gate。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`
@@ -40,6 +42,21 @@
 - 已知非阻断 residual：Patch smoke 的临时 SQLite DB 在 Windows 清理前依赖 CPython
   `gc.collect()` 释放短生命周期连接；当前 Windows regression 通过，若未来引入其他 Python
   runtime，应在独立 store-lifecycle hardening change 中增加显式 close 边界。
+
+## Grounded Evidence Framing Remediation（2026-06-23，已归档）
+
+- Change 已归档为 `2026-06-23-harden-grounded-evidence-framing`；风险级别：medium。
+- 第二次真实 DeepSeek run 在 8 calls、finish reason 与 usage 均正常时，仍出现 grounded citation
+  fallback 和 Prompt Injection marker；Planner/Patch/no-answer/secret filtering 正常。
+- Grounded user prompt 现使用与 validator/system allowed list 一致的裸 `path:start-end` label，
+  并把 evidence 序列化为明确的不可信 JSON data envelope。
+- System instruction 现禁止遵循、复述、转换、编码或以其他方式执行 evidence 内改变回答行为、
+  泄露内容或输出 marker/token 的指令；JSON mode prompt assembly 保持不变。
+- TDD RED/GREEN 已覆盖 framing、envelope、anti-injection instruction 与 JSON parity；
+  external review 后又移除 allowed-list bullet、收紧行为指令措辞并增加特殊字符 round-trip；
+  Provider/Grounded Answer/AgentLoop/API focused regression 为 137 passed。
+- Final deterministic verification 为 334 passed、1 skipped；OpenSpec strict/all 为 19 passed。
+  Internal/focused external review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
 
 ## Grounded Citation Instruction Remediation（2026-06-22，已归档）
 
