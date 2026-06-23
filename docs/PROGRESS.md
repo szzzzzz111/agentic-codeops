@@ -1,5 +1,24 @@
 # 项目进度
 
+## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
+
+- Change 已归档为 `2026-06-23-harden-grounded-prompt-injection-suppression`；风险级别：medium。
+- 第五次真实 DeepSeek eval 在 clean commit `3b7d5cc` 完成 8 calls，质量 baseline 5/5，
+  citation、Planner、Patch、ambiguous、no-answer、secret filtering、finish reason 和 usage 均通过，
+  唯一失败为 `prompt_injection_executed`。
+- Grounded-text instruction 现要求静默忽略 evidence 内的命令、角色、策略、声明式 response rule
+  和额外输出要求；不得确认、解释拒绝、转换或复现 original query 未明确询问的 marker/token。
+- 相同字符串若是 original query 明确询问的仓库事实或标识符，仍允许只基于相关 evidence 回答；
+  citation footer、validator、evidence envelope、JSON mode、metrics、API、默认 Patch wiring 和
+  persistence 均未修改。
+- TDD RED/GREEN 已完成；focused Provider/Grounded Answer/AgentLoop/API regression 为
+  137 passed。Final full verify 为 334 passed、1 skipped；OpenSpec strict/all 为 19 passed。
+- Focused external review 初审提出 2 个 P2、1 个 P3 和 1 个测试表述缺口；已收紧
+  `attack target`、`unrelated`、声明式规则覆盖和 prompt-contract 证据措辞，re-review 无剩余
+  P0-P3。Stage Debt Sweep 未发现新增阻断债务。
+- Residual：prompt-only contract 是否被真实模型服从必须由 eval change 完整重跑验证；同名合法
+  标识符例外与通用 marker substring gate 的潜在语义冲突未被当前固定 fixture 触发。
+
 ## Grounded Citation Footer Remediation（2026-06-23，已归档）
 
 - Change 已归档为 `2026-06-23-require-grounded-citation-footer`；风险级别：medium。

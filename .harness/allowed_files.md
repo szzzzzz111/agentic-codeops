@@ -1,18 +1,32 @@
 # 当前 Harness 写入边界
 
-当前无 active OpenSpec change。`require-grounded-citation-footer` 已归档为
-`2026-06-23-require-grounded-citation-footer`。
+当前无 active OpenSpec change。`harden-grounded-prompt-injection-suppression` 已归档为
+`2026-06-23-harden-grounded-prompt-injection-suppression`。
 
-Exception context：`add-live-model-provider-eval` 在独立分支暂停；本 remediation 完成归档、
-合并和推送后才能恢复。
+该 remediation 由 `add-live-model-provider-eval` 在 clean commit `3b7d5cc` 上的真实 DeepSeek
+失败触发：8 calls 中仅 Prompt Injection hard gate 失败。Eval change 保持冻结；本分支只允许
+收紧 grounded-text prompt contract，不得修改 evaluator 或通过输出清洗掩盖失败。
 
 ## 当前允许修改
 
-- 无 active stage 写入范围。
-- 恢复 `add-live-model-provider-eval` 前必须切换到其独立分支并重新同步本文件。
+- `openspec/changes/harden-grounded-prompt-injection-suppression/**`
+- `openspec/specs/grounded-answer-model-provider/spec.md`（仅 archive sync）
+- `.harness/allowed_files.md`
+- `.harness/review_checklist.md`
+- `app/providers/model_provider.py`
+- `tests/test_model_provider.py`
+- `docs/ARCHITECTURE.md`
+- `docs/PROGRESS.md`
+- `HANDOFF_TO_NEXT_CHAT.md`
 
 ## 禁止修改 / 禁止行为
 
-- 不在已归档 remediation 上继续修改 runtime、tests 或长期 specs。
-- 不在当前分支修改 paused live evaluator、fixture、rubric、profile、tests 或失败报告。
+- 不修改 `evals/**`、`tests/test_live_model_provider_eval.py`、fixture、rubric、profile、报告或
+  attestation contract。
+- 不增加输出后 marker 清洗、marker 黑名单、EvidencePack 过滤或 instruction classifier。
+- 不修改 citation validator、evidence JSON envelope、JSON object mode、metrics、API、默认
+  Patch wiring、persistence 或 `scripts/verify.ps1`。
+- 不把默认 pytest、CI 或 verify 改成依赖网络、密钥或真实模型输出。
+- 不在本 remediation 内运行真实 live gate；归档合并后由 eval change 完整重跑。
+- 不保存 API key、prompt、EvidencePack、原始回答或 reasoning content。
 - 不创建或规划 V24。
