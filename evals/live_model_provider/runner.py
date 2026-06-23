@@ -171,7 +171,12 @@ def run_live_evaluation(
         if api_result is not None and api_result.metrics is not None
         else 0
     )
-    if budget.used != MAX_LIVE_CALLS or observed_calls != MAX_LIVE_CALLS:
+    observed_call_count_invalid = (
+        api_result is not None
+        and api_result.metrics is not None
+        and observed_calls != MAX_LIVE_CALLS
+    )
+    if budget.used != MAX_LIVE_CALLS or observed_call_count_invalid:
         results.append(
             CaseResult(
                 case_id="call_budget",

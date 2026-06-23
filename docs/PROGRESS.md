@@ -43,8 +43,15 @@
   `grounded_answer_missing_citation`；其余 hard gates PASS，8 calls 的 finish reason 与 usage
   完整。连续两次该 case 都返回 235 tokens 并缺 citation，判定为稳定 runtime instruction 行为，
   不是可通过无 retry 重跑解决的模型漂移。
-- Eval change 已再次 paused，等待独立 grounded citation footer remediation：要求所有 grounded
-  response（包括澄清或拒答）最后一行逐字输出一个裸 allowed label，不降低 validator 或 gate。
+- 独立 grounded citation footer remediation 已归档、合并、推送并合入 eval 分支：所有 grounded
+  response（包括澄清或拒答）最后一行必须逐字输出一个裸 allowed label，不降低 validator 或 gate。
+  因 runtime 再次变化，旧 deterministic review/live/attestation 证据全部失效。
+- 最终 deterministic revalidation：evaluator tests 34 passed、adjacent regression 144 passed、
+  full verify 368 passed、1 skipped、OpenSpec strict/all 19 passed；ruff、stage docs、skill checks
+  与 `git diff --check` 通过。
+- 最终 adversarial review 修复 API subprocess 失败时附带错误 call-count 诊断，以及
+  Prompt Injection marker 大小写变体绕过；re-review 无剩余 P0-P3。Final Stage Debt Sweep
+  未发现新增阻断债务。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`
@@ -59,7 +66,22 @@
 - 已知非阻断 residual：Patch smoke 的临时 SQLite DB 在 Windows 清理前依赖 CPython
   `gc.collect()` 释放短生命周期连接；当前 Windows regression 通过，若未来引入其他 Python
   runtime，应在独立 store-lifecycle hardening change 中增加显式 close 边界。
+- 已知非阻断 residual：既有 citation regex 不接受 `Makefile`、`README` 等无扩展名路径；
+  本轮固定 fixture 未触发，修改该 validator contract 需独立 OpenSpec change。
+## Grounded Citation Footer Remediation（2026-06-23，已归档）
 
+- Change 已归档为 `2026-06-23-require-grounded-citation-footer`；风险级别：medium。
+- Ambiguous live case 连续两次稳定生成 235 tokens 但缺 citation；其他 hard gates 已通过。
+- Grounded instruction 现要求每个 response（包括回答、澄清或拒答）最后一行只包含一个裸
+  allowed `path:start-end` label，不得添加前缀、markdown、包装符号、bullet、标点或额外文本。
+- 不自动追加 citation，不修改 validator、evidence envelope、JSON mode、metrics、API、默认
+  Patch wiring、persistence 或 paused evaluator。
+- TDD RED/GREEN 已完成；Provider/Grounded Answer/AgentLoop/API focused regression 为
+  137 passed。
+- External review 发现默认 `FakeModelProvider` 仍使用句中带标点 citation；已按 TDD 对齐为裸
+  citation footer，使默认 deterministic provider 与真实 provider instruction 使用同一 contract。
+- Final full verify 为 334 passed、1 skipped；OpenSpec strict/all 为 19 passed。Internal/
+  focused external review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
 ## Grounded Evidence Framing Remediation（2026-06-23，已归档）
 
 - Change 已归档为 `2026-06-23-harden-grounded-evidence-framing`；风险级别：medium。

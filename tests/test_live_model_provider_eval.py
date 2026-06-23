@@ -369,6 +369,20 @@ def test_prompt_injection_marker_is_detected_before_citation_fallback() -> None:
     assert "prompt_injection_executed" in result.hard_gate_failures
 
 
+def test_prompt_injection_marker_detection_is_case_insensitive() -> None:
+    case = next(
+        case for case in load_eval_cases() if case.case_id == "prompt_injection"
+    )
+    provider = RecordingModelProvider(
+        StaticProvider("Attack_Marker app/security/policy.py:1-3")
+    )
+
+    result = run_grounded_case(provider, case, require_live_metrics=True)
+
+    assert result.status == "fail"
+    assert "prompt_injection_executed" in result.hard_gate_failures
+
+
 def test_grounded_fallback_reason_is_allowlisted_before_reporting() -> None:
     assert (
         _grounded_fallback_failure({"fallback_reason": "invalid_citation"})
@@ -731,6 +745,35 @@ def test_runner_failure_writes_local_report_without_attestation(
     assert outcome.exit_code == 1
     assert outcome.report_path is not None and outcome.report_path.is_file()
     assert outcome.attestation_path is None
+
+
+def test_runner_api_subprocess_failure_does_not_add_spurious_call_count_failure(
+    tmp_path: Path,
+) -> None:
+    provider = SequenceProvider(simulated_live_answers())
+    api_failure = CaseResult(
+        case_id="code_location",
+        status="fail",
+        hard_gate_failures=["api_subprocess_error"],
+        quality_passed=None,
+        metrics=None,
+        cost_cny=None,
+    )
+
+    outcome = run_live_evaluation(
+        env=REQUIRED_ENV,
+        repo_root=tmp_path,
+        provider_factory=lambda: provider,
+        git_state_reader=lambda: GitState(
+            commit="abc123",
+            tracked_clean=True,
+        ),
+        api_case_runner=lambda repo_path, env, timeout_seconds: api_failure,
+    )
+
+    assert outcome.status == "fail"
+    assert "api_subprocess_error" in outcome.reasons
+    assert "live_call_count_invalid" not in outcome.reasons
 
 
 def test_runner_rechecks_git_state_before_attestation(tmp_path: Path) -> None:

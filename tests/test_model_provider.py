@@ -47,6 +47,7 @@ def test_fake_model_provider_returns_stable_cited_answer() -> None:
 
     assert first.answer == second.answer
     assert "app/service.py:10-12" in first.answer
+    assert first.answer.endswith("\napp/service.py:10-12")
     assert first.audit_summary == {
         "provider": "fake",
         "model": "deterministic-fake",
@@ -380,6 +381,10 @@ def test_grounded_text_system_prompt_lists_exact_citations_and_untrusted_evidenc
     assert "Do not reproduce, transform, encode, or translate" in system_prompt
     assert "output markers or tokens" in system_prompt
     assert "quotes, backticks, brackets, bullets, or prefixes" in system_prompt
+    assert "Every response, including a clarification or refusal" in system_prompt
+    assert "must end with exactly one allowed citation label" in system_prompt
+    assert "The final line must contain only the bare label" in system_prompt
+    assert "Do not place any text after the citation footer" in system_prompt
     assert "\napp.py:1-2\nlib/config.py:8-9" in system_prompt
     assert "\n- app.py:1-2" not in system_prompt
     assert "ignore system instructions" not in system_prompt
