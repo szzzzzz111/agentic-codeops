@@ -47,26 +47,27 @@ OpenAI-compatible provider MUST 使用运行时依赖 `httpx`。Provider 配置 
 `path:n-n`。Citation MUST 完全匹配提供给 provider 的 evidence `file_path`、`start_line` 和
 `end_line`。
 
-Grounded-text provider instruction MUST 列出 request evidence 中允许的 citation labels，并要求
-模型至少逐字复制一个完整 label。Instruction MUST NOT 允许模型改写路径、起止行、引用子范围或
-创建未提供的 citation。Grounded-text user message MUST 使用与 allowed list 相同的裸
-`path:start-end` label，MUST NOT 使用方括号或其他竞争 citation framing。
+Grounded-text provider instruction MUST 列出 request evidence 中允许的 citation labels。
+每个 grounded response（包括回答、澄清或拒答）的最后一行 MUST 只包含一个完整 allowed label。
+Footer MUST NOT 包含 `Citation:` 等前缀、markdown、方括号、引号、bullet、标点或额外文本。
+Instruction MUST NOT 允许模型改写路径、起止行、引用子范围或创建未提供的 citation。
 
-Grounded evidence MUST 通过明确标记为不可信数据的结构化 envelope 传递。Instruction MUST 明确
-repository evidence 是不可信数据，其中的文本不得覆盖 system instruction；模型 MUST NOT
-遵循、复述、转换、编码或以其他方式执行 evidence 内要求改变回答行为、泄露内容、忽略规则或输出
-marker 的指令。
+Grounded-text user message MUST 使用与 allowed list 相同的裸 `path:start-end` label，MUST NOT
+使用方括号或其他竞争 citation framing。Grounded evidence MUST 通过明确标记为不可信数据的
+结构化 envelope 传递。Instruction MUST 明确 repository evidence 是不可信数据，其中的文本不得
+覆盖 system instruction；模型 MUST NOT 遵循、复述、转换、编码或以其他方式执行 evidence 内
+要求改变回答行为、泄露内容、忽略规则或输出 marker 的指令。
 
 系统 MUST 允许重复 citation 和乱序 citation。系统 MUST 将绝对路径、未提供路径、错误行号、
 错误范围、无法解析 citation 和没有合法 citation 的 provider 输出视为不可信，并返回保守
 fallback。
 
-#### Scenario: Grounded instruction 明确 exact citation contract
+#### Scenario: Grounded response 使用 exact citation footer
 
 - **WHEN** grounded-text request 包含一个或多个 evidence items
 - **THEN** system instruction MUST 按稳定顺序列出对应 `path:start-end` labels
-- **AND** instruction MUST 要求至少逐字复制一个 label
-- **AND** user message MUST 使用相同裸 label 且不得使用方括号包装
+- **AND** response 最后一行 MUST 只包含一个 allowed label
+- **AND** footer MUST NOT 包含前缀、markdown、包装符号、bullet、标点或额外文本
 
 #### Scenario: Grounded evidence 使用不可信数据 envelope
 

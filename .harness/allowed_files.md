@@ -1,7 +1,7 @@
 # 当前 Harness 写入边界
 
-当前无 active OpenSpec change。`harden-grounded-evidence-framing` 已归档为
-`2026-06-23-harden-grounded-evidence-framing`。
+当前无 active OpenSpec change。`require-grounded-citation-footer` 已归档为
+`2026-06-23-require-grounded-citation-footer`。
 
 Exception context：`add-live-model-provider-eval` 在独立分支暂停；本 remediation 完成归档、
 合并和推送后才能恢复。
