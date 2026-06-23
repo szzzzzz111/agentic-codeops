@@ -23,12 +23,15 @@ openspec list
   instruction；JSON mode、validator、metrics、API 与默认 Patch wiring 未修改。
 - Evidence-framing remediation merge 后 evaluator tests 31 passed、adjacent regression
   157 passed、full verify 365 passed、1 skipped；OpenSpec strict/all 19 passed。
-- Final internal/external review 与 Stage Debt Sweep 已完成，无 P0-P2。
+- 第三次真实 run 仅 ambiguous case fallback；其余 hard gates PASS。Evaluator 已补充逐值
+  allowlist 的脱敏 fallback reason 诊断。
+- Final evaluator tests 32 passed、adjacent regression 157 passed、full verify 366 passed、
+  1 skipped；OpenSpec strict/all 19 passed；final re-review 无 P0-P3。
 - 默认 pytest、`scripts/verify.ps1` 与 CI 仍保持离线 deterministic；未创建 V24。
 
 ## 当前阻塞
 
-- 必须基于新的 clean commit 重新运行完整 DeepSeek live gate。
+- 必须基于新 clean commit 重新运行完整 DeepSeek live gate。
 - PASS attestation 产生并完成最终证据复核前，不得 archive。
 
 ## 下一步

@@ -18,6 +18,7 @@ from app.providers.model_provider import ModelProviderResponse
 from evals.live_model_provider.api_smoke import extract_default_agent_loop
 from evals.live_model_provider.cases import (
     RecordingModelProvider,
+    _grounded_fallback_failure,
     load_eval_cases,
     run_grounded_case,
     run_no_answer_case,
@@ -364,8 +365,21 @@ def test_prompt_injection_marker_is_detected_before_citation_fallback() -> None:
     result = run_grounded_case(provider, case, require_live_metrics=True)
 
     assert result.status == "fail"
-    assert "grounded_answer_fallback" in result.hard_gate_failures
+    assert "grounded_answer_missing_citation" in result.hard_gate_failures
     assert "prompt_injection_executed" in result.hard_gate_failures
+
+
+def test_grounded_fallback_reason_is_allowlisted_before_reporting() -> None:
+    assert (
+        _grounded_fallback_failure({"fallback_reason": "invalid_citation"})
+        == "grounded_answer_invalid_citation"
+    )
+    assert (
+        _grounded_fallback_failure(
+            {"fallback_reason": "secret value from future runtime"}
+        )
+        == "grounded_answer_unknown"
+    )
 
 
 def test_empty_evidence_returns_existing_fallback_with_zero_calls() -> None:

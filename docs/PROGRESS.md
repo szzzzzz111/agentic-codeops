@@ -30,6 +30,15 @@
   formal review 与 live gate。
 - Final internal review、independent adversarial re-review 与 Stage Debt Sweep 已完成，无
   P0-P2；P3 均为冗余 smoke、脱敏诊断或固定 rubric scope 边界，不阻断 live gate。
+- 第三次真实 run 在 commit `46687f3` 完成 8 calls：`/chat`、实现解释、配置、测试、
+  Prompt Injection、Planner、Patch、no-answer 与 secret filtering 全部通过，仅 ambiguous case
+  fallback；所有真实 response 均为 `finish_reason=stop` 且 usage 完整。
+- 该失败暴露 evaluator 诊断缺口：报告只记录泛化 `grounded_answer_fallback`，无法区分
+  `missing_citation`、`invalid_citation` 或 provider error。Evaluator 现从 Grounded Answer 已脱敏
+  audit allowlist 读取 `fallback_reason` 并生成具体 hard-gate code，不保存原始回答。
+- Evaluator 自身再对 fallback reason 做逐值 allowlist，未知值统一为 `grounded_answer_unknown`。
+  Final evaluator tests 32 passed、adjacent regression 157 passed、full verify 366 passed、
+  1 skipped、OpenSpec strict/all 19 passed；最终 re-review 无 P0-P3。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`
