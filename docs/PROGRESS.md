@@ -1,5 +1,20 @@
 # 项目进度
 
+## Grounded Citation Footer Remediation（2026-06-23，已归档）
+
+- Change 已归档为 `2026-06-23-require-grounded-citation-footer`；风险级别：medium。
+- Ambiguous live case 连续两次稳定生成 235 tokens 但缺 citation；其他 hard gates 已通过。
+- Grounded instruction 现要求每个 response（包括回答、澄清或拒答）最后一行只包含一个裸
+  allowed `path:start-end` label，不得添加前缀、markdown、包装符号、bullet、标点或额外文本。
+- 不自动追加 citation，不修改 validator、evidence envelope、JSON mode、metrics、API、默认
+  Patch wiring、persistence 或 paused evaluator。
+- TDD RED/GREEN 已完成；Provider/Grounded Answer/AgentLoop/API focused regression 为
+  137 passed。
+- External review 发现默认 `FakeModelProvider` 仍使用句中带标点 citation；已按 TDD 对齐为裸
+  citation footer，使默认 deterministic provider 与真实 provider instruction 使用同一 contract。
+- Final full verify 为 334 passed、1 skipped；OpenSpec strict/all 为 19 passed。Internal/
+  focused external review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
+
 ## Grounded Evidence Framing Remediation（2026-06-23，已归档）
 
 - Change 已归档为 `2026-06-23-harden-grounded-evidence-framing`；风险级别：medium。
