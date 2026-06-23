@@ -30,15 +30,19 @@ openspec list
   `53754678b7bc3a03354b19863a20dc8be676875e0e7e1b85a005f85e26362496`。
 - 默认 pytest、`scripts/verify.ps1` 与 CI 仍保持离线 deterministic；未创建 V24。
 
-## 当前阻塞
+## 当前 reshape
 
-- Eval change 已冻结。Prompt-only remediation 前后同一 hard gate 均失败，下一步必须独立评估
-  结构化 evidence isolation；不得继续堆叠 prompt、重复 live run 或放宽 gate。
-- PASS attestation 产生并完成最终证据复核前，不得 archive。
+- Change 2 正式分离 evaluator readiness 与 provider conformance。
+- Prompt Injection 仍是 hard gate，FAIL 仍返回 1；PASS-only attestation 不变。
+- 新增固定 allowlist 的 evaluated-failure record；它证明可信评测已完成，不代表 provider PASS。
+- SKIP、dirty tree、internal/subprocess/timeout/budget/Git/report integrity failure 不得生成 tracked
+  evidence，也不得满足 archive 条件。
+- Runtime 冻结，不创建 evidence filtering remediation。
 
 ## 下一步
 
-1. 提交 paused exception evidence。
-2. 独立规划结构化 evidence isolation remediation；不修改 evaluator。
-3. Remediation 完成并合入后恢复 eval，作废旧证据并完整重跑。
-4. PASS 后提交 attestation、复核证据、archive、merge、push；不创建 V24。
+1. 完成 reshaped OpenSpec/Harness plan review 并确认实现。
+2. TDD 实现 evaluated-failure record 与 evaluation-integrity 分类。
+3. 完整 deterministic verification、formal review 和 Stage Debt Sweep 后提交 clean evaluator。
+4. 重跑真实 DeepSeek gate；提交 PASS attestation 或可信 failure record。
+5. 最终证据复核后 archive、merge、push；文档不得把 FAIL provider 写成已认证，不创建 V24。

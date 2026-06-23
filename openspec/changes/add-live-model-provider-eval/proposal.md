@@ -11,7 +11,12 @@ deterministic fake provider，尚未证明默认 `/chat` 启动链、Grounded An
 - 在全新 subprocess 中验证默认 `/chat` 启动 wiring，并分别验证 Grounded Answer、Long Task
   Planner 和显式依赖注入的 `ModelPatchAuthoringProvider`。
 - 增加 prompt injection、无答案、secret filtering、报告脱敏、调用预算和 timeout 硬门。
-- 只有真实 DeepSeek hard gates PASS 并生成 tracked attestation 后才允许归档本 change。
+- 保持真实 DeepSeek hard gate 与退出码语义不变：provider conformance FAIL 仍返回 1，PASS-only
+  attestation 仍只代表被测 provider 通过全部 hard gates。
+- 新增固定 allowlist 的 tracked evaluated-failure record，用于证明最终 evaluator 在 clean commit
+  上完成了一次可信但不合规的真实评测；该记录不代表 provider 认证。
+- Change 归档表示 evaluator readiness 已完成。最终可信 live run 可以是 PASS attestation，也可以是
+  evaluated-failure record；SKIP、内部错误或 evaluation integrity failure 仍不得归档。
 - 不修改 Model Provider runtime、默认 Patch wiring、`/chat` contract、默认 CI 或
   `scripts/verify.ps1`，不创建 V24。
 
@@ -32,5 +37,6 @@ deterministic fake provider，尚未证明默认 `/chat` 启动链、Grounded An
 - Tests: `tests/test_live_model_provider_eval.py`
 - Process: `.harness/allowed_files.md`、`.harness/review_checklist.md`
 - Docs: `docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`、PASS 后的
-  `docs/evals/live-model-provider/*.json`
+  `docs/evals/live-model-provider/*.json`，或可信 FAIL 后的
+  `docs/evals/live-model-provider/failures/*.json`
 - Runtime/API: 无变更；默认验证不新增网络依赖。

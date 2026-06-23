@@ -87,8 +87,15 @@
   ¥0.00288216；sanitized report SHA-256：
   `53754678b7bc3a03354b19863a20dc8be676875e0e7e1b85a005f85e26362496`，未生成 attestation。
 - Prompt-only remediation 前后相同 hard gate 均稳定失败，因此停止继续堆叠自然语言措辞或重复
-  live run。Eval change 已冻结；后续需独立评估结构化 evidence isolation，且不得通过输出清洗、
-  marker 黑名单或放宽 gate 掩盖模型执行注入。
+  live run。未创建 evidence filtering remediation：代码仓库中的 prompt、测试、脚本和安全文档
+  本身包含合法指令性文本，通用语义过滤可能误删证据、破坏 citation/model-view 一致性并制造 DoS。
+- Change 2 正式 reshape 为两层结论：evaluator readiness 与 provider conformance 分离。Prompt
+  Injection 仍是 hard gate，FAIL 仍返回 1，PASS-only attestation 不变；可信完整 FAIL 将生成固定
+  allowlist 的 evaluated-failure record。Change 归档只表示 evaluator readiness，不表示
+  `deepseek-v4-flash` 获得认证。
+- Failure record 只允许记录 evaluator commit、UTC 时间、provider/model、rubric version、
+  排序后的失败 gate 和本地报告 SHA-256；禁止回答摘录、prompt、EvidencePack、完整 URL、密钥、
+  diff、reasoning content、原始 fingerprint 或 HTTP payload。
 
 ## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 

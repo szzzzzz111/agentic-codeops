@@ -77,11 +77,11 @@ response MUST 以 `finish_reason=stop` 完成并提供完整 usage。
 - **THEN** live run MUST FAIL
 - **AND** runner MUST NOT 自动 retry
 
-### Requirement: 报告、成本和 attestation 必须脱敏
+### Requirement: 报告、成本和 tracked evidence 必须脱敏
 
 Runner SHALL 记录 latency、cache hit/miss、completion/reasoning/total tokens 和成本。成本 MUST
 使用版本化 profile 单价，reasoning tokens MUST NOT 在 completion tokens 之外重复计费。完整本地
-报告和 tracked attestation MUST 使用 allowlist schema，MUST NOT 保存 API key、完整 URL、prompt、
+报告、tracked attestation 和 evaluated-failure record MUST 使用 allowlist schema，MUST NOT 保存 API key、完整 URL、prompt、
 EvidencePack、原始回答、原始 diff、reasoning content 或原始 system fingerprint。
 
 #### Scenario: PASS 生成可归档证据
@@ -89,9 +89,54 @@ EvidencePack、原始回答、原始 diff、reasoning content 或原始 system f
 - **WHEN** tracked working tree 干净且所有 live hard gates PASS
 - **THEN** runner SHALL 写本地脱敏报告和 tracked attestation
 - **AND** attestation MUST 记录被测 commit、本地报告 SHA-256、profile/rubric 版本和聚合指标
+- **AND** runner MUST NOT 创建 evaluated-failure record
 
 #### Scenario: 非 PASS 不生成 attestation
 
 - **WHEN** run 为 SKIP、FAIL 或内部错误
 - **THEN** runner MUST NOT 创建 tracked attestation
+- **AND** provider conformance MUST NOT 被标记为 PASS
+
+#### Scenario: 可信 FAIL 生成 evaluated-failure record
+
+- **WHEN** clean committed evaluator 完整执行所有计划 case 并写入有效本地脱敏报告
+- **AND** evaluation integrity checks 全部通过但一个或多个 provider/system conformance hard gates 失败
+- **THEN** runner MUST 保持 FAIL 状态并返回退出码 1
+- **AND** runner SHALL 写入固定 allowlist 的 tracked evaluated-failure record
+- **AND** record MUST 只包含 `schema_version`、`record_type`、`evaluation_status`、`conformance_status`、`evaluator_commit`、`evaluated_at`、`profile.provider`、`profile.model`、`rubric_version`、`failed_gates` 和 `local_report_sha256`
+- **AND** `failed_gates` MUST 来自固定 conformance gate allowlist，并按字典序去重排序
+- **AND** record MUST NOT 被表示为 attestation、PASS 或 provider certification
+- **AND** runner MUST NOT 创建 tracked attestation
+
+#### Scenario: Tracked evidence 不覆盖同名文件
+
+- **WHEN** 本地报告、attestation 或 evaluated-failure record 的目标路径已存在
+- **THEN** runner MUST fail closed
+- **AND** runner MUST NOT 覆盖或修改已有文件
+
+#### Scenario: Evaluation integrity failure 不生成 tracked evidence
+
+- **WHEN** run 为 SKIP、profile mismatch、dirty tree、internal error、subprocess failure、timeout、单 case 或整轮调用预算/计数异常、Git 状态变化或报告校验失败
+- **THEN** runner MUST NOT 创建 attestation 或 evaluated-failure record
 - **AND** change MUST NOT 因该 run 归档
+
+### Requirement: Change 归档表示 evaluator readiness
+
+Change SHALL 把 evaluator readiness 与 provider conformance 分离。Prompt Injection 等 provider/system
+conformance gate MUST 保持 hard gate；FAIL run MUST 继续返回退出码 1。
+
+#### Scenario: PASS evidence 允许 evaluator closeout
+
+- **WHEN** 最终 clean committed evaluator 的所有 live hard gates PASS
+- **AND** PASS-only attestation 与本地报告 hash 复核一致
+- **THEN** change MAY 在 deterministic verification、formal review 和 closeout evidence 完整后归档
+- **AND** 被测 provider MAY 被描述为通过该 profile/rubric 的 conformance gate
+
+#### Scenario: 可信 FAIL baseline 允许 evaluator closeout
+
+- **WHEN** 最终 clean committed evaluator 产生有效 evaluated-failure record
+- **AND** failure record 与本地报告 hash、evaluator commit、provider/model、rubric 和失败 gate 复核一致
+- **THEN** change MAY 在 deterministic verification、formal review 和 closeout evidence 完整后归档
+- **AND** 文档 MUST 明确归档仅表示 evaluator readiness
+- **AND** 被测 provider MUST 明确记录为未通过对应 conformance gate
+- **AND** 历史本地 FAIL 报告 MUST NOT 被倒推为 tracked failure record
