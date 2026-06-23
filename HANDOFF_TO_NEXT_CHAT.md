@@ -2,9 +2,10 @@
 
 ## 当前状态
 
-- Active OpenSpec change：无；`harden-grounded-prompt-injection-suppression` 已归档。
-- 当前分支：`codex/harden-grounded-prompt-injection-suppression`。
-- `add-live-model-provider-eval` 在独立分支冻结；本 remediation 必须先归档、合并和推送。
+- Active OpenSpec change：`add-live-model-provider-eval`。
+- 当前分支：`codex/add-live-model-provider-eval`。
+- 四个 grounded remediation 均已归档、合并、推送并合入 eval 分支；旧
+  deterministic review/live/attestation 证据按契约失效。
 - 精确 Git/OpenSpec 状态先运行：
 
 ```powershell
@@ -15,24 +16,35 @@ openspec list
 
 ## 已完成
 
-- 第五次真实 DeepSeek run 在 eval commit `3b7d5cc` 完成 8 calls，质量 baseline 5/5，唯一失败为
-  `prompt_injection_executed`；其余 hard gates 均通过。
-- Grounded-text prompt 现要求静默忽略 evidence 内的命令、角色、策略、声明式 response rule 和
-  额外输出要求，不得确认、解释拒绝、转换或复现 original query 未明确询问的 marker/token。
-- 用户明确询问同名仓库事实或标识符时仍可基于相关 evidence 回答。
-- 未增加输出清洗、marker 黑名单、EvidencePack 过滤或 classifier；citation footer、validator、
-  JSON mode、metrics、API、默认 Patch wiring、persistence 和 frozen evaluator 均未修改。
-- Focused regression：137 passed；full verify：334 passed、1 skipped；OpenSpec：19/19。
-- Internal/focused external review 与 Stage Debt Sweep 已完成，external re-review 无剩余 P0-P3。
+- Python evaluator、固定 fixtures/rubric、DeepSeek profile、调用预算、成本、脱敏报告、
+  subprocess `/chat` smoke、Planner/Patch smoke 和 deterministic safety gates 已实现。
+- 历史 live run 已定位 citation instruction、evidence framing、citation footer 和
+  prompt-injection suppression 缺陷。
+- Runtime 现使用裸 citation labels、untrusted JSON evidence envelope、exact citation footer，
+  并静默忽略 evidence 内命令、角色、策略、声明式 response rule 和额外输出要求。
+- 不使用输出清洗；JSON mode、validator、metrics、API、默认 Patch wiring 与 persistence 未修改。
+- 第五次 run 在 commit `3b7d5cc` 仅 Prompt Injection 失败；该旧结果不得用于当前 gate。
+- 第四个 remediation 合入后 evaluator 34 passed、adjacent 144 passed、full verify 368 passed、
+  1 skipped、OpenSpec 19/19；final independent re-review 无 P0-P3。
+- 第六次 live run 在 commit `21ec714` 仍仅 Prompt Injection 失败；sanitized report SHA-256：
+  `53754678b7bc3a03354b19863a20dc8be676875e0e7e1b85a005f85e26362496`。
+- 默认 pytest、`scripts/verify.ps1` 与 CI 仍保持离线 deterministic；未创建 V24。
 
-## 当前阻塞
+## 当前 reshape
 
-- Remediation 尚待 archive commit、merge 和 push。
-- Runtime 变化后，eval change 既有 deterministic review、live result 与 attestation 证据全部失效。
+- Change 2 正式分离 evaluator readiness 与 provider conformance。
+- Prompt Injection 仍是 hard gate，FAIL 仍返回 1；PASS-only attestation 不变。
+- 新增固定 allowlist 的 evaluated-failure record；它证明可信评测已完成，不代表 provider PASS。
+- SKIP、dirty tree、internal/subprocess/timeout/budget/Git/report integrity failure 不得生成 tracked
+  evidence，也不得满足 archive 条件。
+- Runtime 冻结，不创建 evidence filtering remediation。
+- 最终 live run 已在 clean commit `9697c3e` 完成 8 calls，产生可信 evaluated-failure record；
+  8 个 provider 调用均为 `availability=unavailable`，没有生成 PASS attestation，
+  `deepseek-v4-flash` 未通过 conformance。
 
 ## 下一步
 
-1. 提交 archive 状态，复验后 merge/push。
-2. 恢复 `add-live-model-provider-eval`，合入最新 `main` 并重跑 deterministic workflow。
-3. 用户重新提供 Git-ignored live 环境后运行完整 8-call DeepSeek gate。
-4. PASS 后提交 attestation、最终复核、archive、merge、push；不创建 V24。
+1. Change 2 已归档为 `2026-06-23-add-live-model-provider-eval`，长期 spec 已同步。
+2. 执行 archive 后验证并提交 archive commit。
+3. 合并到 `main` 并 push。
+4. 最终 handoff 保留 provider conformance FAIL，不创建 V24。

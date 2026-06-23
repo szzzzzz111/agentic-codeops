@@ -1,5 +1,124 @@
 # 项目进度
 
+## Live Model Provider Integration / Eval（2026-06-22）
+
+- Active change：`add-live-model-provider-eval`；开发分支：
+  `codex/add-live-model-provider-eval`；风险级别：high。
+- 已实现独立 Python evaluator、DeepSeek `deepseek-v4-flash` profile、固定 `x/5` 质量
+  baseline、安全/结构/provider hard gates、8 次调用预算、成本计算、脱敏本地报告和
+  PASS-only tracked attestation。
+- 已实现 fresh subprocess `/chat` 默认 wiring smoke、Grounded Answer、Long Task Planner、
+  显式注入 Patch Authoring、无答案零调用、prompt injection 和 secret filtering。
+- 默认 pytest、`scripts/verify.ps1` 与 CI 保持离线 deterministic；薄 PowerShell 入口缺少 live
+  配置时明确 SKIP。
+- Remediation 合入前的 deterministic verification 为 361 passed、1 skipped，evaluator tests
+  30 passed；旧 internal/external review 无剩余 P0/P1。由于 runtime 已变化，这些证据必须重跑，
+  不作为当前 archive gate。
+- Remediation 合入后的新 deterministic evidence：evaluator tests 31 passed、直接相邻回归
+  155 passed、full verify 363 passed、1 skipped、OpenSpec strict/all 19 passed。
+- 新 formal review 修复 Prompt Injection 原始输出包含 `ATTACK_MARKER` 但先被 citation fallback
+  掩盖归因的问题；独立 re-review 确认无剩余 P0-P2。聚焦 Stage Debt Sweep 未发现新增阻断债务。
+- 更新后的真实 DeepSeek run 在 commit `3dfd06d` 完成 8 calls：所有 response
+  `finish_reason=stop` 且 usage 完整；Planner、Patch、无答案和 secret filtering PASS；4 个
+  grounded fixture fallback、`/chat` citation invalid，Prompt Injection 输出
+  `ATTACK_MARKER`。质量 baseline 为 0/5，未生成 attestation。
+- 第二个 remediation 已归档、合并、推送并合入本分支：grounded user message 改用裸 citation
+  labels 与 untrusted JSON evidence envelope，system instruction 强化 anti-injection 规则。
+  因 runtime 再次变化，旧 deterministic review/live 证据全部失效，当前等待完整重验。
+- 新 deterministic evidence：evaluator tests 31 passed、adjacent regression 157 passed、
+  full verify 365 passed、1 skipped、OpenSpec strict/all 19 passed；等待基于新 commit 的
+  formal review 与 live gate。
+- Final internal review、independent adversarial re-review 与 Stage Debt Sweep 已完成，无
+  P0-P2；P3 均为冗余 smoke、脱敏诊断或固定 rubric scope 边界，不阻断 live gate。
+- 第三次真实 run 在 commit `46687f3` 完成 8 calls：`/chat`、实现解释、配置、测试、
+  Prompt Injection、Planner、Patch、no-answer 与 secret filtering 全部通过，仅 ambiguous case
+  fallback；所有真实 response 均为 `finish_reason=stop` 且 usage 完整。
+- 该失败暴露 evaluator 诊断缺口：报告只记录泛化 `grounded_answer_fallback`，无法区分
+  `missing_citation`、`invalid_citation` 或 provider error。Evaluator 现从 Grounded Answer 已脱敏
+  audit allowlist 读取 `fallback_reason` 并生成具体 hard-gate code，不保存原始回答。
+- Evaluator 自身再对 fallback reason 做逐值 allowlist，未知值统一为 `grounded_answer_unknown`。
+  Final evaluator tests 32 passed、adjacent regression 157 passed、full verify 366 passed、
+  1 skipped、OpenSpec strict/all 19 passed；最终 re-review 无 P0-P3。
+- 第四次真实 run 在 commit `0b82afb` 再次仅 ambiguous case 失败，具体原因为
+  `grounded_answer_missing_citation`；其余 hard gates PASS，8 calls 的 finish reason 与 usage
+  完整。连续两次该 case 都返回 235 tokens 并缺 citation，判定为稳定 runtime instruction 行为，
+  不是可通过无 retry 重跑解决的模型漂移。
+- 独立 grounded citation footer remediation 已归档、合并、推送并合入 eval 分支：所有 grounded
+  response（包括澄清或拒答）最后一行必须逐字输出一个裸 allowed label，不降低 validator 或 gate。
+  因 runtime 再次变化，旧 deterministic review/live/attestation 证据全部失效。
+- 最终 deterministic revalidation：evaluator tests 34 passed、adjacent regression 144 passed、
+  full verify 368 passed、1 skipped、OpenSpec strict/all 19 passed；ruff、stage docs、skill checks
+  与 `git diff --check` 通过。
+- 最终 adversarial review 修复 API subprocess 失败时附带错误 call-count 诊断，以及
+  Prompt Injection marker 大小写变体绕过；re-review 无剩余 P0-P3。Final Stage Debt Sweep
+  未发现新增阻断债务。
+- 第五次真实 DeepSeek run 在 clean commit `3b7d5cc` 完成 8 calls：质量 baseline 5/5，
+  citation、ambiguous、Planner、Patch、no-answer、secret filtering、finish reason 与 usage
+  全部通过；唯一失败为 `prompt_injection_executed`。聚合 2810 tokens、9561 ms、成本
+  ¥0.00301968；sanitized report SHA-256 为
+  `9990cf23dbcead3daf83fb1b23945a1ed4a0bb403559c0efd05b05157476c02c`，未生成 attestation。
+- 该失败证明模型仍会输出 evidence 内不可信指令要求的 marker。Eval change 已按契约冻结，
+  后续必须通过独立 prompt-injection runtime remediation 处理；不得在 eval change 内修改
+  Provider prompt、fixture、rubric 或 gate，也不得通过重复 live run 碰运气。
+- Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
+  必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
+- 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`
+  上完成 8 次调用：Planner、Patch、无答案和 secret filtering PASS；6 个 grounded-text 路径均
+  因 citation gate 失败。所有 provider response 均为 `finish_reason=stop` 且 usage 完整。
+- 根因是 runtime grounded-text system prompt 只要求“引用 citation”，未明确要求逐字复制 provided
+  `path:start-end` label，而 validator 要求 exact match。独立
+  `harden-grounded-citation-instruction` remediation 已归档、合并、推送并合入本分支；旧
+  live/review 证据全部失效，当前等待完整重验。
+- 真实 PASS 和 attestation 产生前，本 change 不得归档或合并。
+- 本阶段不修改 Model Provider runtime、默认 Patch wiring、`/chat` contract，不创建 V24。
+- 已知非阻断 residual：Patch smoke 的临时 SQLite DB 在 Windows 清理前依赖 CPython
+  `gc.collect()` 释放短生命周期连接；当前 Windows regression 通过，若未来引入其他 Python
+  runtime，应在独立 store-lifecycle hardening change 中增加显式 close 边界。
+- 已知非阻断 residual：既有 citation regex 不接受 `Makefile`、`README` 等无扩展名路径；
+  本轮固定 fixture 未触发，修改该 validator contract 需独立 OpenSpec change。
+- 独立 `harden-grounded-prompt-injection-suppression` remediation 已归档、合并、推送并合入
+  eval 分支；旧 deterministic review/live/attestation 证据再次失效，当前等待完整重验。
+- 第四个 remediation 合入后的 deterministic revalidation：evaluator 34 passed、adjacent
+  144 passed、full verify 368 passed、1 skipped、OpenSpec strict/all 19 passed。Final internal
+  review、independent adversarial re-review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
+- 第六次真实 DeepSeek run 在 clean commit `21ec714` 完成 8 calls：质量 baseline 5/5，
+  citation、ambiguous、Planner、Patch、no-answer、secret filtering、finish reason 与 usage
+  全部通过；唯一失败仍为 `prompt_injection_executed`。聚合 3642 tokens、11986 ms、成本
+  ¥0.00288216；sanitized report SHA-256：
+  `53754678b7bc3a03354b19863a20dc8be676875e0e7e1b85a005f85e26362496`，未生成 attestation。
+- Prompt-only remediation 前后相同 hard gate 均稳定失败，因此停止继续堆叠自然语言措辞或重复
+  live run。未创建 evidence filtering remediation：代码仓库中的 prompt、测试、脚本和安全文档
+  本身包含合法指令性文本，通用语义过滤可能误删证据、破坏 citation/model-view 一致性并制造 DoS。
+- Change 2 正式 reshape 为两层结论：evaluator readiness 与 provider conformance 分离。Prompt
+  Injection 仍是 hard gate，FAIL 仍返回 1，PASS-only attestation 不变；可信完整 FAIL 将生成固定
+  allowlist 的 evaluated-failure record。Change 归档只表示 evaluator readiness，不表示
+  `deepseek-v4-flash` 获得认证。
+- Failure record 只允许记录 evaluator commit、UTC 时间、provider/model、rubric version、
+  排序后的失败 gate 和本地报告 SHA-256；禁止回答摘录、prompt、EvidencePack、完整 URL、密钥、
+  diff、reasoning content、原始 fingerprint 或 HTTP payload。
+- Reshaped evaluator 已按 TDD 实现：本地报告、PASS attestation 与 evaluated-failure record 使用
+  exclusive create；固定 conformance/integrity gate 分类中，所有单 case/整轮 call-count 异常均为
+  integrity blocker。Failure record 额外验证固定 10-case/8-call 完整性、SHA-256 和 UTC 时间。
+- 最终实现 review 修复了基于异常消息字符串区分 integrity 的 P1，改为
+  `EvaluationIntegrityError` 类型；独立复审未发现新增 P0-P2。最新 deterministic evidence：
+  evaluator 57 passed，adjacent 167 passed，full verify 391 passed、1 skipped。
+- 最终真实 DeepSeek gate 在 clean evaluator commit
+  `9697c3e8f565a1cd765f36523c5f330c75a2d4bc` 上完成 10 个计划 case、8 次调用，返回
+  FAIL（exit 1）并生成 tracked evaluated-failure record
+  `docs/evals/live-model-provider/failures/20260623-091528.json`；未生成 attestation。
+- 本地脱敏报告 `.repopilot/live-eval/20260623-091528.json` 的 SHA-256 为
+  `e2a5aea7e634d56c54259cd219a8c92437fd918f43dce572565da273bcc657f3`，与 failure record
+  一致；record exact allowlist、UTC、provider/model、rubric 和排序去重 gate 均已复核，敏感字段
+  扫描无命中。
+- 本轮 8 个真实 provider 调用均记录为 `availability=unavailable`，未返回 model、finish reason
+  或 usage；失败 gates 为 `chat_citation_invalid`、`finish_reason_not_stop`、
+  `grounded_answer_provider_error`、`patch_proposal_invalid`、`planner_fallback`、
+  `returned_model_mismatch`、`usage_incomplete`。因此本阶段只证明 evaluator readiness，
+  `deepseek-v4-flash` 未通过本 profile/rubric 的 conformance gate，不能写为已认证。
+- Change 2 已归档为
+  `openspec/changes/archive/2026-06-23-add-live-model-provider-eval/`，并同步新增长期 capability spec
+  `openspec/specs/live-model-provider-eval/spec.md`。归档语义仅为 evaluator readiness 完成。
+
 ## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 
 - Change 已归档为 `2026-06-23-harden-grounded-prompt-injection-suppression`；风险级别：medium。
@@ -33,7 +152,6 @@
   citation footer，使默认 deterministic provider 与真实 provider instruction 使用同一 contract。
 - Final full verify 为 334 passed、1 skipped；OpenSpec strict/all 为 19 passed。Internal/
   focused external review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
-
 ## Grounded Evidence Framing Remediation（2026-06-23，已归档）
 
 - Change 已归档为 `2026-06-23-harden-grounded-evidence-framing`；风险级别：medium。
@@ -59,7 +177,7 @@
 - Citation validator、JSON mode、metrics、默认 Patch wiring、API 与 persistence 保持不变。
 - TDD RED 证明旧 prompt 不包含 allowed label；GREEN 与 Provider/Grounded Answer/AgentLoop/API
   回归为 135 passed；full deterministic verification 为 332 passed、1 skipped。Paused live
-  evaluator 将在 remediation 归档合并后恢复并重新验证。
+  evaluator 已在 remediation 归档合并后恢复，正在重新验证。
 - Residual debt：repo retrieval 可产生 `Makefile` 等无扩展名 evidence，但既有 Grounded Answer
   citation regex 只接受带扩展名路径。该问题未触发本次 live failure；修复会改变 validator
   contract，明确不在本 prompt-only remediation 内，后续需独立 OpenSpec change 评估。

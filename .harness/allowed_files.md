@@ -1,32 +1,38 @@
 # 当前 Harness 写入边界
 
-当前无 active OpenSpec change。`harden-grounded-prompt-injection-suppression` 已归档为
-`2026-06-23-harden-grounded-prompt-injection-suppression`。
+Active OpenSpec change：`add-live-model-provider-eval`。风险级别：high。
 
-该 remediation 由 `add-live-model-provider-eval` 在 clean commit `3b7d5cc` 上的真实 DeepSeek
-失败触发：8 calls 中仅 Prompt Injection hard gate 失败。Eval change 保持冻结；本分支只允许
-收紧 grounded-text prompt contract，不得修改 evaluator 或通过输出清洗掩盖失败。
+Change 正在正式 reshape：Prompt Injection 仍是 hard gate，真实 conformance FAIL 仍返回 1，
+PASS-only attestation 不变；新增固定 allowlist 的 evaluated-failure record，把 evaluator readiness
+与 provider conformance 分离。当前 runtime 冻结，不创建 evidence filtering remediation。
+
+第六次真实 run 在 commit `21ec714` 完成 8 calls，质量 baseline 5/5，除
+`prompt_injection_executed` 外所有 hard gates 通过。该结果证明 evaluator 能稳定捕获回答完整性
+风险，但旧 runner 尚不能生成 reshaped failure record，因此实现后必须在新的 clean commit 上重跑。
 
 ## 当前允许修改
 
-- `openspec/changes/harden-grounded-prompt-injection-suppression/**`
-- `openspec/specs/grounded-answer-model-provider/spec.md`（仅 archive sync）
+- `openspec/changes/add-live-model-provider-eval/**`
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
-- `app/providers/model_provider.py`
-- `tests/test_model_provider.py`
-- `docs/ARCHITECTURE.md`
+- `evals/__init__.py`
+- `evals/live_model_provider/**`
+- `scripts/run_live_model_eval.ps1`
+- `tests/test_live_model_provider_eval.py`
+- `docs/evals/live-model-provider/**`
 - `docs/PROGRESS.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
 
 ## 禁止修改 / 禁止行为
 
-- 不修改 `evals/**`、`tests/test_live_model_provider_eval.py`、fixture、rubric、profile、报告或
-  attestation contract。
-- 不增加输出后 marker 清洗、marker 黑名单、EvidencePack 过滤或 instruction classifier。
-- 不修改 citation validator、evidence JSON envelope、JSON object mode、metrics、API、默认
-  Patch wiring、persistence 或 `scripts/verify.ps1`。
-- 不把默认 pytest、CI 或 verify 改成依赖网络、密钥或真实模型输出。
-- 不在本 remediation 内运行真实 live gate；归档合并后由 eval change 完整重跑。
-- 不保存 API key、prompt、EvidencePack、原始回答或 reasoning content。
+- 不修改 `app/**` runtime、system prompt、EvidencePack、默认 Patch wiring、`/chat` contract 或
+  `scripts/verify.ps1`。
+- 不降低 Prompt Injection、citation、secret、schema、metrics 或 provider hard gate。
+- 不改变 FAIL=1、ERROR=2、SKIP=0 的退出码语义。
+- 不把 evaluated-failure record 表示为 attestation、PASS 或 provider certification。
+- 不为 SKIP、profile mismatch、dirty tree、subprocess/integrity failure、timeout、预算异常、
+  Git 状态变化或报告校验失败生成 tracked evidence。
+- 不保存 API key、完整 URL、prompt、EvidencePack、原始回答、原始 diff、reasoning content、
+  原始 fingerprint 或原始 HTTP payload。
+- 不把普通 pytest、默认 CI 或默认 verify 改成依赖网络、密钥或真实模型输出。
 - 不创建或规划 V24。
