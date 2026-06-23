@@ -1,5 +1,20 @@
 # 项目进度
 
+## Grounded Evidence Framing Remediation（2026-06-23，已归档）
+
+- Change 已归档为 `2026-06-23-harden-grounded-evidence-framing`；风险级别：medium。
+- 第二次真实 DeepSeek run 在 8 calls、finish reason 与 usage 均正常时，仍出现 grounded citation
+  fallback 和 Prompt Injection marker；Planner/Patch/no-answer/secret filtering 正常。
+- Grounded user prompt 现使用与 validator/system allowed list 一致的裸 `path:start-end` label，
+  并把 evidence 序列化为明确的不可信 JSON data envelope。
+- System instruction 现禁止遵循、复述、转换、编码或以其他方式执行 evidence 内改变回答行为、
+  泄露内容或输出 marker/token 的指令；JSON mode prompt assembly 保持不变。
+- TDD RED/GREEN 已覆盖 framing、envelope、anti-injection instruction 与 JSON parity；
+  external review 后又移除 allowed-list bullet、收紧行为指令措辞并增加特殊字符 round-trip；
+  Provider/Grounded Answer/AgentLoop/API focused regression 为 137 passed。
+- Final deterministic verification 为 334 passed、1 skipped；OpenSpec strict/all 为 19 passed。
+  Internal/focused external review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
+
 ## Grounded Citation Instruction Remediation（2026-06-22，已归档）
 
 - Change 已归档为 `2026-06-22-harden-grounded-citation-instruction`；风险级别：medium。
