@@ -36,16 +36,16 @@
 
 ## 7. Reshaped Tracked Evidence Contract
 
-- [ ] 7.1 Add failing tests for the exact evaluated-failure allowlist schema, sorted known conformance gates, forbidden content and PASS/FAIL evidence exclusivity.
-- [ ] 7.2 Add failing tests that distinguish complete conformance FAIL from SKIP and evaluation integrity failure, including every single-case and whole-run call-count gate.
-- [ ] 7.3 Implement exclusive-create local report, PASS-only attestation and tracked evaluated-failure record without changing live exit codes or hard gates.
-- [ ] 7.4 Add simulated PASS, trustworthy FAIL and integrity-failure orchestration tests.
+- [x] 7.1 Add failing tests for the exact evaluated-failure allowlist schema, sorted known conformance gates, forbidden content and PASS/FAIL evidence exclusivity.
+- [x] 7.2 Add failing tests that distinguish complete conformance FAIL from SKIP and evaluation integrity failure, including every single-case and whole-run call-count gate.
+- [x] 7.3 Implement exclusive-create local report, PASS-only attestation and tracked evaluated-failure record without changing live exit codes or hard gates.
+- [x] 7.4 Add simulated PASS, trustworthy FAIL and integrity-failure orchestration tests.
 
 ## 8. Reshaped Verification And Review
 
-- [ ] 8.1 Run focused evaluator tests, adjacent provider/runtime regressions and full deterministic verify.
-- [ ] 8.2 Perform internal review, independent adversarial external review and focused Stage Debt Sweep against the reshaped contract.
-- [ ] 8.3 Close all findings and commit the final evaluator implementation on a clean tracked tree.
+- [x] 8.1 Run focused evaluator tests, adjacent provider/runtime regressions and full deterministic verify.
+- [x] 8.2 Perform internal review, independent adversarial external review and focused Stage Debt Sweep against the reshaped contract.
+- [x] 8.3 Close all findings and commit the final evaluator implementation on a clean tracked tree.
 
 ## 9. Final Live Evidence And Closeout
 

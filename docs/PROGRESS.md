@@ -96,6 +96,12 @@
 - Failure record 只允许记录 evaluator commit、UTC 时间、provider/model、rubric version、
   排序后的失败 gate 和本地报告 SHA-256；禁止回答摘录、prompt、EvidencePack、完整 URL、密钥、
   diff、reasoning content、原始 fingerprint 或 HTTP payload。
+- Reshaped evaluator 已按 TDD 实现：本地报告、PASS attestation 与 evaluated-failure record 使用
+  exclusive create；固定 conformance/integrity gate 分类中，所有单 case/整轮 call-count 异常均为
+  integrity blocker。Failure record 额外验证固定 10-case/8-call 完整性、SHA-256 和 UTC 时间。
+- 最终实现 review 修复了基于异常消息字符串区分 integrity 的 P1，改为
+  `EvaluationIntegrityError` 类型；独立复审未发现新增 P0-P2。最新 deterministic evidence：
+  evaluator 57 passed，adjacent 167 passed，full verify 391 passed、1 skipped。
 
 ## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 

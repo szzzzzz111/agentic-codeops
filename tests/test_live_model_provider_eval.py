@@ -15,6 +15,8 @@ from app.services.chat_service import ChatService
 from app.providers.model_provider import OpenAICompatibleModelProvider
 from app.providers.model_provider import ProviderCallMetrics
 from app.providers.model_provider import ModelProviderResponse
+from evals.live_model_provider import core as live_eval_core
+from evals.live_model_provider import runner as live_eval_runner
 from evals.live_model_provider.api_smoke import extract_default_agent_loop
 from evals.live_model_provider.cases import (
     RecordingModelProvider,
@@ -277,6 +279,251 @@ def test_non_pass_report_cannot_create_attestation() -> None:
 
     with pytest.raises(ValueError, match="PASS report required"):
         build_attestation(report, local_report_sha256="0" * 64)
+
+
+def failure_report(
+    *hard_gate_failures: str,
+    completed_at: str = "2026-06-23T08:00:00Z",
+) -> LiveEvalReport:
+    case_ids = (
+        "code_location",
+        "implementation_explanation",
+        "configuration",
+        "test_validation",
+        "ambiguous",
+        "prompt_injection",
+        "no_answer",
+        "planner",
+        "patch",
+        "secret_filter",
+    )
+    return LiveEvalReport(
+        status="fail",
+        tested_commit="abc123",
+        started_at="2026-06-23T07:59:00Z",
+        completed_at=completed_at,
+        profile=DEEPSEEK_V4_FLASH_PROFILE,
+        rubric_version="2026-06-22",
+        call_count=8,
+        quality_passed=5,
+        quality_total=5,
+        cases=[
+            CaseResult(
+                case_id=case_id,
+                status=(
+                    "fail"
+                    if case_id == "prompt_injection"
+                    and hard_gate_failures
+                    else "pass"
+                ),
+                hard_gate_failures=(
+                    list(hard_gate_failures)
+                    if case_id == "prompt_injection"
+                    else []
+                ),
+                quality_passed=None,
+                metrics=None,
+                cost_cny=None,
+            )
+            for case_id in case_ids
+        ],
+    )
+
+
+def test_evaluated_failure_record_uses_exact_allowlist_and_sorted_gates() -> None:
+    record = live_eval_core.build_evaluated_failure_record(
+        failure_report(
+            "prompt_injection_executed",
+            "chat_citation_invalid",
+            "prompt_injection_executed",
+        ),
+        local_report_sha256="A" * 64,
+    )
+
+    assert set(record) == {
+        "schema_version",
+        "record_type",
+        "evaluation_status",
+        "conformance_status",
+        "evaluator_commit",
+        "evaluated_at",
+        "profile",
+        "rubric_version",
+        "failed_gates",
+        "local_report_sha256",
+    }
+    assert record["record_type"] == "evaluated_failure"
+    assert record["evaluation_status"] == "complete"
+    assert record["conformance_status"] == "fail"
+    assert record["evaluator_commit"] == "abc123"
+    assert record["evaluated_at"] == "2026-06-23T08:00:00Z"
+    assert record["profile"] == {
+        "provider": "openai_compatible",
+        "model": "deepseek-v4-flash",
+    }
+    assert record["failed_gates"] == [
+        "chat_citation_invalid",
+        "prompt_injection_executed",
+    ]
+    assert record["local_report_sha256"] == "a" * 64
+    serialized = json.dumps(record, ensure_ascii=False).casefold()
+    for forbidden in (
+        "test_api_key_canary",
+        "https://api.deepseek.com",
+        "raw_prompt",
+        "full_prompt",
+        "raw_answer",
+        "evidencepack",
+        "diff",
+        "reasoning",
+        "fingerprint",
+    ):
+        assert forbidden not in serialized
+
+
+@pytest.mark.parametrize(
+    "gate",
+    [
+        "call_count_invalid",
+        "chat_call_count_invalid",
+        "planner_call_count_invalid",
+        "patch_call_count_invalid",
+        "live_call_count_invalid",
+        "api_subprocess_error",
+        "api_subprocess_timeout",
+        "api_subprocess_invalid_output",
+        "run_timeout",
+        "git_state_changed_during_live_run",
+    ],
+)
+def test_integrity_gate_blocks_evaluated_failure_record(gate: str) -> None:
+    with pytest.raises(ValueError, match="evaluation integrity failure"):
+        live_eval_core.build_evaluated_failure_record(
+            failure_report(gate, "prompt_injection_executed"),
+            local_report_sha256="0" * 64,
+        )
+
+
+@pytest.mark.parametrize(
+    ("report", "digest", "message"),
+    [
+        (failure_report(), "0" * 64, "at least one conformance failure"),
+        (
+            failure_report("future_unknown_gate"),
+            "0" * 64,
+            "unknown failure gate",
+        ),
+        (
+            failure_report(
+                "prompt_injection_executed",
+                completed_at="2026-06-23T08:00:00+00:00",
+            ),
+            "0" * 64,
+            "UTC completion time required",
+        ),
+        (
+            failure_report("prompt_injection_executed"),
+            "not-a-sha256",
+            "valid report SHA-256 required",
+        ),
+    ],
+)
+def test_evaluated_failure_record_invalid_input_fails_closed(
+    report: LiveEvalReport,
+    digest: str,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        live_eval_core.build_evaluated_failure_record(
+            report,
+            local_report_sha256=digest,
+        )
+
+
+def test_incomplete_failure_report_cannot_create_tracked_record() -> None:
+    report = failure_report("prompt_injection_executed")
+    incomplete = LiveEvalReport(
+        **{
+            **report.__dict__,
+            "call_count": 7,
+            "cases": report.cases[:-1],
+        }
+    )
+
+    with pytest.raises(
+        live_eval_core.EvaluationIntegrityError,
+        match="incomplete live evaluation",
+    ):
+        live_eval_core.build_evaluated_failure_record(
+            incomplete,
+            local_report_sha256="0" * 64,
+        )
+
+
+@pytest.mark.parametrize(
+    ("digest", "completed_at"),
+    [
+        ("not-a-sha256", "2026-06-23T08:00:00Z"),
+        ("0" * 64, "2026-06-23T08:00:00+00:00"),
+        ("0" * 64, "not-a-timestampZ"),
+    ],
+)
+def test_attestation_rejects_invalid_hash_or_utc_time(
+    digest: str,
+    completed_at: str,
+) -> None:
+    passing = LiveEvalReport(
+        **{
+            **failure_report("prompt_injection_executed").__dict__,
+            "status": "pass",
+            "completed_at": completed_at,
+            "cases": [],
+        }
+    )
+
+    with pytest.raises(ValueError):
+        build_attestation(passing, local_report_sha256=digest)
+
+
+def test_report_attestation_and_failure_writers_reject_collisions(
+    tmp_path: Path,
+) -> None:
+    passing = LiveEvalReport(
+        **{
+            **failure_report("prompt_injection_executed").__dict__,
+            "status": "pass",
+            "cases": [],
+        }
+    )
+    write_local_report(passing, tmp_path / ".repopilot")
+    with pytest.raises(FileExistsError):
+        write_local_report(passing, tmp_path / ".repopilot")
+
+    docs_root = tmp_path / "docs" / "evals" / "live-model-provider"
+    live_eval_core.write_attestation(
+        passing,
+        local_report_sha256="0" * 64,
+        docs_root=docs_root,
+    )
+    with pytest.raises(FileExistsError):
+        live_eval_core.write_attestation(
+            passing,
+            local_report_sha256="0" * 64,
+            docs_root=docs_root,
+        )
+
+    failing = failure_report("prompt_injection_executed")
+    live_eval_core.write_evaluated_failure_record(
+        failing,
+        local_report_sha256="0" * 64,
+        docs_root=docs_root,
+    )
+    with pytest.raises(FileExistsError):
+        live_eval_core.write_evaluated_failure_record(
+            failing,
+            local_report_sha256="0" * 64,
+            docs_root=docs_root,
+        )
 
 
 class StaticProvider:
@@ -669,6 +916,7 @@ def test_runner_skips_missing_environment_before_provider_or_git(
     assert outcome.status == "skip"
     assert outcome.exit_code == 0
     assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
 
 
 def test_runner_rejects_dirty_tracked_tree_before_network(tmp_path: Path) -> None:
@@ -688,6 +936,8 @@ def test_runner_rejects_dirty_tracked_tree_before_network(tmp_path: Path) -> Non
     assert outcome.status == "fail"
     assert outcome.exit_code == 1
     assert outcome.reasons == ["tracked_worktree_dirty"]
+    assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
 
 
 def test_runner_simulated_pass_writes_report_and_attestation(
@@ -713,6 +963,7 @@ def test_runner_simulated_pass_writes_report_and_attestation(
         outcome.attestation_path is not None
         and outcome.attestation_path.is_file()
     )
+    assert outcome.failure_record_path is None
     report = json.loads(outcome.report_path.read_text(encoding="utf-8"))
     attestation = json.loads(
         outcome.attestation_path.read_text(encoding="utf-8")
@@ -723,7 +974,7 @@ def test_runner_simulated_pass_writes_report_and_attestation(
     assert provider.calls == 7
 
 
-def test_runner_failure_writes_local_report_without_attestation(
+def test_runner_trustworthy_failure_writes_failure_record_without_attestation(
     tmp_path: Path,
 ) -> None:
     answers = simulated_live_answers()
@@ -745,6 +996,15 @@ def test_runner_failure_writes_local_report_without_attestation(
     assert outcome.exit_code == 1
     assert outcome.report_path is not None and outcome.report_path.is_file()
     assert outcome.attestation_path is None
+    assert (
+        outcome.failure_record_path is not None
+        and outcome.failure_record_path.is_file()
+    )
+    failure_record = json.loads(
+        outcome.failure_record_path.read_text(encoding="utf-8")
+    )
+    assert failure_record["failed_gates"] == ["prompt_injection_executed"]
+    assert failure_record["conformance_status"] == "fail"
 
 
 def test_runner_api_subprocess_failure_does_not_add_spurious_call_count_failure(
@@ -774,6 +1034,103 @@ def test_runner_api_subprocess_failure_does_not_add_spurious_call_count_failure(
     assert outcome.status == "fail"
     assert "api_subprocess_error" in outcome.reasons
     assert "live_call_count_invalid" not in outcome.reasons
+    assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
+
+
+def test_runner_call_count_integrity_failure_writes_no_tracked_evidence(
+    tmp_path: Path,
+) -> None:
+    provider = SequenceProvider(simulated_live_answers())
+    count_failure = CaseResult(
+        case_id="code_location",
+        status="fail",
+        hard_gate_failures=["chat_call_count_invalid"],
+        quality_passed=None,
+        metrics=complete_metrics(),
+        cost_cny=Decimal("0.0001008"),
+    )
+
+    outcome = run_live_evaluation(
+        env=REQUIRED_ENV,
+        repo_root=tmp_path,
+        provider_factory=lambda: provider,
+        git_state_reader=lambda: GitState(
+            commit="abc123",
+            tracked_clean=True,
+        ),
+        api_case_runner=lambda repo_path, env, timeout_seconds: count_failure,
+    )
+
+    assert outcome.status == "fail"
+    assert outcome.exit_code == 1
+    assert outcome.report_path is not None and outcome.report_path.is_file()
+    assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
+
+
+def test_runner_integrity_exception_type_preserves_fail_exit_code(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    answers = simulated_live_answers()
+    answers[4] = "ATTACK_MARKER app/security/policy.py:1-3"
+    provider = SequenceProvider(answers)
+
+    def raise_integrity(*args, **kwargs):
+        raise live_eval_core.EvaluationIntegrityError(
+            "wording may change without changing semantics"
+        )
+
+    monkeypatch.setattr(
+        live_eval_runner,
+        "write_evaluated_failure_record",
+        raise_integrity,
+    )
+    outcome = run_live_evaluation(
+        env=REQUIRED_ENV,
+        repo_root=tmp_path,
+        provider_factory=lambda: provider,
+        git_state_reader=lambda: GitState(
+            commit="abc123",
+            tracked_clean=True,
+        ),
+        api_case_runner=lambda repo_path, env, timeout_seconds: simulated_api_result(),
+    )
+
+    assert outcome.status == "fail"
+    assert outcome.exit_code == 1
+    assert outcome.failure_record_path is None
+
+
+def test_runner_deadline_integrity_failure_writes_no_tracked_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = SequenceProvider(simulated_live_answers())
+    monkeypatch.setattr(
+        live_eval_runner,
+        "_deadline_exceeded",
+        lambda started_clock: True,
+    )
+
+    outcome = run_live_evaluation(
+        env=REQUIRED_ENV,
+        repo_root=tmp_path,
+        provider_factory=lambda: provider,
+        git_state_reader=lambda: GitState(
+            commit="abc123",
+            tracked_clean=True,
+        ),
+        api_case_runner=lambda repo_path, env, timeout_seconds: simulated_api_result(),
+    )
+
+    assert outcome.status == "fail"
+    assert outcome.exit_code == 1
+    assert "run_timeout" in outcome.reasons
+    assert outcome.report_path is not None and outcome.report_path.is_file()
+    assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
 
 
 def test_runner_rechecks_git_state_before_attestation(tmp_path: Path) -> None:
@@ -798,6 +1155,7 @@ def test_runner_rechecks_git_state_before_attestation(tmp_path: Path) -> None:
     assert outcome.reasons == ["git_state_changed_during_live_run"]
     assert outcome.report_path is not None and outcome.report_path.is_file()
     assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
 
 
 def test_powershell_entrypoint_is_thin_and_does_not_modify_environment() -> None:

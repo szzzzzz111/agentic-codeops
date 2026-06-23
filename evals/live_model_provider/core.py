@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal
 import hashlib
 import json
@@ -14,6 +15,21 @@ EXIT_SKIP = 0
 EXIT_FAIL = 1
 EXIT_ERROR = 2
 RUBRIC_VERSION = "2026-06-22"
+EXPECTED_LIVE_CALLS = 8
+EXPECTED_LIVE_CASE_IDS = frozenset(
+    {
+        "code_location",
+        "implementation_explanation",
+        "configuration",
+        "test_validation",
+        "ambiguous",
+        "prompt_injection",
+        "no_answer",
+        "planner",
+        "patch",
+        "secret_filter",
+    }
+)
 REQUIRED_ENV_NAMES = (
     "REPOPILOT_MODEL_PROVIDER",
     "REPOPILOT_MODEL_BASE_URL",
@@ -21,6 +37,60 @@ REQUIRED_ENV_NAMES = (
     "REPOPILOT_MODEL_NAME",
     "REPOPILOT_MODEL_THINKING",
 )
+CONFORMANCE_FAILURE_GATES = frozenset(
+    {
+        "chat_citation_invalid",
+        "chat_contract_invalid",
+        "chat_status_invalid",
+        "finish_reason_not_stop",
+        "grounded_answer_invalid_citation",
+        "grounded_answer_missing_citation",
+        "grounded_answer_no_evidence",
+        "grounded_answer_provider_error",
+        "grounded_answer_unknown",
+        "metrics_missing",
+        "no_answer_called_provider",
+        "no_answer_fallback_mismatch",
+        "patch_pending_store_missing",
+        "patch_proposal_invalid",
+        "patch_was_applied",
+        "planner_action_type_invalid",
+        "planner_fallback",
+        "planner_step_count_invalid",
+        "planner_step_order_invalid",
+        "prompt_injection_executed",
+        "prompt_token_split_mismatch",
+        "requested_model_mismatch",
+        "returned_model_mismatch",
+        "safe_control_missing_from_evidence_pack",
+        "safe_control_missing_from_http_payload",
+        "safe_control_missing_from_retrieval",
+        "secret_in_evidence_pack",
+        "secret_in_http_payload",
+        "secret_in_retrieval",
+        "total_token_count_mismatch",
+        "usage_incomplete",
+        "usage_negative",
+    }
+)
+INTEGRITY_FAILURE_GATES = frozenset(
+    {
+        "api_subprocess_error",
+        "api_subprocess_invalid_output",
+        "api_subprocess_timeout",
+        "call_count_invalid",
+        "chat_call_count_invalid",
+        "git_state_changed_during_live_run",
+        "live_call_count_invalid",
+        "patch_call_count_invalid",
+        "planner_call_count_invalid",
+        "run_timeout",
+    }
+)
+
+
+class EvaluationIntegrityError(ValueError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -221,7 +291,8 @@ def write_local_report(
     encoded = (
         json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     ).encode("utf-8")
-    report_path.write_bytes(encoded)
+    with report_path.open("xb") as handle:
+        handle.write(encoded)
     return report_path, hashlib.sha256(encoded).hexdigest()
 
 
@@ -232,6 +303,9 @@ def build_attestation(
 ) -> dict[str, object]:
     if report.status != "pass":
         raise ValueError("PASS report required")
+    normalized_digest = _validate_sha256(local_report_sha256)
+    _validate_utc_timestamp(report.started_at)
+    _validate_utc_timestamp(report.completed_at)
     aggregate = _aggregate_metrics(report.cases)
     return {
         "schema_version": "1",
@@ -252,7 +326,7 @@ def build_attestation(
             "total": report.quality_total,
         },
         "aggregate": aggregate,
-        "local_report_sha256": local_report_sha256,
+        "local_report_sha256": normalized_digest,
     }
 
 
@@ -270,11 +344,88 @@ def write_attestation(
     file_name = report.completed_at.replace(":", "").replace("-", "")
     file_name = file_name.replace("T", "-").replace("Z", "")
     path = docs_root / f"{file_name}.json"
-    path.write_text(
-        json.dumps(attestation, ensure_ascii=False, indent=2, sort_keys=True)
-        + "\n",
-        encoding="utf-8",
+    with path.open("x", encoding="utf-8") as handle:
+        handle.write(
+            json.dumps(
+                attestation,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+    return path
+
+
+def conformance_failures_for_record(cases: list[CaseResult]) -> list[str]:
+    failures = {
+        failure
+        for case in cases
+        for failure in case.hard_gate_failures
+    }
+    if not failures:
+        raise ValueError("at least one conformance failure required")
+    unknown = failures - CONFORMANCE_FAILURE_GATES - INTEGRITY_FAILURE_GATES
+    if unknown:
+        raise ValueError("unknown failure gate")
+    if failures & INTEGRITY_FAILURE_GATES:
+        raise EvaluationIntegrityError("evaluation integrity failure")
+    return sorted(failures)
+
+
+def build_evaluated_failure_record(
+    report: LiveEvalReport,
+    *,
+    local_report_sha256: str,
+) -> dict[str, object]:
+    if report.status != "fail":
+        raise ValueError("FAIL report required")
+    normalized_digest = _validate_sha256(local_report_sha256)
+    _validate_utc_timestamp(report.completed_at)
+    case_ids = [case.case_id for case in report.cases]
+    if (
+        report.call_count != EXPECTED_LIVE_CALLS
+        or len(case_ids) != len(EXPECTED_LIVE_CASE_IDS)
+        or set(case_ids) != EXPECTED_LIVE_CASE_IDS
+    ):
+        raise EvaluationIntegrityError("incomplete live evaluation")
+    return {
+        "schema_version": "1",
+        "record_type": "evaluated_failure",
+        "evaluation_status": "complete",
+        "conformance_status": "fail",
+        "evaluator_commit": report.tested_commit,
+        "evaluated_at": report.completed_at,
+        "profile": {
+            "provider": report.profile.provider,
+            "model": report.profile.model,
+        },
+        "rubric_version": report.rubric_version,
+        "failed_gates": conformance_failures_for_record(report.cases),
+        "local_report_sha256": normalized_digest,
+    }
+
+
+def write_evaluated_failure_record(
+    report: LiveEvalReport,
+    *,
+    local_report_sha256: str,
+    docs_root: Path,
+) -> Path:
+    payload = build_evaluated_failure_record(
+        report,
+        local_report_sha256=local_report_sha256,
     )
+    failure_root = docs_root / "failures"
+    failure_root.mkdir(parents=True, exist_ok=True)
+    file_name = report.completed_at.replace(":", "").replace("-", "")
+    file_name = file_name.replace("T", "-").replace("Z", "")
+    path = failure_root / f"{file_name}.json"
+    with path.open("x", encoding="utf-8") as handle:
+        handle.write(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n"
+        )
     return path
 
 
@@ -404,3 +555,22 @@ def _aggregate_metrics(cases: list[CaseResult]) -> dict[str, object]:
         "total_tokens": sum_optional("total_tokens"),
         "cost_cny": str(sum(costs, Decimal("0"))),
     }
+
+
+def _validate_sha256(value: str) -> str:
+    normalized = value.casefold()
+    if len(normalized) != 64 or any(
+        character not in "0123456789abcdef"
+        for character in normalized
+    ):
+        raise ValueError("valid report SHA-256 required")
+    return normalized
+
+
+def _validate_utc_timestamp(value: str) -> None:
+    if not value.endswith("Z"):
+        raise ValueError("UTC completion time required")
+    try:
+        datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError as exc:
+        raise ValueError("UTC completion time required") from exc

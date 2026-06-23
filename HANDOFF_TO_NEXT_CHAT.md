@@ -41,8 +41,8 @@ openspec list
 
 ## 下一步
 
-1. 完成 reshaped OpenSpec/Harness plan review 并确认实现。
-2. TDD 实现 evaluated-failure record 与 evaluation-integrity 分类。
-3. 完整 deterministic verification、formal review 和 Stage Debt Sweep 后提交 clean evaluator。
-4. 重跑真实 DeepSeek gate；提交 PASS attestation 或可信 failure record。
-5. 最终证据复核后 archive、merge、push；文档不得把 FAIL provider 写成已认证，不创建 V24。
+1. 提交已完成 formal review 的最终 evaluator implementation，确认 tracked tree clean。
+2. 在该 clean commit 上重跑真实 DeepSeek gate；不得复用历史报告。
+3. 提交 PASS attestation 或可信 evaluated-failure record；SKIP/integrity failure 继续阻断。
+4. 复核 report hash、commit、UTC、provider/model、rubric 与 gate 后 archive、merge、push。
+5. 文档不得把 FAIL provider 写成已认证，不创建 V24。

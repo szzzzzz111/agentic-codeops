@@ -29,17 +29,20 @@ from evals.live_model_provider.core import (
     EXIT_ERROR,
     EXIT_FAIL,
     EXIT_SKIP,
+    EXPECTED_LIVE_CALLS,
     RUBRIC_VERSION,
     CallBudget,
     CaseResult,
+    EvaluationIntegrityError,
     LiveEvalReport,
     write_attestation,
+    write_evaluated_failure_record,
     write_local_report,
     validate_live_environment,
 )
 
 
-MAX_LIVE_CALLS = 8
+MAX_LIVE_CALLS = EXPECTED_LIVE_CALLS
 RUN_TIMEOUT_SECONDS = 300
 
 
@@ -56,6 +59,7 @@ class LiveEvaluationOutcome:
     reasons: list[str] = field(default_factory=list)
     report_path: Path | None = None
     attestation_path: Path | None = None
+    failure_record_path: Path | None = None
 
 
 def run_live_evaluation(
@@ -234,6 +238,17 @@ def run_live_evaluation(
         repo_root / ".repopilot",
     )
     if status != "pass":
+        failure_record_path = None
+        try:
+            failure_record_path = write_evaluated_failure_record(
+                report,
+                local_report_sha256=digest,
+                docs_root=(
+                    repo_root / "docs" / "evals" / "live-model-provider"
+                ),
+            )
+        except EvaluationIntegrityError:
+            pass
         return LiveEvaluationOutcome(
             status="fail",
             exit_code=EXIT_FAIL,
@@ -243,6 +258,7 @@ def run_live_evaluation(
                 for failure in result.hard_gate_failures
             ],
             report_path=report_path,
+            failure_record_path=failure_record_path,
         )
 
     attestation_path = write_attestation(
@@ -276,6 +292,8 @@ def main() -> int:
         print(f"FAIL live model provider eval: {detail}")
         if outcome.report_path:
             print(f"report={outcome.report_path}")
+        if outcome.failure_record_path:
+            print(f"failure_record={outcome.failure_record_path}")
     else:
         print("PASS live model provider eval")
         print(f"report={outcome.report_path}")

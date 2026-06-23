@@ -12,23 +12,23 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 
 ## TDD And Verification
 
-- [ ] RED/GREEN covers exact failure schema, forbidden fields, deterministic ordering and UTC time.
-- [ ] RED/GREEN distinguishes trustworthy conformance FAIL from SKIP and evaluation integrity failure; all single-case and whole-run call-count gates are integrity blockers.
-- [ ] Simulated PASS still writes only attestation; trustworthy FAIL writes only failure record and exits 1.
-- [ ] Integrity failure writes no tracked evidence and remains non-archivable.
-- [ ] Focused tests、adjacent regression、full verify、OpenSpec strict/all 与 `git diff --check` 通过。
+- [x] RED/GREEN covers exact failure schema, forbidden fields, deterministic ordering and UTC time.
+- [x] RED/GREEN distinguishes trustworthy conformance FAIL from SKIP and evaluation integrity failure; all single-case and whole-run call-count gates are integrity blockers.
+- [x] Simulated PASS still writes only attestation; trustworthy FAIL writes only failure record and exits 1.
+- [x] Integrity failure writes no tracked evidence and remains non-archivable.
+- [x] Focused evaluator tests：57 passed；adjacent regression：167 passed；full verify：391 passed、1 skipped；ruff、OpenSpec strict/all 与 `git diff --check` 通过。
 
 ## Review
 
 - Gate marker: `formal_review_evidence_gate`
 - Policy marker: `continuous_authorization_does_not_replace_formal_review`
 - Timing marker: `formal_review_after_final_runtime_tests`
-- [ ] Internal review verifies archive semantics do not weaken any hard gate.
-- [ ] Independent adversarial review checks misclassification, false certification, schema leakage and stale evidence.
-- [ ] Evidence writers use exclusive create; PASS/FAIL tracked evidence is mutually exclusive.
-- [ ] `manual_stage_debt_sweep_completed` covers report/attestation/failure writers, runner state classification,
+- [x] Internal review verifies archive semantics do not weaken any hard gate.
+- [x] Independent adversarial review session `ses_10c530656ffegAJ98pMZlih0iI` checked misclassification, incomplete reports, false certification, schema leakage, timeout and exit codes.
+- [x] Evidence writers use exclusive create; PASS/FAIL tracked evidence is mutually exclusive.
+- [x] `manual_stage_debt_sweep_completed` covers report/attestation/failure writers, runner state classification,
   CLI output, docs and frozen runtime boundary.
-- [ ] `formal_review_findings_closed`。
+- [x] `formal_review_findings_closed`：message-string P1 replaced by `EvaluationIntegrityError`; incomplete 10-case/8-call reports, invalid SHA/UTC and deadline integrity paths fail closed. Existing unused serialization round-trip/version suggestions remain out of scope and non-blocking.
 
 ## Closeout
 
