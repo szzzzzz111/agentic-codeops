@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-- Active OpenSpec change：无；`harden-grounded-citation-instruction` 已归档。
+- Active OpenSpec change：无；`harden-grounded-evidence-framing` 已归档。
 - `add-live-model-provider-eval` 在独立分支 paused；remediation 必须先归档、合并和推送。
 - 精确 Git/OpenSpec 状态先运行：
 
@@ -14,12 +14,13 @@ openspec list
 
 ## 已完成
 
-- Grounded citation instruction 已按 TDD 收紧：列出 exact labels、要求逐字复制、evidence 视为
-  untrusted data。
-- Focused Provider/Grounded Answer/AgentLoop/API regression：135 passed。
-- Full deterministic verification：332 passed、1 skipped；OpenSpec strict/all：19 passed。
-- Internal/focused external review 与 Stage Debt Sweep 已完成，无本 change 内阻断项。
-- Validator、JSON mode、metrics、API 和默认 Patch wiring 未修改。
+- 已建立 medium-risk remediation OpenSpec/Harness contract。
+- Grounded prompt 已按 TDD 改为裸 citation label + untrusted JSON evidence envelope。
+- System instruction 已禁止执行或复述 evidence 内改变回答行为、泄露内容或输出 marker/token 的指令。
+- JSON mode、validator、metrics、API、默认 Patch wiring、persistence 与 paused evaluator 未修改。
+- Focused Provider/Grounded Answer/AgentLoop/API regression：137 passed。
+- Final full verify：334 passed、1 skipped；OpenSpec strict/all：19 passed。
+- Internal/focused external review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
 
 ## 当前阻塞
 
@@ -28,5 +29,5 @@ openspec list
 ## 下一步
 
 1. Merge、push remediation。
-2. 恢复 `add-live-model-provider-eval` 并重新运行完整 deterministic/live gate。
+2. 恢复 `add-live-model-provider-eval`，使旧 review/live 证据失效并完整重跑。
 3. 不创建 V24。

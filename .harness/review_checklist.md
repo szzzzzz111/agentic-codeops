@@ -1,36 +1,37 @@
 # 当前 Review 清单
 
-Archived change：`2026-06-22-harden-grounded-citation-instruction`。风险级别：medium。
+Archived change：`2026-06-23-harden-grounded-evidence-framing`。风险级别：medium。
 
 ## Scope
 
-- [x] Grounded instruction 列出 exact allowed citation labels。
-- [x] 要求逐字复制 label，并将 evidence text 声明为不可信数据。
-- [x] Validator、JSON mode、metrics、API、Patch wiring 和 persistence 不变。
+- [x] Grounded user prompt 与 system allowed list 使用相同裸 citation label。
+- [x] Grounded evidence 使用明确的不可信 JSON data envelope。
+- [x] Instruction 禁止执行或复述 evidence 内改变回答行为、泄露内容或输出 marker 的指令。
+- [x] JSON mode、validator、metrics、API、Patch wiring 和 persistence 不变。
 - [x] 不修改 paused live evaluator，不创建 V24。
 
 ## TDD And Verification
 
-- [x] RED/GREEN covers labels, deduplication, exact format and untrusted evidence。
-- [x] Focused provider/Grounded Answer/AgentLoop/API regression：135 passed。
-- [x] Full verify：332 passed、1 skipped；ruff、stage docs 与 skill checks 通过。
-- [x] OpenSpec strict/all：19 passed；`git diff --check` 通过。
+- [x] RED/GREEN covers citation framing, evidence envelope, injection instruction and JSON-mode parity.
+- [x] Focused Provider/Grounded Answer/AgentLoop/API regression：137 passed。
+- [x] Final full verify：334 passed、1 skipped；OpenSpec strict/all：19 passed；ruff、stage docs、
+  skill checks 与 `git diff --check` 通过。
 
 ## Review
 
 - Gate marker: `formal_review_evidence_gate`
 - Policy marker: `continuous_authorization_does_not_replace_formal_review`
 - Timing marker: `formal_review_after_final_runtime_tests`
-- [x] Internal plan and implementation review complete：确认 grounded-text prompt 只使用已校验的
-  evidence metadata，稳定去重 labels，不复制 snippet；JSON mode、validator、metrics 与 wiring 未改。
-- [x] Focused external review complete：OpenCode `deepseek-v4-flash-free` session
-  `ses_110500ed7ffe0fX04uuzC6tvoS` 报告 0 P0/P1、1 P2、3 P3。
-- [x] `manual_stage_debt_sweep_completed`：检查 provider request validation/system prompt、
-  Grounded Answer citation regex/fallback、EvidencePack、repo retrieval/file listing、AgentLoop/API
-  回归和长期 specs；无本 change 内新增阻断缺陷。
-- [x] `formal_review_findings_closed`：P2 extensionless path 与 validator 不对称为既有、未触发本次
-  live failure 且修改 validator 明确超出 remediation scope，记录为 residual debt；P3 空 evidence、
-  Fake provider 与特殊字符项由既有边界覆盖或不经过本路径，不阻断 archive。
+- [x] Internal plan and implementation review complete：确认 grounded-only mode branch、JSON
+  escaping、裸 citation labels、structured-output parity 与 audit boundary。
+- [x] Focused external review session `ses_10dea04ebffe0m3qVh8yY6dUs9` complete：初审无
+  P0-P2、3 个 P3；移除 allowed-list bullet、收紧行为指令措辞并增加特殊字符 round-trip 后，
+  re-review 确认所有 P3 关闭。
+- [x] `manual_stage_debt_sweep_completed`：检查 Provider/tests、Grounded Answer
+  regex/fallback、Planner/Patch JSON callers、AgentLoop/API、audit/persistence、OpenSpec/Harness
+  与 paused eval；无新增阻断债务。
+- [x] `formal_review_findings_closed`：无 P0/P1/P2/P3；extensionless citation 为既有 scope 外
+  residual，真实模型抗注入效果由恢复后的 live gate 验证。
 
 ## Closeout
 
