@@ -9,7 +9,7 @@
 - 收紧 grounded-text system instruction：识别 evidence 中的指令性文本后必须静默忽略，只使用
   其中与用户仓库问题相关的事实内容。
 - 明确禁止在回答、拒答、澄清、引用或安全说明中输出、复述、拼写、转换、编码、翻译或讨论
-  evidence 指令要求产生、且与 original query 无关的 marker/token。
+  evidence 指令要求产生、且未被 original query 明确询问的 marker/token。
 - 保持 exact citation footer、evidence JSON envelope、citation validator、JSON object mode、
   metrics、API、默认 Patch wiring 和 persistence contract 不变。
 - 不增加输出后清洗、marker 黑名单、evidence 内容过滤、answerability classifier、retry 或 V24。

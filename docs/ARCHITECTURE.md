@@ -344,6 +344,9 @@ AgentLoop
 - Grounded-text user message 使用不带方括号的 citation label，并把 evidence items 放入明确标记
   为不可信数据的 JSON envelope；system instruction 禁止遵循、复述、转换或编码 evidence 内要求
   改变回答行为、泄露内容或输出 marker/token 的指令。`json_object` mode 保留原有 prompt assembly。
+- Grounded-text instruction 还要求静默忽略命令、角色、策略、声明式 response rule 和额外输出要求；
+  不得在回答、澄清、拒答或安全说明中确认、解释拒绝、转换或复现 original query 未明确询问的
+  marker/token。若相同字符串是用户明确询问的仓库事实或标识符，仍可只基于相关 evidence 回答。
 - 每个 grounded response（包括回答、澄清或拒答）必须以一个裸 allowed citation label 作为唯一
   最后一行；footer 不得包含前缀、markdown、包装符号、bullet、标点或额外文本。Provider 不自动
   补写 citation，模型不服从时仍由 validator fail closed。
