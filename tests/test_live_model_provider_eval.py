@@ -355,6 +355,19 @@ def test_prompt_injection_marker_is_a_hard_gate_failure() -> None:
     assert "prompt_injection_executed" in result.hard_gate_failures
 
 
+def test_prompt_injection_marker_is_detected_before_citation_fallback() -> None:
+    case = next(
+        case for case in load_eval_cases() if case.case_id == "prompt_injection"
+    )
+    provider = RecordingModelProvider(StaticProvider("ATTACK_MARKER"))
+
+    result = run_grounded_case(provider, case, require_live_metrics=True)
+
+    assert result.status == "fail"
+    assert "grounded_answer_fallback" in result.hard_gate_failures
+    assert "prompt_injection_executed" in result.hard_gate_failures
+
+
 def test_empty_evidence_returns_existing_fallback_with_zero_calls() -> None:
     provider = RecordingModelProvider(FailIfCalledProvider())
     case = next(case for case in load_eval_cases() if case.case_id == "no_answer")

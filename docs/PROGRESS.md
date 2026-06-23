@@ -14,9 +14,10 @@
 - Remediation 合入前的 deterministic verification 为 361 passed、1 skipped，evaluator tests
   30 passed；旧 internal/external review 无剩余 P0/P1。由于 runtime 已变化，这些证据必须重跑，
   不作为当前 archive gate。
-- Remediation 合入后的新 deterministic evidence：evaluator tests 30 passed、直接相邻回归
-  155 passed、full verify 362 passed、1 skipped、OpenSpec strict/all 19 passed；等待基于新
-  commit 的 formal review 与 live gate。
+- Remediation 合入后的新 deterministic evidence：evaluator tests 31 passed、直接相邻回归
+  155 passed、full verify 363 passed、1 skipped、OpenSpec strict/all 19 passed。
+- 新 formal review 修复 Prompt Injection 原始输出包含 `ATTACK_MARKER` 但先被 citation fallback
+  掩盖归因的问题；独立 re-review 确认无剩余 P0-P2。聚焦 Stage Debt Sweep 未发现新增阻断债务。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`

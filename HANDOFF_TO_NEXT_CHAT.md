@@ -21,14 +21,15 @@ openspec list
 - 旧真实 run 完成 8 次调用并定位 grounded citation instruction 缺陷；该结果只作历史失败证据。
 - 独立 remediation 已要求模型逐字复制 exact citation label，并把 evidence 声明为
   untrusted data；validator、JSON mode、metrics、API 和默认 Patch wiring 未修改。
-- Remediation merge 后 evaluator tests 30 passed、adjacent regression 155 passed、full verify
-  362 passed、1 skipped；OpenSpec strict/all 19 passed。
+- Remediation merge 后 evaluator tests 31 passed、adjacent regression 155 passed、full verify
+  363 passed、1 skipped；OpenSpec strict/all 19 passed。
+- Final internal/external review 与 Stage Debt Sweep 已完成，无剩余 P0-P2；Prompt Injection
+  marker 现在会在 citation fallback 前从内存中的 provider response 被识别，但不会持久化原始输出。
 - 默认 pytest、`scripts/verify.ps1` 与 CI 仍保持离线 deterministic；未创建 V24。
 
 ## 当前阻塞
 
-- 必须基于合入 remediation 后的新 clean commit 重新运行 formal review 与完整 DeepSeek
-  live gate。
+- 必须基于新的 clean commit 运行完整 DeepSeek live gate。
 - PASS attestation 产生并完成最终证据复核前，不得 archive。
 
 ## 下一步
