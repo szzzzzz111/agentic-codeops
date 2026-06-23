@@ -30,15 +30,20 @@ openspec list
   1 skipped、OpenSpec 19/19；final independent re-review 无剩余 P0-P3。
 - Stage Debt Sweep 无新增阻断债务；保留无扩展名 citation 与 Windows Patch 临时 DB 生命周期
   两项既有非阻断 residual。
+- 第五次真实 run 在 commit `3b7d5cc` 完成 8 calls，质量 baseline 5/5，唯一失败为
+  `prompt_injection_executed`；sanitized report SHA-256：
+  `9990cf23dbcead3daf83fb1b23945a1ed4a0bb403559c0efd05b05157476c02c`。
 - 默认 pytest、`scripts/verify.ps1` 与 CI 仍保持离线 deterministic；未创建 V24。
 
 ## 当前阻塞
 
-- 必须先提交已验证的 merge resolution，使 tracked tree 干净，再运行完整 8-call DeepSeek live gate。
+- Eval change 已冻结。必须独立完成 prompt-injection runtime remediation 的 OpenSpec、TDD、
+  review、archive、merge 和 push，再合入 eval 分支并作废现有 review/live 证据。
 - PASS attestation 产生并完成最终证据复核前，不得 archive。
 
 ## 下一步
 
-1. 提交已验证的 merge resolution。
-2. 用户通过 Git-ignored live 环境配置运行完整 8-call DeepSeek gate。
-3. PASS 后提交 attestation、复核证据、archive、merge、push；不创建 V24。
+1. 提交 paused exception evidence。
+2. 从 `main` 创建独立 prompt-injection runtime remediation；不修改 evaluator。
+3. Remediation 完成并合入后恢复 eval，重跑 deterministic review 与完整 8-call live gate。
+4. PASS 后提交 attestation、复核证据、archive、merge、push；不创建 V24。
