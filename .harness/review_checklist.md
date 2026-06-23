@@ -43,6 +43,11 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
   `9cafb9311ab6eb4030f3ba16318de682c734ca9d5ada04331a1c97a36b05826d`。
 - [x] `diagnostic_gap_recorded`：旧 evaluator 只记录泛化 `grounded_answer_fallback`；现改为
   使用 Grounded Answer 已脱敏 allowlist 中的具体 `fallback_reason`。
+- [x] 第四次 run 在 commit `0b82afb` 上确认 ambiguous case 为
+  `grounded_answer_missing_citation`；其余 hard gates PASS。Sanitized report SHA-256:
+  `47aecb0e72c543ef0d58855824e6389077eaeec66f96c1dc3cd7a7d95d4708d`。
+- [x] `paused_exception_recorded`：该稳定行为需要独立 citation-footer runtime remediation；
+  不在 eval change 内修改。
 - [x] 两个独立 grounded remediation 均已归档、合并并推送。
 - [ ] Real DeepSeek hard gates PASS on the updated clean commit.
 - [ ] PASS attestation and final evidence review are complete.

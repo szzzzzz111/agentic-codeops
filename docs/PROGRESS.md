@@ -39,6 +39,12 @@
 - Evaluator 自身再对 fallback reason 做逐值 allowlist，未知值统一为 `grounded_answer_unknown`。
   Final evaluator tests 32 passed、adjacent regression 157 passed、full verify 366 passed、
   1 skipped、OpenSpec strict/all 19 passed；最终 re-review 无 P0-P3。
+- 第四次真实 run 在 commit `0b82afb` 再次仅 ambiguous case 失败，具体原因为
+  `grounded_answer_missing_citation`；其余 hard gates PASS，8 calls 的 finish reason 与 usage
+  完整。连续两次该 case 都返回 235 tokens 并缺 citation，判定为稳定 runtime instruction 行为，
+  不是可通过无 retry 重跑解决的模型漂移。
+- Eval change 已再次 paused，等待独立 grounded citation footer remediation：要求所有 grounded
+  response（包括澄清或拒答）最后一行逐字输出一个裸 allowed label，不降低 validator 或 gate。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`

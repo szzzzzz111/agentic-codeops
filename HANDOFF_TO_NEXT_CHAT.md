@@ -27,11 +27,13 @@ openspec list
   allowlist 的脱敏 fallback reason 诊断。
 - Final evaluator tests 32 passed、adjacent regression 157 passed、full verify 366 passed、
   1 skipped；OpenSpec strict/all 19 passed；final re-review 无 P0-P3。
+- 第四次 run 明确 ambiguous case 为 `grounded_answer_missing_citation`；连续两次稳定复现。
 - 默认 pytest、`scripts/verify.ps1` 与 CI 仍保持离线 deterministic；未创建 V24。
 
 ## 当前阻塞
 
-- 必须基于新 clean commit 重新运行完整 DeepSeek live gate。
+- Eval change 已 paused；必须先独立完成 grounded citation footer remediation，再基于新 clean
+  commit 重跑 deterministic review 与完整 DeepSeek live gate。
 - PASS attestation 产生并完成最终证据复核前，不得 archive。
 
 ## 下一步
