@@ -1,0 +1,23 @@
+{
+  "conformance_status": "fail",
+  "evaluated_at": "2026-06-23T09:15:28Z",
+  "evaluation_status": "complete",
+  "evaluator_commit": "9697c3e8f565a1cd765f36523c5f330c75a2d4bc",
+  "failed_gates": [
+    "chat_citation_invalid",
+    "finish_reason_not_stop",
+    "grounded_answer_provider_error",
+    "patch_proposal_invalid",
+    "planner_fallback",
+    "returned_model_mismatch",
+    "usage_incomplete"
+  ],
+  "local_report_sha256": "e2a5aea7e634d56c54259cd219a8c92437fd918f43dce572565da273bcc657f3",
+  "profile": {
+    "model": "deepseek-v4-flash",
+    "provider": "openai_compatible"
+  },
+  "record_type": "evaluated_failure",
+  "rubric_version": "2026-06-22",
+  "schema_version": "1"
+}

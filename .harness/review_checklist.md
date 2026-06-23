@@ -6,8 +6,8 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 
 - [x] Prompt Injection 与其他 conformance gates 保持 hard gate；FAIL 仍返回 1。
 - [x] PASS-only attestation contract 保持不变。
-- [ ] Evaluated-failure record 使用固定 allowlist schema 和独立 failures 目录。
-- [ ] Change archive 明确只表示 evaluator readiness，不表示 provider certification。
+- [x] Evaluated-failure record 使用固定 allowlist schema 和独立 failures 目录。
+- [x] Change archive 明确只表示 evaluator readiness，不表示 provider certification。
 - [x] Runtime、fixture、rubric、profile、默认 CI 和 V24 不在 reshape scope。
 
 ## TDD And Verification
@@ -33,9 +33,9 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 ## Closeout
 
 - [x] Historical live FAIL reports remain local sanitized evidence and are not retroactive tracked records.
-- [ ] Final evaluator implementation committed before live execution.
-- [ ] Final live run produces either PASS attestation or trustworthy evaluated-failure record.
-- [ ] Final evidence review verifies evaluator commit、UTC time、provider/model、rubric、failed gates and report hash.
-- [ ] SKIP or evaluation integrity failure cannot satisfy archive conditions.
+- [x] Final evaluator implementation commit `9697c3e` was clean before live execution.
+- [x] Final live run produced tracked evaluated-failure record `20260623-091528.json`; no attestation was created.
+- [x] Final evidence review verified commit `9697c3e8f565a1cd765f36523c5f330c75a2d4bc`, UTC `2026-06-23T09:15:28Z`, provider/model, rubric, sorted gates and report SHA-256 `e2a5aea7e634d56c54259cd219a8c92437fd918f43dce572565da273bcc657f3`.
+- [x] Run completed 10 planned cases and 8 calls without SKIP or integrity failure; all 8 provider calls reported `availability=unavailable`, so provider conformance failed and no certification is claimed.
 - [ ] Change archived docs explicitly distinguish evaluator readiness from provider conformance.
 - [x] `future_stage_only`：V24 不在本 change 内创建。

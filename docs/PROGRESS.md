@@ -102,6 +102,19 @@
 - 最终实现 review 修复了基于异常消息字符串区分 integrity 的 P1，改为
   `EvaluationIntegrityError` 类型；独立复审未发现新增 P0-P2。最新 deterministic evidence：
   evaluator 57 passed，adjacent 167 passed，full verify 391 passed、1 skipped。
+- 最终真实 DeepSeek gate 在 clean evaluator commit
+  `9697c3e8f565a1cd765f36523c5f330c75a2d4bc` 上完成 10 个计划 case、8 次调用，返回
+  FAIL（exit 1）并生成 tracked evaluated-failure record
+  `docs/evals/live-model-provider/failures/20260623-091528.json`；未生成 attestation。
+- 本地脱敏报告 `.repopilot/live-eval/20260623-091528.json` 的 SHA-256 为
+  `e2a5aea7e634d56c54259cd219a8c92437fd918f43dce572565da273bcc657f3`，与 failure record
+  一致；record exact allowlist、UTC、provider/model、rubric 和排序去重 gate 均已复核，敏感字段
+  扫描无命中。
+- 本轮 8 个真实 provider 调用均记录为 `availability=unavailable`，未返回 model、finish reason
+  或 usage；失败 gates 为 `chat_citation_invalid`、`finish_reason_not_stop`、
+  `grounded_answer_provider_error`、`patch_proposal_invalid`、`planner_fallback`、
+  `returned_model_mismatch`、`usage_incomplete`。因此本阶段只证明 evaluator readiness，
+  `deepseek-v4-flash` 未通过本 profile/rubric 的 conformance gate，不能写为已认证。
 
 ## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 

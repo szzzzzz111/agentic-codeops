@@ -38,11 +38,13 @@ openspec list
 - SKIP、dirty tree、internal/subprocess/timeout/budget/Git/report integrity failure 不得生成 tracked
   evidence，也不得满足 archive 条件。
 - Runtime 冻结，不创建 evidence filtering remediation。
+- 最终 live run 已在 clean commit `9697c3e` 完成 8 calls，产生可信 evaluated-failure record；
+  8 个 provider 调用均为 `availability=unavailable`，没有生成 PASS attestation，
+  `deepseek-v4-flash` 未通过 conformance。
 
 ## 下一步
 
-1. 提交已完成 formal review 的最终 evaluator implementation，确认 tracked tree clean。
-2. 在该 clean commit 上重跑真实 DeepSeek gate；不得复用历史报告。
-3. 提交 PASS attestation 或可信 evaluated-failure record；SKIP/integrity failure 继续阻断。
-4. 复核 report hash、commit、UTC、provider/model、rubric 与 gate 后 archive、merge、push。
-5. 文档不得把 FAIL provider 写成已认证，不创建 V24。
+1. 提交 `docs/evals/live-model-provider/failures/20260623-091528.json` 与 closeout evidence。
+2. Archive Change 2；archive 文档必须明确只完成 evaluator readiness。
+3. 执行 archive 后验证、合并到 `main` 并 push。
+4. 最终 handoff 保留 provider conformance FAIL，不创建 V24。
