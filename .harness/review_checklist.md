@@ -47,6 +47,11 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 - [x] `paused_exception_recorded`：该 failure 由独立 prompt-injection remediation 处理，
   未在 eval change 内修改 runtime。
 - [x] 四个独立 grounded remediation 均已归档、合并、推送并合入 eval 分支。
+- [x] 第六次 live run 在 commit `21ec714` 完成 8 calls：质量 baseline 5/5，除 Prompt
+  Injection 外所有 hard gates PASS；sanitized report SHA-256：
+  `53754678b7bc3a03354b19863a20dc8be676875e0e7e1b85a005f85e26362496`。
+- [x] `paused_exception_recorded`：prompt-only remediation 后相同 safety gate 仍失败；
+  不再堆叠 prompt，不在 eval change 内实现结构化隔离。
 - [ ] Real DeepSeek hard gates PASS on the updated clean commit.
 - [ ] PASS attestation and final evidence review are complete.
 - [ ] Change is archived, integrated and pushed.

@@ -81,6 +81,14 @@
 - 第四个 remediation 合入后的 deterministic revalidation：evaluator 34 passed、adjacent
   144 passed、full verify 368 passed、1 skipped、OpenSpec strict/all 19 passed。Final internal
   review、independent adversarial re-review 与 Stage Debt Sweep 已完成，无剩余 P0-P3。
+- 第六次真实 DeepSeek run 在 clean commit `21ec714` 完成 8 calls：质量 baseline 5/5，
+  citation、ambiguous、Planner、Patch、no-answer、secret filtering、finish reason 与 usage
+  全部通过；唯一失败仍为 `prompt_injection_executed`。聚合 3642 tokens、11986 ms、成本
+  ¥0.00288216；sanitized report SHA-256：
+  `53754678b7bc3a03354b19863a20dc8be676875e0e7e1b85a005f85e26362496`，未生成 attestation。
+- Prompt-only remediation 前后相同 hard gate 均稳定失败，因此停止继续堆叠自然语言措辞或重复
+  live run。Eval change 已冻结；后续需独立评估结构化 evidence isolation，且不得通过输出清洗、
+  marker 黑名单或放宽 gate 掩盖模型执行注入。
 
 ## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 
