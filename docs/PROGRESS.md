@@ -118,6 +118,8 @@
 - Change 2 已归档为
   `openspec/changes/archive/2026-06-23-add-live-model-provider-eval/`，并同步新增长期 capability spec
   `openspec/specs/live-model-provider-eval/spec.md`。归档语义仅为 evaluator readiness 完成。
+- Change 2 已合并并推送到 `agentic-codeops/main`；merge 后 full verify 为 391 passed、1 skipped，
+  OpenSpec 19/19 与 stage closeout 均通过。当前无 active OpenSpec change。
 
 ## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 
