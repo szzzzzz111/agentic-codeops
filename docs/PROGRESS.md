@@ -115,6 +115,9 @@
   `grounded_answer_provider_error`、`patch_proposal_invalid`、`planner_fallback`、
   `returned_model_mismatch`、`usage_incomplete`。因此本阶段只证明 evaluator readiness，
   `deepseek-v4-flash` 未通过本 profile/rubric 的 conformance gate，不能写为已认证。
+- Change 2 已归档为
+  `openspec/changes/archive/2026-06-23-add-live-model-provider-eval/`，并同步新增长期 capability spec
+  `openspec/specs/live-model-provider-eval/spec.md`。归档语义仅为 evaluator readiness 完成。
 
 ## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 

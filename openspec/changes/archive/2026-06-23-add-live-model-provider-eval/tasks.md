@@ -52,4 +52,4 @@
 - [x] 9.1 Run the real DeepSeek live gate against the final committed evaluator; do not derive tracked evidence from historical reports.
 - [x] 9.2 Commit either a PASS-only attestation or a valid evaluated-failure record; SKIP/integrity failures remain blockers.
 - [x] 9.3 Perform final evidence review against the local report hash, evaluator commit, provider/model, rubric and gate results.
-- [ ] 9.4 Archive, integrate and push only after evaluator readiness evidence and all review findings are closed.
+- [x] 9.4 Archive only after evaluator readiness evidence and all review findings are closed.

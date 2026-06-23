@@ -37,5 +37,5 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 - [x] Final live run produced tracked evaluated-failure record `20260623-091528.json`; no attestation was created.
 - [x] Final evidence review verified commit `9697c3e8f565a1cd765f36523c5f330c75a2d4bc`, UTC `2026-06-23T09:15:28Z`, provider/model, rubric, sorted gates and report SHA-256 `e2a5aea7e634d56c54259cd219a8c92437fd918f43dce572565da273bcc657f3`.
 - [x] Run completed 10 planned cases and 8 calls without SKIP or integrity failure; all 8 provider calls reported `availability=unavailable`, so provider conformance failed and no certification is claimed.
-- [ ] Change archived docs explicitly distinguish evaluator readiness from provider conformance.
+- [x] Change archived as `2026-06-23-add-live-model-provider-eval`; archived specs/docs explicitly distinguish evaluator readiness from provider conformance.
 - [x] `future_stage_only`：V24 不在本 change 内创建。

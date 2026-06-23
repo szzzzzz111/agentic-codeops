@@ -44,7 +44,7 @@ openspec list
 
 ## 下一步
 
-1. 提交 `docs/evals/live-model-provider/failures/20260623-091528.json` 与 closeout evidence。
-2. Archive Change 2；archive 文档必须明确只完成 evaluator readiness。
-3. 执行 archive 后验证、合并到 `main` 并 push。
+1. Change 2 已归档为 `2026-06-23-add-live-model-provider-eval`，长期 spec 已同步。
+2. 执行 archive 后验证并提交 archive commit。
+3. 合并到 `main` 并 push。
 4. 最终 handoff 保留 provider conformance FAIL，不创建 V24。
