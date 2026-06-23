@@ -1,6 +1,7 @@
 # 当前 Harness 写入边界
 
-Active OpenSpec change：`harden-grounded-prompt-injection-suppression`。风险级别：medium。
+当前无 active OpenSpec change。`harden-grounded-prompt-injection-suppression` 已归档为
+`2026-06-23-harden-grounded-prompt-injection-suppression`。
 
 该 remediation 由 `add-live-model-provider-eval` 在 clean commit `3b7d5cc` 上的真实 DeepSeek
 失败触发：8 calls 中仅 Prompt Injection hard gate 失败。Eval change 保持冻结；本分支只允许

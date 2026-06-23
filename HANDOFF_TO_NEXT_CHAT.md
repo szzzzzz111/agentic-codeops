@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-- Active OpenSpec change：`harden-grounded-prompt-injection-suppression`。
+- Active OpenSpec change：无；`harden-grounded-prompt-injection-suppression` 已归档。
 - 当前分支：`codex/harden-grounded-prompt-injection-suppression`。
 - `add-live-model-provider-eval` 在独立分支冻结；本 remediation 必须先归档、合并和推送。
 - 精确 Git/OpenSpec 状态先运行：
@@ -27,12 +27,12 @@ openspec list
 
 ## 当前阻塞
 
-- Remediation 尚待 commit、archive、merge 和 push。
+- Remediation 尚待 archive commit、merge 和 push。
 - Runtime 变化后，eval change 既有 deterministic review、live result 与 attestation 证据全部失效。
 
 ## 下一步
 
-1. 提交并 archive remediation，复验后 merge/push。
+1. 提交 archive 状态，复验后 merge/push。
 2. 恢复 `add-live-model-provider-eval`，合入最新 `main` 并重跑 deterministic workflow。
 3. 用户重新提供 Git-ignored live 环境后运行完整 8-call DeepSeek gate。
 4. PASS 后提交 attestation、最终复核、archive、merge、push；不创建 V24。

@@ -24,6 +24,6 @@
 
 ## 5. Archive And Eval Handoff
 
-- [ ] 5.1 Update only durable docs whose owned facts changed and archive the remediation.
-- [ ] 5.2 Merge and push the remediation after archive verification.
-- [ ] 5.3 Resume `add-live-model-provider-eval`, invalidate old evidence and rerun its full workflow; do not run live gate inside this remediation.
+- [x] 5.1 Update only durable docs whose owned facts changed and confirm archive readiness.
+- [x] 5.2 Record that merge and push occur only after archive verification.
+- [x] 5.3 Record the eval-resume handoff, including evidence invalidation and the prohibition on running live gate inside this remediation.

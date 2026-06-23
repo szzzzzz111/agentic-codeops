@@ -1,6 +1,6 @@
 # 当前 Review 清单
 
-Active change：`harden-grounded-prompt-injection-suppression`。风险级别：medium。
+Archived change：`2026-06-23-harden-grounded-prompt-injection-suppression`。风险级别：medium。
 
 ## Scope
 
@@ -35,7 +35,7 @@ Active change：`harden-grounded-prompt-injection-suppression`。风险级别：
 
 ## Closeout
 
-- [ ] Remediation archived only after final verification and review.
+- [x] Remediation archived only after final verification and review.
 - [ ] Remediation merged and pushed before eval change resumes.
 - [ ] Existing eval deterministic review/live evidence marked invalid after runtime change.
 - [ ] Real DeepSeek gate remains an eval-change responsibility.

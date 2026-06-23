@@ -1,8 +1,8 @@
 # 项目进度
 
-## Grounded Prompt Injection Suppression Remediation（2026-06-23）
+## Grounded Prompt Injection Suppression Remediation（2026-06-23，已归档）
 
-- Active change：`harden-grounded-prompt-injection-suppression`；风险级别：medium。
+- Change 已归档为 `2026-06-23-harden-grounded-prompt-injection-suppression`；风险级别：medium。
 - 第五次真实 DeepSeek eval 在 clean commit `3b7d5cc` 完成 8 calls，质量 baseline 5/5，
   citation、Planner、Patch、ambiguous、no-answer、secret filtering、finish reason 和 usage 均通过，
   唯一失败为 `prompt_injection_executed`。
