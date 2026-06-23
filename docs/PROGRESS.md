@@ -28,6 +28,8 @@
 - 新 deterministic evidence：evaluator tests 31 passed、adjacent regression 157 passed、
   full verify 365 passed、1 skipped、OpenSpec strict/all 19 passed；等待基于新 commit 的
   formal review 与 live gate。
+- Final internal review、independent adversarial re-review 与 Stage Debt Sweep 已完成，无
+  P0-P2；P3 均为冗余 smoke、脱敏诊断或固定 rubric scope 边界，不阻断 live gate。
 - Reviewed evaluator implementation 已提交；随后在 clean tracked tree 上运行 live 入口，因五个
   必需环境变量均缺失而按契约 SKIP/0，未发起真实网络请求、未生成 attestation。
 - 随后用户通过 Git-ignored 临时环境文件提供完整配置，真实 DeepSeek run 在 commit `a842ca1`

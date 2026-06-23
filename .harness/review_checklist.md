@@ -25,10 +25,17 @@ Active change：`add-live-model-provider-eval`。风险级别：high。
 - Gate marker: `formal_review_evidence_gate`
 - Policy marker: `continuous_authorization_does_not_replace_formal_review`
 - Timing marker: `formal_review_after_final_runtime_tests`
-- [ ] Evidence-framing remediation merge 后重新执行 internal implementation review。
-- [ ] Evidence-framing remediation merge 后重新执行 independent adversarial external review。
-- [ ] `manual_stage_debt_sweep_completed`
-- [ ] `formal_review_findings_closed`
+- [x] Evidence-framing remediation merge 后 internal implementation review complete：确认
+  runtime prompt tests、citation validator、raw marker detection、JSON callers、budget、metrics、
+  reports 与 clean-tree binding。
+- [x] Independent adversarial re-review session `ses_10dd70b89ffenCalcvMK60fWKl` complete：
+  无 P0-P2；4 个 P3 均为冗余检查、脱敏诊断或固定 rubric scope 边界。
+- [x] `manual_stage_debt_sweep_completed`：检查 runtime prompt/validator、evaluator cases/API
+  subprocess、Planner/Patch、budget/deadline、metrics/cost、report/attestation、PowerShell 与默认
+  verify；无新增阻断债务。
+- [x] `formal_review_findings_closed`：API citation 由上游 strict validator 保证；subprocess
+  fingerprint status 丢失不影响 gate 且原值禁止持久化；固定 ATTACK_MARKER 与编码绕过按 rubric
+  scope 接受。既有 extensionless citation 与 Windows Patch DB lifecycle residual 保留。
 
 ## Closeout
 
