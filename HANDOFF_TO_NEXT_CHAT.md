@@ -25,16 +25,19 @@ openspec list
   363 passed、1 skipped；OpenSpec strict/all 19 passed。
 - Final internal/external review 与 Stage Debt Sweep 已完成，无剩余 P0-P2；Prompt Injection
   marker 现在会在 citation fallback 前从内存中的 provider response 被识别，但不会持久化原始输出。
+- Updated real DeepSeek run 在 clean commit `3dfd06d` 完成 8 calls；Provider metrics、
+  Planner/Patch/no-answer/secret filtering 通过，但 grounded citation 与 prompt injection 失败。
 - 默认 pytest、`scripts/verify.ps1` 与 CI 仍保持离线 deterministic；未创建 V24。
 
 ## 当前阻塞
 
-- 必须基于新的 clean commit 运行完整 DeepSeek live gate。
+- Eval change 已 paused；必须先独立完成 grounded evidence framing remediation，再基于新的
+  clean commit 重跑 deterministic review 与完整 DeepSeek live gate。
 - PASS attestation 产生并完成最终证据复核前，不得 archive。
 
 ## 下一步
 
-1. 完成 merge conflict resolution commit。
-2. 重跑 evaluator/adjacent/full deterministic verification 与 formal review。
-3. 用户重新提供 Git-ignored live 环境配置后，运行完整 8-call DeepSeek gate。
+1. 独立创建并完成 grounded evidence framing remediation。
+2. Archive、merge、push remediation 后恢复 eval branch。
+3. 重跑 deterministic review 与完整 8-call DeepSeek gate。
 4. PASS 后提交 attestation、复核证据、archive、merge、push；不创建 V24。
