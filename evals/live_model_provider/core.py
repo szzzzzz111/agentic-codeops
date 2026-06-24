@@ -30,6 +30,18 @@ EXPECTED_LIVE_CASE_IDS = frozenset(
         "secret_filter",
     }
 )
+REQUIRED_PROVIDER_CASE_IDS = frozenset(
+    {
+        "code_location",
+        "implementation_explanation",
+        "configuration",
+        "test_validation",
+        "ambiguous",
+        "prompt_injection",
+        "planner",
+        "patch",
+    }
+)
 REQUIRED_ENV_NAMES = (
     "REPOPILOT_MODEL_PROVIDER",
     "REPOPILOT_MODEL_BASE_URL",
@@ -37,6 +49,7 @@ REQUIRED_ENV_NAMES = (
     "REPOPILOT_MODEL_NAME",
     "REPOPILOT_MODEL_THINKING",
 )
+LIVE_NETWORK_CONFIRMATION_ENV = "REPOPILOT_LIVE_NETWORK_CONFIRMED"
 CONFORMANCE_FAILURE_GATES = frozenset(
     {
         "chat_citation_invalid",
@@ -143,6 +156,7 @@ class CaseResult:
     quality_passed: bool | None
     metrics: ProviderCallMetrics | None
     cost_cny: Decimal | None
+    diagnostics: dict[str, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -251,6 +265,42 @@ def validate_provider_metrics(metrics: ProviderCallMetrics | None) -> list[str]:
         ):
             failures.append("total_token_count_mismatch")
     return failures
+
+
+def has_evaluable_provider_contact(metrics: ProviderCallMetrics | None) -> bool:
+    if metrics is None or metrics.availability != "available":
+        return False
+    required_usage = (
+        metrics.prompt_tokens,
+        metrics.prompt_cache_hit_tokens,
+        metrics.prompt_cache_miss_tokens,
+        metrics.completion_tokens,
+        metrics.total_tokens,
+    )
+    return (
+        metrics.finish_reason is not None
+        and metrics.returned_model is not None
+        and all(value is not None for value in required_usage)
+    )
+
+
+def provider_failure_diagnostics(
+    audit_summary: Mapping[str, str],
+    metrics: ProviderCallMetrics | None,
+) -> dict[str, str] | None:
+    if metrics is None or metrics.availability != "unavailable":
+        return None
+    error_class = _diagnostic_code(
+        str(audit_summary.get("error_class", "")).strip()
+    )
+    if not error_class:
+        return None
+    status_class = _status_class_for_error(error_class)
+    return {
+        "phase": _phase_for_status_class(status_class),
+        "error_class": error_class,
+        "status_class": status_class,
+    }
 
 
 def calculate_cost_cny(
@@ -389,6 +439,16 @@ def build_evaluated_failure_record(
         or set(case_ids) != EXPECTED_LIVE_CASE_IDS
     ):
         raise EvaluationIntegrityError("incomplete live evaluation")
+    required_cases = [
+        case
+        for case in report.cases
+        if case.case_id in REQUIRED_PROVIDER_CASE_IDS
+    ]
+    if len(required_cases) != len(REQUIRED_PROVIDER_CASE_IDS) or any(
+        not has_evaluable_provider_contact(case.metrics)
+        for case in required_cases
+    ):
+        raise EvaluationIntegrityError("provider contact incomplete")
     return {
         "schema_version": "1",
         "record_type": "evaluated_failure",
@@ -459,6 +519,7 @@ def deserialize_case_result(payload: Mapping[str, object]) -> CaseResult:
         else None
     )
     raw_cost = payload.get("cost_cny")
+    raw_diagnostics = payload.get("diagnostics")
     return CaseResult(
         case_id=str(payload["case_id"]),
         status=str(payload["status"]),
@@ -473,6 +534,14 @@ def deserialize_case_result(payload: Mapping[str, object]) -> CaseResult:
         ),
         metrics=metrics,
         cost_cny=Decimal(str(raw_cost)) if raw_cost is not None else None,
+        diagnostics=(
+            {
+                str(key): str(value)
+                for key, value in raw_diagnostics.items()
+            }
+            if isinstance(raw_diagnostics, dict)
+            else None
+        ),
     )
 
 
@@ -509,6 +578,7 @@ def _case_payload(case: CaseResult) -> dict[str, object]:
         "quality_passed": case.quality_passed,
         "metrics": _metrics_payload(case.metrics),
         "cost_cny": str(case.cost_cny) if case.cost_cny is not None else None,
+        "diagnostics": dict(case.diagnostics) if case.diagnostics else None,
     }
 
 
@@ -555,6 +625,47 @@ def _aggregate_metrics(cases: list[CaseResult]) -> dict[str, object]:
         "total_tokens": sum_optional("total_tokens"),
         "cost_cny": str(sum(costs, Decimal("0"))),
     }
+
+
+def _status_class_for_error(error_class: str) -> str:
+    normalized = error_class.casefold()
+    if "timeout" in normalized:
+        return "timeout"
+    if "connect" in normalized or "network" in normalized:
+        return "network_error"
+    if "httpstatus" in normalized:
+        return "http_error"
+    if "json" in normalized or "valueerror" in normalized:
+        return "parse_error"
+    if "validation" in normalized or "finishreason" in normalized:
+        return "validation_error"
+    return "provider_error"
+
+
+def _diagnostic_code(value: str) -> str:
+    if not value:
+        return ""
+    candidate = value.split(":", 1)[0].split()[0]
+    if candidate.casefold() in {"http", "https"}:
+        return "ProviderError"
+    if not candidate or len(candidate) > 80:
+        return "ProviderError"
+    allowed = set("._-")
+    if not all(character.isalnum() or character in allowed for character in candidate):
+        return "ProviderError"
+    if not any(character.isalpha() for character in candidate):
+        return "ProviderError"
+    return candidate
+
+
+def _phase_for_status_class(status_class: str) -> str:
+    if status_class in {"network_error", "timeout"}:
+        return "provider_http_request"
+    if status_class == "http_error":
+        return "provider_http_status"
+    if status_class == "parse_error":
+        return "provider_response_parse"
+    return "provider_response_validation"
 
 
 def _validate_sha256(value: str) -> str:

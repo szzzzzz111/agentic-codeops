@@ -1050,3 +1050,36 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
 - 当前状态：实现已完成、内部 self-review 和外部 review 均无阻塞发现，并已提交归档。
 - 已同步长期 `openspec/specs/repo-query-understanding-rag/spec.md`：补入 V10 Evidence Pack / Context Budget requirements，并修正 `min_fused_score=0.35` 长期规格口径。
 - 文档同步补充：已补齐 README 的 V9 阶段历史和路线图状态，修正 ARCHITECTURE 中 V8 当前态措辞，并在 HANDOFF 中补充 V9 完整摘要。
+## Live Eval Transport Blocker Classification Remediation (2026-06-24)
+
+- Active remediation change: `classify-live-eval-transport-blockers`; current branch:
+  `codex/classify-live-eval-transport-blockers`; risk level: high.
+- This change fixes live evaluator evidence semantics: provider conformance verdicts and tracked evaluated-failure
+  records are allowed only after all required live provider attempts have evaluable provider contact. If any required
+  attempt is a transport/sandbox/provider-contact blocker, the round outcome is `transport_blocked` and no PASS
+  attestation or evaluated-failure record is generated.
+- Missing `REPOPILOT_LIVE_NETWORK_CONFIRMED=1` now stops before git/provider work with
+  `SKIP live model provider eval: live_network_not_confirmed` / exit 0. The variable is an operator
+  authorization/declaration only, not proof that the shell is technically network-capable.
+- During-run transport blocker is fixed as `BLOCKED live model provider eval: transport_blocked` / exit 1 with only a
+  local sanitized report. Internal runner bugs remain `ERROR live model provider eval: <ErrorClass>` / exit 2.
+- Local reports may include only allowlisted diagnostics: `phase`, `error_class`, `status_class`. `error_class` is
+  reduced to a safe code token before serialization. Reports must not persist API key, full URL, headers, payload,
+  prompt, EvidencePack, raw answer, raw exception message, traceback, HTTP body, diff, reasoning content or raw
+  fingerprint.
+- `build_evaluated_failure_record()` now also enforces required provider-contact completeness, so direct builder use
+  cannot create tracked failure evidence for a transport-blocked run.
+- Scope remained frozen: no `app/**`, fixture, rubric, profile, pricing, `scripts/verify.ps1`, default CI, `/chat`
+  contract or default Patch wiring changes; no V24; no real live gate was run in this remediation.
+- Deterministic evidence: focused evaluator tests `64 passed`; full `scripts/verify.ps1` `398 passed, 1 skipped`;
+  OpenSpec strict/all `21 passed, 0 failed`; stage docs check passed; `git diff --check` clean except CRLF
+  normalization warnings.
+- Formal review: internal review fixed the builder guard and diagnostic sanitizer; independent adversarial review found
+  no P0/P1 issue. P2.1 grounded diagnostics was closed with repo evidence and regression coverage; P2.2
+  `api_subprocess_error` / `run_timeout` remains an existing integrity-failure path with no tracked evidence.
+- Stage Debt Sweep inspected changed evaluator paths, `scripts/run_live_model_eval.ps1`,
+  `app/providers/model_provider.py` and `app/answering/grounded_answer.py`; no new blocking debt was found.
+- The paused `revalidate-deepseek-provider-conformance` live artifact
+  `docs/evals/live-model-provider/failures/20260624-013028.json` should be treated as provider-contact-unverified
+  transport/integrity blocker现场 evidence under the old contract, not as DeepSeek provider certification or a reliable
+  provider conformance FAIL conclusion.

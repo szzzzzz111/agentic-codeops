@@ -19,6 +19,7 @@ from evals.live_model_provider.core import (
     CaseResult,
     calculate_cost_cny,
     deserialize_case_result,
+    provider_failure_diagnostics,
     validate_provider_metrics,
 )
 
@@ -88,9 +89,10 @@ def run_planner_case(provider: RecordingModelProvider) -> CaseResult:
         failures.append("planner_step_order_invalid")
     if any(step.action_type != "repo_rag" for step in plan.steps):
         failures.append("planner_action_type_invalid")
-    metrics = provider.responses[-1].metrics if provider.responses else None
+    response = provider.responses[-1] if provider.responses else None
+    metrics = response.metrics if response else None
     failures.extend(validate_provider_metrics(metrics))
-    return _case_with_metrics("planner", failures, metrics)
+    return _case_with_metrics("planner", failures, metrics, response)
 
 
 def run_patch_case(provider: RecordingModelProvider) -> CaseResult:
@@ -145,15 +147,17 @@ def run_patch_case(provider: RecordingModelProvider) -> CaseResult:
             failures.append("patch_pending_store_missing")
         gc.collect()
 
-    metrics = provider.responses[-1].metrics if provider.responses else None
+    response = provider.responses[-1] if provider.responses else None
+    metrics = response.metrics if response else None
     failures.extend(validate_provider_metrics(metrics))
-    return _case_with_metrics("patch", failures, metrics)
+    return _case_with_metrics("patch", failures, metrics, response)
 
 
 def _case_with_metrics(
     case_id: str,
     failures: list[str],
     metrics,
+    response=None,
 ) -> CaseResult:
     cost = (
         calculate_cost_cny(metrics, DEEPSEEK_V4_FLASH_PROFILE)
@@ -167,6 +171,11 @@ def _case_with_metrics(
         quality_passed=None,
         metrics=metrics,
         cost_cny=cost,
+        diagnostics=(
+            provider_failure_diagnostics(response.audit_summary, metrics)
+            if response is not None
+            else None
+        ),
     )
 
 

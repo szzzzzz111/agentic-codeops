@@ -24,6 +24,7 @@ from evals.live_model_provider.core import (
     CaseResult,
     calculate_cost_cny,
     evaluate_required_facts,
+    provider_failure_diagnostics,
     validate_provider_metrics,
 )
 
@@ -135,6 +136,10 @@ def run_grounded_case(
         quality_passed=quality_passed,
         metrics=metrics,
         cost_cny=cost,
+        diagnostics=provider_failure_diagnostics(
+            result.audit_summary,
+            metrics,
+        ),
     )
 
 

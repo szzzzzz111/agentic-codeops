@@ -30,11 +30,14 @@ from evals.live_model_provider.core import (
     EXIT_FAIL,
     EXIT_SKIP,
     EXPECTED_LIVE_CALLS,
+    LIVE_NETWORK_CONFIRMATION_ENV,
+    REQUIRED_PROVIDER_CASE_IDS,
     RUBRIC_VERSION,
     CallBudget,
     CaseResult,
     EvaluationIntegrityError,
     LiveEvalReport,
+    has_evaluable_provider_contact,
     write_attestation,
     write_evaluated_failure_record,
     write_local_report,
@@ -79,6 +82,12 @@ def run_live_evaluation(
             status=environment.status,
             exit_code=environment.exit_code,
             reasons=environment.reasons,
+        )
+    if str(env.get(LIVE_NETWORK_CONFIRMATION_ENV, "")).strip() != "1":
+        return LiveEvaluationOutcome(
+            status="skip",
+            exit_code=EXIT_SKIP,
+            reasons=["live_network_not_confirmed"],
         )
 
     read_git = git_state_reader or (lambda: _read_git_state(repo_root))
@@ -219,6 +228,8 @@ def run_live_evaluation(
         if all(result.status == "pass" for result in results)
         else "fail"
     )
+    if _transport_blocked(results):
+        status = "transport_blocked"
     report = LiveEvalReport(
         status=status,
         tested_commit=git_state.commit,
@@ -237,6 +248,13 @@ def run_live_evaluation(
         report,
         repo_root / ".repopilot",
     )
+    if status == "transport_blocked":
+        return LiveEvaluationOutcome(
+            status="blocked",
+            exit_code=EXIT_FAIL,
+            reasons=["transport_blocked"],
+            report_path=report_path,
+        )
     if status != "pass":
         failure_record_path = None
         try:
@@ -288,6 +306,10 @@ def main() -> int:
     detail = ",".join(outcome.reasons)
     if outcome.status == "skip":
         print(f"SKIP live model provider eval: {detail}")
+    elif outcome.status == "blocked":
+        print(f"BLOCKED live model provider eval: {detail}")
+        if outcome.report_path:
+            print(f"report={outcome.report_path}")
     elif outcome.status == "fail":
         print(f"FAIL live model provider eval: {detail}")
         if outcome.report_path:
@@ -308,6 +330,28 @@ def _provider_from_env(env: Mapping[str, str]) -> OpenAICompatibleModelProvider:
         model=str(env["REPOPILOT_MODEL_NAME"]).strip(),
         timeout_seconds=30,
         thinking_mode=str(env["REPOPILOT_MODEL_THINKING"]).strip(),
+    )
+
+
+def _transport_blocked(results: list[CaseResult]) -> bool:
+    provider_results = [
+        result
+        for result in results
+        if result.case_id in REQUIRED_PROVIDER_CASE_IDS
+    ]
+    if len(provider_results) != len(REQUIRED_PROVIDER_CASE_IDS):
+        return False
+    return any(
+        _has_provider_contact_blocker(result)
+        and not has_evaluable_provider_contact(result.metrics)
+        for result in provider_results
+    )
+
+
+def _has_provider_contact_blocker(result: CaseResult) -> bool:
+    return (
+        result.metrics is not None
+        and result.metrics.availability == "unavailable"
     )
 
 

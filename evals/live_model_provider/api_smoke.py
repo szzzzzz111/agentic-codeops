@@ -15,6 +15,7 @@ from evals.live_model_provider.core import (
     CaseResult,
     calculate_cost_cny,
     evaluate_required_facts,
+    provider_failure_diagnostics,
     serialize_case_result,
     validate_provider_metrics,
 )
@@ -66,7 +67,8 @@ def main() -> int:
         failures.append("chat_citation_invalid")
     if recorder.call_count != 1:
         failures.append("chat_call_count_invalid")
-    metrics = recorder.responses[-1].metrics if recorder.responses else None
+    provider_response = recorder.responses[-1] if recorder.responses else None
+    metrics = provider_response.metrics if provider_response else None
     failures.extend(validate_provider_metrics(metrics))
     quality_passed = evaluate_required_facts(
         answer,
@@ -84,6 +86,14 @@ def main() -> int:
         quality_passed=quality_passed,
         metrics=metrics,
         cost_cny=cost,
+        diagnostics=(
+            provider_failure_diagnostics(
+                provider_response.audit_summary,
+                metrics,
+            )
+            if provider_response is not None
+            else None
+        ),
     )
     print(json.dumps(serialize_case_result(result), ensure_ascii=False))
     return 0
