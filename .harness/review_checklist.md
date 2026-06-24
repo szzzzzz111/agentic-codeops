@@ -2,12 +2,13 @@
 
 Active change：`revalidate-deepseek-provider-conformance`。风险级别：high。当前状态：
 paused after trustworthy conformance FAIL；`harden-grounded-prompt-injection-live-behavior`
-remediation 已归档，等待合回 paused revalidation 分支。
+remediation 已归档并合回本分支。
 
 ## 已归档 remediation：Grounded prompt injection live behavior
 
 - [x] Remediation change 已归档到
   `openspec/changes/archive/2026-06-24-harden-grounded-prompt-injection-live-behavior/`。
+- [x] Remediation 已 fast-forward 合回 `codex/revalidate-deepseek-provider-conformance`。
 - [x] Long-term spec `openspec/specs/grounded-answer-model-provider/spec.md` 已完成 archive sync。
 - [x] Runtime change 仅限 `app/providers/model_provider.py` 的 `grounded_text` system prompt 与 user-message
   evidence handling contract。
@@ -26,8 +27,11 @@ remediation 已归档，等待合回 paused revalidation 分支。
 ## Revalidation 恢复边界
 
 - [x] `docs/evals/live-model-provider/failures/20260624-110532.json` 仍是旧 runtime 下的可信 conformance FAIL pause-site evidence，不是 provider certification。
-- [x] Remediation 合回后，旧 live evidence 对 certification 解释必须标记为 stale，因为 runtime prompt 已变化。
-- [ ] Remediation merge back 到 `codex/revalidate-deepseek-provider-conformance` 后，重新运行 deterministic preflight。
+- [x] Remediation 合回后，旧 live evidence 对 certification 解释已标记为 stale，因为 runtime prompt 已变化。
+- [x] 重新运行 deterministic preflight。
+  - Evidence：focused evaluator tests `64 passed`；full `scripts/verify.ps1` `400 passed, 1 skipped`；
+    `openspec validate revalidate-deepseek-provider-conformance --strict` 通过；`openspec validate --all`
+    `20 passed, 0 failed`；stage docs 与 `git diff --check` 通过。
 - [ ] 用户明确确认后，才能按 revalidation contract 运行 exactly one renewed live gate。
 - [ ] Renewed live gate 仍必须 no retry、no model switch、no extra diagnostics。
 - [ ] PASS attestation 仍是唯一 provider certification evidence。

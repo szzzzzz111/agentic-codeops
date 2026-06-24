@@ -2,16 +2,17 @@
 
 ## 当前状态
 
-- 当前分支：`codex/harden-grounded-prompt-injection-live-behavior`
-- Active OpenSpec change：`revalidate-deepseek-provider-conformance`（remediation 已归档，等待合回）
-- 父分支 / paused change：`codex/revalidate-deepseek-provider-conformance` /
-  `revalidate-deepseek-provider-conformance`，状态仍为 paused after trustworthy conformance FAIL。
+- 当前分支：`codex/revalidate-deepseek-provider-conformance`
+- Active OpenSpec change：`revalidate-deepseek-provider-conformance`
+- 当前状态：paused after trustworthy conformance FAIL；prompt-injection remediation 已归档并合回本分支。
 - 本 remediation 只处理 latest live gate 中唯一失败的 `prompt_injection_executed`，已归档到
   `openspec/changes/archive/2026-06-24-harden-grounded-prompt-injection-live-behavior/`。
 - 已按 TDD 实现 prompt-only runtime change：只修改 `app/providers/model_provider.py` 的 grounded-text
   system prompt 与 user-message evidence handling contract，新增 `tests/test_model_provider.py` payload tests。
 - `classify-live-eval-transport-blockers` remediation 已归档并合回 paused revalidation 分支。
 - 最新 revalidation live gate 已重新运行一次；未生成 PASS attestation，不能 archive / merge to `main` / push as complete。
+- 因 runtime prompt 已变化，旧 `20260624-110532` live evidence 现在只能作为旧 runtime pause-site evidence，
+  对当前 certification 解释为 stale。
 - 默认 pytest、CI 与 `scripts/verify.ps1` 继续保持离线 deterministic。
 - 未创建 V24。
 
@@ -40,25 +41,26 @@
 - OpenSpec：`openspec validate harden-grounded-prompt-injection-live-behavior --strict` 通过；`openspec validate --all` 为 21 passed、0 failed。
 - Stage docs、skill eval、ruff 与 `git diff --check` 通过。
 - Formal review：internal review、OpenCode independent adversarial review 和 Stage Debt Sweep 均未发现 P0/P1/P2。
-- Residual：deterministic tests 不能证明真实 DeepSeek 服从；归档合回后仍需 renewed live gate。
-- 真实 live gate 尚未在本 remediation 内运行，也不应运行。
+- Residual：deterministic tests 不能证明真实 DeepSeek 服从；现在需要在 revalidation change 内重新 preflight，
+  然后等用户明确确认 renewed live gate。
+- 合回后的 revalidation preflight 已通过：focused evaluator tests 64 passed；full verify 400 passed、1 skipped；
+  revalidation OpenSpec strict 通过；OpenSpec all 20 passed、0 failed；stage docs 与 `git diff --check` 通过。
 
 ## 解释
 
 - 这次不是 transport blocker；它是可信 provider conformance FAIL。
 - 这也不是 provider certification；PASS attestation 仍是唯一 certification evidence。
-- 当前 failure record 可以作为本 revalidation 分支的 pause-site evidence，但不能作为完成态 archive/merge/push。
+- 当前旧 failure record 可以作为旧 runtime pause-site evidence，但不能作为当前 certification evidence，
+  也不能作为完成态 archive/merge/push。
 
 ## 下一步
 
-1. 将 `harden-grounded-prompt-injection-live-behavior` 合回 `codex/revalidate-deepseek-provider-conformance`；
-   不要在 remediation 分支内运行 live gate。
+1. 等用户明确确认后，按 revalidation contract 运行 exactly one renewed live gate。
 2. 不得修改 evaluator、fixture、rubric、profile、pricing、live evidence schema、默认 CI、`/chat`
    public contract 或默认 Patch wiring。
 3. 不做 output sanitizer、marker blacklist、evidence filtering/projection/suppression、额外模型调用、
    retry、模型切换或 evaluator gate 降级。
-4. 本 remediation 内不运行真实 live gate。归档并合回 paused revalidation 分支后，旧 live evidence
-   因 runtime prompt 改动而 stale；新的 live gate 仍需用户明确确认。
+4. 旧 live evidence 因 runtime prompt 改动而 stale；新的 live gate 仍需用户明确确认。
 5. 继续前先检查：
 
    ```powershell

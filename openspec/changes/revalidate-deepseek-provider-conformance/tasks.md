@@ -28,3 +28,11 @@
 - [ ] 5.2 Archive only after a valid PASS attestation and all review findings are closed.
 - [x] 5.3 If outcome is not PASS, record the pause and stop without archive/merge/push; the current failure artifact may remain only on the current revalidation branch unless the contract is formally reshaped.
 - [ ] 5.4 On PASS, verify archive sync preserves all existing requirements, then run archive/merge verification, integrate into `main`, push and write one final handoff.
+
+## 6. Post-remediation renewed validation
+
+- [x] 6.1 Merge archived `harden-grounded-prompt-injection-live-behavior` remediation back into this revalidation branch.
+- [x] 6.2 Mark prior `20260624-110532` live evidence stale for current certification because runtime prompt changed.
+- [x] 6.3 Re-run deterministic preflight on the new merged runtime commit.
+- [ ] 6.4 Obtain explicit user confirmation before exactly one renewed live gate.
+- [ ] 6.5 Classify renewed live outcome from stdout plus evidence path, and require PASS attestation before archive/merge/push completion.
