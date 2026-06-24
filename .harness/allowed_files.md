@@ -1,35 +1,25 @@
 # 当前 Harness 写入边界
 
-Active OpenSpec change：`revalidate-deepseek-provider-conformance`。风险级别：high。当前状态：
-paused after trustworthy conformance FAIL；`harden-grounded-prompt-injection-live-behavior`
-remediation 已归档并合回本分支。旧 live evidence 因 runtime prompt 变化而对当前 certification
-解释 stale。
+Active OpenSpec change：无。`revalidate-deepseek-provider-conformance` 已归档到
+`openspec/changes/archive/2026-06-24-revalidate-deepseek-provider-conformance/`。
 
 ## 当前允许修改
 
-- `openspec/changes/revalidate-deepseek-provider-conformance/**`
-- `.harness/allowed_files.md`
-- `.harness/review_checklist.md`
-- `docs/PROGRESS.md`
-- `HANDOFF_TO_NEXT_CHAT.md`
-- archived remediation：
-  `openspec/changes/archive/2026-06-24-harden-grounded-prompt-injection-live-behavior/**`
-- 长期 spec archive sync：
-  `openspec/specs/grounded-answer-model-provider/spec.md`
-- renewed PASS 后由 runner exclusive-create 的 attestation：
-  `docs/evals/live-model-provider/<timestamp>.json`
-- renewed 有效 conformance FAIL 后由 runner exclusive-create 的 pause-site evidence：
-  `docs/evals/live-model-provider/failures/<timestamp>.json`
+- archive closeout 文档：
+  - `.harness/allowed_files.md`
+  - `.harness/review_checklist.md`
+  - `docs/PROGRESS.md`
+  - `HANDOFF_TO_NEXT_CHAT.md`
+- revalidation archive：
+  `openspec/changes/archive/2026-06-24-revalidate-deepseek-provider-conformance/**`
+- live eval long-term spec archive sync：
+  `openspec/specs/live-model-provider-eval/spec.md`
 
 ## 禁止修改 / 禁止行为
 
-- 不在 active revalidation change 内继续修改 runtime、fixtures、rubric、profile、pricing 或 live evaluator。
+- 不再修改 runtime、tests、fixtures、rubric、profile、pricing、live evaluator 或 evidence schema。
 - 不修改 `scripts/run_live_model_eval.ps1`、`scripts/verify.ps1`、默认 CI、`/chat` public contract 或默认 Patch wiring。
-- 不降低 Prompt Injection、citation、secret、schema、metrics、finish reason 或 usage hard gate。
+- 不运行额外 live gate，不 retry，不切换模型，不增加 live case，不发送额外真实 provider 诊断请求。
 - 不覆盖、删除或改写历史 attestation/evaluated-failure record。
-- 不把 `docs/evals/live-model-provider/failures/20260624-110532.json` 表示为 provider certification 或完成态 evidence；它只是旧 runtime 下的可信 conformance FAIL pause-site evidence。
-- 旧 `20260624-110532` live evidence 对当前 certification 解释必须标记为 stale，因为 runtime prompt 已变化。
-- Renewed live gate 必须在 deterministic preflight 通过且用户明确确认后执行。
-- 不 retry，不切换模型，不增加 live case，不发送额外真实 provider 诊断请求。
 - 不打印、提交或持久化 API key、完整 URL、prompt、EvidencePack、原始回答、diff、raw exception、traceback、reasoning content、原始 fingerprint 或 HTTP payload。
 - 不创建或规划 V24。

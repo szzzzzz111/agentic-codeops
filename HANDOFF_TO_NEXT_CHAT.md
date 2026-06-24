@@ -3,20 +3,21 @@
 ## 当前状态
 
 - 当前分支：`codex/revalidate-deepseek-provider-conformance`
-- Active OpenSpec change：`revalidate-deepseek-provider-conformance`
-- 当前状态：paused after trustworthy conformance FAIL；prompt-injection remediation 已归档并合回本分支。
+- Active OpenSpec change：无。
+- 当前状态：`revalidate-deepseek-provider-conformance` 已归档；等待用户授权 merge to `main` / push。
 - 本 remediation 只处理 latest live gate 中唯一失败的 `prompt_injection_executed`，已归档到
   `openspec/changes/archive/2026-06-24-harden-grounded-prompt-injection-live-behavior/`。
 - 已按 TDD 实现 prompt-only runtime change：只修改 `app/providers/model_provider.py` 的 grounded-text
   system prompt 与 user-message evidence handling contract，新增 `tests/test_model_provider.py` payload tests。
 - `classify-live-eval-transport-blockers` remediation 已归档并合回 paused revalidation 分支。
-- 最新 revalidation live gate 已重新运行一次；未生成 PASS attestation，不能 archive / merge to `main` / push as complete。
+- 旧 revalidation live gate 曾失败且未生成 PASS attestation；该旧证据已被新 runtime PASS supersede。
 - 因 runtime prompt 已变化，旧 `20260624-110532` live evidence 现在只能作为旧 runtime pause-site evidence，
   对当前 certification 解释为 stale。
-- Renewed live gate 已在用户确认后运行并 PASS；当前有新的 PASS attestation，可进入 final evidence
-  review / archive closeout。
+- Renewed live gate 已在用户确认后运行并 PASS；新的 PASS attestation 已提交，revalidation change 已归档。
 - 默认 pytest、CI 与 `scripts/verify.ps1` 继续保持离线 deterministic。
 - 未创建 V24。
+- Archive 后 full verify 为 400 passed、1 skipped；OpenSpec all 为 19 passed、0 failed；stage docs 与
+  `git diff --check` 通过。
 
 ## 最新 live rerun 结果
 
@@ -64,27 +65,22 @@
 - OpenSpec：`openspec validate harden-grounded-prompt-injection-live-behavior --strict` 通过；`openspec validate --all` 为 21 passed、0 failed。
 - Stage docs、skill eval、ruff 与 `git diff --check` 通过。
 - Formal review：internal review、OpenCode independent adversarial review 和 Stage Debt Sweep 均未发现 P0/P1/P2。
-- Residual：deterministic tests 不能证明真实 DeepSeek 服从；现在需要在 revalidation change 内重新 preflight，
-  然后等用户明确确认 renewed live gate。
+- Residual：prompt-only remediation 只能认证 attestation 中记录的 commit/profile/rubric/model；后续 runtime、
+  evaluator、fixture、rubric、profile 或 provider/model 变化都需要重新认证。
 - 合回后的 revalidation preflight 已通过：focused evaluator tests 64 passed；full verify 400 passed、1 skipped；
   revalidation OpenSpec strict 通过；OpenSpec all 20 passed、0 failed；stage docs 与 `git diff --check` 通过。
 
 ## 解释
 
-- 这次不是 transport blocker；它是可信 provider conformance FAIL。
-- 这也不是 provider certification；PASS attestation 仍是唯一 certification evidence。
+- `20260624-110532` 不是 transport blocker；它是旧 runtime 下的可信 provider conformance FAIL。
+- `20260624-124206` 是 renewed runtime 下的 PASS；PASS attestation 是唯一 certification evidence。
 - 当前旧 failure record 可以作为旧 runtime pause-site evidence，但不能作为当前 certification evidence，
   也不能作为完成态 archive/merge/push。
 
 ## 下一步
 
-1. Commit renewed PASS attestation and closeout docs, then perform final evidence review / archive readiness.
-2. 不得修改 evaluator、fixture、rubric、profile、pricing、live evidence schema、默认 CI、`/chat`
-   public contract 或默认 Patch wiring。
-3. 不做 output sanitizer、marker blacklist、evidence filtering/projection/suppression、额外模型调用、
-   retry、模型切换或 evaluator gate 降级。
-4. 旧 live evidence 因 runtime prompt 改动而 stale；新的 live gate 仍需用户明确确认。
-5. 继续前先检查：
+1. 等用户授权后 merge 当前分支到 `main` 并 push。
+2. Merge/push 前检查：
 
    ```powershell
    git status --short --branch

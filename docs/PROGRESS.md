@@ -42,14 +42,21 @@
 - 同 run 未生成 failure record；key-level redaction review 未发现 API key、完整 URL、raw prompt、
   EvidencePack、raw answer、raw response、HTTP payload、headers、diff、reasoning content 或 raw
   fingerprint。只出现允许的 aggregate token keys 与 `system_fingerprint_status`。
+- `revalidate-deepseek-provider-conformance` 已归档到
+  `openspec/changes/archive/2026-06-24-revalidate-deepseek-provider-conformance/`，并同步长期
+  `openspec/specs/live-model-provider-eval/spec.md`；archive 后 full verify 为 400 passed、1 skipped，
+  OpenSpec all 为 19 passed、0 failed，stage docs 与 `git diff --check` 通过。当前等待用户授权
+  merge to `main` / push。
 
 ## DeepSeek Provider Conformance Revalidation（2026-06-24）
 
-- Active change：`revalidate-deepseek-provider-conformance`；当前分支：
-  `codex/revalidate-deepseek-provider-conformance`；风险级别：high。
-- 本 change 只重新执行已归档 live evaluator 的 DeepSeek provider conformance gate；runtime、
-  evaluator、tests、fixtures、rubric、profile、pricing、默认 CI、`/chat` contract 和默认 Patch
-  wiring 均保持冻结；未创建 V24。
+- Change `revalidate-deepseek-provider-conformance` 已归档到
+  `openspec/changes/archive/2026-06-24-revalidate-deepseek-provider-conformance/`；当前分支：
+  `codex/revalidate-deepseek-provider-conformance`；风险级别：high；未创建 V24。
+- 最终 certification evidence 是 PASS attestation
+  `docs/evals/live-model-provider/20260624-124206.json`，认证 tested commit
+  `8b018b84ae8c39eff3b18aeda98ac4a106b9d65d` 下的 `deepseek-v4-flash` profile/rubric/model。
+- 下面保留本 change 的历史执行轨迹；早期 transport blocker 与旧 runtime prompt-injection FAIL 均不得解释为最终 provider certification。
 - Planning baseline commit：`ffaa453`；pre-live evidence commit：
   `f4d1270b218dd95078b0c84ceec85a38422e05ee`。Preflight 已通过：focused evaluator
   tests 57 passed；full `scripts/verify.ps1` 为 391 passed、1 skipped；OpenSpec 20/20；
