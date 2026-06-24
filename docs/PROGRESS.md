@@ -1052,8 +1052,8 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
 - 文档同步补充：已补齐 README 的 V9 阶段历史和路线图状态，修正 ARCHITECTURE 中 V8 当前态措辞，并在 HANDOFF 中补充 V9 完整摘要。
 ## Live Eval Transport Blocker Classification Remediation (2026-06-24)
 
-- Active remediation change: `classify-live-eval-transport-blockers`; current branch:
-  `codex/classify-live-eval-transport-blockers`; risk level: high.
+- Archived remediation change: `classify-live-eval-transport-blockers`; merged into current
+  `codex/revalidate-deepseek-provider-conformance` branch; risk level: high.
 - This change fixes live evaluator evidence semantics: provider conformance verdicts and tracked evaluated-failure
   records are allowed only after all required live provider attempts have evaluable provider contact. If any required
   attempt is a transport/sandbox/provider-contact blocker, the round outcome is `transport_blocked` and no PASS

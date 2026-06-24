@@ -25,5 +25,5 @@
 
 - [x] 4.1 Update durable progress and next-session handoff only with facts owned by this remediation.
 - [x] 4.2 Archive after deterministic verification and all review findings are closed.
-- [ ] 4.3 Merge remediation back into the paused revalidation branch; mark old revalidation live evidence stale.
+- [x] 4.3 Merge remediation back into the paused revalidation branch; mark old revalidation live evidence stale.
 - [x] 4.4 Stop before any new live provider certification run unless the user explicitly confirms network-capable execution.
