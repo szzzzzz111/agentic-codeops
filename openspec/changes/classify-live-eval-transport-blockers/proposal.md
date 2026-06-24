@@ -13,13 +13,14 @@ conformance failure allowlist 时生成 evaluated-failure record。这会让“�
 - 增强 live evaluator 的 provider-contact / transport failure 分类。
 - 在脱敏 report 中为 provider-call failure 记录 allowlist 字段，例如 `phase`、`error_class`、
   `status_class`，不保存 URL、payload、prompt、raw exception、API key 或完整 HTTP body。
-- 当 live run 没有任何可确认完成的真实 provider response，或所有 live provider attempts 都是
-  `availability=unavailable` 且无有效 usage/model/finish reason 时，整体归类为
-  `transport_blocked` / evaluation integrity blocker。
+- 当任一 required live provider attempt 属于 transport/sandbox/provider-contact blocker，或缺少可评价
+  provider contact 时，整轮归类为 `transport_blocked` / evaluation integrity blocker。单个 confirmed
+  provider response 只能证明该 case 可评价，不能证明整轮 eval 可评价。
 - `transport_blocked` 不生成 PASS attestation，也不生成 evaluated-failure record；只保留本地脱敏
-  report，并返回非成功状态。
+  report，并固定输出 `BLOCKED live model provider eval: transport_blocked`、退出码 1。
 - live gate 执行环境 contract 明确要求 network-capable/escalated shell；普通 sandbox shell 不得启动
-  live gate 去消耗认证机会。
+  live gate 去消耗认证机会。缺少显式 live-network confirmation 时固定输出
+  `SKIP live model provider eval: live_network_not_confirmed`、退出码 0。
 
 ## Capabilities
 

@@ -8,8 +8,8 @@ generate tracked provider conformance evidence when the evaluated provider was n
 #### Scenario: Transport blocker 不生成 tracked conformance evidence
 
 - **WHEN** a live run attempts provider-backed cases
-- **AND** every provider-backed attempt has `availability=unavailable`
-- **AND** no provider-backed attempt has a complete real response with finish reason、returned model and usage
+- **AND** any required provider-backed attempt lacks evaluable provider contact because of transport、sandbox or
+  provider-call failure
 - **THEN** the run MUST be classified as transport/integrity blocked
 - **AND** the runner MUST NOT generate PASS attestation
 - **AND** the runner MUST NOT generate evaluated-failure record
@@ -23,12 +23,20 @@ generate tracked provider conformance evidence when the evaluated provider was n
 - **AND** the report MUST NOT include API key、complete URL、headers、payload、prompt、EvidencePack、raw answer、
   raw exception message、traceback、HTTP body、diff、reasoning content or raw fingerprint
 
-#### Scenario: Confirmed provider contact can still produce conformance FAIL evidence
+#### Scenario: Full provider contact can still produce conformance FAIL evidence
 
-- **WHEN** at least one provider-backed attempt completes with a usable model response
+- **WHEN** every required provider-backed attempt completes with a usable model response
 - **AND** the run completes with conformance hard gate failures rather than integrity failures
 - **THEN** the runner MAY generate an evaluated-failure record under the existing allowlist schema
 - **AND** that record MUST remain distinct from transport/integrity blocker outcomes
+
+#### Scenario: Partial provider contact does not prove round-level evaluability
+
+- **WHEN** at least one provider-backed attempt completes with a usable model response
+- **AND** at least one required provider-backed attempt lacks evaluable provider contact
+- **THEN** the run MUST be classified as transport/integrity blocked
+- **AND** the runner MUST NOT generate evaluated-failure record
+- **AND** the usable response MUST NOT be used to claim round-level provider conformance failure
 
 #### Scenario: Unconfirmed live shell fails closed before provider calls
 
@@ -36,4 +44,13 @@ generate tracked provider conformance evidence when the evaluated provider was n
 - **THEN** the runner MUST stop before provider calls
 - **AND** the result MUST NOT consume live call budget
 - **AND** the result MUST NOT generate PASS attestation or evaluated-failure record
+- **AND** stdout MUST be `SKIP live model provider eval: live_network_not_confirmed`
+- **AND** exit code MUST be 0
 - **AND** default deterministic verification MUST remain network-free
+
+#### Scenario: Transport blocker reports fixed blocked outcome
+
+- **WHEN** a run is classified as transport/integrity blocked after live execution starts
+- **THEN** stdout MUST be `BLOCKED live model provider eval: transport_blocked`
+- **AND** exit code MUST be 1
+- **AND** internal runner errors MUST continue to use `ERROR live model provider eval: <ErrorClass>` with exit code 2

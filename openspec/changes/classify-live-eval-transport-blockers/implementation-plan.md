@@ -34,15 +34,18 @@ Frozen:
    - RED: all live provider attempts unavailable currently writes evaluated-failure record.
    - GREEN: all-unavailable provider-contact-unverified run returns blocker outcome and writes no tracked evidence.
 
-3. Mixed outcome stays conformance
-   - RED/GREEN: if at least one live provider response is available and gates fail, normal conformance failure path remains eligible for evaluated-failure record.
+3. Round-level provider contact
+   - RED: one usable provider response plus any required unavailable attempt currently remains eligible for evaluated-failure record.
+   - GREEN: any required unavailable attempt makes the whole run `transport_blocked` with no tracked conformance evidence.
+   - RED/GREEN: only when all required live provider attempts are evaluable may normal conformance failure path remain eligible for evaluated-failure record.
 
 4. Live shell guard
    - RED: runner can start live calls in unconfirmed shell.
-   - GREEN: missing explicit live-network confirmation fails closed before provider calls and writes no tracked evidence.
+   - GREEN: missing explicit live-network confirmation returns `SKIP live model provider eval: live_network_not_confirmed` / exit 0 before provider calls and writes no tracked evidence.
 
 5. Reports and stdout
    - RED/GREEN: stdout/report clearly distinguish PASS、conformance FAIL、SKIP/ERROR、transport blocker.
+   - GREEN: during-run transport blocker returns `BLOCKED live model provider eval: transport_blocked` / exit 1; runner bug remains `ERROR ...` / exit 2.
    - No secret values, URL, prompt, EvidencePack, raw response, exception message, traceback, payload or fingerprint.
 
 ## Verification
@@ -69,8 +72,8 @@ separate revalidation step.
 ## Review Targets
 
 - Transport blocker cannot create attestation or evaluated-failure record.
-- Conformance FAIL path still works when provider-contact is confirmed.
+- Conformance FAIL path still works only when all required provider contacts are confirmed.
 - Diagnostic metadata is useful but strictly allowlisted and redacted.
 - Default verify remains offline.
 - Historical evidence is not modified.
-- Live-network confirmation guard does not silently bypass user/environment authorization.
+- Live-network confirmation guard is documented as explicit operator declaration, not proof of technical network reachability.

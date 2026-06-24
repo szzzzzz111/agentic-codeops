@@ -8,7 +8,7 @@
 
 - [ ] 2.1 Add RED tests for redacted transport diagnostic metadata.
 - [ ] 2.2 Add RED tests that all-unavailable provider attempts produce transport/integrity blocker with no tracked evidence.
-- [ ] 2.3 Add RED tests preserving conformance failure record generation when provider-contact is confirmed.
+- [ ] 2.3 Add RED tests that partial provider contact still becomes transport/integrity blocker and that full provider contact preserves conformance failure record generation.
 - [ ] 2.4 Add RED tests for explicit live-network confirmation guard before provider calls.
 - [ ] 2.5 Implement minimal evaluator/provider diagnostics and blocker classification.
 - [ ] 2.6 Update stdout/report serialization and PowerShell entrypoint behavior without adding live network dependency to default verify.

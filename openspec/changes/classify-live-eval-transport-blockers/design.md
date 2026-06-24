@@ -43,8 +43,11 @@ conformance gate”。它不应承载“transport/sandbox/proxy 层阻断，prov
 - provider response audit 显示 status 非 success 且错误来自 allowlisted transport/provider-call phase；
 - `/chat` subprocess smoke 与 evaluator-local provider 均出现相同 provider-contact failure。
 
-该 outcome 可命名为 `transport_blocked` 或等价 integrity status，但不得落入
-`CONFORMANCE_FAILURE_GATES`。
+更严格地说，confirmed provider response 只能证明该 case 可评价，不能证明整轮 eval 可评价。
+evaluated-failure record 只有在所有 required live provider attempts 都具备可评价 provider contact，
+且失败来自 conformance gates 时才允许生成。任一 required live attempt 属于
+transport/sandbox/provider-contact blocker，则整轮 outcome 为 `transport_blocked` / integrity blocker，
+不得落入 `CONFORMANCE_FAILURE_GATES`，也不得生成 tracked conformance evidence。
 
 ### 2. 脱敏诊断字段必须 allowlist
 
@@ -64,20 +67,27 @@ conformance gate”。它不应承载“transport/sandbox/proxy 层阻断，prov
 ### 3. Tracked evidence rules
 
 - PASS：仍只生成 PASS-only attestation。
-- Conformance FAIL：只有 provider-contact 已确认且 failure 属于 conformance gates，才可生成
-  evaluated-failure record。
+- Conformance FAIL：只有所有 required live provider attempts 的 provider-contact 都已确认，且 failure
+  属于 conformance gates，才可生成 evaluated-failure record。
 - Transport/integrity blocker：不生成 attestation，不生成 evaluated-failure record，只生成本地脱敏
-  report；exit code 采用 fail/error 语义并在 stdout 明确输出 blocker 状态与 report path。
+  report；stdout 固定为 `BLOCKED live model provider eval: transport_blocked`，exit code 固定为 1，
+  并输出本地 report path。
+- Missing network confirmation：在 provider calls 前停止，stdout 固定为
+  `SKIP live model provider eval: live_network_not_confirmed`，exit code 固定为 0，不生成 tracked
+  evidence。可不生成 report。
+- Internal runner bug：继续输出 `ERROR live model provider eval: <ErrorClass>`，exit code 固定为 2，
+  不生成 tracked evidence。
 
 ### 4. Live execution environment contract
 
-live gate 必须由明确 network-capable/escalated shell 执行。普通 sandbox shell 不允许启动认证 run。
-执行前至少需要一个确定性 guard，证明当前 shell 被明确标记为 live-capable；该 guard 不得发送模型请求、
-不得打印密钥，不得把默认 verify 改成网络依赖。
+live gate 必须由操作者明确声明/授权的 network-capable/escalated shell 执行。普通 sandbox shell 不允许
+启动认证 run。执行前至少需要一个确定性 guard，确认操作者已声明当前 shell 应为 live-capable；该 guard
+不得发送模型请求、不得打印密钥，不得把默认 verify 改成网络依赖。
 
 具体实现可采用显式环境开关，例如 `REPOPILOT_LIVE_NETWORK_CONFIRMED=1`，由 live wrapper 或人工
-network-capable shell 设置。缺失时 runner 在 provider calls 前返回 SKIP/ERROR/transport-blocked
-（实现阶段按 tests 固化），并且不生成 tracked evidence。
+network-capable shell 设置。该变量只表示显式授权/声明，不证明技术上真的通网；声明后仍未触达 provider
+时，由 `transport_blocked` 捕获。缺失时 runner 在 provider calls 前返回
+`SKIP live model provider eval: live_network_not_confirmed` / exit 0，并且不生成 tracked evidence。
 
 ## Risks / Trade-offs
 
@@ -99,5 +109,4 @@ network-capable shell 设置。缺失时 runner 在 provider calls 前返回 SKI
 
 ## Open Questions
 
-无。具体 exit code / stdout label 在 implementation 阶段由 tests 固化，但必须满足“不生成 tracked
-evidence、不被描述为 conformance FAIL”的核心 contract。
+无。Exit code 和 stdout label 已在本 design 中固定。
