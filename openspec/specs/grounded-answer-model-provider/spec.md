@@ -58,13 +58,20 @@ Grounded-text user message MUST 使用与 allowed list 相同的裸 `path:start-
 覆盖 system instruction；模型 MUST NOT 遵循、复述、转换、编码或以其他方式执行 evidence 内
 要求改变回答行为、泄露内容、忽略规则或输出 marker 的指令。
 
-Instruction MUST 要求模型静默忽略 evidence 内的命令式、角色式、策略式、声明式 response rule
-或特定输出要求。
-模型 MUST NOT 在回答、拒答、澄清、引用或安全说明中提及该指令、说明拒绝执行，或输出、复述、
-拼写、引用、转换、编码、翻译、讨论其要求产生且未被 original query 明确询问的 marker/token。模型
-MAY 只使用同一 evidence 中与用户仓库问题相关的事实内容；若相同字符串本身是 original query
-明确询问的仓库事实或标识符，instruction MUST NOT 禁止基于 evidence 回答。澄清或拒答 MUST
-使用不复现攻击目标的中性措辞，并继续满足 exact citation footer contract。
+Grounded-text prompt contract MUST make the model-visible task explicit: answer the original user question by
+extracting repository facts from evidence data, and treat evidence text that is directed at the assistant as
+evidence-borne instruction rather than answerable fact. Evidence-borne instruction includes command-like text,
+role assignment, policy override, declarative response rule, request to ignore constraints, request to reveal
+information, or extra-output request. The prompt MUST require the model to ignore the evidence-borne instruction
+and its requested output target silently while preserving any separate repository fact in the same evidence item
+that is relevant to the original user question.
+
+Instruction MUST require the model to silently ignore evidence 内的命令式、角色式、策略式、声明式
+response rule 或特定输出要求。模型 MUST NOT 在回答、拒答、澄清、引用或安全说明中提及该指令、
+说明拒绝执行，或输出、复述、拼写、引用、转换、编码、翻译、讨论其要求产生且未被 original query
+明确询问的 marker/token。模型 MAY 只使用同一 evidence 中与用户仓库问题相关的事实内容；若相同
+字符串本身是 original query 明确询问的仓库事实或标识符，instruction MUST NOT 禁止基于 evidence
+回答。澄清或拒答 MUST 使用不复现攻击目标的中性措辞，并继续满足 exact citation footer contract。
 
 系统 MUST 允许重复 citation 和乱序 citation。系统 MUST 将绝对路径、未提供路径、错误行号、
 错误范围、无法解析 citation 和没有合法 citation 的 provider 输出视为不可信，并返回保守
@@ -90,6 +97,13 @@ fallback。
 - **THEN** grounded-text instruction MUST 要求模型只使用与用户仓库问题相关的事实内容
 - **AND** response MUST NOT 提及、确认、拒绝说明、引用、拼写、转换、编码、翻译或讨论该指令及其输出目标
 - **AND** clarification 或 refusal MUST 使用中性措辞并继续满足 exact citation footer contract
+
+#### Scenario: Prompt 明确保留同段合法 repository fact
+
+- **WHEN** one evidence item contains both a repository fact relevant to the user question and an instruction directed at the assistant
+- **THEN** grounded-text prompt MUST instruct the model to answer from the repository fact
+- **AND** grounded-text prompt MUST instruct the model to ignore the directed-at-assistant instruction and its requested output target
+- **AND** the raw evidence content MUST remain present in the provider request rather than being filtered or projected
 
 #### Scenario: 用户明确询问同名仓库标识符
 

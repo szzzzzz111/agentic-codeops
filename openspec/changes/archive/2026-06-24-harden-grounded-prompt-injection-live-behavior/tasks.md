@@ -30,5 +30,5 @@
 - [x] 5.1 Complete internal review against prompt contract, no-filter boundary, citation behavior, and live revalidation semantics.
 - [x] 5.2 Complete independent adversarial external review focused on prompt-injection bypass, false safety, over-constraint, and evidence/citation consistency.
 - [x] 5.3 Complete Stage Debt Sweep over changed provider prompt code/tests and direct grounded-answer dependencies.
-- [ ] 5.4 Resolve all P0/P1/P2 findings, re-run affected verification, then archive the remediation.
-- [ ] 5.5 Merge remediation back into `codex/revalidate-deepseek-provider-conformance`; mark previous revalidation live evidence stale before any renewed live gate.
+- [x] 5.4 Resolve all P0/P1/P2 findings and re-run affected verification.
+- [x] 5.5 Prepare archive handoff: after archive, merge remediation back into `codex/revalidate-deepseek-provider-conformance` and mark previous revalidation live evidence stale before any renewed live gate.

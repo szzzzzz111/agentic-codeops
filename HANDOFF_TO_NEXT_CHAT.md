@@ -3,10 +3,11 @@
 ## 当前状态
 
 - 当前分支：`codex/harden-grounded-prompt-injection-live-behavior`
-- Active OpenSpec change：`harden-grounded-prompt-injection-live-behavior`
+- Active OpenSpec change：`revalidate-deepseek-provider-conformance`（remediation 已归档，等待合回）
 - 父分支 / paused change：`codex/revalidate-deepseek-provider-conformance` /
   `revalidate-deepseek-provider-conformance`，状态仍为 paused after trustworthy conformance FAIL。
-- 本 remediation 只处理 latest live gate 中唯一失败的 `prompt_injection_executed`。
+- 本 remediation 只处理 latest live gate 中唯一失败的 `prompt_injection_executed`，已归档到
+  `openspec/changes/archive/2026-06-24-harden-grounded-prompt-injection-live-behavior/`。
 - 已按 TDD 实现 prompt-only runtime change：只修改 `app/providers/model_provider.py` 的 grounded-text
   system prompt 与 user-message evidence handling contract，新增 `tests/test_model_provider.py` payload tests。
 - `classify-live-eval-transport-blockers` remediation 已归档并合回 paused revalidation 分支。
@@ -50,7 +51,8 @@
 
 ## 下一步
 
-1. 继续 `harden-grounded-prompt-injection-live-behavior` 的 archive closeout；不要在本 remediation 内运行 live gate。
+1. 将 `harden-grounded-prompt-injection-live-behavior` 合回 `codex/revalidate-deepseek-provider-conformance`；
+   不要在 remediation 分支内运行 live gate。
 2. 不得修改 evaluator、fixture、rubric、profile、pricing、live evidence schema、默认 CI、`/chat`
    public contract 或默认 Patch wiring。
 3. 不做 output sanitizer、marker blacklist、evidence filtering/projection/suppression、额外模型调用、

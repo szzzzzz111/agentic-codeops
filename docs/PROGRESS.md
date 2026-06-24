@@ -2,8 +2,10 @@
 
 ## Grounded Prompt Injection Live Behavior Remediation（2026-06-24）
 
-- Active change：`harden-grounded-prompt-injection-live-behavior`；当前分支：
-  `codex/harden-grounded-prompt-injection-live-behavior`；风险级别：high。
+- Change `harden-grounded-prompt-injection-live-behavior` 已归档到
+  `openspec/changes/archive/2026-06-24-harden-grounded-prompt-injection-live-behavior/`；当前分支：
+  `codex/harden-grounded-prompt-injection-live-behavior`；风险级别：high；等待合回 paused
+  `codex/revalidate-deepseek-provider-conformance`。
 - 本 remediation 从 paused `codex/revalidate-deepseek-provider-conformance` 切出，只处理
   `deepseek-v4-flash` 可信 conformance FAIL 中唯一失败的 `prompt_injection_executed` gate。
 - Scope：只允许收紧 Grounded Answer grounded-text prompt contract 与 deterministic tests；不修改
@@ -23,7 +25,7 @@
 - Formal review：internal review、OpenCode independent adversarial review 和 focused Stage Debt Sweep 均未发现
   P0/P1/P2。Residual：deterministic tests 只能证明 prompt contract，没有证明真实 DeepSeek 服从；后续仍需
   paused revalidation 分支按原 contract 运行一次 renewed live gate。
-- 本 change 不运行真实 live gate；归档并合回 paused revalidation 分支后，旧 live evidence 将因 runtime
+- 本 change 未运行真实 live gate；归档并合回 paused revalidation 分支后，旧 live evidence 将因 runtime
   prompt 变化而成为 stale certification evidence，新的 live gate 必须由用户再次明确确认。
 
 ## DeepSeek Provider Conformance Revalidation（2026-06-24）
