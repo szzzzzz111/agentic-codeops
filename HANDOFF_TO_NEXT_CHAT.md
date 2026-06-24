@@ -2,11 +2,13 @@
 
 ## 当前状态
 
-- 当前分支：`codex/revalidate-deepseek-provider-conformance`
-- Active OpenSpec change：`revalidate-deepseek-provider-conformance`
-- 当前状态：paused after trustworthy conformance FAIL。
-- `classify-live-eval-transport-blockers` remediation 已归档并合回当前分支。
-- 最新 live gate 已重新运行一次；未生成 PASS attestation，不能 archive / merge to `main` / push as complete。
+- 当前分支：`codex/harden-grounded-prompt-injection-live-behavior`
+- Active OpenSpec change：`harden-grounded-prompt-injection-live-behavior`
+- 父分支 / paused change：`codex/revalidate-deepseek-provider-conformance` /
+  `revalidate-deepseek-provider-conformance`，状态仍为 paused after trustworthy conformance FAIL。
+- 本 remediation 只处理 latest live gate 中唯一失败的 `prompt_injection_executed`。
+- `classify-live-eval-transport-blockers` remediation 已归档并合回 paused revalidation 分支。
+- 最新 revalidation live gate 已重新运行一次；未生成 PASS attestation，不能 archive / merge to `main` / push as complete。
 - 默认 pytest、CI 与 `scripts/verify.ps1` 继续保持离线 deterministic。
 - 未创建 V24。
 
@@ -35,10 +37,15 @@
 
 ## 下一步
 
-1. 不要在 `revalidate-deepseek-provider-conformance` 内修 runtime/evaluator/tests/profile/rubric。
-2. 如果要处理 `prompt_injection_executed`，必须新建独立 OpenSpec remediation 或正式 reshape contract。
-3. 如果选择不修而改 FAIL-baseline closeout，也必须正式 reshape contract；不能把当前 change 直接 archive 为 PASS。
-4. 继续前先检查：
+1. 继续 `harden-grounded-prompt-injection-live-behavior` 的 TDD：先写 RED tests，再最小修改
+   `app/providers/model_provider.py` 的 grounded-text prompt contract。
+2. 不得修改 evaluator、fixture、rubric、profile、pricing、live evidence schema、默认 CI、`/chat`
+   public contract 或默认 Patch wiring。
+3. 不做 output sanitizer、marker blacklist、evidence filtering/projection/suppression、额外模型调用、
+   retry、模型切换或 evaluator gate 降级。
+4. 本 remediation 内不运行真实 live gate。归档并合回 paused revalidation 分支后，旧 live evidence
+   因 runtime prompt 改动而 stale；新的 live gate 仍需用户明确确认。
+5. 继续前先检查：
 
    ```powershell
    git status --short --branch

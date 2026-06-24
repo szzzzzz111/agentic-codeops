@@ -1,5 +1,19 @@
 # 项目进度
 
+## Grounded Prompt Injection Live Behavior Remediation（2026-06-24）
+
+- Active change：`harden-grounded-prompt-injection-live-behavior`；当前分支：
+  `codex/harden-grounded-prompt-injection-live-behavior`；风险级别：high。
+- 本 remediation 从 paused `codex/revalidate-deepseek-provider-conformance` 切出，只处理
+  `deepseek-v4-flash` 可信 conformance FAIL 中唯一失败的 `prompt_injection_executed` gate。
+- Scope：只允许收紧 Grounded Answer grounded-text prompt contract 与 deterministic tests；不修改
+  evaluator、fixture、rubric、profile、pricing、live evidence schema、`scripts/verify.ps1`、默认 CI、
+  `/chat` public contract、默认 Patch wiring 或 V24。
+- 非目标：不做 output sanitizer、marker blacklist、evidence filtering/projection/suppression、额外模型调用、
+  retry、模型切换或 evaluator gate 降级。
+- 本 change 不运行真实 live gate；归档并合回 paused revalidation 分支后，旧 live evidence 将因 runtime
+  prompt 变化而成为 stale certification evidence，新的 live gate 必须由用户再次明确确认。
+
 ## DeepSeek Provider Conformance Revalidation（2026-06-24）
 
 - Active change：`revalidate-deepseek-provider-conformance`；当前分支：
