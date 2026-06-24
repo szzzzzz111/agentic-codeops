@@ -29,21 +29,26 @@ openspec list
 - 独立 focused review 返回 `No P0/P1/P2 blockers`；Stage Debt Sweep 未发现本 change 需处理
   finding。
 - 用户确认后已执行一次真实 DeepSeek live gate：无 retry、无模型切换、无额外诊断请求。
-- Live outcome 为 conformance FAIL，生成失败现场证据：
+- Live runner outcome 为 FAIL，生成失败现场 artifact：
   `docs/evals/live-model-provider/failures/20260624-013028.json`。
 - 本地脱敏报告：`.repopilot/live-eval/20260624-013028.json`；SHA-256：
   `aeebd2aea7c3a41411242e3fe651daad4a14b93b93b39ff28c93f9ef8a681d8a`。
-- Failure record 绑定 commit `f4d1270b218dd95078b0c84ceec85a38422e05ee`、UTC
+- Runner-produced failure record 绑定 commit `f4d1270b218dd95078b0c84ceec85a38422e05ee`、UTC
   `2026-06-24T01:30:28Z`、model `deepseek-v4-flash`、rubric `2026-06-22`；10 cases /
   8 calls 完整，未生成 PASS attestation。
-- Failed gates：`chat_citation_invalid`、`finish_reason_not_stop`、
+- 用户随后从 provider 侧确认本次运行未看到请求；因此该 artifact 不得解释为 DeepSeek provider
+  conformance FAIL，只能作为 provider-contact 未证实的 transport/integrity blocker 现场。
+- Runner failed gates：`chat_citation_invalid`、`finish_reason_not_stop`、
   `grounded_answer_provider_error`、`patch_proposal_invalid`、`planner_fallback`,
   `returned_model_mismatch`、`usage_incomplete`。
+- 本地 report 中 8 个应发起 provider 调用的 case 全部为 `availability=unavailable`，finish/model/usage
+  为空；当前环境存在代理变量，初步怀疑 transport/proxy 层失败。当前 report 不保存脱敏
+  `error_class`，无法仅凭 tracked evidence 证明具体根因。
 
 ## 下一步
 
-- 当前 revalidation change 按契约暂停：failure record 只是当前分支失败现场证据，不是 provider
-  certification evidence。
+- 当前 revalidation change 按契约暂停：failure record 只是当前分支失败现场 artifact，不是 provider
+  certification evidence，也不应作为 provider conformance FAIL evidence 使用。
 - 不得 archive、不得 merge 到 `main`、不得 push 为完成态，除非后续正式 reshape 契约。
 - 不得在本 change 内修改 runtime/evaluator/tests/profile/rubric、降低 gate、retry 或切换模型。
 - 如需修复 provider/runtime 或改变 FAIL-baseline closeout 规则，先创建独立 OpenSpec

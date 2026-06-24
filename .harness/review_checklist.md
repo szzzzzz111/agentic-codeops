@@ -36,8 +36,9 @@ Active change：`revalidate-deepseek-provider-conformance`。风险级别：high
 
 - [x] 用户明确确认后执行一次完整 8-call live gate；无 retry、无模型切换、无额外诊断请求。
 - [x] Outcome 由 stdout 与 evidence path 共同判定：exit 1 且 stdout 包含 `failure_record=docs/evals/live-model-provider/failures/20260624-013028.json`。
-- [x] PASS 时只有 attestation；本次为有效 FAIL，只生成当前分支暂停现场 failure record，未生成 attestation，不 archive/merge/push。
-- [x] Final evidence review verifies report hash、tested commit、UTC、profile/model、rubric、10 cases、8 calls and redaction；failed gates 包含 `usage_incomplete`，因此不估算通过态成本、不生成认证。
+- [x] PASS 时只有 attestation；本次只生成当前分支暂停现场 artifact，未生成 attestation，不 archive/merge/push。
+- [x] Final evidence review verifies report hash、tested commit、UTC、profile/model、rubric、10 cases、8 runner/provider-attempts and redaction；failed gates 包含 `usage_incomplete`，因此不估算通过态成本、不生成认证。
+- [x] Provider-side no-request observation invalidates interpreting this as DeepSeek conformance FAIL；treat as provider-contact unverified transport/integrity blocker.
 - [ ] Archive/merge/push 仅在 PASS attestation 与所有 review findings 关闭后执行。
 - [ ] Archive sync 保留长期 spec 的全部 6 个 requirement，并加入独立 revalidation scenario。
 - [x] `future_stage_only`：V24 不在本 change 内创建。

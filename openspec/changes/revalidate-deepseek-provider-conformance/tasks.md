@@ -19,12 +19,12 @@
 ## 4. Live Conformance Gate
 
 - [x] 4.1 Obtain explicit user confirmation and run exactly one complete DeepSeek live gate with no retry or extra diagnostic calls.
-- [x] 4.2 Classify outcome from stdout plus evidence paths, not exit code alone; on PASS commit the PASS-only attestation, while a valid conformance FAIL may commit only pause-site failure evidence on the current branch and FAIL/SKIP/ERROR/integrity-blocked outcomes pause without runtime changes.
+- [x] 4.2 Classify outcome from stdout plus evidence paths, not exit code alone; PASS did not occur, and the runner-produced failure artifact is retained only as pause-site evidence after provider-side no-request observation invalidated conformance interpretation.
 - [x] 4.3 Verify report hash, tested commit, UTC, profile/model, rubric, 10 cases, 8 calls, hard gates, metrics, cost and redaction.
 
 ## 5. Closeout
 
 - [x] 5.1 Update only durable provider-conformance facts in PROGRESS and concise next-session context in HANDOFF.
 - [ ] 5.2 Archive only after a valid PASS attestation and all review findings are closed.
-- [x] 5.3 If outcome is not PASS, record the pause and stop without archive/merge/push; a valid FAIL record may remain only on the current revalidation branch unless the contract is formally reshaped.
+- [x] 5.3 If outcome is not PASS, record the pause and stop without archive/merge/push; the current failure artifact may remain only on the current revalidation branch unless the contract is formally reshaped.
 - [ ] 5.4 On PASS, verify archive sync preserves all existing requirements, then run archive/merge verification, integrate into `main`, push and write one final handoff.

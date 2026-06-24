@@ -14,21 +14,29 @@
   检查，未打印值，未发送额外诊断请求。
 - 独立 focused review 确认无 P0/P1/P2 blocker；Stage Debt Sweep 仅检查 live
   runner/entrypoint 直接依赖和 closeout docs，未发现本 change 需处理 finding。
-- 真实 DeepSeek live gate 已按用户确认执行一次，无 retry、无模型切换、无额外诊断请求；结果为
-  conformance FAIL，未生成 PASS attestation。
+- 真实 DeepSeek live gate 已按用户确认执行一次，无 retry、无模型切换、无额外诊断请求；runner
+  结果为 FAIL，未生成 PASS attestation。随后用户从 provider 侧确认本次运行未看到请求，因此该
+  run 不得解释为 DeepSeek provider conformance FAIL，只能作为 provider-contact 未证实的
+  transport/integrity blocker 现场。
 - 本次失败证据：`docs/evals/live-model-provider/failures/20260624-013028.json`；本地脱敏报告：
   `.repopilot/live-eval/20260624-013028.json`；本地报告 SHA-256：
   `aeebd2aea7c3a41411242e3fe651daad4a14b93b93b39ff28c93f9ef8a681d8a`。
-- Failure record 绑定 commit `f4d1270b218dd95078b0c84ceec85a38422e05ee`、UTC
+- Runner-produced failure record 绑定 commit `f4d1270b218dd95078b0c84ceec85a38422e05ee`、UTC
   `2026-06-24T01:30:28Z`、provider `openai_compatible`、model `deepseek-v4-flash`、
   rubric `2026-06-22`；10 cases / 8 calls 完整，report hash 与 record 一致，未生成同 run
-  attestation sibling，API key 和完整 base URL 未进入 tracked failure record。
-- Failed gates：`chat_citation_invalid`、`finish_reason_not_stop`、
+  attestation sibling，API key 和完整 base URL 未进入 tracked failure record。但这些 “8 calls”
+  是 runner/provider-attempt 计数，不证明 DeepSeek 服务端收到请求。
+- Runner failed gates：`chat_citation_invalid`、`finish_reason_not_stop`、
   `grounded_answer_provider_error`、`patch_proposal_invalid`、`planner_fallback`,
   `returned_model_mismatch`、`usage_incomplete`。
-- 当前状态：本 change 按契约暂停。Failure record 只是当前 revalidation 分支的失败现场证据，
-  不是 provider certification evidence；不得 archive、不得 merge 到 `main`、不得 push 为完成态，
-  除非后续正式 reshape 契约。任何 remediation 必须进入独立 OpenSpec change。
+- 本地诊断显示 8 个应发起 provider 调用的 case 全部为 `availability=unavailable`、finish/model/usage
+  为空，且当前环境存在 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 等代理变量；初步怀疑请求在
+  本地 transport/proxy 层失败，未到达 DeepSeek endpoint。当前 runner/report 不保留脱敏
+  `error_class`，因此无法仅凭 tracked report 证明具体 transport 根因。
+- 当前状态：本 change 按契约暂停。Failure record 只是当前 revalidation 分支的失败现场 artifact，
+  不是 provider certification evidence，也不应作为 provider conformance FAIL evidence 使用；不得
+  archive、不得 merge 到 `main`、不得 push 为完成态，除非后续正式 reshape 契约。任何 remediation
+  必须进入独立 OpenSpec change。
 
 ## Live Model Provider Integration / Eval（2026-06-22）
 
