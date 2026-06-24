@@ -1,5 +1,12 @@
 # 项目进度
 
+## DeepSeek Provider Conformance Revalidation Closeout（2026-06-24）
+
+- `revalidate-deepseek-provider-conformance` 已归档并 fast-forward 合并到本地 `main`。
+- Merge 后 full `scripts/verify.ps1` 为 400 passed、1 skipped；OpenSpec all 为 19 passed、0 failed；
+  stage docs 与 `git diff --check` 通过。
+- 当前无 active OpenSpec change；未创建 V24。下一步仅剩 push `main` 到远端。
+
 ## Grounded Prompt Injection Live Behavior Remediation（2026-06-24）
 
 - Change `harden-grounded-prompt-injection-live-behavior` 已归档到
