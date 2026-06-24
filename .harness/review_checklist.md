@@ -47,4 +47,13 @@ remediation 已归档并合回本分支。
   - No same-timestamp failure record was created.
   - Key-level redaction review found only allowed token aggregate keys and `system_fingerprint_status`; no API key,
     full URL, raw prompt, EvidencePack, raw answer, raw response, HTTP payload, headers, diff, reasoning content or raw fingerprint.
-- [ ] 未创建 V24。
+- [x] 未创建 V24。
+
+## Archive readiness
+
+- [x] PASS attestation 已提交到当前 revalidation 分支。
+- [x] Evidence review postdates live PASS and attestation commit.
+- [x] Prior FAIL records remain unchanged and are not described as provider certification.
+- [x] Current PASS attestation is the only provider certification evidence for tested commit
+  `8b018b84ae8c39eff3b18aeda98ac4a106b9d65d` under this profile/rubric/model.
+- [x] No P0/P1/P2 finding remains open.

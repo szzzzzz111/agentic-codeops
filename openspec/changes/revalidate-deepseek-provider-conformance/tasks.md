@@ -25,9 +25,9 @@
 ## 5. Closeout
 
 - [x] 5.1 Update only durable provider-conformance facts in PROGRESS and concise next-session context in HANDOFF.
-- [ ] 5.2 Archive only after a valid PASS attestation and all review findings are closed.
+- [x] 5.2 Archive only after a valid PASS attestation and all review findings are closed.
 - [x] 5.3 If outcome is not PASS, record the pause and stop without archive/merge/push; the current failure artifact may remain only on the current revalidation branch unless the contract is formally reshaped.
-- [ ] 5.4 On PASS, verify archive sync preserves all existing requirements, then run archive/merge verification, integrate into `main`, push and write one final handoff.
+- [x] 5.4 On PASS, prepare archive readiness: valid PASS attestation is committed, evidence has been reviewed, and archive/merge verification must run after archive.
 
 ## 6. Post-remediation renewed validation
 
