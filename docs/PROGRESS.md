@@ -1,5 +1,35 @@
 # 项目进度
 
+## DeepSeek Provider Conformance Revalidation（2026-06-24）
+
+- Active change：`revalidate-deepseek-provider-conformance`；当前分支：
+  `codex/revalidate-deepseek-provider-conformance`；风险级别：high。
+- 本 change 只重新执行已归档 live evaluator 的 DeepSeek provider conformance gate；runtime、
+  evaluator、tests、fixtures、rubric、profile、pricing、默认 CI、`/chat` contract 和默认 Patch
+  wiring 均保持冻结；未创建 V24。
+- Planning baseline commit：`ffaa453`；pre-live evidence commit：
+  `f4d1270b218dd95078b0c84ceec85a38422e05ee`。Preflight 已通过：focused evaluator
+  tests 57 passed；full `scripts/verify.ps1` 为 391 passed、1 skipped；OpenSpec 20/20；
+  stage docs、skill eval、ruff 与 `git diff --check` 通过。`.env.live` 仅做 key presence
+  检查，未打印值，未发送额外诊断请求。
+- 独立 focused review 确认无 P0/P1/P2 blocker；Stage Debt Sweep 仅检查 live
+  runner/entrypoint 直接依赖和 closeout docs，未发现本 change 需处理 finding。
+- 真实 DeepSeek live gate 已按用户确认执行一次，无 retry、无模型切换、无额外诊断请求；结果为
+  conformance FAIL，未生成 PASS attestation。
+- 本次失败证据：`docs/evals/live-model-provider/failures/20260624-013028.json`；本地脱敏报告：
+  `.repopilot/live-eval/20260624-013028.json`；本地报告 SHA-256：
+  `aeebd2aea7c3a41411242e3fe651daad4a14b93b93b39ff28c93f9ef8a681d8a`。
+- Failure record 绑定 commit `f4d1270b218dd95078b0c84ceec85a38422e05ee`、UTC
+  `2026-06-24T01:30:28Z`、provider `openai_compatible`、model `deepseek-v4-flash`、
+  rubric `2026-06-22`；10 cases / 8 calls 完整，report hash 与 record 一致，未生成同 run
+  attestation sibling，API key 和完整 base URL 未进入 tracked failure record。
+- Failed gates：`chat_citation_invalid`、`finish_reason_not_stop`、
+  `grounded_answer_provider_error`、`patch_proposal_invalid`、`planner_fallback`,
+  `returned_model_mismatch`、`usage_incomplete`。
+- 当前状态：本 change 按契约暂停。Failure record 只是当前 revalidation 分支的失败现场证据，
+  不是 provider certification evidence；不得 archive、不得 merge 到 `main`、不得 push 为完成态，
+  除非后续正式 reshape 契约。任何 remediation 必须进入独立 OpenSpec change。
+
 ## Live Model Provider Integration / Eval（2026-06-22）
 
 - Active change：`add-live-model-provider-eval`；开发分支：
