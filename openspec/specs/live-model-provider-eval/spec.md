@@ -5,7 +5,6 @@
 定义与默认离线验证隔离的真实 OpenAI-compatible provider evaluator，包括固定评测集、调用预算、
 安全与结构硬门、质量 baseline、脱敏指标/成本报告，以及区分 provider conformance 与 evaluator
 readiness 的 PASS attestation 和 evaluated-failure evidence。
-
 ## Requirements
 ### Requirement: Live evaluator 默认不依赖网络
 
@@ -147,3 +146,59 @@ conformance gate MUST 保持 hard gate；FAIL run MUST 继续返回退出码 1�
 - **AND** 文档 MUST 明确归档仅表示 evaluator readiness
 - **AND** 被测 provider MUST 明确记录为未通过对应 conformance gate
 - **AND** 历史本地 FAIL 报告 MUST NOT 被倒推为 tracked failure record
+
+### Requirement: Live evaluator 区分 provider conformance 与 execution integrity
+
+Live evaluator MUST distinguish provider/system conformance failures from evaluation integrity failures. It MUST NOT
+generate tracked provider conformance evidence when the evaluated provider was not fairly contacted.
+
+#### Scenario: Transport blocker 不生成 tracked conformance evidence
+
+- **WHEN** a live run attempts provider-backed cases
+- **AND** any required provider-backed attempt lacks evaluable provider contact because of transport、sandbox or
+  provider-call failure
+- **THEN** the run MUST be classified as transport/integrity blocked
+- **AND** the runner MUST NOT generate PASS attestation
+- **AND** the runner MUST NOT generate evaluated-failure record
+- **AND** the local report MAY record redacted diagnostic codes
+- **AND** documentation MUST NOT describe the result as provider conformance FAIL
+
+#### Scenario: Redacted transport diagnostics are allowlisted
+
+- **WHEN** a provider call fails before a usable model response is available
+- **THEN** the local report MAY include allowlisted diagnostic fields such as `phase`、`error_class` and `status_class`
+- **AND** the report MUST NOT include API key、complete URL、headers、payload、prompt、EvidencePack、raw answer、
+  raw exception message、traceback、HTTP body、diff、reasoning content or raw fingerprint
+
+#### Scenario: Full provider contact can still produce conformance FAIL evidence
+
+- **WHEN** every required provider-backed attempt completes with a usable model response
+- **AND** the run completes with conformance hard gate failures rather than integrity failures
+- **THEN** the runner MAY generate an evaluated-failure record under the existing allowlist schema
+- **AND** that record MUST remain distinct from transport/integrity blocker outcomes
+
+#### Scenario: Partial provider contact does not prove round-level evaluability
+
+- **WHEN** at least one provider-backed attempt completes with a usable model response
+- **AND** at least one required provider-backed attempt lacks evaluable provider contact
+- **THEN** the run MUST be classified as transport/integrity blocked
+- **AND** the runner MUST NOT generate evaluated-failure record
+- **AND** the usable response MUST NOT be used to claim round-level provider conformance failure
+
+#### Scenario: Unconfirmed live shell fails closed before provider calls
+
+- **WHEN** live evaluation is launched without explicit network-capable execution confirmation
+- **THEN** the runner MUST stop before provider calls
+- **AND** the result MUST NOT consume live call budget
+- **AND** the result MUST NOT generate PASS attestation or evaluated-failure record
+- **AND** stdout MUST be `SKIP live model provider eval: live_network_not_confirmed`
+- **AND** exit code MUST be 0
+- **AND** default deterministic verification MUST remain network-free
+
+#### Scenario: Transport blocker reports fixed blocked outcome
+
+- **WHEN** a run is classified as transport/integrity blocked after live execution starts
+- **THEN** stdout MUST be `BLOCKED live model provider eval: transport_blocked`
+- **AND** exit code MUST be 1
+- **AND** internal runner errors MUST continue to use `ERROR live model provider eval: <ErrorClass>` with exit code 2
+

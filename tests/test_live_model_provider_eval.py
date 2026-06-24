@@ -56,6 +56,10 @@ REQUIRED_ENV = {
     "REPOPILOT_MODEL_NAME": "deepseek-v4-flash",
     "REPOPILOT_MODEL_THINKING": "disabled",
 }
+CONFIRMED_ENV = {
+    **REQUIRED_ENV,
+    "REPOPILOT_LIVE_NETWORK_CONFIRMED": "1",
+}
 
 
 def complete_metrics() -> ProviderCallMetrics:
@@ -73,6 +77,14 @@ def complete_metrics() -> ProviderCallMetrics:
         completion_tokens=20,
         reasoning_tokens=5,
         total_tokens=120,
+    )
+
+
+def unavailable_metrics() -> ProviderCallMetrics:
+    return ProviderCallMetrics(
+        availability="unavailable",
+        latency_ms=25,
+        requested_model="deepseek-v4-flash",
     )
 
 
@@ -263,6 +275,28 @@ def test_report_and_attestation_use_allowlists_and_never_store_raw_content(
     assert "fp_private" not in attestation_text
 
 
+def test_transport_diagnostics_reduce_error_class_to_safe_code() -> None:
+    diagnostics = live_eval_core.provider_failure_diagnostics(
+        {
+            "status": "error",
+            "error_class": (
+                "ConnectError: https://api.deepseek.com "
+                "TEST_API_KEY_CANARY"
+            ),
+        },
+        unavailable_metrics(),
+    )
+
+    assert diagnostics == {
+        "phase": "provider_http_request",
+        "error_class": "ConnectError",
+        "status_class": "network_error",
+    }
+    serialized = json.dumps(diagnostics, ensure_ascii=False).casefold()
+    assert "https://api.deepseek.com" not in serialized
+    assert "test_api_key_canary" not in serialized
+
+
 def test_non_pass_report_cannot_create_attestation() -> None:
     report = LiveEvalReport(
         status="fail",
@@ -322,7 +356,21 @@ def failure_report(
                     else []
                 ),
                 quality_passed=None,
-                metrics=None,
+                metrics=(
+                    complete_metrics()
+                    if case_id
+                    in {
+                        "code_location",
+                        "implementation_explanation",
+                        "configuration",
+                        "test_validation",
+                        "ambiguous",
+                        "prompt_injection",
+                        "planner",
+                        "patch",
+                    }
+                    else None
+                ),
                 cost_cny=None,
             )
             for case_id in case_ids
@@ -460,6 +508,41 @@ def test_incomplete_failure_report_cannot_create_tracked_record() -> None:
         )
 
 
+def test_unconfirmed_provider_contact_cannot_create_tracked_failure_record() -> None:
+    report = failure_report("prompt_injection_executed")
+    blocked_cases = [
+        CaseResult(
+            **{
+                **case.__dict__,
+                "metrics": unavailable_metrics(),
+                "diagnostics": {
+                    "phase": "provider_http_request",
+                    "error_class": "ConnectError",
+                    "status_class": "network_error",
+                },
+            }
+        )
+        if case.case_id == "configuration"
+        else case
+        for case in report.cases
+    ]
+    blocked = LiveEvalReport(
+        **{
+            **report.__dict__,
+            "cases": blocked_cases,
+        }
+    )
+
+    with pytest.raises(
+        live_eval_core.EvaluationIntegrityError,
+        match="provider contact incomplete",
+    ):
+        live_eval_core.build_evaluated_failure_record(
+            blocked,
+            local_report_sha256="0" * 64,
+        )
+
+
 @pytest.mark.parametrize(
     ("digest", "completed_at"),
     [
@@ -544,6 +627,20 @@ class StaticProvider:
         )
 
 
+class UnavailableStaticProvider:
+    def generate(self, request) -> ModelProviderResponse:
+        return ModelProviderResponse(
+            answer="",
+            audit_summary={
+                "provider": "openai_compatible",
+                "model": "deepseek-v4-flash",
+                "status": "error",
+                "error_class": "ConnectError",
+            },
+            metrics=unavailable_metrics(),
+        )
+
+
 class FailIfCalledProvider:
     def generate(self, request) -> ModelProviderResponse:
         raise AssertionError("provider must not be called")
@@ -585,6 +682,22 @@ def test_grounded_case_scores_quality_and_valid_citation() -> None:
     assert result.hard_gate_failures == []
     assert result.quality_passed is True
     assert provider.call_count == 1
+
+
+def test_grounded_case_preserves_redacted_provider_failure_diagnostics() -> None:
+    case = next(
+        case for case in load_eval_cases() if case.case_id == "configuration"
+    )
+    provider = RecordingModelProvider(UnavailableStaticProvider())
+
+    result = run_grounded_case(provider, case, require_live_metrics=True)
+
+    assert result.status == "fail"
+    assert result.diagnostics == {
+        "phase": "provider_http_request",
+        "error_class": "ConnectError",
+        "status_class": "network_error",
+    }
 
 
 def test_prompt_injection_marker_is_a_hard_gate_failure() -> None:
@@ -837,6 +950,53 @@ class SequenceProvider:
         )
 
 
+class UnavailableProvider:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def generate(self, request) -> ModelProviderResponse:
+        self.calls += 1
+        return ModelProviderResponse(
+            answer="",
+            audit_summary={
+                "provider": "openai_compatible",
+                "model": "deepseek-v4-flash",
+                "status": "error",
+                "error_class": "ConnectError",
+            },
+            metrics=unavailable_metrics(),
+        )
+
+
+class PartiallyUnavailableProvider:
+    def __init__(self, answers: list[str]) -> None:
+        self.answers = list(answers)
+        self.calls = 0
+
+    def generate(self, request) -> ModelProviderResponse:
+        self.calls += 1
+        if self.calls == 1:
+            return ModelProviderResponse(
+                answer=self.answers[0],
+                audit_summary={
+                    "provider": "openai_compatible",
+                    "model": "deepseek-v4-flash",
+                    "status": "success",
+                },
+                metrics=complete_metrics(),
+            )
+        return ModelProviderResponse(
+            answer="",
+            audit_summary={
+                "provider": "openai_compatible",
+                "model": "deepseek-v4-flash",
+                "status": "error",
+                "error_class": "ConnectError",
+            },
+            metrics=unavailable_metrics(),
+        )
+
+
 def simulated_live_answers() -> list[str]:
     return [
         (
@@ -897,6 +1057,26 @@ def simulated_api_result() -> CaseResult:
     )
 
 
+def simulated_unavailable_api_result() -> CaseResult:
+    return CaseResult(
+        case_id="code_location",
+        status="fail",
+        hard_gate_failures=[
+            "finish_reason_not_stop",
+            "returned_model_mismatch",
+            "usage_incomplete",
+        ],
+        quality_passed=False,
+        metrics=unavailable_metrics(),
+        cost_cny=None,
+        diagnostics={
+            "phase": "provider_http_request",
+            "error_class": "ConnectError",
+            "status_class": "network_error",
+        },
+    )
+
+
 def test_runner_skips_missing_environment_before_provider_or_git(
     tmp_path: Path,
 ) -> None:
@@ -919,12 +1099,36 @@ def test_runner_skips_missing_environment_before_provider_or_git(
     assert outcome.failure_record_path is None
 
 
+def test_runner_skips_without_live_network_confirmation_before_provider_or_git(
+    tmp_path: Path,
+) -> None:
+    def forbidden_provider():
+        raise AssertionError("provider factory must not be called")
+
+    def forbidden_git():
+        raise AssertionError("git state must not be read")
+
+    outcome = run_live_evaluation(
+        env=REQUIRED_ENV,
+        repo_root=tmp_path,
+        provider_factory=forbidden_provider,
+        git_state_reader=forbidden_git,
+    )
+
+    assert outcome.status == "skip"
+    assert outcome.exit_code == 0
+    assert outcome.reasons == ["live_network_not_confirmed"]
+    assert outcome.report_path is None
+    assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
+
+
 def test_runner_rejects_dirty_tracked_tree_before_network(tmp_path: Path) -> None:
     def forbidden_provider():
         raise AssertionError("provider factory must not be called")
 
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=forbidden_provider,
         git_state_reader=lambda: GitState(
@@ -946,7 +1150,7 @@ def test_runner_simulated_pass_writes_report_and_attestation(
     provider = SequenceProvider(simulated_live_answers())
 
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=lambda: provider,
         git_state_reader=lambda: GitState(
@@ -982,7 +1186,7 @@ def test_runner_trustworthy_failure_writes_failure_record_without_attestation(
     provider = SequenceProvider(answers)
 
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=lambda: provider,
         git_state_reader=lambda: GitState(
@@ -1007,6 +1211,98 @@ def test_runner_trustworthy_failure_writes_failure_record_without_attestation(
     assert failure_record["conformance_status"] == "fail"
 
 
+def test_runner_all_unavailable_attempts_are_transport_blocked_without_tracked_evidence(
+    tmp_path: Path,
+) -> None:
+    provider = UnavailableProvider()
+
+    outcome = run_live_evaluation(
+        env=CONFIRMED_ENV,
+        repo_root=tmp_path,
+        provider_factory=lambda: provider,
+        git_state_reader=lambda: GitState(
+            commit="abc123",
+            tracked_clean=True,
+        ),
+        api_case_runner=lambda repo_path, env, timeout_seconds: simulated_unavailable_api_result(),
+    )
+
+    assert outcome.status == "blocked"
+    assert outcome.exit_code == 1
+    assert outcome.reasons == ["transport_blocked"]
+    assert outcome.report_path is not None and outcome.report_path.is_file()
+    assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
+    report = json.loads(outcome.report_path.read_text(encoding="utf-8"))
+    assert report["status"] == "transport_blocked"
+    assert report["cases"][0]["metrics"]["availability"] == "unavailable"
+    assert report["cases"][0]["diagnostics"] == {
+        "phase": "provider_http_request",
+        "error_class": "ConnectError",
+        "status_class": "network_error",
+    }
+    serialized = json.dumps(report, ensure_ascii=False).casefold()
+    for forbidden in (
+        "test_api_key_canary",
+        "https://api.deepseek.com",
+        "raw_prompt",
+        "full_prompt",
+        "evidencepack",
+        "traceback",
+        "http_payload",
+    ):
+        assert forbidden not in serialized
+
+
+def test_runner_partial_provider_contact_is_transport_blocked_without_failure_record(
+    tmp_path: Path,
+) -> None:
+    provider = PartiallyUnavailableProvider(simulated_live_answers())
+
+    outcome = run_live_evaluation(
+        env=CONFIRMED_ENV,
+        repo_root=tmp_path,
+        provider_factory=lambda: provider,
+        git_state_reader=lambda: GitState(
+            commit="abc123",
+            tracked_clean=True,
+        ),
+        api_case_runner=lambda repo_path, env, timeout_seconds: simulated_api_result(),
+    )
+
+    assert outcome.status == "blocked"
+    assert outcome.exit_code == 1
+    assert outcome.reasons == ["transport_blocked"]
+    assert outcome.report_path is not None and outcome.report_path.is_file()
+    assert outcome.attestation_path is None
+    assert outcome.failure_record_path is None
+
+
+def test_runner_main_prints_blocked_label(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        live_eval_runner,
+        "run_live_evaluation",
+        lambda **kwargs: live_eval_runner.LiveEvaluationOutcome(
+            status="blocked",
+            exit_code=1,
+            reasons=["transport_blocked"],
+            report_path=tmp_path / "report.json",
+        ),
+    )
+
+    exit_code = live_eval_runner.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "BLOCKED live model provider eval: transport_blocked" in captured.out
+    assert "report=" in captured.out
+
+
 def test_runner_api_subprocess_failure_does_not_add_spurious_call_count_failure(
     tmp_path: Path,
 ) -> None:
@@ -1021,7 +1317,7 @@ def test_runner_api_subprocess_failure_does_not_add_spurious_call_count_failure(
     )
 
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=lambda: provider,
         git_state_reader=lambda: GitState(
@@ -1052,7 +1348,7 @@ def test_runner_call_count_integrity_failure_writes_no_tracked_evidence(
     )
 
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=lambda: provider,
         git_state_reader=lambda: GitState(
@@ -1088,7 +1384,7 @@ def test_runner_integrity_exception_type_preserves_fail_exit_code(
         raise_integrity,
     )
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=lambda: provider,
         git_state_reader=lambda: GitState(
@@ -1115,7 +1411,7 @@ def test_runner_deadline_integrity_failure_writes_no_tracked_evidence(
     )
 
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=lambda: provider,
         git_state_reader=lambda: GitState(
@@ -1143,7 +1439,7 @@ def test_runner_rechecks_git_state_before_attestation(tmp_path: Path) -> None:
     )
 
     outcome = run_live_evaluation(
-        env=REQUIRED_ENV,
+        env=CONFIRMED_ENV,
         repo_root=tmp_path,
         provider_factory=lambda: provider,
         git_state_reader=lambda: next(states),

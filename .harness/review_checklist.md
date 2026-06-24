@@ -1,44 +1,49 @@
 # 当前 Review 清单
 
-Active change：`revalidate-deepseek-provider-conformance`。风险级别：high。
+Active change：`classify-live-eval-transport-blockers`。风险级别：high。
 
 ## Scope
 
-- [x] 仅重新执行既有 DeepSeek live conformance gate，不修改 runtime/evaluator/tests。
-- [x] 历史 evaluated-failure record 保持不可变。
-- [x] PASS-only attestation contract、hard gates 与退出码保持不变。
-- [x] PASS attestation 是唯一认证证据；有效 FAIL record 仅为当前分支暂停现场证据。
-- [x] `.env.live` wrapper 只做同进程 key presence，不打印值、不额外诊断。
+- [x] 仅修改 live evaluator 的 transport/sandbox/provider-contact blocker 分类与脱敏诊断。
+- [x] 保持历史 evidence 不可变，不回改 paused revalidation artifact。
+- [x] PASS attestation 仍是唯一认证证据；transport blocker 不生成 tracked conformance evidence。
+- [x] Conformance FAIL 只有在所有 required live provider attempts 都具备可评价 provider contact 时才允许 evaluated-failure record。
+- [x] Plan review P1 fixed：partial provider contact 不能证明 round-level evaluability；任一 required attempt blocked 则整轮 transport/integrity blocked。
+- [x] Plan review P2 fixed：missing network confirmation = `SKIP ... live_network_not_confirmed` / exit 0；during-run transport blocker = `BLOCKED ... transport_blocked` / exit 1；runner bug = `ERROR ...` / exit 2。
+- [x] `REPOPILOT_LIVE_NETWORK_CONFIRMED=1` 只表示操作者显式声明/授权，不证明技术网络可达。
 - [x] 默认 verify/CI 保持离线 deterministic。
 - [x] 不创建 V24。
 
-## Pre-Live Verification
+## Planning
 
-- [x] Planning/OpenSpec/Harness artifacts 完成 internal review；独立 plan review session `ses_10b1cdbe4ffeA5IpfyFePB2W44` 无剩余 P0-P2。
-- [x] Review P1/P2 follow-up closed：FAIL record 写入边界已纳入 Harness，`.env.live` live wrapper 已明确。
-- [x] Focused evaluator tests 通过：`pytest tests/test_live_model_provider_eval.py -q` = 57 passed。
-- [x] Full deterministic verify 通过：`scripts/verify.ps1` = 391 passed, 1 skipped；ruff、stage docs、skill eval 通过。
-- [x] OpenSpec strict/all、stage docs checks 与 `git diff --check` 通过：20/20 OpenSpec items passed，stage docs valid，diff check clean。
-- [x] Live 配置五个必需 key 完整，值未打印；仅执行 key presence check，未发送 provider/model 诊断请求。
-- [x] Final pre-live commit 已提交且 tracked tree clean。
+- [x] OpenSpec proposal/design/spec/tasks 与 Harness 边界完成 internal review；diagnostics 从既有 provider audit 派生，不修改 `app/**`。
+- [x] OpenSpec strict/all、stage docs checks 与 `git diff --check` 通过：`classify-live-eval-transport-blockers` valid，OpenSpec 21/21，stage docs valid，diff check clean。
+- [x] 用户确认后进入 TDD implementation。
 
-## Formal Review
+## Implementation / Verification
 
-- Gate marker: `formal_review_evidence_gate`
-- Policy marker: `continuous_authorization_does_not_replace_formal_review`
-- Timing marker: `formal_review_after_final_runtime_tests`
-- [x] Internal review covers commit identity、no retry、evidence exclusivity and historical evidence immutability；无阻断 finding。
-- [x] Independent adversarial review covers stale evidence、false certification、redaction and network isolation；focused `opencode run` returned `No P0/P1/P2 blockers`，且未读取 `.env.live`。
-- [x] `manual_stage_debt_sweep_completed`：仅检查 live runner/entrypoint 的直接依赖和 closeout docs，不扩展 runtime debt；无本 change 需处理 finding。
+- Gate marker：`formal_review_evidence_gate`
+- Policy marker：`continuous_authorization_does_not_replace_formal_review`
+- Timing marker：`formal_review_after_final_runtime_tests`
+- [x] RED tests cover redacted transport metadata, all-unavailable blocker, partial-contact blocker, full-contact conformance FAIL, live shell guard, builder-level provider-contact guard, diagnostic code sanitization and no tracked evidence.
+- [x] Focused evaluator tests passed：`pytest tests/test_live_model_provider_eval.py -q` → `64 passed in 1.28s`。
+- [x] Full deterministic verify passed：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` → `398 passed, 1 skipped`; ruff passed; stage docs scan passed; skill eval structure scan passed。
+- [x] OpenSpec / docs / diff checks passed after final runtime/test change：
+  - `openspec validate classify-live-eval-transport-blockers --strict` → valid
+  - `openspec validate --all` → 21 passed, 0 failed
+  - `powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1` → valid
+  - `git diff --check` → clean except existing CRLF normalization warnings
+- [x] Internal review covers evidence lifecycle, redaction, shell guard and historical evidence immutability.
+  - Finding fixed：`build_evaluated_failure_record()` now rejects reports where any required provider case lacks evaluable provider contact.
+  - Finding fixed：transport diagnostic `error_class` is reduced to a safe code token before serialization.
+- [x] Independent adversarial review completed with no P0/P1 findings.
+  - P2.1 triage：grounded diagnostics concern rejected/covered; `GroundedAnswerGenerator` already preserves allowlisted `error_class`, and regression test now confirms unavailable grounded case reports redacted diagnostics.
+  - P2.2 triage：`api_subprocess_error` / `run_timeout` remain existing integrity-failure paths with no tracked evidence; not reclassified as transport blocker in this change.
+- [x] `manual_stage_debt_sweep_completed`：inspected changed evaluator paths, `scripts/run_live_model_eval.ps1`, `app/providers/model_provider.py`, and `app/answering/grounded_answer.py`.
+  - No `app/**` runtime changes.
+  - Provider `error_class` source is class-name based; evaluator sanitizer still fails closed for malformed values.
+  - `system_fingerprint` remains redacted to status, and attestation/failure record allowlists remain narrow.
+  - Local report / attestation / evaluated-failure writers still use exclusive-create semantics.
 - [x] `formal_review_findings_closed`。
-
-## Live And Closeout
-
-- [x] 用户明确确认后执行一次完整 8-call live gate；无 retry、无模型切换、无额外诊断请求。
-- [x] Outcome 由 stdout 与 evidence path 共同判定：exit 1 且 stdout 包含 `failure_record=docs/evals/live-model-provider/failures/20260624-013028.json`。
-- [x] PASS 时只有 attestation；本次只生成当前分支暂停现场 artifact，未生成 attestation，不 archive/merge/push。
-- [x] Final evidence review verifies report hash、tested commit、UTC、profile/model、rubric、10 cases、8 runner/provider-attempts and redaction；failed gates 包含 `usage_incomplete`，因此不估算通过态成本、不生成认证。
-- [x] Provider-side no-request observation invalidates interpreting this as DeepSeek conformance FAIL；treat as provider-contact unverified transport/integrity blocker.
-- [ ] Archive/merge/push 仅在 PASS attestation 与所有 review findings 关闭后执行。
-- [ ] Archive sync 保留长期 spec 的全部 6 个 requirement，并加入独立 revalidation scenario。
+- [ ] Archive/merge/push only after deterministic verification, formal review and OpenSpec archive sync pass.
 - [x] `future_stage_only`：V24 不在本 change 内创建。
