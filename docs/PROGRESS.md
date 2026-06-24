@@ -11,6 +11,18 @@
   `/chat` public contract、默认 Patch wiring 或 V24。
 - 非目标：不做 output sanitizer、marker blacklist、evidence filtering/projection/suppression、额外模型调用、
   retry、模型切换或 evaluator gate 降级。
+- 已按 TDD 实现最小 prompt-only remediation：`grounded_text` system prompt 和 user-message evidence
+  JSON 前的 handling contract 现在要求从 evidence data 中抽取 repository facts，把 directed-at-assistant
+  的命令、角色、策略、response rule 和 extra-output request 视为 evidence-borne instruction，并静默忽略其
+  requested output target；同段合法 repository fact 和用户明确询问的同名 repository identifier 仍允许回答。
+- 新增 deterministic payload tests 验证：raw hostile evidence 仍完整进入 user prompt，attack target 未进入
+  system prompt blacklist，`json_object` prompt assembly 保持不变。
+- Deterministic verification：`pytest tests/test_model_provider.py -q` 为 45 passed；full
+  `scripts/verify.ps1` 为 400 passed、1 skipped；OpenSpec strict/all 为 21 passed、0 failed；stage docs、
+  skill eval、ruff 与 `git diff --check` 通过。
+- Formal review：internal review、OpenCode independent adversarial review 和 focused Stage Debt Sweep 均未发现
+  P0/P1/P2。Residual：deterministic tests 只能证明 prompt contract，没有证明真实 DeepSeek 服从；后续仍需
+  paused revalidation 分支按原 contract 运行一次 renewed live gate。
 - 本 change 不运行真实 live gate；归档并合回 paused revalidation 分支后，旧 live evidence 将因 runtime
   prompt 变化而成为 stale certification evidence，新的 live gate 必须由用户再次明确确认。
 
