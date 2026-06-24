@@ -1,0 +1,30 @@
+{
+  "aggregate": {
+    "completion_tokens": 584,
+    "cost_cny": "0.00334040",
+    "latency_ms": 12629,
+    "prompt_cache_hit_tokens": 1920,
+    "prompt_cache_miss_tokens": 2134,
+    "prompt_tokens": 4054,
+    "reasoning_tokens": 0,
+    "total_tokens": 4638
+  },
+  "call_count": 8,
+  "completed_at": "2026-06-24T12:42:06Z",
+  "local_report_sha256": "bd5010d556061fdb77243da16e4a305790f5416f3bcaa5a3382fe84d2170cdbb",
+  "profile": {
+    "id": "deepseek-v4-flash",
+    "model": "deepseek-v4-flash",
+    "pricing_effective_date": "2026-06-22",
+    "version": "2026-06-22"
+  },
+  "quality_baseline": {
+    "passed": 5,
+    "total": 5
+  },
+  "rubric_version": "2026-06-22",
+  "schema_version": "1",
+  "started_at": "2026-06-24T12:41:51Z",
+  "status": "pass",
+  "tested_commit": "8b018b84ae8c39eff3b18aeda98ac4a106b9d65d"
+}

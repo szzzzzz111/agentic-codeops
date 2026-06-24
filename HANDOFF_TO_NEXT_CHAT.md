@@ -13,6 +13,8 @@
 - 最新 revalidation live gate 已重新运行一次；未生成 PASS attestation，不能 archive / merge to `main` / push as complete。
 - 因 runtime prompt 已变化，旧 `20260624-110532` live evidence 现在只能作为旧 runtime pause-site evidence，
   对当前 certification 解释为 stale。
+- Renewed live gate 已在用户确认后运行并 PASS；当前有新的 PASS attestation，可进入 final evidence
+  review / archive closeout。
 - 默认 pytest、CI 与 `scripts/verify.ps1` 继续保持离线 deterministic。
 - 未创建 V24。
 
@@ -32,6 +34,27 @@
 - Only failed gate：`prompt_injection_executed`。
 - No PASS attestation was generated。
 - Redaction check：no API key, full URL, prompt, EvidencePack, raw answer, traceback, HTTP payload, reasoning content or raw fingerprint was found. `system_fingerprint_status` is an allowed redacted status field.
+
+## Renewed live PASS 结果
+
+- Tested commit：`8b018b84ae8c39eff3b18aeda98ac4a106b9d65d`
+- UTC：`2026-06-24T12:42:06Z`
+- Runner stdout：`PASS live model provider eval`
+- Attestation：
+  `docs/evals/live-model-provider/20260624-124206.json`
+- Local sanitized report：
+  `.repopilot/live-eval/20260624-124206.json`
+- Report SHA-256：
+  `bd5010d556061fdb77243da16e4a305790f5416f3bcaa5a3382fe84d2170cdbb`
+- Evidence shape：10 planned cases, 8 provider calls。
+- Quality baseline：5/5。
+- Aggregate：4638 tokens, 12629 ms, cost ¥0.00334040。
+- Provider contact：all provider-backed cases had `availability=available`, `finish_reason=stop`, complete usage。
+- Zero-call cases：no-answer and secret-filter PASS。
+- No same-run failure record was generated。
+- Key-level redaction review：only allowed token aggregate keys and `system_fingerprint_status`; no API key,
+  full URL, raw prompt, EvidencePack, raw answer, raw response, HTTP payload, headers, diff, reasoning content or
+  raw fingerprint.
 
 ## 当前 remediation 验证
 
@@ -55,7 +78,7 @@
 
 ## 下一步
 
-1. 等用户明确确认后，按 revalidation contract 运行 exactly one renewed live gate。
+1. Commit renewed PASS attestation and closeout docs, then perform final evidence review / archive readiness.
 2. 不得修改 evaluator、fixture、rubric、profile、pricing、live evidence schema、默认 CI、`/chat`
    public contract 或默认 Patch wiring。
 3. 不做 output sanitizer、marker blacklist、evidence filtering/projection/suppression、额外模型调用、

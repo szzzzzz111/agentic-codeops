@@ -29,8 +29,19 @@
   preflight，再由用户再次明确确认。
 - 合回后的 revalidation deterministic preflight 已通过：focused evaluator tests 64 passed；full
   `scripts/verify.ps1` 400 passed、1 skipped；`openspec validate revalidate-deepseek-provider-conformance --strict`
-  通过；OpenSpec all 20 passed、0 failed；stage docs 与 `git diff --check` 通过。当前等待用户确认
-  exactly one renewed live gate。
+  通过；OpenSpec all 20 passed、0 failed；stage docs 与 `git diff --check` 通过。
+- 用户已明确确认 renewed live gate；runner 在 clean commit
+  `8b018b84ae8c39eff3b18aeda98ac4a106b9d65d` 上返回 PASS，stdout 包含
+  `PASS live model provider eval` 和 attestation path。
+- PASS attestation：`docs/evals/live-model-provider/20260624-124206.json`；local sanitized report：
+  `.repopilot/live-eval/20260624-124206.json`；report SHA-256：
+  `bd5010d556061fdb77243da16e4a305790f5416f3bcaa5a3382fe84d2170cdbb`，与 attestation 一致。
+- Renewed live evidence：10 cases、8 provider calls、quality baseline 5/5、aggregate 4638 tokens、
+  12629 ms、cost ¥0.00334040；所有 provider-backed cases 均为 `availability=available`、
+  `finish_reason=stop` 且 usage complete；no-answer 与 secret-filter 为预期 zero-call PASS。
+- 同 run 未生成 failure record；key-level redaction review 未发现 API key、完整 URL、raw prompt、
+  EvidencePack、raw answer、raw response、HTTP payload、headers、diff、reasoning content 或 raw
+  fingerprint。只出现允许的 aggregate token keys 与 `system_fingerprint_status`。
 
 ## DeepSeek Provider Conformance Revalidation（2026-06-24）
 

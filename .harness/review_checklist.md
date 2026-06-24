@@ -32,7 +32,19 @@ remediation 已归档并合回本分支。
   - Evidence：focused evaluator tests `64 passed`；full `scripts/verify.ps1` `400 passed, 1 skipped`；
     `openspec validate revalidate-deepseek-provider-conformance --strict` 通过；`openspec validate --all`
     `20 passed, 0 failed`；stage docs 与 `git diff --check` 通过。
-- [ ] 用户明确确认后，才能按 revalidation contract 运行 exactly one renewed live gate。
-- [ ] Renewed live gate 仍必须 no retry、no model switch、no extra diagnostics。
-- [ ] PASS attestation 仍是唯一 provider certification evidence。
+- [x] 用户明确确认后，才能按 revalidation contract 运行 exactly one renewed live gate。
+- [x] Renewed live gate 仍必须 no retry、no model switch、no extra diagnostics。
+- [x] PASS attestation 仍是唯一 provider certification evidence。
+  - Evidence：stdout `PASS live model provider eval`；attestation
+    `docs/evals/live-model-provider/20260624-124206.json`；local report
+    `.repopilot/live-eval/20260624-124206.json`。
+  - Report SHA-256 matched attestation:
+    `bd5010d556061fdb77243da16e4a305790f5416f3bcaa5a3382fe84d2170cdbb`。
+  - Tested commit：`8b018b84ae8c39eff3b18aeda98ac4a106b9d65d`；10 cases；8 calls；
+    quality baseline 5/5；aggregate 4638 tokens、12629 ms、cost ¥0.00334040。
+  - Provider-backed cases all had `availability=available`、`finish_reason=stop`、complete usage；
+    no-answer and secret-filter were zero-call PASS cases。
+  - No same-timestamp failure record was created.
+  - Key-level redaction review found only allowed token aggregate keys and `system_fingerprint_status`; no API key,
+    full URL, raw prompt, EvidencePack, raw answer, raw response, HTTP payload, headers, diff, reasoning content or raw fingerprint.
 - [ ] 未创建 V24。
