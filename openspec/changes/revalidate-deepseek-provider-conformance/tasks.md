@@ -19,8 +19,8 @@
 ## 4. Live Conformance Gate
 
 - [x] 4.1 Obtain explicit user confirmation and run exactly one complete DeepSeek live gate with no retry or extra diagnostic calls.
-- [x] 4.2 Classify outcome from stdout plus evidence paths, not exit code alone; PASS did not occur, and the runner-produced failure artifact is retained only as pause-site evidence after provider-side no-request observation invalidated conformance interpretation.
-- [x] 4.3 Verify report hash, tested commit, UTC, profile/model, rubric, 10 cases, 8 calls, hard gates, metrics, cost and redaction.
+- [x] 4.2 Classify outcome from stdout plus evidence paths, not exit code alone; PASS did not occur, and the latest runner-produced failure artifact is retained as trustworthy provider conformance FAIL pause-site evidence.
+- [x] 4.3 Verify report hash, tested commit, UTC, profile/model, rubric, 10 cases, 8 calls, hard gates, complete provider contact, metrics, cost and redaction.
 
 ## 5. Closeout
 

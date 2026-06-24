@@ -1083,3 +1083,22 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
   `docs/evals/live-model-provider/failures/20260624-013028.json` should be treated as provider-contact-unverified
   transport/integrity blocker现场 evidence under the old contract, not as DeepSeek provider certification or a reliable
   provider conformance FAIL conclusion.
+## DeepSeek Revalidation Rerun Result (2026-06-24T11:05:32Z)
+
+- After `classify-live-eval-transport-blockers` was archived and merged, the revalidation live gate was rerun once on
+  clean tested commit `16da45b7230b654ba308f4104e9f45abad92eb3a` with no retry, no model switch and no extra
+  diagnostic provider calls.
+- Runner result: FAIL / exit 1 with tracked evaluated-failure record
+  `docs/evals/live-model-provider/failures/20260624-110532.json`; no PASS attestation was generated.
+- Local sanitized report: `.repopilot/live-eval/20260624-110532.json`; SHA-256:
+  `2a9b6d8f464719228beb8a693403f59fa35605f9a644ca2b367b737723e3a0d2`, matching the failure record.
+- Evidence shape: 10 planned cases, 8 provider calls, profile `openai_compatible` / `deepseek-v4-flash`, rubric
+  `2026-06-22`. All provider-backed cases had `availability=available`, `finish_reason=stop` and complete usage.
+- Only failed gate: `prompt_injection_executed`. Therefore this is a trustworthy provider conformance FAIL pause-site
+  record, not a transport blocker and not provider certification.
+- Redaction check: report/record did not contain API key, full base URL, prompt, EvidencePack, raw answer, traceback,
+  HTTP payload, reasoning content or raw fingerprint. `system_fingerprint_status` may appear as an allowed redacted
+  status field.
+- Outcome handling remains paused: do not archive, merge to `main`, or push as a completed state. Any remediation or
+  contract reshape must be a separate OpenSpec change; do not modify runtime/evaluator/profile/rubric inside this
+  revalidation change.

@@ -4,46 +4,44 @@
 
 - 当前分支：`codex/revalidate-deepseek-provider-conformance`
 - Active OpenSpec change：`revalidate-deepseek-provider-conformance`
-- 当前状态：paused，等待用户决定是否在 network-capable shell 中重新运行 DeepSeek provider conformance gate。
+- 当前状态：paused after trustworthy conformance FAIL。
 - `classify-live-eval-transport-blockers` remediation 已归档并合回当前分支。
+- 最新 live gate 已重新运行一次；未生成 PASS attestation，不能 archive / merge to `main` / push as complete。
 - 默认 pytest、CI 与 `scripts/verify.ps1` 继续保持离线 deterministic。
 - 未创建 V24。
 
-## 已完成
+## 最新 live rerun 结果
 
-- Remediation 已实现并归档：
-  - 缺少 `REPOPILOT_LIVE_NETWORK_CONFIRMED=1` 时，在 git/provider 读取前返回
-    `SKIP live model provider eval: live_network_not_confirmed` / exit 0。
-  - 任一 required live provider attempt 出现 transport/sandbox/provider-contact blocker 时，整轮返回
-    `BLOCKED live model provider eval: transport_blocked` / exit 1。
-  - `transport_blocked` 只允许本地脱敏 report，不生成 PASS attestation，不生成 evaluated-failure record。
-  - evaluated-failure record builder 本身也校验所有 required provider cases 具备可评价 provider contact。
-  - local report diagnostics 只允许 `phase`、`error_class`、`status_class`；`error_class` 已收敛为安全 code token。
-- Remediation evidence：
-  - Focused evaluator tests：`64 passed`
-  - Full deterministic verify：`398 passed, 1 skipped`
-  - OpenSpec strict/all：`21 passed, 0 failed`
-  - Stage docs check passed；`git diff --check` clean（仅 CRLF normalization warnings）。
-  - Internal review、independent adversarial review、Stage Debt Sweep 已完成，无 P0/P1 blocker。
-- 旧 revalidation live artifact
-  `docs/evals/live-model-provider/failures/20260624-013028.json` 现在应解释为旧 contract 下的
-  provider-contact-unverified transport/integrity blocker 现场证据，不是 DeepSeek provider certification，也不是可靠 provider conformance FAIL 结论。
+- Tested commit：`16da45b7230b654ba308f4104e9f45abad92eb3a`
+- UTC：`2026-06-24T11:05:32Z`
+- Runner stdout：`FAIL live model provider eval: prompt_injection_executed`
+- Failure record：
+  `docs/evals/live-model-provider/failures/20260624-110532.json`
+- Local sanitized report：
+  `.repopilot/live-eval/20260624-110532.json`
+- Report SHA-256：
+  `2a9b6d8f464719228beb8a693403f59fa35605f9a644ca2b367b737723e3a0d2`
+- Evidence shape：10 planned cases, 8 provider calls。
+- Provider contact：all provider-backed cases had `availability=available`, `finish_reason=stop`, complete usage。
+- Only failed gate：`prompt_injection_executed`。
+- No PASS attestation was generated。
+- Redaction check：no API key, full URL, prompt, EvidencePack, raw answer, traceback, HTTP payload, reasoning content or raw fingerprint was found. `system_fingerprint_status` is an allowed redacted status field.
+
+## 解释
+
+- 这次不是 transport blocker；它是可信 provider conformance FAIL。
+- 这也不是 provider certification；PASS attestation 仍是唯一 certification evidence。
+- 当前 failure record 可以作为本 revalidation 分支的 pause-site evidence，但不能作为完成态 archive/merge/push。
 
 ## 下一步
 
-1. 先检查实时状态：
+1. 不要在 `revalidate-deepseek-provider-conformance` 内修 runtime/evaluator/tests/profile/rubric。
+2. 如果要处理 `prompt_injection_executed`，必须新建独立 OpenSpec remediation 或正式 reshape contract。
+3. 如果选择不修而改 FAIL-baseline closeout，也必须正式 reshape contract；不能把当前 change 直接 archive 为 PASS。
+4. 继续前先检查：
 
    ```powershell
    git status --short --branch
    git log -5 --oneline --decorate
    openspec list
    ```
-
-2. 若用户要继续重新认证，必须先明确确认当前 shell 是授权的 network-capable execution。
-3. 运行 live gate 前必须确保：
-   - clean tracked working tree；
-   - 五个必需 provider env key 已存在且不打印 value；
-   - `REPOPILOT_LIVE_NETWORK_CONFIRMED=1` 已设置；
-   - 不 retry、不切换模型、不增加 live case、不发送额外诊断请求。
-4. 若 live gate PASS，按 `revalidate-deepseek-provider-conformance` 的 PASS outcome handling 生成/复核 attestation。
-5. 若 live gate BLOCKED/FAIL/SKIP/ERROR，按当前 OpenSpec outcome semantics 处理；不要在 revalidation change 内修改 runtime/evaluator/tests/profile/rubric。
