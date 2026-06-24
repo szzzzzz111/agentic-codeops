@@ -16,20 +16,21 @@ Active change：`revalidate-deepseek-provider-conformance`。风险级别：high
 
 - [x] Planning/OpenSpec/Harness artifacts 完成 internal review；独立 plan review session `ses_10b1cdbe4ffeA5IpfyFePB2W44` 无剩余 P0-P2。
 - [x] Review P1/P2 follow-up closed：FAIL record 写入边界已纳入 Harness，`.env.live` live wrapper 已明确。
-- [ ] Focused evaluator tests 与 full deterministic verify 通过。
-- [ ] OpenSpec strict/all、stage docs checks 与 `git diff --check` 通过。
-- [ ] Live 配置五个必需 key 完整，值未打印。
-- [ ] Final pre-live commit 已提交且 tracked tree clean。
+- [x] Focused evaluator tests 通过：`pytest tests/test_live_model_provider_eval.py -q` = 57 passed。
+- [x] Full deterministic verify 通过：`scripts/verify.ps1` = 391 passed, 1 skipped；ruff、stage docs、skill eval 通过。
+- [x] OpenSpec strict/all、stage docs checks 与 `git diff --check` 通过：20/20 OpenSpec items passed，stage docs valid，diff check clean。
+- [x] Live 配置五个必需 key 完整，值未打印；仅执行 key presence check，未发送 provider/model 诊断请求。
+- [x] Final pre-live commit 已提交且 tracked tree clean。
 
 ## Formal Review
 
 - Gate marker: `formal_review_evidence_gate`
 - Policy marker: `continuous_authorization_does_not_replace_formal_review`
 - Timing marker: `formal_review_after_final_runtime_tests`
-- [ ] Internal review covers commit identity、no retry、evidence exclusivity and historical evidence immutability.
-- [ ] Independent adversarial review covers stale evidence、false certification、redaction and network isolation.
-- [ ] `manual_stage_debt_sweep_completed`：仅检查 live runner/entrypoint 的直接依赖和 closeout docs，不扩展 runtime debt。
-- [ ] `formal_review_findings_closed`。
+- [x] Internal review covers commit identity、no retry、evidence exclusivity and historical evidence immutability；无阻断 finding。
+- [x] Independent adversarial review covers stale evidence、false certification、redaction and network isolation；focused `opencode run` returned `No P0/P1/P2 blockers`，且未读取 `.env.live`。
+- [x] `manual_stage_debt_sweep_completed`：仅检查 live runner/entrypoint 的直接依赖和 closeout docs，不扩展 runtime debt；无本 change 需处理 finding。
+- [x] `formal_review_findings_closed`。
 
 ## Live And Closeout
 

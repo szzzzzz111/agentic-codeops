@@ -6,15 +6,15 @@
 
 ## 2. Deterministic Preflight
 
-- [ ] 2.1 Run focused evaluator tests and full deterministic `scripts/verify.ps1`.
-- [ ] 2.2 Run OpenSpec strict/all validation, stage checks and `git diff --check`.
-- [ ] 2.3 Confirm the ignored live configuration is complete without printing values or sending diagnostic model calls.
+- [x] 2.1 Run focused evaluator tests and full deterministic `scripts/verify.ps1`.
+- [x] 2.2 Run OpenSpec strict/all validation, stage checks and `git diff --check`.
+- [x] 2.3 Confirm the ignored live configuration is complete without printing values or sending diagnostic model calls.
 
 ## 3. Formal Review
 
-- [ ] 3.1 Perform internal review of clean-commit identity, evidence exclusivity, no-retry budget and historical evidence immutability.
-- [ ] 3.2 Perform independent adversarial review of the revalidation plan and preflight evidence.
-- [ ] 3.3 Close all findings and commit the final pre-live documentation state.
+- [x] 3.1 Perform internal review of clean-commit identity, evidence exclusivity, no-retry budget and historical evidence immutability.
+- [x] 3.2 Perform independent adversarial review of the revalidation plan and preflight evidence.
+- [x] 3.3 Close all findings and commit the final pre-live documentation state.
 
 ## 4. Live Conformance Gate
 
