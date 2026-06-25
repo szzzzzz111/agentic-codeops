@@ -20,11 +20,16 @@ Harness owns the writable and review boundary.
 5. Update `.harness/allowed_files.md` and `.harness/review_checklist.md` before
    implementation.
 6. Name only the durable docs whose owned facts will actually change.
-7. Define the internal review target and whether independent external review is
-   required.
-8. Internally review proposal, design, tasks, spec deltas, test plan, and
-   Harness boundaries against each other. Fix contradictions before validation.
-9. Validate the change, summarize stage-level decisions in plain language, and
+7. Define the internal review target and whether Codex independent plan review
+   and OpenCode independent plan review are required. Medium/high stages require
+   both before implementation.
+8. Complete internal plan review of proposal, design, tasks, spec deltas, test
+   plan, and Harness boundaries against each other. Fix contradictions before
+   validation.
+9. For required external plan review, collect Codex independent plan review and
+   OpenCode independent plan review findings or explicit no-findings conclusions,
+   then triage every finding before implementation.
+10. Validate the change, summarize stage-level decisions in plain language, and
    stop at the implementation confirmation gate.
 
 ## Scope Guards
@@ -34,6 +39,9 @@ Harness owns the writable and review boundary.
 - Do not claim roadmap capabilities are implemented.
 - Do not make every durable document mandatory by default.
 - Planning validation proves artifact structure, not design quality.
+- OpenCode plan review should reuse a relevant existing review session when
+  possible; terminal timeout is not a verdict until the session is inspected for
+  final assistant review text.
 - Ask the human partner about intent, non-goals, and sequencing, not line-level
   code review.
 

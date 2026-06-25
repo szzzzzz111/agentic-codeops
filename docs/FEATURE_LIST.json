@@ -223,16 +223,18 @@
   {
     "id": "demo-ready-agent-cli",
     "category": "cli",
-    "description": "Local repopilot CLI thinly maps demo commands to existing ChatService and AgentLoop behavior.",
+    "description": "Local repopilot CLI thinly maps demo commands to existing ChatService and AgentLoop behavior with a demo-ready capability surface.",
     "acceptance_criteria": [
       "ask, patch, patch confirm, patch confirm --verify, verify, status, and audit latest map to existing chat messages",
+      "patch requests map to create patch: <request> without relying on user wording",
       "global --repo, --user-id, and --session-id defaults and overrides are supported",
-      "output includes trace_id, answer, related_files, and tool_calls summaries",
+      "output is sectioned from public trace_id, answer, related_files, and tool_calls only",
       "verification labels are limited to verify, pytest, and ruff",
-      "unsafe verification input and unsafe patch ids are rejected before ChatService",
-      "no new /chat fields, network dependency, default CI change, provider wiring, arbitrary subprocess, or V24 behavior"
+      "patch ids must match ^patch_[A-Za-z0-9_]{1,122}$ and unsafe ids are rejected before ChatService",
+      "unsafe verification input is rejected before ChatService",
+      "no new /chat fields, network dependency, default CI change, provider wiring, arbitrary subprocess, or Verified Patch Promotion"
     ],
     "passes": true,
-    "notes": "Covered by tests/test_cli.py; implemented as a local console script entrypoint app.cli:main."
+    "notes": "Covered by tests/test_cli.py; implemented as a local console script entrypoint app.cli:main. V24 is CLI presentation/command mapping only; Verified Patch Promotion is deferred to V25/backlog."
   }
 ]

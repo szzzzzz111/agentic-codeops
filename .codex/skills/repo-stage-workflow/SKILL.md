@@ -17,18 +17,20 @@ own responsibility.
    commits, active OpenSpec changes, and unrelated local edits.
 2. Classify the stage as `low`, `medium`, or `high` risk using
    `references/workflow-contract.md`.
-3. Use `openspec-stage-planner` to define and internally review the stage
-   contract, non-goals, writable paths, required evidence, and confirmation
-   boundary.
+3. Use `openspec-stage-planner` to define the stage contract, non-goals,
+   writable paths, required evidence, and confirmation boundary. Complete
+   plan-level review before implementation: internal plan review, Codex
+   independent plan review, and OpenCode independent plan review when required.
 4. Use `openspec-apply-change` and `superpowers:test-driven-development` for
    implementation. Do not widen scope to repair unrelated debt.
 5. Run focused deterministic verification after each meaningful slice and the
    repository's full verification after runtime or tests change.
-6. Use `repo-stage-review-loop` after the final implementation change. Review
-   requirements, code, tests, safety boundaries, and changed dependencies.
+6. Use `repo-stage-review-loop` after the final implementation change for final implementation review.
+   Review requirements, code, tests, safety boundaries, and changed dependencies.
 7. When external review is requested or the risk level requires it, give the
-   reviewer an adversarial brief. Use `external-review-triage` to classify each
-   finding as `fix`, `clarify`, `reject`, or `defer`.
+   reviewer an adversarial brief. This applies to plan-level review and final
+   implementation review as separate gates. Use `external-review-triage` to
+   classify each finding as `fix`, `clarify`, `reject`, or `defer`.
 8. Perform a focused Stage Debt Sweep over changed paths and the older paths
    they directly depend on. Record only concrete findings, dispositions, and
    residual risks.

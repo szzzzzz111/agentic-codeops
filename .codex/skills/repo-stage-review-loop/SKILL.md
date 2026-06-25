@@ -7,13 +7,22 @@ description: Use when a RepoPilot plan or implementation needs formal review, wh
 
 ## Core Rule
 
-Review the final implementation state against the approved contract. Passing
-tests and completed tasks are inputs to review, not substitutes for it.
+Review the plan contract before implementation when requested, and review the
+final implementation state against the approved contract after code changes.
+Passing tests and completed tasks are inputs to review, not substitutes for it.
+
+## Plan Contract Review
+
+For plan review, read the proposed plan or active OpenSpec artifacts, Harness
+boundaries, relevant specs, and directly implicated runtime/docs. Report
+severity-ordered findings against intent, scope, non-goals, test plan,
+review gates, and roadmap truth. Medium/high plans should receive internal,
+Codex independent, and OpenCode independent review before implementation.
 
 ## Review Loop
 
-1. Read the active OpenSpec contract, changed files, tests, allowed paths, and
-   current review checklist.
+1. Read the active OpenSpec contract, changed files or plan contract, tests,
+   allowed paths, and current review checklist.
 2. Confirm the review occurs after the latest runtime/test change.
 3. Report severity-ordered findings with file/line evidence, trigger,
    consequence, and missing regression coverage. If there are no findings,

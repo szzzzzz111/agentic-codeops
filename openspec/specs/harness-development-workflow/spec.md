@@ -174,6 +174,43 @@ depth and external-review expectations, but MUST NOT remove TDD, deterministic v
 - **WHEN** a stage changes only development documentation, local skills, or deterministic process checks
 - **THEN** internal review and relevant structural validation are sufficient unless external review is requested
 
+### Requirement: V24 CLI Surface Replaces Previous Promotion Slot
+
+RepoPilot SHALL treat V24 as the CLI Capability Surface / Demo-ready Product Surface stage. The previous Verified Patch Promotion roadmap item MUST be moved to V25 or backlog and MUST NOT be implemented or documented as implemented by this stage.
+
+#### Scenario: V24 planning updates roadmap truth
+
+- **WHEN** V24 CLI Capability Surface planning artifacts and docs are updated
+- **THEN** README, ARCHITECTURE, PROGRESS, HANDOFF, and relevant specs MUST avoid using V24 to mean Verified Patch Promotion
+- **AND** Verified Patch Promotion MUST be described only as a future candidate
+
+### Requirement: Plan Review Gates Precede Implementation
+
+Medium and high risk RepoPilot stages SHALL complete plan-level review before runtime or test implementation begins.
+
+Plan-level review MUST include internal plan review, Codex independent plan review, OpenCode independent plan review, and triage of all findings. Passing OpenSpec validation MUST NOT be treated as plan review.
+
+#### Scenario: Implementation waits for plan review evidence
+
+- **WHEN** a medium or high risk stage reaches the implementation confirmation gate
+- **THEN** internal plan review MUST check proposal, design, tasks, spec deltas, test plan, and Harness boundaries
+- **AND** Codex independent plan review MUST return severity findings or an explicit no-findings conclusion
+- **AND** OpenCode independent plan review MUST return final assistant review text with severity findings or an explicit no-findings conclusion
+- **AND** all plan findings MUST be classified as `fix`, `clarify`, `reject`, or `defer`
+
+#### Scenario: OpenCode review terminal timeout is not a verdict
+
+- **WHEN** an `opencode run` review command times out or does not print a final result
+- **THEN** the agent MUST inspect the relevant OpenCode session for final assistant review text before marking the gate failed
+- **AND** missing final review text remains a blocker unless the user explicitly authorizes a downgrade
+
+#### Scenario: OpenCode review prefers existing review sessions
+
+- **WHEN** an OpenCode plan review is required
+- **THEN** the agent SHOULD run `opencode session list` to find a relevant existing review session
+- **AND** it SHOULD use `opencode run --session <session_id> ...` before creating a new session
+- **AND** the final review evidence MUST identify whether the session was reused or newly created
+
 ### Requirement: External Review Seeks Independent Counterexamples
 
 外部 review SHALL target failure modes not already covered by task completion reporting. Findings SHOULD include
@@ -184,6 +221,12 @@ severity, location, trigger, consequence, and a suggested regression test. Exter
 
 - **WHEN** external feedback only repeats tasks or passing tests without an independent failure hypothesis
 - **THEN** it MUST NOT be treated as meaningful diversity evidence
+
+#### Scenario: Plan reviewer reports findings
+
+- **WHEN** Codex, OpenCode, or another external reviewer reports plan findings
+- **THEN** each finding MUST be classified as `fix`, `clarify`, `reject`, or `defer`
+- **AND** accepted fixes or clarifications MUST be reflected in the plan before implementation begins
 
 ### Requirement: Archive Freezes Reviewed Runtime
 
@@ -292,7 +335,7 @@ The stage MUST keep README truthfulness, OpenSpec artifacts, and Harness boundar
 
 The Demo-ready Agent CLI implementation SHALL be planned and reviewed as a medium-risk user-facing command surface.
 
-It MUST use TDD, update Harness boundaries before runtime/test edits, and preserve existing `/chat`, AgentLoop, ToolExecutor, PermissionPolicy, ApprovalGate, VerificationRunner, Worktree, Audit, provider, and CI boundaries. It MUST NOT introduce V24 promotion, arbitrary shell execution, network dependency, background tasks, subagents, connectors, commit/merge/push automation, or real model patch provider wiring.
+It MUST use TDD, update Harness boundaries before runtime/test edits, and preserve existing `/chat`, AgentLoop, ToolExecutor, PermissionPolicy, ApprovalGate, VerificationRunner, Worktree, Audit, provider, and CI boundaries. It MUST NOT introduce Verified Patch Promotion, arbitrary shell execution, network dependency, background tasks, subagents, connectors, commit/merge/push automation, or real model patch provider wiring.
 
 #### Scenario: CLI implementation starts after planning gate
 

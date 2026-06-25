@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from app.schemas.chat import ChatResponse
+from app.patching.parser import is_patch_proposal_request
 
 
 class RecordingChatService:
@@ -44,7 +45,7 @@ def _run_cli(args: list[str], service: RecordingChatService) -> int:
     ("args", "expected_message"),
     [
         (["ask", "Where is AgentLoop?"], "Where is AgentLoop?"),
-        (["patch", "change app.py"], "change app.py"),
+        (["patch", "change app.py"], "create patch: change app.py"),
         (["patch", "confirm", "patch_20260625_abcd1234"], "confirm patch patch_20260625_abcd1234"),
         (
             ["patch", "confirm", "patch_20260625_abcd1234", "--verify", "verify"],
@@ -71,6 +72,17 @@ def test_cli_maps_supported_commands_to_existing_chat_messages(
     assert service.requests[0].repo_path == "."
     assert service.requests[0].user_id == "cli"
     assert service.requests[0].session_id == "cli"
+
+
+def test_cli_patch_request_message_triggers_existing_patch_intent() -> None:
+    service = RecordingChatService()
+
+    exit_code = _run_cli(["patch", "change README wording"], service)
+
+    assert exit_code == 0
+    message = service.requests[0].message
+    assert message == "create patch: change README wording"
+    assert is_patch_proposal_request(message)
 
 
 def test_cli_accepts_global_scope_overrides() -> None:
@@ -122,12 +134,13 @@ def test_cli_prints_safe_response_summary(capsys: pytest.CaptureFixture[str]) ->
 
     assert exit_code == 0
     output = capsys.readouterr().out
-    assert "trace_id: trace_123" in output
-    assert "answer:" in output
+    assert "Trace" in output
+    assert "trace_123" in output
+    assert "Answer" in output
     assert "grounded answer" in output
-    assert "related_files:" in output
+    assert "Related files" in output
     assert "- app/example.py" in output
-    assert "tool_calls:" in output
+    assert "Tool calls" in output
     assert "- tool_name=repo_rag status=success result_count=2" in output
     assert "- tool_name=verification_run status=success command_label=verify" in output
 
@@ -210,6 +223,45 @@ def test_cli_rejects_unsafe_patch_id_before_chat_service(
     assert "Traceback" not in captured.err
 
 
+@pytest.mark.parametrize(
+    "patch_id",
+    [
+        "patch_a",
+        f"patch_{'a' * 122}",
+    ],
+)
+def test_cli_accepts_runtime_compatible_patch_id_boundaries(patch_id: str) -> None:
+    service = RecordingChatService()
+
+    exit_code = _run_cli(["patch", "confirm", patch_id], service)
+
+    assert exit_code == 0
+    assert service.requests[0].message == f"confirm patch {patch_id}"
+
+
+@pytest.mark.parametrize(
+    "patch_id",
+    [
+        "patch_",
+        f"patch_{'a' * 123}",
+        "patch_abc-123",
+        "id_123",
+    ],
+)
+def test_cli_rejects_runtime_incompatible_patch_id_before_chat_service(
+    patch_id: str,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    service = RecordingChatService()
+
+    exit_code = _run_cli(["patch", "confirm", patch_id], service)
+
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert service.requests == []
+    assert "unsupported patch id" in captured.err
+
+
 def test_cli_returns_usage_exit_code_without_raw_traceback(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -241,3 +293,27 @@ def test_pyproject_exposes_repopilot_console_script() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
 
     assert pyproject["project"]["scripts"]["repopilot"] == "app.cli:main"
+
+
+def test_workflow_skills_define_plan_review_gates() -> None:
+    stage_planner = Path(".codex/skills/openspec-stage-planner/SKILL.md").read_text(encoding="utf-8")
+    workflow = Path(".codex/skills/repo-stage-workflow/SKILL.md").read_text(encoding="utf-8")
+    review_loop = Path(".codex/skills/repo-stage-review-loop/SKILL.md").read_text(encoding="utf-8")
+    triage = Path(".codex/skills/external-review-triage/SKILL.md").read_text(encoding="utf-8")
+
+    assert "internal plan review" in stage_planner
+    assert "Codex independent plan review" in stage_planner
+    assert "OpenCode independent plan review" in stage_planner
+    assert "plan-level review" in workflow
+    assert "final implementation review" in workflow
+    assert "plan contract" in review_loop
+    assert "external plan findings" in triage
+
+
+def test_opencode_plan_review_skill_documents_session_reuse() -> None:
+    skill = Path(".opencode/skills/openspec-plan-review/SKILL.md").read_text(encoding="utf-8")
+
+    assert "opencode session list" in skill
+    assert "opencode run --session <session_id>" in skill
+    assert "terminal output times out" in skill
+    assert "final assistant review text" in skill

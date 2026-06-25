@@ -1,11 +1,31 @@
 # 项目进度
 
+## V24 CLI Capability Surface / Plan Review Workflow Hardening（2026-06-25）
+
+- OpenSpec change `polish-demo-cli-capability-surface` 已归档到
+  `openspec/changes/archive/2026-06-25-polish-demo-cli-capability-surface/`；当前分支：
+  `codex/polish-demo-cli-capability-surface`；风险级别：medium；当前无 active OpenSpec change。
+- V24 已重定义为 CLI Capability Surface / Demo-ready Product Surface：`repopilot` 继续作为 `ChatService.handle_chat()` 的薄入口，展示 grounded answer、patch proposal、explicit apply、deterministic verify、status 和 audit；不修改 `/chat` public contract、provider runtime、live eval、默认 Patch wiring、默认 CI、AgentLoop、ToolExecutor、VerificationRunner、Audit 或 Worktree runtime。
+- 原 Verified Patch Promotion 已顺延为 V25/backlog 候选；本阶段不实现 promotion、commit、merge、push、branch management、PR creation、后台任务、subagents 或 connectors。
+- 计划 review 流程已纳入本阶段：实现前计划 review 必须区分 internal plan review、Codex independent plan review 和 OpenCode independent plan review；OpenCode review 优先复用已有 session，终端超时后先检查 session final assistant review text，再决定 blocker/triage。
+- 当前实现进展：CLI 已固定 `patch "<request>" -> "create patch: <request>"` 映射，patch id validator 固定为 `^patch_[A-Za-z0-9_]{1,122}$`，CLI 输出改为基于公开 `trace_id`、`answer`、`related_files`、`tool_calls` 的人类可读分段。
+- 当前 workflow 进展：已更新 `.codex/skills/openspec-stage-planner`、`repo-stage-workflow`、`repo-stage-review-loop`、`external-review-triage` 和 `.opencode/skills/openspec-plan-review`，覆盖 plan-level review、final implementation review、外部 plan findings triage 和 OpenCode session reuse/timeout 规则。
+- 当前验证 evidence：`openspec validate polish-demo-cli-capability-surface --strict` 通过；`openspec validate --all` 为 21 passed、0 failed；focused CLI tests 为 41 passed；adjacent CLI/API/AgentLoop/Verification regression 为 133 passed；`scripts/verify.ps1` 通过，pytest 441 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warnings。
+- Final review evidence：internal final implementation review 修复了 `docs/PROGRESS.md` 路线图旧口径和长期 spec 中 `V24 promotion` 短语；focused external final review 复用 OpenCode session `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，终端超时后从 session final assistant review text 取证，无 P0/P1。P2.1 `FEATURE_LIST passes:true` vs unchecked checklist 已按 `fix` 通过 checklist 更新关闭；P3 输出风格、parser-coupled test、skill wording tests 和错误消息措辞均分类为 `defer` 或 `clarify`，不阻断。
+- Stage Debt Sweep：覆盖 `app/cli.py`、`tests/test_cli.py`、`app/patching/parser.py` / `ChatService` 邻近 message path、`.codex/skills/**` workflow、`.opencode/skills/openspec-plan-review`、README/ARCHITECTURE/PROGRESS/AGENT_RULES/FEATURE_LIST/HANDOFF、OpenSpec change artifacts、long-term specs 和 Harness files；无新增 blocking debt。
+- Archive evidence：long-term specs 已在 archive 前同步；archive 使用
+  `openspec archive polish-demo-cli-capability-surface --skip-specs --yes`，避免重复应用已同步的
+  delta specs。Archive-after `openspec list` 为 No active changes found；`openspec validate --all`
+  为 20 passed、0 failed；full `scripts/verify.ps1` 通过，pytest 441 passed、1 skipped，ruff、
+  stage docs scan、skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization
+  warnings。
+
 ## Demo-ready Agent CLI Implementation Closeout（2026-06-25）
 
 - OpenSpec change `add-demo-ready-agent-cli` 已归档到 `openspec/changes/archive/2026-06-25-add-demo-ready-agent-cli/`；当前分支：`codex/add-demo-ready-agent-cli`；风险级别：medium；当前无 active OpenSpec change。
 - 已完成 TDD RED -> GREEN：新增 `tests/test_cli.py`，覆盖 `ask`、`patch`、`patch confirm`、`patch confirm --verify`、`verify`、`status`、`audit latest` 到 `ChatService` 的薄映射。
 - 已实现 `app/cli.py` 和 `pyproject.toml` console script：`repopilot = "app.cli:main"`；CLI 默认 `repo_path=.`、`user_id=cli`、`session_id=cli`，支持 `--repo`、`--user-id`、`--session-id` 覆盖。
-- 安全边界保持不变：只接受 `verify`、`pytest`、`ruff` 固定验证标签；unsafe verification input、empty required values 和 unsafe patch id 在调用 `ChatService` 前拒绝；不新增网络依赖、HTTP client mode、provider runtime wiring、默认 CI、`/chat` contract、默认 Patch wiring 或 V24 promotion。
+- 安全边界保持不变：只接受 `verify`、`pytest`、`ruff` 固定验证标签；unsafe verification input、empty required values 和 unsafe patch id 在调用 `ChatService` 前拒绝；不新增网络依赖、HTTP client mode、provider runtime wiring、默认 CI、`/chat` contract、默认 Patch wiring 或 Verified Patch Promotion。
 - Review evidence：内部 final review 无 P0/P1/P2；focused external review 复用 OpenCode session `ses_10290b071ffeLx5JxfppaZ3qfo`，结论无 P0/P1/P2；其非阻塞空值 exit-code 观察已补 RED coverage 并修复。
 - Verification evidence：focused CLI tests 32 passed；adjacent AgentLoop/API/verification regressions 124 passed；pre-archive full `scripts/verify.ps1` 通过，pytest 432 passed、1 skipped；archive-after `openspec validate --all` 20 passed、0 failed；archive-after full `scripts/verify.ps1` 通过，pytest 432 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warning。
 
@@ -647,15 +667,18 @@ RepoPilot 当前定位为面向代码仓库分析任务的可控 Code Agent Harn
 - V18：Patch + Verify Loop。串联明确确认下的 pending patch apply 与白名单 verify，返回组合结果、失败摘要和下一步建议；不自动生成或再次 apply patch，持久恢复由 V19 提供。
 - V19：Persistent Audit / Recovery。用轻量 SQLite 持久化关键 trace、patch attempt、verification result 和 task event，支持跨 session 恢复。
 - V20：Worktree Isolation。在 patch/verify 成熟后引入受控 git worktree，隔离改动和验证，避免污染主工作区。
-- V21（计划候选）：Worktree Inventory / Inspection。保持纯只读，提供 scoped
+- V21（已完成）：Worktree Inventory / Inspection。保持纯只读，提供 scoped
   inventory、diffstat、changed files、限长脱敏 diff preview、验证摘要和一致性检查。
 - V22（已完成）：Worktree Re-verification。明确触发白名单验证重跑，复用现有
   verification 状态，patch 保持 `applied_in_worktree`，每次结果进入脱敏 audit。
-- V23（计划候选）：Worktree Disposal / Reconciliation。明确确认后幂等清理并协调
+- V23（已完成）：Worktree Disposal / Reconciliation。明确确认后幂等清理并协调
   Git registry、目录和 metadata；discard 后使用独立终态，不回退为 `pending`。
-- V24（计划候选）：Verified Patch Promotion。仅提升验证成功且内容完整性校验通过的
-  原始受控 patch；要求主工作区干净且 `HEAD == base_commit`，不自动 commit/push。
-- V24 完成后重新评估 Operator Control、Durable Execution、Background Worker、
+- V24（当前）：CLI Capability Surface / Demo-ready Product Surface。通过 `repopilot`
+  稳定展示已有 grounded answer、patch proposal、explicit apply、deterministic verify、
+  status 和 audit 能力；不改 `/chat` contract、provider runtime 或默认 Patch wiring。
+- V25/backlog 候选：Verified Patch Promotion。仅在独立 OpenSpec change 中重新评估，
+  不写成当前已实现能力。
+- V24 CLI surface 完成后重新评估 Verified Patch Promotion、Operator Control、Durable Execution、Background Worker、
   subagents、connectors、notifications、heartbeat/cron 和 always-on assistant，
   不提前锁定后续顺序或公开 API。
 
@@ -1050,11 +1073,12 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V23 已完成 implementation、review remediation、archive 与 merge；开始下一阶段前先按
-  OpenSpec stage planning 流程重新同步 harness 边界。
+- 当前建议：V24 `polish-demo-cli-capability-surface` 正在实现；继续完成 docs/spec 同步、
+  full verification、final implementation review 和 closeout。
 - 近期路线：V21 inspection、V22 re-verification 与 V23 disposal/reconciliation 已完成；
-  下一阶段推荐规划 V24 verified promotion。
-- V24 完成后重新评估 Operator Control、Durable Execution、Background Worker、
+  V24 为 CLI Capability Surface / Demo-ready Product Surface，Verified Patch Promotion
+  顺延为 V25/backlog 候选。
+- V24 CLI surface 完成后重新评估 Verified Patch Promotion、Operator Control、Durable Execution、Background Worker、
   subagents、connectors、notifications、heartbeat/cron 和 always-on assistant；
   不要写成当前 runtime 已实现能力，也不要提前锁定公开 API。
 - 继续保持不执行 skill，除非后续阶段明确开放。

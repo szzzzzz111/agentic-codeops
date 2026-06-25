@@ -258,14 +258,16 @@ V20 后的近期后端路线按 worktree 生命周期风险递增拆分，避免
    unlock/remove/discard，并协调 Git registry、目录和 metadata 不一致。discard 后
    worktree 转为 `discarded`，patch 转为 `discarded`，不得回退为
    `pending` 或自动重新 apply。
-4. V24 Verified Patch Promotion 仅允许 `verification_succeeded` worktree。promotion
-   前必须确认主工作区干净、`HEAD == base_commit`、不存在目标文件之外的额外修改，
-   且目标文件内容与存储的原始受控 patch 预期结果一致；提升操作重新通过
-   `patch_apply` 应用原始 patch，不直接复制或信任 worktree 当前文件。
+4. V24 CLI Capability Surface / Demo-ready Product Surface 仅把已有 grounded
+   answer、patch proposal、explicit apply、deterministic verify、status 和 audit
+   能力通过 `repopilot` CLI 稳定展示。CLI 只调用 `ChatService.handle_chat()`，
+   输出只基于公开 `trace_id`、`answer`、`related_files`、`tool_calls` 分段呈现；
+   不新增 `/chat` contract、provider runtime、默认 Patch wiring 或写入 executor。
 
-V21-V24 均保持明确命令、scope 校验、`PermissionPolicy -> ApprovalGate ->
-ToolExecutor` 写入边界和脱敏 persistent audit。V24 归档后再重新评估 Operator
-Control、Durable Execution、Background Worker、subagents、connectors 和
+V21-V23 均保持明确命令、scope 校验、`PermissionPolicy -> ApprovalGate ->
+ToolExecutor` 写入边界和脱敏 persistent audit。Verified Patch Promotion 顺延为
+V25/backlog 候选，届时必须重新进入独立 OpenSpec change；V24 归档后再重新评估
+Operator Control、Durable Execution、Background Worker、subagents、connectors 和
 notifications；不提前锁定公开 API 或后台执行模型。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search

@@ -19,8 +19,13 @@
 - `high`：Git/subprocess、持久化、权限、patch 生命周期、公开 API；要求完整独立对抗式 review。
 - 风险分级只调整 review 深度，不取消 TDD、验证和安全边界。
 - 端到端阶段使用 `repo-stage-workflow`；planning、review、handoff skill 各自只承担单一职责。
-- 实现确认前必须对 proposal、design、tasks、spec deltas、测试计划和 Harness 边界做一次内部
-  plan review；OpenSpec validation 不替代该语义检查。
+- 实现确认前必须对 proposal、design、tasks、spec deltas、测试计划和 Harness 边界完成
+  plan review；medium/high 阶段默认包含 internal plan review、Codex independent plan
+  review 和 OpenCode independent plan review。OpenSpec validation 不替代该语义检查。
+- OpenCode 计划 review 优先复用已有相关会话：先 `opencode session list`，再
+  `opencode run --session <session_id> ...`。终端超时后必须先检查 session 是否已产出
+  final assistant review text，不能直接算失败或通过；没有 final text 默认是 blocker，
+  除非用户明确降级授权。
 
 ## 验证与 Review
 
@@ -31,9 +36,11 @@
 powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
-- 正式 review 必须针对最终 runtime/test 状态，并在 archive/merge 前完成。
+- 正式 final implementation review 必须针对最终 runtime/test 状态，并在 archive/merge 前完成；
+  它不能替代实现前 plan review，plan review 也不能替代最终实现 review。
 - 测试、OpenSpec validation、checklist marker 和零散自检不能替代正式 review。
-- 外部 reviewer 应寻找独立反例；finding 按 `fix / clarify / reject / defer` 处理。
+- 外部 reviewer 应寻找独立反例；plan finding 和 implementation finding 都按
+  `fix / clarify / reject / defer` 处理。
 - archive 后如再改 runtime，必须重新验证、review，并重新判断 archive readiness。
 
 ## Stage Debt Sweep

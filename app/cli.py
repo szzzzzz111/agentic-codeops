@@ -10,7 +10,7 @@ from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat_service import ChatService
 
 
-_PATCH_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
+_PATCH_ID_RE = re.compile(r"^patch_[A-Za-z0-9_]{1,122}$")
 _SUPPORTED_VERIFY_LABELS = {"pytest", "ruff", "verify"}
 
 
@@ -103,7 +103,8 @@ def _patch_message(args: Sequence[str]) -> str:
     if args[0] != "confirm":
         if len(args) != 1:
             raise CliUsageError("patch request must be provided as one argument")
-        return args[0]
+        _require_non_empty("message", args[0])
+        return f"create patch: {args[0]}"
 
     if len(args) not in {2, 4}:
         raise CliUsageError("patch confirm requires a patch id and optional --verify label")
@@ -142,17 +143,18 @@ def _require_non_empty(name: str, value: str) -> None:
 
 
 def _print_response(response: ChatResponse, out: TextIO) -> None:
-    print(f"trace_id: {response.trace_id}", file=out)
-    print("answer:", file=out)
+    print("Trace", file=out)
+    print(f"- trace_id: {response.trace_id}", file=out)
+    print("Answer", file=out)
     print(response.answer, file=out)
 
     if response.related_files:
-        print("related_files:", file=out)
+        print("Related files", file=out)
         for path in response.related_files:
             print(f"- {path}", file=out)
 
     if response.tool_calls:
-        print("tool_calls:", file=out)
+        print("Tool calls", file=out)
         for call in response.tool_calls:
             summary = " ".join(f"{key}={value}" for key, value in call.items())
             print(f"- {summary}", file=out)

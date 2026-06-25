@@ -66,7 +66,7 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - [openspec/specs/](openspec/specs/)：长期 capability specs。
 - [HANDOFF_TO_NEXT_CHAT.md](HANDOFF_TO_NEXT_CHAT.md)：下一轮 session 操作上下文。
 
-## Demo-ready CLI
+## V24 Demo-ready CLI
 
 `repopilot` CLI 已实现为本地薄入口：它把命令映射为现有 `ChatService.handle_chat()`
 请求，复用既有 AgentLoop、ToolExecutor、VerificationRunner、Worktree 和 Audit 边界；
@@ -82,13 +82,35 @@ repopilot status
 repopilot audit latest
 ```
 
+V24 将 CLI 定位为 RepoPilot 已有 Agent Harness 能力的 demo-ready 展示面：
+`ask` 展示 grounded answer、related files 和 tool call 摘要；`patch "<request>"`
+固定映射为 `create patch: <request>`，不依赖用户文案是否包含 “patch”；
+patch proposal、confirm、confirm `--verify`、status 和 audit latest 均只基于
+`trace_id`、`answer`、`related_files`、`tool_calls` 做人类可读分段输出。
+
+可录屏 walkthrough：
+
+```powershell
+repopilot ask "这个仓库的 CLI 入口在哪里？"
+repopilot patch "更新 README 中的一个说明句"
+repopilot patch confirm patch_demo_1
+repopilot patch confirm patch_demo_1 --verify verify
+repopilot status
+repopilot audit latest
+```
+
+上述命令展示的是本地 CLI 到现有 ChatService/AgentLoop 能力的稳定映射；默认 fake
+Patch Authoring provider 不生成真实 model-authored diff，示例中的 patch id 需要来自实际
+pending patch proposal 输出。
+
 CLI 只接受固定验证标签 `verify`、`pytest`、`ruff`，拒绝附加 argv、管道、重定向、
-环境变量注入和 unsafe patch id；它不实现 V24 promotion、commit、merge、push、
+环境变量注入和 unsafe patch id；patch id 必须匹配 `^patch_[A-Za-z0-9_]{1,122}$`。
+CLI 不实现 Verified Patch Promotion、commit、merge、push、
 后台任务、subagent 或 connector。
 
 ## 当前快照
 
-- 当前阶段能力：V1-V23 已归档；V23 已实现、review、归档并合并。
+- 当前阶段能力：V1-V23 已归档；V24 `polish-demo-cli-capability-surface` 正在实现 CLI Capability Surface / Demo-ready Product Surface。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -505,7 +527,7 @@ ChatService
 
 已归档至 V20：Worktree Isolation。已归档至 V21：Worktree Inventory / Inspection。
 已归档至 V22：Worktree Re-verification。已归档至 V23：Worktree Disposal / Reconciliation。
-当前无 active OpenSpec change；`add-demo-ready-agent-cli` 已归档，CLI 已实现为本地薄入口，仍不代表新增 `/chat` contract、provider runtime、默认 Patch wiring 或 V24 promotion。
+当前 active OpenSpec change 为 `polish-demo-cli-capability-surface`；V24 仅打磨 CLI Capability Surface / Demo-ready Product Surface 和计划 review 流程，不代表新增 `/chat` contract、provider runtime、默认 Patch wiring 或 Verified Patch Promotion。
 
 近期后端路线聚焦补齐 worktree 生命周期闭环，并按只读到受控写入逐阶段推进：
 
@@ -518,10 +540,12 @@ ChatService
 - V23 Worktree Disposal / Reconciliation：明确确认后幂等 unlock/remove/discard，
   协调 Git registry、目录和 metadata 不一致；worktree 转为 `discarded`，patch
   转为 `discarded`，不回退为 `pending`。
-- V24 Verified Patch Promotion：仅允许验证成功且内容完整性校验通过的 worktree；
-  要求主工作区干净且 `HEAD == base_commit`，并使用存储的原始受控 patch 提升，
-  不直接复制 worktree 内容，不自动 commit/push。
+- V24 CLI Capability Surface / Demo-ready Product Surface：把已有 grounded answer、
+  patch proposal、explicit apply、deterministic verify、status 和 audit 能力通过
+  `repopilot` CLI 稳定展示；只做命令映射和 presentation，不改 runtime contract。
+- V25 candidate Verified Patch Promotion：顺延评估；候选方向是仅允许验证成功且内容完整性校验通过的
+  worktree，并要求主工作区干净、`HEAD == base_commit`、不自动 commit/push。
 
-V24 完成后重新评估 Operator Control、Durable Execution、Background Worker、
+V24 CLI surface 完成后再重新评估 Verified Patch Promotion、Operator Control、Durable Execution、Background Worker、
 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 的优先级；
 当前不要把这些候选方向写成已实现能力或提前锁定公开 API。

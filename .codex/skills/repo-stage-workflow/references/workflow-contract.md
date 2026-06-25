@@ -38,6 +38,26 @@ Each finding should include severity, location, trigger, consequence, and a
 suggested regression test. A reviewer may report no findings, but must state
 what was inspected and the residual uncertainty.
 
+## Plan Review Contract
+
+Medium and high risk stages require plan-level review before implementation:
+internal plan review, Codex independent plan review, and OpenCode independent
+plan review. Plan-level review checks proposal/design/tasks/spec deltas/test
+plan/Harness boundaries and roadmap truth. It is separate from final
+implementation review.
+
+For OpenCode review, prefer reusing a relevant existing review session:
+
+```powershell
+opencode session list
+opencode run --session <session_id> "<adversarial plan review brief>"
+```
+
+If terminal output times out or does not print the final answer, inspect the
+OpenCode session for final assistant review text before declaring the gate
+failed. Missing final text is a blocker unless the user explicitly authorizes a
+downgrade. Codex subagent review does not replace OpenCode review.
+
 ## Focused Stage Debt Sweep
 
 Inspect:
