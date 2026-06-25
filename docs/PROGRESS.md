@@ -3,8 +3,8 @@
 ## V24 CLI Capability Surface / Plan Review Workflow Hardening（2026-06-25）
 
 - OpenSpec change `polish-demo-cli-capability-surface` 已归档到
-  `openspec/changes/archive/2026-06-25-polish-demo-cli-capability-surface/`；当前分支：
-  `codex/polish-demo-cli-capability-surface`；风险级别：medium；当前无 active OpenSpec change。
+  `openspec/changes/archive/2026-06-25-polish-demo-cli-capability-surface/`，并已 fast-forward
+  合并到 `main`；风险级别：medium；当前无 active OpenSpec change。
 - V24 已重定义为 CLI Capability Surface / Demo-ready Product Surface：`repopilot` 继续作为 `ChatService.handle_chat()` 的薄入口，展示 grounded answer、patch proposal、explicit apply、deterministic verify、status 和 audit；不修改 `/chat` public contract、provider runtime、live eval、默认 Patch wiring、默认 CI、AgentLoop、ToolExecutor、VerificationRunner、Audit 或 Worktree runtime。
 - 原 Verified Patch Promotion 已顺延为 V25/backlog 候选；本阶段不实现 promotion、commit、merge、push、branch management、PR creation、后台任务、subagents 或 connectors。
 - 计划 review 流程已纳入本阶段：实现前计划 review 必须区分 internal plan review、Codex independent plan review 和 OpenCode independent plan review；OpenCode review 优先复用已有 session，终端超时后先检查 session final assistant review text，再决定 blocker/triage。
