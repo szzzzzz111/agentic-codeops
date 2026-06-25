@@ -1,5 +1,23 @@
 # 项目进度
 
+## README 门面优化 / Demo-ready Agent CLI Planning（2026-06-24）
+
+- Active change：`demo-ready-readme-cli-planning`；当前分支：`main`；风险级别：low。
+- 本阶段目标是先优化 README 顶部“面试官版”项目介绍，并规划 Demo-ready Agent CLI；当前不直接实现 CLI runtime，不创建 V24。
+- README 规划口径：面向代码仓库理解、受控 Patch 和验证闭环的本地 Coding Agent Harness；只列当前已实现能力，不把 Roadmap 或 CLI 写成已实现。
+- CLI 规划口径：未来 `repopilot` 命令只作为现有 AgentLoop / ToolExecutor / VerificationRunner / Audit / Worktree 能力的薄入口；不重写 AgentLoop，不修改 `/chat` contract，不改变默认 CI，不引入网络依赖。
+- 已同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`；允许范围排除 `app/**`、`tests/**`、live eval profile、provider runtime、默认 Patch wiring、CLI implementation 和 V24。
+- Planning validation：`openspec validate demo-ready-readme-cli-planning --strict` 通过；`openspec validate --all` 为 20 passed、0 failed；`git diff --check` 通过，仅有 CRLF normalization warning。
+- README 首屏已优化为项目门面：一句话定位、核心能力、执行闭环、快速开始、文档入口和 `Demo-ready CLI 规划中`；V20-V23 阶段记录已下沉到阶段历史。
+- CLI 仍保持规划-only；未新增 runtime entrypoint、package metadata、命令 parser、命令测试或发布配置。
+- Verification：focused route-map regression 1 passed；full `scripts/verify.ps1` 通过，pytest 400 passed、1 skipped，ruff passed，stage docs scan passed，skill eval structure scan passed；OpenSpec all 20 passed、0 failed；`git diff --check` 通过，仅有 CRLF normalization warning。
+- 2026-06-25 archive closeout：`demo-ready-readme-cli-planning` 已归档到
+  `openspec/changes/archive/2026-06-25-demo-ready-readme-cli-planning/`；long-term specs 已同步
+  `openspec/specs/demo-ready-agent-cli/spec.md` 与
+  `openspec/specs/harness-development-workflow/spec.md`；当前无 active OpenSpec change。Archive 后
+  `openspec validate --all` 为 20 passed、0 failed；full `scripts/verify.ps1` 通过，pytest
+  400 passed、1 skipped，ruff passed，stage docs scan passed，skill eval structure scan passed。
+
 ## DeepSeek Provider Conformance Revalidation Closeout（2026-06-24）
 
 - `revalidate-deepseek-provider-conformance` 已归档并 fast-forward 合并到本地 `main`。

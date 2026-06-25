@@ -1,55 +1,86 @@
 # RepoPilot
 
-## V23 Worktree Disposal / Reconciliation
+RepoPilot 是一个面向代码仓库理解、受控 Patch 和验证闭环的本地 Coding Agent Harness。
 
-> 当前状态：V23 merge 后正式 code review 发现的两个 P1 与一个 P2 已完成 remediation；
-> 正式 re-review 未发现新增 P0/P1/P2，full verification 与 remediation closeout 已通过。
+它不是通用 AI IDE 或 AI 编程助手的替代品，而是把代码智能体执行过程收束在可观察、可审批、
+可验证、可审计的本地边界内：先用仓库证据回答问题，再把修改请求收束为 patch proposal / 合法
+pending patch 边界，经明确确认后隔离执行，并用固定验证命令和 SQLite 审计闭环交接。
 
-V23 已完成 runtime、tests、内部 review 并归档到
-`openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/`，并已合并到
-`main`。本阶段实现 exact confirmed discard、受限
-reconciliation、严格 lifecycle 顺序、persistent audit，以及共享 Git metadata runner 的独立
-timeout / 读取前硬上限；当前 active OpenSpec change 为无。
+## 核心能力
 
-## V22 Worktree Re-verification
+- Agent Loop：`POST /chat` 背后的轻量编排层，统一处理 memory、long task、assistant status、
+  patch、verification、audit recovery 和 repo search。
+- repo-local hybrid RAG：deterministic query understanding、lexical search、本地 deterministic
+  embedding、multi-query rewrite 和 rerank；默认不依赖外部向量库或网络。
+- Evidence Pack / citation：内部 Evidence Pack 与字符级 Context Budget 约束 grounded answer，
+  public response 保持 `trace_id`、`answer`、`related_files`、`tool_calls`。
+- 受控 Patch + Verify：明确 patch 请求进入 proposal / validation 边界；合法 pending patch 确认后
+  才 apply，并可串联固定白名单 `pytest`、`ruff`、`verify`。
+- Worktree 隔离：确认后的 patch flow 在 detached locked worktree 中执行，支持 scoped inventory、
+  inspection、re-verification 和 disposal/reconciliation，主工作区保持不变。
+- SQLite audit：repo-local `.repopilot/` 保存 memory、long task、patch、worktree 和脱敏 audit
+  状态；公开查询只返回安全摘要。
+- live model eval：独立 live provider evaluator、tracked PASS attestation / failure record 和脱敏
+  本地报告；默认测试与 CI 仍保持离线 deterministic。
 
-V22 已实现、完成 review，并归档到
-`openspec/changes/archive/2026-06-14-v22-worktree-re-verification/`。本阶段提供对现有 retained worktree 的明确白名单验证
-重跑：先按当前 `user_id + repo_key` 做 fail-closed consistency preflight，再复用现有
-`verification_run` 权限审批、timeout、限长与脱敏边界，仅在指定 worktree 内执行。
+## 执行闭环
 
-V22 不新增 verification label、lifecycle、公开 API 或 `/chat` 顶层字段；不修改 patch，
-不执行 cleanup、reconciliation、promotion 或 patch mutation。
+```text
+User request
+  -> AgentLoop
+  -> repo-local hybrid RAG
+  -> Evidence Pack / grounded answer
+  -> patch proposal / pending patch boundary
+  -> explicit confirm apply
+  -> isolated worktree execution
+  -> fixed-label verification
+  -> redacted SQLite audit / status
+```
 
-## V21 Worktree Inventory / Inspection
+## 快速开始
 
-V21 已实现、review、提交并归档
-到 `openspec/changes/archive/2026-06-09-v21-worktree-inventory-inspection/`，并已
-fast-forward 合并、推送到 `agentic-codeops/main`。
+启动服务：
 
-V21 提供按 `user_id + repo_key` 隔离的纯只读 worktree inventory / inspection：
-preview 路径仅来自机器可解析 Git 输出，untracked 文件只公开 count，inventory /
-inspection 跳过 persistent audit 以保证读取不创建或修改任何状态。
+```bash
+uvicorn app.main:app --reload
+```
 
-## V20 Worktree Isolation
+接口地址：
 
-V20 已归档到
-`openspec/changes/archive/2026-06-07-v20-worktree-isolation/`，并已 fast-forward
-合并、推送到 `agentic-codeops/main`。本地已合并 feature 分支按审计惯例保留。
+```text
+http://127.0.0.1:8000
+```
 
-- 明确确认的 standalone patch 与组合 Patch + Verify 会先创建 detached、locked
-  Git worktree，再在同一个内部 `execution_repo_path` 中执行。
-- 主工作区必须干净，且 `.repopilot/` 必须被 Git ignore；patch 成功后主工作区保持不变。
-- worktree 生命周期保存在 `.repopilot/worktrees.sqlite3`，patch 成功状态为
-  `applied_in_worktree`。
-- `worktree status <worktree_id>` / `查看 worktree <worktree_id>` 通过现有
-  `/chat.answer` 返回脱敏只读摘要。
-- standalone verification 仍在用户当前工作区执行。
-- V20 不提供 worktree 删除、prune、commit、merge、push、promote、继续执行或重试命令。
+默认验证入口：
 
-RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。它不是通用 AI IDE 或 AI 编程助手的替代品，而是围绕 Agent 的工具调用、安全边界、执行追踪、评测和交接机制，构建一个可验证、可审计、可扩展的代码智能体执行框架。
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+```
 
-当前应用场景包括代码仓库阅读、Bug 定位和修复建议。项目价值不在于“更会写代码”，而在于让 Agent 执行过程有明确边界、可观察输出和可交接规则。
+## 文档入口
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：当前真实架构、边界和后续演进方向。
+- [docs/PROGRESS.md](docs/PROGRESS.md)：阶段状态、验证记录和剩余债务。
+- [docs/AGENT_RULES.md](docs/AGENT_RULES.md)：分支、修改、验证、review 和交接规则。
+- [docs/FEATURE_LIST.json](docs/FEATURE_LIST.json)：可验收能力清单。
+- [openspec/specs/](openspec/specs/)：长期 capability specs。
+- [HANDOFF_TO_NEXT_CHAT.md](HANDOFF_TO_NEXT_CHAT.md)：下一轮 session 操作上下文。
+
+## Demo-ready CLI 规划中
+
+当前仓库尚未实现 `repopilot` CLI。正在规划的 CLI 只会作为现有 AgentLoop、ToolExecutor、
+VerificationRunner、Worktree 和 Audit 能力的薄入口，目标 demo 路径是：
+
+```text
+repopilot ask "<question>"
+repopilot patch "<request>"
+repopilot patch confirm <patch_id> --verify verify
+repopilot status
+repopilot audit latest
+```
+
+该 CLI 规划不重写 AgentLoop，不修改 `/chat` contract，不改变默认 CI，不引入网络依赖，不做隐式
+patch apply，不实现 V24 promotion、commit、merge 或 push。
 
 ## 当前快照
 
@@ -183,38 +214,6 @@ RepoPilot 是一个面向代码仓库分析任务的可控 Code Agent Harness。
 
 - `load_skill_metadata(repo_path)`：发现 `.agents/skills/*/SKILL.md`，只解析 `name`、`description` 和相对仓库 `path`。
 - `load_skill_content(repo_path, skill_path)`：按相对路径读取 `.agents/skills/<skill>/SKILL.md`，返回 `path` 和完整 `content`。
-
-## 快速开始
-
-启动服务：
-
-```bash
-uvicorn app.main:app --reload
-```
-
-接口地址：
-
-```text
-http://127.0.0.1:8000
-```
-
-运行测试：
-
-```bash
-pytest
-```
-
-可选静态检查：
-
-```bash
-ruff check .
-```
-
-默认验证入口：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
-```
 
 ## 请求示例
 
@@ -394,6 +393,7 @@ V19 加入 repo-local `.repopilot/audit.sqlite3` 持久审计，记录所有 `/c
 V19 通过现有 `/chat.answer` 提供只读 recovery/status 查询，保持顶层 response contract 不变。Recovery intent 在 patch/verification 之后、capability-status/repo_search 之前处理，命中后不调用 `repo_rag`，不执行 patch、verification、task resume、repo mutation、commit、push 或 worktree 操作。
 
 ### V20：Worktree Isolation
+<!-- Legacy route-map anchor: ## V20 Worktree Isolation -->
 
 V20 为明确确认的 standalone patch 与组合 Patch + Verify 创建 detached、locked
 Git worktree，并通过内部 `execution_repo_path` 执行 patch 与组合 verification。
@@ -414,6 +414,24 @@ Preview 路径只来自固定 argv 的机器可解析 Git 输出；最多 20 文
 80 行、单行 300 字符，并拒绝敏感、隐藏和二进制内容。Untracked 文件只公开 count。
 Inventory / inspection 保留 request-local 安全 trace，但跳过 persistent audit，且读取
 缺失状态时不创建 `.repopilot/` 或数据库。
+
+### V22：Worktree Re-verification
+
+V22 对 scoped retained worktree 提供明确触发的白名单验证重跑。执行前按
+`user_id + repo_key` 做 fail-closed consistency preflight，并复用现有
+`verification_run` 权限、审批、timeout、限长和脱敏边界。
+
+V22 不新增 verification label、公开 API 或 `/chat` 顶层字段；不修改 patch，不执行 cleanup、
+reconciliation、promotion 或 patch mutation。
+
+### V23：Worktree Disposal / Reconciliation
+
+V23 提供明确确认后的 worktree discard 与窄范围 reconciliation：按 scoped metadata、
+Git registry、目录、HEAD/base 和 patch 状态做 fail-closed preflight，再执行幂等 unlock/remove/
+discard closeout。
+
+V23 已完成 runtime、tests、review remediation、归档并合并到 `main`。它不提供 promotion、
+patch mutation/reapply、commit、merge、push、隐式 repair、自动 retry 或 `git worktree prune`。
 
 ## 当前非目标
 
@@ -483,7 +501,7 @@ ChatService
 
 已归档至 V20：Worktree Isolation。已归档至 V21：Worktree Inventory / Inspection。
 已归档至 V22：Worktree Re-verification。已归档至 V23：Worktree Disposal / Reconciliation。
-当前 active change 为无；V23 已进入主线。
+当前 active change 为无；`demo-ready-readme-cli-planning` 已归档，CLI 仍处于规划阶段。
 
 近期后端路线聚焦补齐 worktree 生命周期闭环，并按只读到受控写入逐阶段推进：
 

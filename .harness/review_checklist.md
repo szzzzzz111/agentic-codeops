@@ -1,44 +1,37 @@
 # 当前 Review 清单
 
-Active OpenSpec change：无。`revalidate-deepseek-provider-conformance` 已归档。
+Active OpenSpec change：无。`demo-ready-readme-cli-planning` 已归档。
 
-## Revalidation closeout evidence
+## Planning / README / CLI scope
 
-- [x] `harden-grounded-prompt-injection-live-behavior` remediation 已归档并合回 revalidation 分支。
-- [x] 旧 `20260624-110532` live evidence 已标记为旧 runtime pause-site evidence，不作为当前 certification。
-- [x] Post-remediation deterministic preflight 通过：
-  - focused evaluator tests：64 passed
-  - full `scripts/verify.ps1`：400 passed, 1 skipped
-  - revalidation OpenSpec strict：passed
-  - OpenSpec all before archive：20 passed, 0 failed
-  - stage docs 与 `git diff --check`：passed
-- [x] 用户确认后运行 exactly one renewed live gate；未 retry、未切换模型、未增加 live case、未发送额外诊断请求。
-- [x] Renewed live gate PASS：
-  - stdout：`PASS live model provider eval`
-  - attestation：`docs/evals/live-model-provider/20260624-124206.json`
-  - local report：`.repopilot/live-eval/20260624-124206.json`
-  - report SHA-256：`bd5010d556061fdb77243da16e4a305790f5416f3bcaa5a3382fe84d2170cdbb`
-  - tested commit：`8b018b84ae8c39eff3b18aeda98ac4a106b9d65d`
-  - 10 cases / 8 calls / quality 5/5
-  - aggregate：4638 tokens、12629 ms、cost ¥0.00334040
-- [x] Provider-backed cases all had `availability=available`、`finish_reason=stop`、complete usage。
-- [x] No-answer and secret-filter were zero-call PASS cases。
-- [x] No same-timestamp failure record was created。
-- [x] Key-level redaction review found only allowed token aggregate keys and `system_fingerprint_status`; no API key,
-  full URL, raw prompt, EvidencePack, raw answer, raw response, HTTP payload, headers, diff, reasoning content or raw fingerprint。
-- [x] PASS attestation 已提交，且是 tested commit/profile/rubric/model 的唯一 provider certification evidence。
-- [x] `revalidate-deepseek-provider-conformance` 已归档到
-  `openspec/changes/archive/2026-06-24-revalidate-deepseek-provider-conformance/`。
-- [x] Archive 后验证通过：
-  - full `scripts/verify.ps1`：400 passed, 1 skipped
-  - OpenSpec all：19 passed, 0 failed
-  - stage docs：passed
-  - `git diff --check`：passed
-- [x] 未创建 V24。
+- [x] 已读取 AGENTS.md、必读项目文档、`openspec/README.md`、当前 harness 文件和 handoff。
+- [x] 已确认当前分支为 `main`，初始工作树干净，最近提交为 revalidation handoff，起始 `openspec list` 无 active change。
+- [x] 已判断风险级别为 `low`：只做 README/规划文档，不改 runtime、tests、provider、CI 或 `/chat` contract。
+- [x] 已创建非 V24 OpenSpec change：`demo-ready-readme-cli-planning`。
+- [x] README 首屏已改为“面试官版”项目门面：一句话定位、核心能力、执行闭环、快速开始、文档入口。
+- [x] README 核心能力只列当前已实现能力，不把 Roadmap 写成已实现。
+- [x] 内部阶段记录已下沉，不让首屏像开发流水账。
+- [x] CLI 明确只是规划中的薄入口，不声明 `repopilot` 命令已实现。
+- [x] CLI 规划复用现有 AgentLoop / ToolExecutor / VerificationRunner / Audit / Worktree 能力。
+- [x] 不重写 AgentLoop，不修改 `/chat` contract，不改变默认 CI，不引入网络依赖。
+- [x] 不接受任意 shell、用户附加 argv、管道、重定向、环境变量注入或额外 verification 参数。
+- [x] Patch proposal 与 apply confirmation 保持分离，不做隐式 apply。
+- [x] 不修改 live eval profile、provider runtime、默认 Patch wiring，不创建或实现 V24。
 
-## Remaining closeout
+## Archive closeout
 
-- [ ] Commit archive closeout.
-- [ ] Merge to `main` only with user authorization.
-- [ ] Push only with user authorization.
-- [ ] Write one final handoff after integration.
+- [x] `openspec archive demo-ready-readme-cli-planning -y` 已同步 specs 并归档到
+  `openspec/changes/archive/2026-06-25-demo-ready-readme-cli-planning/`。
+- [x] Long-term spec sync：
+  - `openspec/specs/demo-ready-agent-cli/spec.md` 新增 3 条 requirements。
+  - `openspec/specs/harness-development-workflow/spec.md` 新增 1 条 requirement。
+- [x] 新增 `demo-ready-agent-cli` long-term spec 的 Purpose 已替换 archive 默认 `TBD`。
+- [x] `openspec list` 当前为 No active changes found。
+
+## Verification
+
+- [x] Focused regression：`pytest tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent -q`，1 passed。
+- [x] Archive 前 `openspec validate demo-ready-readme-cli-planning --strict` 通过。
+- [x] Archive 后 `openspec validate --all` 通过。
+- [x] Archive 后 `git diff --check` 通过；仅有 CRLF normalization warning。
+- [x] Archive 后 full `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过：pytest 400 passed、1 skipped；ruff passed；stage docs scan passed；skill eval structure scan passed。
