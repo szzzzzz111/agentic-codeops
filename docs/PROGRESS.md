@@ -1,5 +1,14 @@
 # 项目进度
 
+## Demo-ready Agent CLI Implementation Closeout（2026-06-25）
+
+- OpenSpec change `add-demo-ready-agent-cli` 已归档到 `openspec/changes/archive/2026-06-25-add-demo-ready-agent-cli/`；当前分支：`codex/add-demo-ready-agent-cli`；风险级别：medium；当前无 active OpenSpec change。
+- 已完成 TDD RED -> GREEN：新增 `tests/test_cli.py`，覆盖 `ask`、`patch`、`patch confirm`、`patch confirm --verify`、`verify`、`status`、`audit latest` 到 `ChatService` 的薄映射。
+- 已实现 `app/cli.py` 和 `pyproject.toml` console script：`repopilot = "app.cli:main"`；CLI 默认 `repo_path=.`、`user_id=cli`、`session_id=cli`，支持 `--repo`、`--user-id`、`--session-id` 覆盖。
+- 安全边界保持不变：只接受 `verify`、`pytest`、`ruff` 固定验证标签；unsafe verification input、empty required values 和 unsafe patch id 在调用 `ChatService` 前拒绝；不新增网络依赖、HTTP client mode、provider runtime wiring、默认 CI、`/chat` contract、默认 Patch wiring 或 V24 promotion。
+- Review evidence：内部 final review 无 P0/P1/P2；focused external review 复用 OpenCode session `ses_10290b071ffeLx5JxfppaZ3qfo`，结论无 P0/P1/P2；其非阻塞空值 exit-code 观察已补 RED coverage 并修复。
+- Verification evidence：focused CLI tests 32 passed；adjacent AgentLoop/API/verification regressions 124 passed；pre-archive full `scripts/verify.ps1` 通过，pytest 432 passed、1 skipped；archive-after `openspec validate --all` 20 passed、0 failed；archive-after full `scripts/verify.ps1` 通过，pytest 432 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warning。
+
 ## README 门面优化 / Demo-ready Agent CLI Planning（2026-06-24）
 
 - Active change：`demo-ready-readme-cli-planning`；当前分支：`main`；风险级别：low。

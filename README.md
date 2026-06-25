@@ -66,21 +66,25 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - [openspec/specs/](openspec/specs/)：长期 capability specs。
 - [HANDOFF_TO_NEXT_CHAT.md](HANDOFF_TO_NEXT_CHAT.md)：下一轮 session 操作上下文。
 
-## Demo-ready CLI 规划中
+## Demo-ready CLI
 
-当前仓库尚未实现 `repopilot` CLI。正在规划的 CLI 只会作为现有 AgentLoop、ToolExecutor、
-VerificationRunner、Worktree 和 Audit 能力的薄入口，目标 demo 路径是：
+`repopilot` CLI 已实现为本地薄入口：它把命令映射为现有 `ChatService.handle_chat()`
+请求，复用既有 AgentLoop、ToolExecutor、VerificationRunner、Worktree 和 Audit 边界；
+不新增 `/chat` 字段，不改默认 CI，不引入网络依赖，也不绕过 patch 确认或验证白名单。
 
 ```text
 repopilot ask "<question>"
 repopilot patch "<request>"
+repopilot patch confirm <patch_id>
 repopilot patch confirm <patch_id> --verify verify
+repopilot verify verify
 repopilot status
 repopilot audit latest
 ```
 
-该 CLI 规划不重写 AgentLoop，不修改 `/chat` contract，不改变默认 CI，不引入网络依赖，不做隐式
-patch apply，不实现 V24 promotion、commit、merge 或 push。
+CLI 只接受固定验证标签 `verify`、`pytest`、`ruff`，拒绝附加 argv、管道、重定向、
+环境变量注入和 unsafe patch id；它不实现 V24 promotion、commit、merge、push、
+后台任务、subagent 或 connector。
 
 ## 当前快照
 
@@ -501,7 +505,7 @@ ChatService
 
 已归档至 V20：Worktree Isolation。已归档至 V21：Worktree Inventory / Inspection。
 已归档至 V22：Worktree Re-verification。已归档至 V23：Worktree Disposal / Reconciliation。
-当前 active change 为无；`demo-ready-readme-cli-planning` 已归档，CLI 仍处于规划阶段。
+当前无 active OpenSpec change；`add-demo-ready-agent-cli` 已归档，CLI 已实现为本地薄入口，仍不代表新增 `/chat` contract、provider runtime、默认 Patch wiring 或 V24 promotion。
 
 近期后端路线聚焦补齐 worktree 生命周期闭环，并按只读到受控写入逐阶段推进：
 

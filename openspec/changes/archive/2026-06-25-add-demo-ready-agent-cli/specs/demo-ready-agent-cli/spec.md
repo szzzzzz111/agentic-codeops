@@ -1,10 +1,5 @@
-# demo-ready-agent-cli Specification
+## MODIFIED Requirements
 
-## Purpose
-记录 Demo-ready Agent CLI 的规划边界：未来 CLI 只能作为现有 RepoPilot 能力的本地薄入口，
-不得被描述为当前已实现 runtime，也不得绕过 AgentLoop、ToolExecutor、VerificationRunner、
-Worktree、Audit 或 `/chat` contract。
-## Requirements
 ### Requirement: Demo-ready CLI Is Planned As A Thin Wrapper
 
 RepoPilot SHALL provide a local `repopilot` CLI as a thin wrapper over existing RepoPilot capabilities, not as a replacement for `AgentLoop`, `ToolExecutor`, `VerificationRunner`, Audit, Worktree, or `/chat` contracts.

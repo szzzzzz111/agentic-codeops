@@ -219,5 +219,20 @@
     ],
     "passes": true,
     "notes": "Implemented in 3991d4a and archived at openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/. Merge-after formal review findings were fixed on feature/v23-review-remediation; formal re-review found no new P0/P1/P2 and full verification passed."
+  },
+  {
+    "id": "demo-ready-agent-cli",
+    "category": "cli",
+    "description": "Local repopilot CLI thinly maps demo commands to existing ChatService and AgentLoop behavior.",
+    "acceptance_criteria": [
+      "ask, patch, patch confirm, patch confirm --verify, verify, status, and audit latest map to existing chat messages",
+      "global --repo, --user-id, and --session-id defaults and overrides are supported",
+      "output includes trace_id, answer, related_files, and tool_calls summaries",
+      "verification labels are limited to verify, pytest, and ruff",
+      "unsafe verification input and unsafe patch ids are rejected before ChatService",
+      "no new /chat fields, network dependency, default CI change, provider wiring, arbitrary subprocess, or V24 behavior"
+    ],
+    "passes": true,
+    "notes": "Covered by tests/test_cli.py; implemented as a local console script entrypoint app.cli:main."
   }
 ]

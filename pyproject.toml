@@ -10,6 +10,9 @@ dependencies = [
     "uvicorn[standard]>=0.27.0",
 ]
 
+[project.scripts]
+repopilot = "app.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",

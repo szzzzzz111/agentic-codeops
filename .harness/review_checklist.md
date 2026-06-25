@@ -1,37 +1,48 @@
 # 当前 Review 清单
 
-Active OpenSpec change：无。`demo-ready-readme-cli-planning` 已归档。
+当前无 active OpenSpec change。最近归档 change：`add-demo-ready-agent-cli`。
 
-## Planning / README / CLI scope
+## Planning gate
 
-- [x] 已读取 AGENTS.md、必读项目文档、`openspec/README.md`、当前 harness 文件和 handoff。
-- [x] 已确认当前分支为 `main`，初始工作树干净，最近提交为 revalidation handoff，起始 `openspec list` 无 active change。
-- [x] 已判断风险级别为 `low`：只做 README/规划文档，不改 runtime、tests、provider、CI 或 `/chat` contract。
-- [x] 已创建非 V24 OpenSpec change：`demo-ready-readme-cli-planning`。
-- [x] README 首屏已改为“面试官版”项目门面：一句话定位、核心能力、执行闭环、快速开始、文档入口。
-- [x] README 核心能力只列当前已实现能力，不把 Roadmap 写成已实现。
-- [x] 内部阶段记录已下沉，不让首屏像开发流水账。
-- [x] CLI 明确只是规划中的薄入口，不声明 `repopilot` 命令已实现。
-- [x] CLI 规划复用现有 AgentLoop / ToolExecutor / VerificationRunner / Audit / Worktree 能力。
-- [x] 不重写 AgentLoop，不修改 `/chat` contract，不改变默认 CI，不引入网络依赖。
-- [x] 不接受任意 shell、用户附加 argv、管道、重定向、环境变量注入或额外 verification 参数。
-- [x] Patch proposal 与 apply confirmation 保持分离，不做隐式 apply。
-- [x] 不修改 live eval profile、provider runtime、默认 Patch wiring，不创建或实现 V24。
+- [x] 当前分支已切到 `codex/add-demo-ready-agent-cli`。
+- [x] 起始 `main` 工作树干净，最近提交为 `dcf95c2 Polish README facade and archive CLI planning`。
+- [x] 起始 `openspec list` 为 No active changes found。
+- [x] 风险级别判定为 `medium`：新增用户命令入口，但不改公开 API、provider、CI、Git/promotion 或持久化模型。
+- [x] 已创建 OpenSpec artifacts 和 spec deltas。
+- [x] 已同步 `.harness/allowed_files.md`，实现前只开放 CLI runtime、package metadata、CLI tests、相关 docs/specs/harness。
+- [x] `openspec validate add-demo-ready-agent-cli --strict` 通过。
+- [x] `openspec validate --all` 通过：21 passed，0 failed。
+- [x] `git diff --check` 通过；仅有 CRLF normalization warning。
+- [x] 完成内部 plan review：proposal、design、tasks、spec deltas、test plan、Harness 边界互相一致。
+- [x] 已获得用户确认后进入 runtime/tests；实现按 TDD RED -> GREEN 完成。
 
-## Archive closeout
+## CLI implementation review target
 
-- [x] `openspec archive demo-ready-readme-cli-planning -y` 已同步 specs 并归档到
-  `openspec/changes/archive/2026-06-25-demo-ready-readme-cli-planning/`。
-- [x] Long-term spec sync：
-  - `openspec/specs/demo-ready-agent-cli/spec.md` 新增 3 条 requirements。
-  - `openspec/specs/harness-development-workflow/spec.md` 新增 1 条 requirement。
-- [x] 新增 `demo-ready-agent-cli` long-term spec 的 Purpose 已替换 archive 默认 `TBD`。
-- [x] `openspec list` 当前为 No active changes found。
+- [x] `repopilot` console entrypoint 只调用现有 `ChatService.handle_chat()`，不重写 AgentLoop。
+- [x] `ask`、`patch`、`patch confirm`、`patch confirm --verify`、`verify`、`status`、`audit latest` 映射到现有 chat semantics。
+- [x] `verify` label 只允许 `verify`、`pytest`、`ruff`。
+- [x] empty required values、unsafe patch id、shell-like syntax、管道、重定向、环境变量赋值、extra args 在调用 `ChatService` 前拒绝。
+- [x] CLI 不新增网络依赖，不读取 provider key，不修改 live eval 或默认 Patch wiring。
+- [x] CLI 不实现 V24 promotion、commit、merge、push、branch management 或 PR creation。
+- [x] CLI 输出只包含安全摘要：`trace_id`、`answer`、`related_files`、`tool_calls`。
+- [x] Usage/validation error exit code 为 `2`；unexpected wrapper failure 为 `1`；正常 ChatService response 为 `0`。
+- [x] README 不再说 CLI 尚未实现，但明确它是薄入口，不扩大 runtime 能力。
 
-## Verification
+## Verification evidence
 
-- [x] Focused regression：`pytest tests/test_chat_api.py::test_docs_keep_stage_route_map_consistent -q`，1 passed。
-- [x] Archive 前 `openspec validate demo-ready-readme-cli-planning --strict` 通过。
-- [x] Archive 后 `openspec validate --all` 通过。
-- [x] Archive 后 `git diff --check` 通过；仅有 CRLF normalization warning。
-- [x] Archive 后 full `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过：pytest 400 passed、1 skipped；ruff passed；stage docs scan passed；skill eval structure scan passed。
+- [x] Focused CLI tests pass：`pytest tests/test_cli.py -q` -> 32 passed。
+- [x] Adjacent AgentLoop/API/verification tests pass：`pytest tests/test_cli.py tests/test_chat_api.py tests/test_agent_harness_kernel.py tests/test_verification_runner.py -q` -> 124 passed。
+- [x] `openspec validate add-demo-ready-agent-cli --strict` pass。
+- [x] `openspec validate --all` pass：21 passed，0 failed。
+- [x] Pre-archive `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` pass：432 passed，1 skipped；ruff and stage scans pass。
+- [x] `git diff --check` pass；仅有 CRLF normalization warning。
+- [x] Archive-after `openspec validate --all` pass：20 passed，0 failed。
+- [x] Archive-after `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` pass：432 passed，1 skipped；ruff and stage scans pass。
+- [x] Archive-after `git diff --check` pass；仅有 CRLF normalization warning。
+
+## Final review evidence
+
+- [x] Internal final review completed after latest runtime/test/doc changes：no P0/P1/P2 findings. Inspected CLI delegation, parser fail-closed behavior, output summary, README claims, feature list, package script, tests, and OpenSpec task state.
+- [x] Focused external review completed via reused OpenCode session `ses_10290b071ffeLx5JxfppaZ3qfo`. Result: no P0/P1/P2 blockers. Non-blocking empty-value exit-code observation was fixed with RED coverage; focused CLI tests now pass at 32 cases and adjacent regressions now pass at 124 cases.
+- [x] Stage Debt Sweep completed for `app/cli.py`, `tests/test_cli.py`, `pyproject.toml`, README/FEATURE_LIST/PROGRESS/HANDOFF, and OpenSpec tasks. No new blocking debt found; residual risk is that CLI intentionally supports only one quoted argument for `ask` and `patch` free text in this first demo-ready slice.
+- [x] OpenSpec archive completed：`add-demo-ready-agent-cli` archived as `openspec/changes/archive/2026-06-25-add-demo-ready-agent-cli/` and long-term specs updated.
