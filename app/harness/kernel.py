@@ -33,6 +33,7 @@ from app.verification.runner import (
 from app.worktrees.manager import WorktreeManager
 from app.worktrees.disposal import parse_worktree_disposal_request
 from app.worktrees.inspection import format_public_changed_files, safe_public_value
+from app.worktrees.promotion import parse_verified_patch_promotion_request
 from app.worktrees.reverification import parse_worktree_reverification_request
 
 
@@ -103,7 +104,8 @@ V16_CAPABILITY_STATUS_ANSWER = (
     "V18 提供明确组合确认下的 Patch + Verify Loop；"
     "V19 提供 Persistent Audit / Recovery；"
     "V20-V23 提供隔离 worktree 生命周期，包括创建、检查、重验证和丢弃/对账；"
-    "当前未实现 Verified Patch Promotion 或自动 commit/push，默认不生成真实 diff。"
+    "V25 提供精确确认后的 Verified Patch Promotion；"
+    "当前未实现自动 commit/push，默认不生成真实 diff。"
 )
 
 
@@ -336,7 +338,7 @@ def _decide_patch_apply(
 
 
 def _valid_patch_context(context: ToolInvocationContext | None) -> bool:
-    return bool(
+    ordinary_apply = bool(
         context is not None
         and context.tool_name == PATCH_APPLY_TOOL
         and context.intent == "patch_apply"
@@ -346,6 +348,18 @@ def _valid_patch_context(context: ToolInvocationContext | None) -> bool:
         and context.expires_at_valid
         and context.scope_valid
     )
+    promotion_apply = bool(
+        context is not None
+        and context.tool_name == PATCH_APPLY_TOOL
+        and context.intent == "patch_promotion_apply"
+        and context.confirmed
+        and context.patch_status == "applied_in_worktree"
+        and context.diff_hash_match
+        and context.expires_at_valid
+        and context.scope_valid
+        and context.promotion_preflight_valid
+    )
+    return ordinary_apply or promotion_apply
 
 
 def _patch_context_rejection_reason(context: ToolInvocationContext | None) -> str:
@@ -608,6 +622,16 @@ class AgentLoop:
                 confirmed=disposal.confirmed,
                 rejected=disposal.rejected,
                 reason=disposal.reason,
+            )
+
+        promotion = parse_verified_patch_promotion_request(request.message)
+        if promotion.handled:
+            return self._run_verified_patch_promotion(
+                request=request,
+                worktree_id=promotion.worktree_id,
+                confirmed=promotion.confirmed,
+                rejected=promotion.rejected,
+                reason=promotion.reason,
             )
 
         reverification = parse_worktree_reverification_request(request.message)
@@ -1725,6 +1749,172 @@ class AgentLoop:
             ],
         )
 
+    def _run_verified_patch_promotion(
+        self,
+        *,
+        request: AgentLoopRequest,
+        worktree_id: str,
+        confirmed: bool,
+        rejected: bool,
+        reason: str,
+    ) -> AgentLoopResult:
+        safe_id = safe_public_value(worktree_id or "unknown")
+        if rejected or not confirmed or not worktree_id:
+            return self._verified_patch_promotion_result(
+                worktree_id=safe_id,
+                status="error",
+                reason=reason or "invalid_request",
+                confirmation=confirmed,
+            )
+        preflight = self.worktree_manager.prepare_promotion(
+            repo_path=request.repo_path,
+            user_id=request.user_id,
+            worktree_id=worktree_id,
+        )
+        if not preflight.accepted or preflight.patch is None:
+            return self._verified_patch_promotion_result(
+                worktree_id=safe_id,
+                status="error",
+                reason=preflight.reason,
+            )
+        context = ToolInvocationContext(
+            tool_name=PATCH_APPLY_TOOL,
+            user_id=request.user_id,
+            repo_key=preflight.repo_key,
+            intent="patch_promotion_apply",
+            patch_id=preflight.patch.patch_id,
+            worktree_id=worktree_id,
+            confirmed=True,
+            patch_status=preflight.patch.status,
+            diff_hash_match=True,
+            expires_at_valid=True,
+            scope_valid=True,
+            promotion_preflight_valid=True,
+        )
+        decision = self.permission_policy.decide(
+            self.tool_registry.get(PATCH_APPLY_TOOL),
+            tool_name=PATCH_APPLY_TOOL,
+            context=context,
+        )
+        if decision.status == "deny" or not self.approval_gate.evaluate(
+            decision,
+            context=context,
+        ):
+            return self._verified_patch_promotion_result(
+                worktree_id=safe_id,
+                status="error",
+                reason=decision.reason,
+                preflight="passed",
+                patch_id=preflight.patch.patch_id,
+            )
+        if not self.worktree_manager.begin_promotion(preflight):
+            return self._verified_patch_promotion_result(
+                worktree_id=safe_id,
+                status="error",
+                reason="promotion_journal_unavailable",
+                preflight="passed",
+                patch_id=preflight.patch.patch_id,
+            )
+        try:
+            tool_result = self.tool_executor.patch_apply(
+                request.repo_path,
+                preflight.patch.diff_text,
+                require_atomic=True,
+                expected_base_commit=preflight.record.base_commit,
+            )
+        except Exception:
+            self.worktree_manager.mark_promotion_apply_failed(preflight)
+            return self._verified_patch_promotion_result(
+                worktree_id=safe_id,
+                status="error",
+                reason="patch_apply_error",
+                preflight="passed",
+                execution_attempted=True,
+                patch_id=preflight.patch.patch_id,
+            )
+        apply_result = tool_result.patch_apply_result
+        if apply_result is None or not apply_result.applied:
+            self.worktree_manager.mark_promotion_apply_failed(preflight)
+            return self._verified_patch_promotion_result(
+                worktree_id=safe_id,
+                status="error",
+                reason="patch_apply_failed",
+                preflight="passed",
+                execution_attempted=True,
+                tool_calls=[tool_result.call_summary()],
+                patch_id=preflight.patch.patch_id,
+            )
+        completion = self.worktree_manager.complete_promotion(preflight)
+        tool_calls = [tool_result.call_summary()]
+        reason = completion.reason
+        if not completion.succeeded:
+            try:
+                rollback_result = self.tool_executor.patch_apply(
+                    request.repo_path,
+                    preflight.rollback_diff,
+                    require_atomic=True,
+                    require_clean=False,
+                    expected_base_commit=preflight.record.base_commit,
+                )
+            except Exception:
+                rollback_result = None
+            if (
+                rollback_result is None
+                or rollback_result.patch_apply_result is None
+                or not rollback_result.patch_apply_result.applied
+            ):
+                reason = "promotion_rollback_failed"
+            else:
+                self.worktree_manager.mark_promotion_apply_failed(preflight)
+                tool_calls.append(rollback_result.call_summary())
+        return self._verified_patch_promotion_result(
+            worktree_id=safe_id,
+            status="ok" if completion.succeeded else "error",
+            reason=reason,
+            preflight="passed",
+            execution_attempted=True,
+            tool_calls=tool_calls,
+            patch_id=preflight.patch.patch_id,
+        )
+
+    def _verified_patch_promotion_result(
+        self,
+        *,
+        worktree_id: str,
+        status: str,
+        reason: str,
+        preflight: str = "failed",
+        execution_attempted: bool = False,
+        tool_calls: list[dict[str, str]] | None = None,
+        confirmation: bool = True,
+        patch_id: str = "",
+    ) -> AgentLoopResult:
+        patch_summary = (
+            "" if not patch_id else f"patch_id={safe_public_value(patch_id)}; "
+        )
+        summary = (
+            f"worktree_id={worktree_id}; {patch_summary}"
+            f"confirmation={str(confirmation).lower()}; "
+            f"preflight={safe_public_value(preflight)}; "
+            f"execution_attempted={str(execution_attempted).lower()}; "
+            f"reason={safe_public_value(reason)}"
+        )
+        return AgentLoopResult(
+            answer=(
+                f"verified patch promotion {'succeeded' if status == 'ok' else 'failed'}: "
+                f"worktree_id={worktree_id}; reason={safe_public_value(reason)}"
+            ),
+            tool_calls=tool_calls or [],
+            trace_events_internal=[
+                TraceEvent(
+                    event_type="verified_patch_promotion_summarized",
+                    tool_name=PATCH_APPLY_TOOL if execution_attempted else None,
+                    status=status,
+                    summary=summary,
+                )
+            ],
+        )
+
     def _run_worktree_reverification(
         self,
         *,
@@ -2345,6 +2535,8 @@ def _route_from_trace(trace_events: list[TraceEvent]) -> str:
             return "long_task_command"
         if event.event_type == "assistant_control_surface":
             return "assistant_control_surface"
+        if event.event_type == "verified_patch_promotion_summarized":
+            return "verified_patch_promotion"
         if event.event_type in {
             "patch_command",
             "patch_verify_loop_started",

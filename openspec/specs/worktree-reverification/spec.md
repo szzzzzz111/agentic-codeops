@@ -95,3 +95,12 @@ Executed answers MUST identify the safe worktree id and command label without ex
 - **WHEN** a user requests re-verification for a scoped `discarded` worktree
 - **THEN** preflight rejects the request
 - **AND** verification MUST NOT run
+
+### Requirement: Promoted Worktrees Cannot Be Re-verified
+
+系统 SHALL treat `promoted` worktrees as ineligible for retained worktree re-verification.
+
+#### Scenario: Promoted worktree is rejected
+
+- **WHEN** re-verification targets a scoped `promoted` worktree
+- **THEN** verification does not run

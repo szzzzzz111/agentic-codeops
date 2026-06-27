@@ -229,7 +229,7 @@ mutation. The existing best-effort V19 trace envelope MAY still be persisted.
 #### Scenario: Patch capability status preserves current non-goals
 
 - **WHEN** the system returns patch capability status
-- **THEN** the answer states that verified promotion and automatic commit/push are not implemented
+- **THEN** the answer distinguishes controlled verified promotion from unimplemented automatic commit/push
 - **AND** it does not imply that the default application can generate a real patch diff
 
 #### Scenario: Grounded answer status reflects later rewrite and memory capabilities
@@ -245,3 +245,12 @@ mutation. The existing best-effort V19 trace envelope MAY still be persisted.
 - **THEN** the answer acknowledges deterministic query rewrite, deterministic rerank, and Memory
 - **AND** it distinguishes them from real LLM rewrite/rerank and vector memory
 - **AND** `related_files` and `tool_calls` remain empty
+
+### Requirement: Verified Promotion Has A Dedicated Route
+
+系统 SHALL route recognized verified promotion requests after disposal/reconciliation and before retained worktree re-verification, patch handling, standalone verification, audit recovery, capability status, and repo-search fallback. Malformed promotion-like requests MUST be rejected by this route.
+
+#### Scenario: Malformed promotion cannot fall through
+
+- **WHEN** a user sends a malformed promotion-like request
+- **THEN** AgentLoop rejects it before later routes run

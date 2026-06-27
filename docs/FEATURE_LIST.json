@@ -221,6 +221,21 @@
     "notes": "Implemented in 3991d4a and archived at openspec/changes/archive/2026-06-15-v23-worktree-disposal-reconciliation/. Merge-after formal review findings were fixed on feature/v23-review-remediation; formal re-review found no new P0/P1/P2 and full verification passed."
   },
   {
+    "id": "v25-verified-patch-promotion",
+    "category": "agent",
+    "description": "Explicit confirmed promotion of a verified retained patch worktree into the main workspace through the existing patch_apply Harness boundary.",
+    "acceptance_criteria": [
+      "only exact confirmed promotion commands are routed after disposal/reconciliation and before re-verification",
+      "scope, lifecycle, clean main workspace, base HEAD, Git/worktree metadata, patch hash, and stored-patch content integrity are checked before writing",
+      "main workspace writes use stored controlled patch data through ToolExecutor, PermissionPolicy, ApprovalGate, and patch_apply without copying worktree files",
+      "successful promotion marks both patch and worktree promoted; persistence failures roll back the main workspace and lifecycle state",
+      "recognized attempts produce a scoped redacted audit event and preserve the existing /chat response schema",
+      "no commit, merge, push, branch/PR automation, background task, connector, notification, worktree deletion, prune, automatic retry, or automatic repair"
+    ],
+    "passes": true,
+    "notes": "Covered by tests/test_verified_patch_promotion.py, adjacent patch/worktree/audit/AgentLoop/API regressions, OpenSpec validation, full verify, implementation review triage, and archive evidence for add-verified-patch-promotion."
+  },
+  {
     "id": "demo-ready-agent-cli",
     "category": "cli",
     "description": "Local repopilot CLI thinly maps demo commands to existing ChatService and AgentLoop behavior with a demo-ready capability surface.",

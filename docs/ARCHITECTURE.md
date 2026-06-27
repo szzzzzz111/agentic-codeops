@@ -1,5 +1,12 @@
 # 架构说明
 
+## V25 Verified Patch Promotion
+
+V25 当前链路为 `AgentLoop -> scoped promotion preflight -> ToolRegistry -> PermissionPolicy ->
+ApprovalGate -> ToolExecutor.patch_apply(main workspace, stored patch) -> lifecycle/audit summary`；路由在 V23 disposal/reconciliation 后、V22 re-verification 前，只接受精确确认命令。
+
+Preflight 要求当前 `user_id + repo_key`、`verification_succeeded` + `applied_in_worktree`、主工作区干净、主 `HEAD == base_commit`、Git/worktree ownership/registry/lock 一致，以及 stored patch hash 与 retained worktree 内容和受控 patch 预期一致。worktree 内容只作完整性证据，不是写入源。promotion 专用 `patch_apply` 使用固定 argv 的 Git atomic apply；patch/worktree/journal 的 `promoted` 终态通过 SQLite cross-database transaction 一起提交。状态同步失败时以受控逆向 patch 回滚主工作区。V25 不 commit、merge、push、建分支/PR、删除 worktree、prune、后台重试或自动修复。
+
 ## V23 Worktree Disposal / Reconciliation
 
 V23 当前实现链路为
@@ -65,8 +72,8 @@ AgentLoop
 与 repo identity。standalone verification 继续使用原始工作区。
 
 `WorktreeManager` 负责 Git 前置检查、固定 argv 创建、失败回滚、生命周期状态和只读
-查询。成功创建的 worktree 在 V20 保留并锁定；清理、commit、merge、push、promote
-与继续执行均不属于当前 runtime。
+查询。成功创建的 worktree 在 V20 保留并锁定；V25 只允许严格验证后的 promotion，清理、commit、merge、push
+与继续执行均不属于该创建流程。
 
 RepoPilot 当前采用渐进式 Harness 架构。目标不是替代通用 AI IDE 或 AI 编程助手，而是围绕代码仓库分析任务，把 Agent 的工具调用、安全边界、执行追踪、验证和交接机制做成可控、可审计、可扩展的执行框架。
 
@@ -78,7 +85,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
   -> PatchManager(proposal/apply confirmation)
-  -> WorktreeManager(scoped create / inventory / inspection / re-verification preflight)
+  -> WorktreeManager(scoped create / inventory / inspection / disposal / re-verification / promotion preflight)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
   -> AuditManager(persistent redacted audit / read-only recovery)

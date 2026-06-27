@@ -87,3 +87,12 @@ Eligible retained worktrees MAY transition to these states only through V23 conf
 - **WHEN** a worktree reaches `discarded`
 - **THEN** repeated disposal/reconciliation is idempotent
 - **AND** re-verification MUST reject the worktree
+
+### Requirement: Promoted Retained Worktrees Are V25 Terminal
+
+Verified promotion MAY transition only a scoped `verification_succeeded` retained worktree to `promoted` after main workspace and stored-patch integrity preflight. The worktree remains retained; re-verification, repeat promotion, patch mutation, and V23 disposal/reconciliation MUST reject it in V25.
+
+#### Scenario: Promoted worktree remains retained
+
+- **WHEN** verified promotion succeeds
+- **THEN** the worktree remains present with lifecycle `promoted`

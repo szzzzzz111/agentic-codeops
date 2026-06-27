@@ -1,5 +1,13 @@
 # 项目进度
 
+## V25 Verified Patch Promotion（archived / merge pending，2026-06-27）
+
+- OpenSpec change `add-verified-patch-promotion` 已归档到 `openspec/changes/archive/2026-06-27-add-verified-patch-promotion/`；风险级别保持 `high`；当前分支：`codex/add-verified-patch-promotion`。runtime/tests 已实现，尚未 merge 或 push。
+- 已实现严格确认路由，位置在 V23 disposal/reconciliation 后、V22 re-verification 前；promotion 仅接受当前 scope 内 `verification_succeeded` + `applied_in_worktree` retained worktree，并检查主工作区干净、`HEAD == base_commit`、Git/worktree metadata、stored patch hash 和 worktree 内容完整性。
+- 主工作区写入只使用 stored controlled patch，并经既有 `ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 与 `ToolExecutor.patch_apply`。promotion 专用写入使用 Git atomic apply，patch/worktree/journal 的 `promoted` 终态通过 SQLite cross-database transaction 提交；状态同步失败会使用受控逆向 patch 回滚主工作区与 lifecycle，不能把 partial promotion 作为成功返回。
+- V25 不实现 commit、merge、push、branch/PR、后台任务、自动 retry/repair、删除 retained worktree 或 `git worktree prune`。Fresh evidence：promotion focused tests 28 passed；adjacent patch/worktree/audit/AgentLoop/API regressions 172 passed；promotion + adjacent total 200 passed；archive 前 `openspec validate --all` 为 22 passed、0 failed；archive 后 `openspec list` 为 No active changes found，`openspec validate --all` 为 21 passed、0 failed；full `scripts/verify.ps1` 通过，pytest 469 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warnings。
+- Review evidence：internal final review 修复了 promotion partial-write、post-apply state truthfulness、dirty-worktree TOCTOU、failed journal retry 和 capability-status 文案漂移；Codex final review 的 P1/P2 已按 `fix` 关闭：atomic apply 增加 `expected_base_commit` guard、`finalize_promotion()` 增加 patch/worktree/journal 状态前置条件、promotion audit payload 增加安全 `patch_id`。OpenCode final review 复用 session `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`；focused re-review 确认上述 findings 已关闭且无新 P0/P1/P2。Stage Debt Sweep 已覆盖 changed runtime/tests/docs/specs/Harness；残余 P3 为无全局 repo lock 下的极窄跨进程 HEAD/file mutation race，记录为后续 hardening，不阻断 V25。
+
 ## V24 CLI Capability Surface / Plan Review Workflow Hardening（2026-06-25）
 
 - OpenSpec change `polish-demo-cli-capability-surface` 已归档到

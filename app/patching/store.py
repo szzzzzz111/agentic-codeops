@@ -16,6 +16,7 @@ PATCH_STATUS_APPLIED_IN_WORKTREE = "applied_in_worktree"
 PATCH_STATUS_FAILED = "failed"
 PATCH_STATUS_EXPIRED = "expired"
 PATCH_STATUS_DISCARDED = "discarded"
+PATCH_STATUS_PROMOTED = "promoted"
 DEFAULT_TTL_HOURS = 24
 
 
@@ -145,6 +146,162 @@ class SQLitePatchStore:
             )
         return cursor.rowcount == 1
 
+    def begin_promotion(
+        self,
+        *,
+        patch_id: str,
+        worktree_id: str,
+        user_id: str,
+        repo_key: str,
+    ) -> bool:
+        self._ensure_promotion_schema()
+        now = _dump_dt(_utc_now())
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO patch_promotions
+                    (patch_id, worktree_id, user_id, repo_key, state, updated_at)
+                VALUES (?, ?, ?, ?, 'prepared', ?)
+                ON CONFLICT(patch_id, worktree_id, user_id, repo_key) DO UPDATE
+                SET state = 'prepared', updated_at = excluded.updated_at
+                WHERE patch_promotions.state = 'apply_failed'
+                """,
+                (patch_id, worktree_id, user_id, repo_key, now),
+            )
+        return cursor.rowcount == 1
+
+    def update_promotion_state(
+        self,
+        *,
+        patch_id: str,
+        worktree_id: str,
+        user_id: str,
+        repo_key: str,
+        state: str,
+    ) -> bool:
+        self._ensure_promotion_schema()
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                UPDATE patch_promotions SET state = ?, updated_at = ?
+                WHERE patch_id = ? AND worktree_id = ? AND user_id = ? AND repo_key = ?
+                """,
+                (state, _dump_dt(_utc_now()), patch_id, worktree_id, user_id, repo_key),
+            )
+        return cursor.rowcount == 1
+
+    def finalize_promotion(
+        self,
+        *,
+        patch_id: str,
+        worktree_id: str,
+        user_id: str,
+        repo_key: str,
+        worktree_db_path: Path,
+    ) -> bool:
+        self._ensure_promotion_schema()
+        now = _dump_dt(_utc_now())
+        with self._connect() as conn:
+            conn.execute("ATTACH DATABASE ? AS promotion_worktrees", (str(worktree_db_path),))
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                patch_cursor = conn.execute(
+                    """
+                    UPDATE patches SET status = ?, updated_at = ?
+                    WHERE patch_id = ? AND user_id = ? AND repo_key = ?
+                      AND status = ?
+                    """,
+                    (
+                        PATCH_STATUS_PROMOTED,
+                        now,
+                        patch_id,
+                        user_id,
+                        repo_key,
+                        PATCH_STATUS_APPLIED_IN_WORKTREE,
+                    ),
+                )
+                worktree_cursor = conn.execute(
+                    """
+                    UPDATE promotion_worktrees.worktrees SET status = ?, updated_at = ?
+                    WHERE worktree_id = ? AND user_id = ? AND repo_key = ?
+                      AND status = ?
+                    """,
+                    (
+                        "promoted",
+                        now,
+                        worktree_id,
+                        user_id,
+                        repo_key,
+                        "verification_succeeded",
+                    ),
+                )
+                journal_cursor = conn.execute(
+                    """
+                    UPDATE patch_promotions SET state = ?, updated_at = ?
+                    WHERE patch_id = ? AND worktree_id = ? AND user_id = ? AND repo_key = ?
+                      AND state = ?
+                    """,
+                    (
+                        "promoted",
+                        now,
+                        patch_id,
+                        worktree_id,
+                        user_id,
+                        repo_key,
+                        "main_applied",
+                    ),
+                )
+                if (
+                    patch_cursor.rowcount != 1
+                    or worktree_cursor.rowcount != 1
+                    or journal_cursor.rowcount != 1
+                ):
+                    raise sqlite3.Error("promotion_state_update_failed")
+                conn.commit()
+            except sqlite3.Error:
+                conn.rollback()
+                return False
+            finally:
+                conn.execute("DETACH DATABASE promotion_worktrees")
+        return True
+
+    def promotion_state(
+        self,
+        *,
+        patch_id: str,
+        worktree_id: str,
+        user_id: str,
+        repo_key: str,
+    ) -> str | None:
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    """
+                    SELECT state FROM patch_promotions
+                    WHERE patch_id = ? AND worktree_id = ? AND user_id = ? AND repo_key = ?
+                    """,
+                    (patch_id, worktree_id, user_id, repo_key),
+                ).fetchone()
+        except sqlite3.OperationalError:
+            return None
+        return None if row is None else str(row[0])
+
+    def mark_promotion_apply_failed(
+        self,
+        *,
+        patch_id: str,
+        worktree_id: str,
+        user_id: str,
+        repo_key: str,
+    ) -> bool:
+        return self.update_promotion_state(
+            patch_id=patch_id,
+            worktree_id=worktree_id,
+            user_id=user_id,
+            repo_key=repo_key,
+            state="apply_failed",
+        )
+
     def _ensure_schema(self) -> None:
         with self._connect() as conn:
             conn.execute(
@@ -161,6 +318,22 @@ class SQLitePatchStore:
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
                     expires_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def _ensure_promotion_schema(self) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS patch_promotions (
+                    patch_id TEXT NOT NULL,
+                    worktree_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    repo_key TEXT NOT NULL,
+                    state TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (patch_id, worktree_id, user_id, repo_key)
                 )
                 """
             )

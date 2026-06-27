@@ -105,12 +105,12 @@ pending patch proposal 输出。
 
 CLI 只接受固定验证标签 `verify`、`pytest`、`ruff`，拒绝附加 argv、管道、重定向、
 环境变量注入和 unsafe patch id；patch id 必须匹配 `^patch_[A-Za-z0-9_]{1,122}$`。
-CLI 不实现 Verified Patch Promotion、commit、merge、push、
-后台任务、subagent 或 connector。
+CLI 不提供独立 Verified Patch Promotion 子命令；promotion 仅在既有 `/chat.answer`
+交互中接受严格确认语法。RepoPilot 不实现 commit、merge、push、后台任务、subagent 或 connector。
 
 ## 当前快照
 
-- 当前阶段能力：V1-V23 已归档；V24 `polish-demo-cli-capability-surface` 正在实现 CLI Capability Surface / Demo-ready Product Surface。
+- 当前阶段能力：V1-V25 已归档；V25 `add-verified-patch-promotion` 已完成 runtime/tests、final verification、review triage 和 OpenSpec archive，尚未合并或推送。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -121,10 +121,11 @@ CLI 不实现 Verified Patch Promotion、commit、merge、push、
 - 当前 Patch + Verify Loop：通过明确组合确认请求串联 pending patch apply 与白名单验证；组合请求必须同时包含 patch id 和验证标签，解析失败整体拒绝且不 apply；apply 成功后才使用独立 verification context 运行验证。
 - 当前 Persistent Audit / Recovery：使用 repo-local `.repopilot/audit.sqlite3` 持久化脱敏 trace envelope、patch attempt、verification result 和 long task event，并通过现有 `/chat.answer` 提供只读恢复/状态查询；不新增 `/chat` 顶层字段。
 - 当前 Worktree Isolation：明确确认的 standalone patch 与组合 Patch + Verify 先创建 detached、locked worktree；patch 与组合 verification 使用同一个内部 `execution_repo_path`，主工作区保持不变；standalone verification 保持主工作区语义。
+- 当前 Verified Patch Promotion：仅精确确认的 `confirm promote worktree <worktree_id>` / `确认提升 worktree <worktree_id>` 可提升当前 scope 内 `verification_succeeded` + `applied_in_worktree` 的 retained worktree；先验证主工作区干净、`HEAD == base_commit`、Git/worktree metadata 与 stored patch 预期内容，再经既有审批 `patch_apply` 写入主工作区。成功后 patch/worktree 均为 `promoted`；失败不 commit/push、不删除 worktree。
 - 当前安全边界：只读文件工具、`ToolRegistry`、`PermissionPolicy`、`ApprovalGate`、`ToolInvocationContext` 和统一 `ToolExecutor`。
 - 当前默认不接真实 LLM，不执行任意 shell，不执行 skill；V16 仅允许用户明确确认后的受控 patch apply；V17 仅允许明确验证请求下的白名单验证命令；V18 仅允许明确组合确认下的 apply 后 verify；V19 recovery/status 只读且不执行 patch、verification、task resume 或 repo mutation；显式配置后可通过 OpenAI-compatible Model Provider 生成 grounded answer。
 - 当前不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、真实 LLM query rewrite/rerank、向量 memory、自动 memory 总结或 context compression。
-- 当前不执行后台任务、不调度真实 subagents、不执行任意 shell、不自动 commit；V20 仅为明确确认的 patch 流程创建受控 worktree。
+- 当前不执行后台任务、不调度真实 subagents、不执行任意 shell、不自动 commit/merge/push 或 worktree prune；V20 创建受控 worktree，V25 只在上述严格验证后受控提升已验证 patch。
 
 ## 当前能力
 
@@ -527,7 +528,7 @@ ChatService
 
 已归档至 V20：Worktree Isolation。已归档至 V21：Worktree Inventory / Inspection。
 已归档至 V22：Worktree Re-verification。已归档至 V23：Worktree Disposal / Reconciliation。
-当前 active OpenSpec change 为 `polish-demo-cli-capability-surface`；V24 仅打磨 CLI Capability Surface / Demo-ready Product Surface 和计划 review 流程，不代表新增 `/chat` contract、provider runtime、默认 Patch wiring 或 Verified Patch Promotion。
+当前无 active OpenSpec change；V25 已完成 runtime/tests、final verification、review triage 并归档，不代表新增 `/chat` contract、provider runtime、默认 CI、commit/merge/push 或 branch/PR automation。
 
 近期后端路线聚焦补齐 worktree 生命周期闭环，并按只读到受控写入逐阶段推进：
 
@@ -543,9 +544,8 @@ ChatService
 - V24 CLI Capability Surface / Demo-ready Product Surface：把已有 grounded answer、
   patch proposal、explicit apply、deterministic verify、status 和 audit 能力通过
   `repopilot` CLI 稳定展示；只做命令映射和 presentation，不改 runtime contract。
-- V25 candidate Verified Patch Promotion：顺延评估；候选方向是仅允许验证成功且内容完整性校验通过的
-  worktree，并要求主工作区干净、`HEAD == base_commit`、不自动 commit/push。
+- V25 Verified Patch Promotion：仅允许验证成功且内容完整性校验通过的 retained worktree；要求主工作区干净、`HEAD == base_commit`、Git/worktree metadata 一致，并使用 stored patch 经审批 `patch_apply` 提升。失败 fail-closed，不自动 commit/push、retry、repair 或删除 worktree。
 
-V24 CLI surface 完成后再重新评估 Verified Patch Promotion、Operator Control、Durable Execution、Background Worker、
+V25 完成 archive 后再重新评估 Operator Control、Durable Execution、Background Worker、
 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 的优先级；
 当前不要把这些候选方向写成已实现能力或提前锁定公开 API。

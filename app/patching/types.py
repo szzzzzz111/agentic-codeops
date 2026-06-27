@@ -15,3 +15,4 @@ class ToolInvocationContext:
     diff_hash_match: bool = False
     expires_at_valid: bool = False
     scope_valid: bool = False
+    promotion_preflight_valid: bool = False

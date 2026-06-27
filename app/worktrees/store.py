@@ -17,6 +17,7 @@ WORKTREE_STATUS_VERIFICATION_SUCCEEDED = "verification_succeeded"
 WORKTREE_STATUS_VERIFICATION_FAILED = "verification_failed"
 WORKTREE_STATUS_DISPOSAL_FAILED = "disposal_failed"
 WORKTREE_STATUS_DISCARDED = "discarded"
+WORKTREE_STATUS_PROMOTED = "promoted"
 
 
 @dataclass(frozen=True)

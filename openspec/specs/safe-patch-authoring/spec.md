@@ -145,3 +145,12 @@ V23 disposal/reconciliation MUST use the scoped update to transition an associat
 - **WHEN** V23 checks a repo without an existing patch database
 - **THEN** it returns a safe failure
 - **AND** it MUST NOT create `.repopilot` or the patch database
+
+### Requirement: Verified Promotion Uses A Scoped Promoted Patch State
+
+仅 verified promotion flow MAY transition a scoped `applied_in_worktree` patch to `promoted`. Ordinary patch confirmation MUST NOT apply such a patch to the main workspace. A promotion write MUST be derived from the stored patch and use approval-gated `patch_apply`; multi-file writes MUST stage new content and originals before target replacement.
+
+#### Scenario: Worktree patch cannot bypass promotion context
+
+- **WHEN** an `applied_in_worktree` patch is presented to ordinary patch confirmation
+- **THEN** `patch_apply` is rejected

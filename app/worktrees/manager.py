@@ -17,6 +17,14 @@ from app.worktrees.reverification import (
     WorktreeReverificationPreflight,
     preflight_worktree_reverification,
 )
+from app.worktrees.promotion import (
+    VerifiedPatchPromotionCompletion,
+    VerifiedPatchPromotionPreflight,
+    begin_verified_patch_promotion,
+    complete_verified_patch_promotion,
+    mark_verified_patch_promotion_apply_failed,
+    preflight_verified_patch_promotion,
+)
 from app.worktrees.store import (
     WORKTREE_STATUS_CREATE_FAILED,
     WORKTREE_STATUS_PATCH_APPLIED,
@@ -47,6 +55,34 @@ class WorktreeInventoryResult:
 
 
 class WorktreeManager:
+    def prepare_promotion(
+        self,
+        *,
+        repo_path: str,
+        user_id: str,
+        worktree_id: str,
+    ) -> VerifiedPatchPromotionPreflight:
+        return preflight_verified_patch_promotion(
+            repo_path=repo_path,
+            user_id=user_id,
+            worktree_id=worktree_id,
+        )
+
+    def begin_promotion(self, preflight: VerifiedPatchPromotionPreflight) -> bool:
+        return begin_verified_patch_promotion(preflight)
+
+    def complete_promotion(
+        self,
+        preflight: VerifiedPatchPromotionPreflight,
+    ) -> VerifiedPatchPromotionCompletion:
+        return complete_verified_patch_promotion(preflight)
+
+    def mark_promotion_apply_failed(
+        self,
+        preflight: VerifiedPatchPromotionPreflight,
+    ) -> None:
+        mark_verified_patch_promotion_apply_failed(preflight)
+
     def prepare_disposal(
         self,
         *,

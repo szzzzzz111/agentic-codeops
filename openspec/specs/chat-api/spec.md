@@ -111,3 +111,12 @@ Public worktree answers MAY include safe `worktree_id`, patch id, status summary
 - **WHEN** `/chat` returns a V23 disposal/reconciliation result
 - **THEN** the response contains only `trace_id`, `answer`, `related_files`, and `tool_calls`
 - **AND** it MUST NOT expose local paths or raw Git output
+
+### Requirement: Verified Promotion Preserves Chat Schema
+
+系统 SHALL return verified promotion results through existing `/chat.answer` and safe `tool_calls`. It MUST NOT add a `/chat` top-level field or standalone promotion API, and MUST NOT expose retained worktree paths, raw Git output, diff, or patch body.
+
+#### Scenario: Promotion answer keeps chat schema
+
+- **WHEN** a promotion request returns a result
+- **THEN** the response keeps the existing top-level chat fields

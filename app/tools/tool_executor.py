@@ -13,7 +13,11 @@ from app.rag.rerank import (
     rerank_with_fallback,
 )
 from app.rag.repo_rag import HybridRepoRetriever, RetrievalResult
-from app.patching.apply import PatchApplyResult, apply_unified_diff
+from app.patching.apply import (
+    PatchApplyResult,
+    apply_unified_diff,
+    apply_unified_diff_atomically,
+)
 from app.tools.file_tools import search_code
 from app.verification.runner import run_whitelisted_verification
 from app.worktrees.manager import WorktreeCreateResult, WorktreeManager
@@ -192,8 +196,25 @@ class ToolExecutor:
             evidence_pack=evidence_pack,
         )
 
-    def patch_apply(self, repo_path: str, diff_text: str) -> ToolExecutionResult:
-        result = apply_unified_diff(repo_path, diff_text)
+    def patch_apply(
+        self,
+        repo_path: str,
+        diff_text: str,
+        *,
+        require_atomic: bool = False,
+        require_clean: bool = True,
+        expected_base_commit: str | None = None,
+    ) -> ToolExecutionResult:
+        result = (
+            apply_unified_diff_atomically(
+                repo_path,
+                diff_text,
+                require_clean=require_clean,
+                expected_base_commit=expected_base_commit,
+            )
+            if require_atomic
+            else apply_unified_diff(repo_path, diff_text)
+        )
         if not result.applied:
             return ToolExecutionResult(
                 tool_name="patch_apply",

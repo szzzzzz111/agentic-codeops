@@ -120,3 +120,12 @@ The event MAY include attempt kind, confirmation, preflight classification, comp
 - **WHEN** disposal stops after a destructive step
 - **THEN** one safe related audit event identifies the completed and failed steps
 - **AND** it does not expose raw local state
+
+### Requirement: Verified Promotion Attempts Are Persistently Auditable
+
+系统 SHALL attempt one scoped redacted `verified_patch_promotion` event for every recognized promotion-like request. It MUST safely express confirmation, preflight, execution attempt, and error class without paths, Git/DB output, diff, patch body, file content, environment values, or secrets.
+
+#### Scenario: Unconfirmed promotion is recorded safely
+
+- **WHEN** a promotion-like request lacks confirmation
+- **THEN** its audit event records `confirmation=false` without a write attempt

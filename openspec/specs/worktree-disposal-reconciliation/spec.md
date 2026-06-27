@@ -75,3 +75,12 @@ The event SHALL distinguish attempt kind, confirmation, preflight classification
 - **WHEN** a recognized disposal-like request lacks confirmation or fails preflight
 - **THEN** one safe attempt event records that mutation was not executed
 - **AND** no destructive operation occurs
+
+### Requirement: V23 Does Not Dispose Promoted Worktrees
+
+V23 disposal/reconciliation SHALL reject `promoted` worktrees and MUST NOT delete the retained worktree or transition its `promoted` patch to `discarded`.
+
+#### Scenario: Promoted worktree cannot be discarded
+
+- **WHEN** V23 disposal targets a scoped `promoted` worktree
+- **THEN** it rejects without cleanup or patch status change

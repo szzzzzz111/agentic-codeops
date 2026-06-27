@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
+import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
+import subprocess
+import tempfile
 
 from app.tools import file_tools
 
@@ -43,20 +46,140 @@ def apply_unified_diff(repo_path: str | Path, diff_text: str) -> PatchApplyResul
     except (OSError, UnicodeDecodeError):
         return PatchApplyResult(applied=False, error="io_error")
 
-    written: list[Path] = []
+    staged_changes: dict[Path, Path] = {}
+    staged_originals: dict[Path, Path] = {}
     try:
         for path, content in planned.items():
-            path.write_text(content, encoding="utf-8")
-            written.append(path)
+            staged_changes[path] = _write_staged_file(path, content)
+        for path, content in originals.items():
+            staged_originals[path] = _write_staged_file(path, content)
     except OSError:
-        for path in written:
-            try:
-                path.write_text(originals[path], encoding="utf-8")
-            except OSError:
-                pass
+        _remove_staged_files(staged_changes, staged_originals)
         return PatchApplyResult(applied=False, error="io_error")
 
+    replaced: list[Path] = []
+    try:
+        for path, staged in staged_changes.items():
+            os.replace(staged, path)
+            replaced.append(path)
+    except OSError:
+        rollback_failed = False
+        for path in replaced:
+            try:
+                os.replace(staged_originals[path], path)
+            except OSError:
+                rollback_failed = True
+        _remove_staged_files(staged_changes, staged_originals)
+        return PatchApplyResult(
+            applied=False,
+            error="rollback_failed" if rollback_failed else "io_error",
+        )
+    _remove_staged_files({}, staged_originals)
+
     return PatchApplyResult(applied=True, changed_files=changed_files)
+
+
+def apply_unified_diff_atomically(
+    repo_path: str | Path,
+    diff_text: str,
+    *,
+    require_clean: bool = True,
+    expected_base_commit: str | None = None,
+) -> PatchApplyResult:
+    plan_result = preflight_unified_diff(repo_path, diff_text)
+    if not plan_result.applied:
+        return plan_result
+    try:
+        repo_root = Path(repo_path).resolve(strict=True)
+        if require_clean:
+            status = subprocess.run(
+                ["git", "status", "--porcelain", "--untracked-files=all"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=20,
+                shell=False,
+                check=False,
+            )
+            if status.returncode != 0:
+                return PatchApplyResult(applied=False, error="main_workspace_unavailable")
+            if status.stdout.strip():
+                return PatchApplyResult(applied=False, error="main_workspace_dirty")
+        if expected_base_commit is not None:
+            head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repo_root,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                timeout=10,
+                shell=False,
+                check=False,
+            )
+            if head.returncode != 0:
+                return PatchApplyResult(applied=False, error="main_workspace_unavailable")
+            if head.stdout.strip() != expected_base_commit:
+                return PatchApplyResult(applied=False, error="atomic_apply_base_mismatch")
+        check = subprocess.run(
+            ["git", "apply", "--check", "--whitespace=nowarn"],
+            cwd=repo_root,
+            input=diff_text,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=20,
+            shell=False,
+            check=False,
+        )
+        if check.returncode != 0:
+            return PatchApplyResult(applied=False, error="atomic_apply_preflight_failed")
+        applied = subprocess.run(
+            ["git", "apply", "--whitespace=nowarn"],
+            cwd=repo_root,
+            input=diff_text,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=20,
+            shell=False,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError, UnicodeError):
+        return PatchApplyResult(applied=False, error="atomic_apply_unavailable")
+    if applied.returncode != 0:
+        return PatchApplyResult(applied=False, error="atomic_apply_failed")
+    return PatchApplyResult(applied=True, changed_files=plan_result.changed_files)
+
+
+def _write_staged_file(target: Path, content: str) -> Path:
+    descriptor, raw_path = tempfile.mkstemp(
+        prefix=f".{target.name}.",
+        suffix=".repopilot-stage",
+        dir=target.parent,
+    )
+    staged = Path(raw_path)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
+            handle.write(content)
+    except Exception:
+        try:
+            staged.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
+    return staged
+
+
+def _remove_staged_files(*groups: dict[Path, Path]) -> None:
+    for group in groups:
+        for target, staged in group.items():
+            if staged == target:
+                continue
+            try:
+                staged.unlink(missing_ok=True)
+            except OSError:
+                pass
 
 
 def preflight_unified_diff(repo_path: str | Path, diff_text: str) -> PatchApplyResult:
