@@ -52,6 +52,9 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 
 ## 文档职责
 
+- `README.md`：项目门面、当前 capability snapshot、quick start 和文档导航；不承载详细阶段历史。
+- `docs/ARCHITECTURE.md`：稳定 runtime boundary 和 durable component relationships；不把 transient stage task 写成当前事实。
+- `docs/FEATURE_LIST.json`：acceptance-oriented capability inventory 和 `passes` 状态；不写路线图叙事。
 - `.harness/review_checklist.md`：过程步骤和 gate 证据。
 - `docs/PROGRESS.md`：长期能力、重要决策、验证和未清债务。
 - `HANDOFF_TO_NEXT_CHAT.md`：下一轮必须知道的当前上下文、阻塞和安全下一步。
@@ -59,6 +62,8 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 
 不是每个 session 都必须修改 PROGRESS 和 HANDOFF。只有各自拥有的事实发生变化时才更新；
 archive、merge、push 和分支清理完成后合并为一次 final handoff，不在多份文档重复动态 hash。
+Archived OpenSpec changes 和 `docs/PROGRESS.md` 历史段落可以保留当时真实的旧路线图措辞；
+current-state drift scan 只应针对当前事实文件和当前建议段。
 
 ## 连续执行授权
 

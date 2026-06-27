@@ -1,5 +1,15 @@
 # 项目进度
 
+## Documentation Source Consolidation（archived，2026-06-27）
+
+- OpenSpec change `consolidate-stage-documentation-sources` 已归档到 `openspec/changes/archive/2026-06-27-consolidate-stage-documentation-sources/`；风险级别：medium。
+- 本阶段目标是减少 README、ARCHITECTURE、PROGRESS、FEATURE_LIST、HANDOFF 和 Harness 之间的 current-stage fact 重复，降低 closeout 后 stale wording 漂移。OpenSpec、Harness、review checklist、Codex/OpenCode skills、Superpowers、MCP 和 plugin 继续只作为开发流程或外部协作范式，不写成 RepoPilot runtime 能力。
+- Planning evidence：已创建 proposal/design/tasks/spec delta 并同步 `.harness/allowed_files.md` 与 `.harness/review_checklist.md`；internal、Codex independent、OpenCode independent plan review 已完成，findings 均按 `fix / clarify / reject / defer` triage；`openspec validate consolidate-stage-documentation-sources --strict` 通过。
+- Implementation scope：README 中等压缩为项目门面；ARCHITECTURE 只保留稳定 runtime boundary；PROGRESS 保留阶段历史、durable decisions、validation evidence 和 unresolved debt；HANDOFF 只保留下轮安全行动上下文；FEATURE_LIST 保持 acceptance-oriented；`scripts/check_stage_docs.ps1` 只检查 current fact sections，不误伤 archived OpenSpec 或 historical PROGRESS entries。
+- Implementation evidence：docs consistency regression 已更新为验证新文档职责，不再要求 README 承载完整 route map；full `scripts/verify.ps1` 通过，pytest 469 passed、1 skipped，ruff、stage docs scan、skill eval structure scan passed；`openspec validate --all` 为 22 passed、0 failed；`git diff --check` 通过，仅 CRLF normalization warnings。
+- Final review evidence：OpenCode final implementation review 复用 session `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，覆盖 README route-map 收敛、ARCHITECTURE stable facts、PROGRESS/HANDOFF current facts、drift script、test contract、allowed files 和 runtime scope；无 P0/P1/P2/P3。Stage Debt Sweep 覆盖 changed docs、adjacent responsibility statements、drift script 和 docs consistency regression；无新增 blocking debt。
+- Archive evidence：archive 使用 `openspec archive consolidate-stage-documentation-sources --skip-specs --yes`，因为长期 `harness-development-workflow` spec 已在 implementation 中同步；archive 后 `openspec list` 为 No active changes found，`openspec validate --all` 为 21 passed、0 failed。
+
 ## V25 Verified Patch Promotion（archived and merged，2026-06-27）
 
 - OpenSpec change `add-verified-patch-promotion` 已归档到 `openspec/changes/archive/2026-06-27-add-verified-patch-promotion/`；风险级别保持 `high`；implementation commit `71aefd6 Add verified patch promotion` 已 fast-forward 合入 `main`。
@@ -1081,12 +1091,11 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V25 `add-verified-patch-promotion` 已完成、归档、合并并推送到 `main`；
-  当前无 active OpenSpec change，下一阶段启动前先重新规划 allowed files、review checklist
-  和风险级别。
+- 当前建议：`consolidate-stage-documentation-sources` 已完成并归档；若尚未提交、合并或推送，先完成 Git closeout；完成后再启动下一阶段规划。
 - 近期路线：V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 CLI
-  Capability Surface / Demo-ready Product Surface 与 V25 Verified Patch Promotion 均已完成。
-- V25 完成后重新评估 Operator Control、Durable Execution、Background Worker、
+  Capability Surface / Demo-ready Product Surface 与 V25 Verified Patch Promotion 均已完成；
+  当前不启动新的 runtime stage。
+- 后续再重新评估 Operator Control、Durable Execution、Background Worker、
   subagents、connectors、notifications、heartbeat/cron 和 always-on assistant；
   不要写成当前 runtime 已实现能力，也不要提前锁定公开 API。
 - 继续保持不执行 skill，除非后续阶段明确开放。

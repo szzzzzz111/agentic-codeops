@@ -644,14 +644,16 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "V10：Evidence Pack + Context Budget" in combined
     assert "V11：Grounded Answer / Model Provider Boundary" in combined
     assert "V12：Query Rewrite + Rerank" in combined
-    assert "### Verification Runner" in readme
-    assert "### Persistent Audit / Recovery" in readme
-    assert "### V19：Persistent Audit / Recovery" in readme
-    assert "已归档至 V20：Worktree Isolation" in readme
-    assert "## V20 Worktree Isolation" in readme
-    assert "### V20：Worktree Isolation" in readme
+    assert "## 当前快照" in readme
+    assert "## 文档职责" in readme
+    assert "### Verification Runner" not in readme
+    assert "### Persistent Audit / Recovery" not in readme
+    assert "### V19：Persistent Audit / Recovery" not in readme
+    assert "## 阶段历史" not in readme
+    assert "## 路线图" not in readme
     assert "## V20 Worktree Isolation 架构补充" in combined
-    assert "当前 active OpenSpec change：无" in combined
+    assert "consolidate-stage-documentation-sources" in combined
+    assert "Active OpenSpec change：无" in combined
     assert "2026-06-07-v20-worktree-isolation" in combined
     assert "V15：Assistant Control Surface" in combined
     assert "V16：Safe Patch Authoring" in combined
@@ -659,9 +661,10 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "V18：Patch + Verify Loop" in combined
     assert "V19：Persistent Audit / Recovery" in combined
     assert "Assistant Control Surface" in combined
-    assert "WorktreeManager(scoped create / inventory / inspection / re-verification preflight)" in combined
+    assert "WorktreeManager(scoped create / inventory / inspection / disposal / re-verification / promotion preflight)" in combined
     assert "ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run)" in combined
     assert "V10-V23 changes 已归档" in combined
+    assert "README 只保留项目门面" in combined
     assert "当前工作分支为 `main`，active OpenSpec change 为无" not in readme
     assert "已归档至 V18：Patch + Verify Loop" not in combined
     assert "V10：Query Rewrite / Rerank / Context Budget" not in combined

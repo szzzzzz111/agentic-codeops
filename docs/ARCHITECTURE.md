@@ -242,7 +242,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 
 V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rewrite、rerank、memory、SandboxRunner 或多 agent orchestration。当前主链路已在 V9 hybrid retrieval 之后加入 V10 Evidence Pack / Context Budget，见后续章节。
 
-## 后续路线调整
+## Worktree Lifecycle 架构摘要
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
@@ -250,37 +250,7 @@ V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / M
 
 V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期状态和只读查询；V21-V25 逐步补齐 inventory/inspection、re-verification、disposal/reconciliation 和 verified promotion。commit、merge、push、branch/PR automation、runtime subagents、connectors、notifications 和 always-on assistant 仍须通过后续独立 OpenSpec change、harness 边界和 review 才能进入 runtime。
 
-V20 后的近期后端路线按 worktree 生命周期风险递增拆分，避免把只读检查、验证执行、
-不可逆清理和主工作区写入放入同一阶段：
-
-1. V21 Worktree Inventory / Inspection 只读提供 scoped inventory、diffstat、changed
-   files、限长脱敏 diff preview、验证摘要和一致性检查。preview 必须使用专用安全
-   formatter，限制总字符、每文件行数和单行长度；不得通过 `diff`、`diff_text` 或
-   `full_diff` audit payload key 持久化，也不得暴露完整 diff。
-2. V22 Worktree Re-verification 只处理明确触发的白名单验证重跑。worktree 使用既有
-   `verification_succeeded` / `verification_failed` 状态表达最新结果，patch 保持
-   `applied_in_worktree`；是否为重跑、次数和每次结果由脱敏 audit 记录，不新增
-   `verification_rerun_*` 状态。
-3. V23 Worktree Disposal / Reconciliation 处理明确确认后的幂等
-   unlock/remove/discard，并协调 Git registry、目录和 metadata 不一致。discard 后
-   worktree 转为 `discarded`，patch 转为 `discarded`，不得回退为
-   `pending` 或自动重新 apply。
-4. V24 CLI Capability Surface / Demo-ready Product Surface 仅把已有 grounded
-   answer、patch proposal、explicit apply、deterministic verify、status 和 audit
-   能力通过 `repopilot` CLI 稳定展示。CLI 只调用 `ChatService.handle_chat()`，
-   输出只基于公开 `trace_id`、`answer`、`related_files`、`tool_calls` 分段呈现；
-   不新增 `/chat` contract、provider runtime、默认 Patch wiring 或写入 executor。
-5. V25 Verified Patch Promotion 只处理精确确认后的 verified retained worktree
-   提升。它在主工作区 clean、`HEAD == base_commit`、Git/worktree metadata、
-   stored patch hash 与目标内容完整性均通过后，使用 stored controlled patch 经
-   approval-gated `patch_apply` 写入主工作区，并把 patch/worktree 标记为
-   `promoted`。
-
-V21-V23 均保持明确命令、scope 校验、`PermissionPolicy -> ApprovalGate ->
-ToolExecutor` 写入边界和脱敏 persistent audit；V25 继续复用这些边界并增加 stored
-patch integrity、expected base guard 和 promotion lifecycle。V25 后再重新评估
-Operator Control、Durable Execution、Background Worker、subagents、connectors 和
-notifications；不提前锁定公开 API 或后台执行模型。
+Worktree lifecycle 的稳定边界是：只读检查、白名单验证、不可逆清理和主工作区写入分别由独立阶段引入；每个写入阶段继续经过 `PermissionPolicy -> ApprovalGate -> ToolExecutor`，并保持明确命令、scope 校验、脱敏 persistent audit 和 fail-closed 失败语义。后续 Operator Control、Durable Execution、Background Worker、runtime subagents、connectors 和 notifications 仍只是候选方向；不得在没有独立 OpenSpec change 和 Harness review 前写成 runtime 能力。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 

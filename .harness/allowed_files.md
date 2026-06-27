@@ -2,15 +2,15 @@
 
 当前 active OpenSpec change：无。
 
-V25 `add-verified-patch-promotion` 已归档到
-`openspec/changes/archive/2026-06-27-add-verified-patch-promotion/`；当前没有开放的新阶段写入范围。
+`consolidate-stage-documentation-sources` 已归档到
+`openspec/changes/archive/2026-06-27-consolidate-stage-documentation-sources/`；当前没有开放的新阶段写入范围。
 
 ## 下一阶段开始前
 
 - 先读取 `AGENTS.md` 及必读文档。
 - 先检查分支、工作树、最近提交、远端同步状态和 `openspec list`。
 - 新阶段必须先创建或选择 OpenSpec change，并同步本文件与 `.harness/review_checklist.md`。
-- 未同步新阶段边界前，不默认开放 `app/**`、`tests/**`、`docs/**` 或 `openspec/specs/**` 的语义修改。
+- 未同步新阶段边界前，不默认开放 `app/**`、`tests/**`、`docs/**`、`scripts/**` 或 `openspec/specs/**` 的语义修改。
 
 ## 长期禁止行为
 

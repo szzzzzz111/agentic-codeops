@@ -20,6 +20,11 @@ $requiredFiles = @(
 
 $findings = @()
 
+function Join-Codepoints {
+    param([int[]]$Codes)
+    return -join ($Codes | ForEach-Object { [char]$_ })
+}
+
 foreach ($path in $requiredFiles) {
     if (-not (Test-Path -LiteralPath $path)) {
         $findings += "$path is missing"
@@ -93,8 +98,21 @@ foreach ($path in $currentFactFiles) {
     }
 }
 
+$readme = Get-Content -Raw -Encoding UTF8 -LiteralPath "README.md"
+$readmeDuplicatedHeadings = @(
+    "## $(Join-Codepoints @(0x5F53, 0x524D, 0x80FD, 0x529B))",
+    "## $(Join-Codepoints @(0x5F53, 0x524D, 0x67B6, 0x6784))",
+    "## $(Join-Codepoints @(0x9636, 0x6BB5, 0x5386, 0x53F2))",
+    "## $(Join-Codepoints @(0x8DEF, 0x7EBF, 0x56FE))"
+)
+foreach ($heading in $readmeDuplicatedHeadings) {
+    if ($readme.Contains($heading)) {
+        $findings += "README.md contains duplicated deep-documentation heading: $heading"
+    }
+}
+
 $progress = Get-Content -Raw -Encoding UTF8 -LiteralPath "docs/PROGRESS.md"
-$nextStepsHeading = [string]::Concat("## ", [char]0x4E0B, [char]0x4E00, [char]0x6B65, [char]0x5EFA, [char]0x8BAE)
+$nextStepsHeading = "## $(Join-Codepoints @(0x4E0B, 0x4E00, 0x6B65, 0x5EFA, 0x8BAE))"
 $nextStepsStart = $progress.IndexOf($nextStepsHeading)
 if ($nextStepsStart -ge 0) {
     $nextSteps = $progress.Substring($nextStepsStart)
