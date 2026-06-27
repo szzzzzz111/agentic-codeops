@@ -110,7 +110,7 @@ CLI 不提供独立 Verified Patch Promotion 子命令；promotion 仅在既有 
 
 ## 当前快照
 
-- 当前阶段能力：V1-V25 已归档；V25 `add-verified-patch-promotion` 已完成 runtime/tests、final verification、review triage 和 OpenSpec archive，尚未合并或推送。
+- 当前阶段能力：V1-V25 已归档；V25 `add-verified-patch-promotion` 已完成 runtime/tests、final verification、review triage、OpenSpec archive，并已合入 `main`。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
