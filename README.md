@@ -110,7 +110,7 @@ CLI 不提供独立 Verified Patch Promotion 子命令；promotion 仅在既有 
 
 ## 当前快照
 
-- 当前阶段能力：V1-V25 已归档；V25 `add-verified-patch-promotion` 已完成 runtime/tests、final verification、review triage、OpenSpec archive，并已合入 `main`。
+- 当前阶段能力：V1-V25 已归档；V25 `add-verified-patch-promotion` 已完成 runtime/tests、final verification、review triage、OpenSpec archive，并已合入和推送到 `main`。
 - 当前 `/chat` contract：响应保留 `trace_id`、`answer`、`related_files`、`tool_calls`，不新增必需顶层字段。
 - 当前检索与回答方式：deterministic query understanding + bounded deterministic multi-query rewrite + repo-local hybrid RAG（lexical + 轻量 deterministic embedding）+ before-Evidence rerank，内部生成 Evidence Pack 与字符级 Context Budget，并通过 grounded answer 边界生成基于证据的 `answer`。
 - 当前 Memory：repo-local SQLite-backed PREF/LTM、进程内 STM、明确 `记住` / `忘记` / `remember` / `forget` 指令和内部 memory audit；`.repopilot/` 是本地状态目录，不提交到 git。
@@ -528,9 +528,9 @@ ChatService
 
 已归档至 V20：Worktree Isolation。已归档至 V21：Worktree Inventory / Inspection。
 已归档至 V22：Worktree Re-verification。已归档至 V23：Worktree Disposal / Reconciliation。
-当前无 active OpenSpec change；V25 已完成 runtime/tests、final verification、review triage 并归档，不代表新增 `/chat` contract、provider runtime、默认 CI、commit/merge/push 或 branch/PR automation。
+当前无 active OpenSpec change；V25 已完成 runtime/tests、final verification、review triage、归档、合并和推送，不代表新增 `/chat` contract、provider runtime、默认 CI、commit/merge/push automation 或 branch/PR automation。
 
-近期后端路线聚焦补齐 worktree 生命周期闭环，并按只读到受控写入逐阶段推进：
+近期后端路线已按只读到受控写入逐阶段补齐 worktree 生命周期闭环：
 
 - V21 Worktree Inventory / Inspection：只读列出和检查当前 scope 的 worktree，返回
   diffstat、changed files、限长脱敏 diff preview、验证摘要和一致性检查结果；不修改
@@ -546,6 +546,6 @@ ChatService
   `repopilot` CLI 稳定展示；只做命令映射和 presentation，不改 runtime contract。
 - V25 Verified Patch Promotion：仅允许验证成功且内容完整性校验通过的 retained worktree；要求主工作区干净、`HEAD == base_commit`、Git/worktree metadata 一致，并使用 stored patch 经审批 `patch_apply` 提升。失败 fail-closed，不自动 commit/push、retry、repair 或删除 worktree。
 
-V25 完成 archive 后再重新评估 Operator Control、Durable Execution、Background Worker、
+V25 完成后再重新评估 Operator Control、Durable Execution、Background Worker、
 subagents、connectors、notifications、heartbeat/cron 和 always-on assistant 的优先级；
 当前不要把这些候选方向写成已实现能力或提前锁定公开 API。

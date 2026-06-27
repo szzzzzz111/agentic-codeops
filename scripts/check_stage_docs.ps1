@@ -68,6 +68,52 @@ foreach ($required in $requiredWorkflowRequirements) {
     }
 }
 
+$currentFactFiles = @(
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/FEATURE_LIST.json",
+    "HANDOFF_TO_NEXT_CHAT.md",
+    ".harness/allowed_files.md",
+    ".harness/review_checklist.md"
+)
+$staleCurrentFactPatterns = @(
+    "V25/backlog",
+    "deferred to V25/backlog",
+    "Verified Patch Promotion is deferred",
+    "archive pending",
+    "merge pending",
+    "final review pending"
+)
+foreach ($path in $currentFactFiles) {
+    $content = Get-Content -Raw -Encoding UTF8 -LiteralPath $path
+    foreach ($pattern in $staleCurrentFactPatterns) {
+        if ($content.Contains($pattern)) {
+            $findings += "$path contains stale current-stage wording: $pattern"
+        }
+    }
+}
+
+$progress = Get-Content -Raw -Encoding UTF8 -LiteralPath "docs/PROGRESS.md"
+$nextStepsHeading = [string]::Concat("## ", [char]0x4E0B, [char]0x4E00, [char]0x6B65, [char]0x5EFA, [char]0x8BAE)
+$nextStepsStart = $progress.IndexOf($nextStepsHeading)
+if ($nextStepsStart -ge 0) {
+    $nextSteps = $progress.Substring($nextStepsStart)
+    $nextHeading = $nextSteps.IndexOf("`n## ", 1)
+    if ($nextHeading -gt 0) {
+        $nextSteps = $nextSteps.Substring(0, $nextHeading)
+    }
+    foreach ($pattern in $staleCurrentFactPatterns) {
+        if ($nextSteps.Contains($pattern)) {
+            $findings += "docs/PROGRESS.md next-step guidance contains stale wording: $pattern"
+        }
+    }
+    if ($nextSteps.Contains('V24 `polish-demo-cli-capability-surface`') -or $nextSteps.Contains("V24 CLI surface")) {
+        $findings += "docs/PROGRESS.md next-step guidance still describes V24 as the current stage"
+    }
+} else {
+    $findings += "docs/PROGRESS.md is missing next-step guidance section"
+}
+
 Write-Host "== RepoPilot stage docs responsibility scan =="
 Write-Host "Required files: $($requiredFiles.Count)"
 Write-Host "Long-term specs: $($specFiles.Count)"

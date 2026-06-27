@@ -121,7 +121,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。V19 `AuditManager` 持久化脱敏 trace envelope 和关键事件摘要；完整 raw internal trace、hybrid retrieval channel detail、Evidence Pack content 和 provider content 不持久化，也不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 和 V20-V23 worktree 生命周期。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态；Worktree Isolation 把 standalone patch 与组合 Patch + Verify 放入 detached、locked worktree，不新增 API 或 `/chat` 顶层字段。默认不接真实 LLM、不执行任意 shell、不自动 commit；显式环境配置只会把 OpenAI-compatible provider 接入 grounded answer 和 Long Task planner。共享 provider 可选记录 request-local latency、finish reason、model/fingerprint 和 token usage，但这些 metrics 不进入业务结果、公开响应或持久化 audit。`ModelPatchAuthoringProvider` 当前仅可通过依赖注入用于测试或自定义装配，默认 `AgentLoop` 不会因环境变量配置而启用真实 patch diff generation。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 和 V20-V25 worktree 生命周期。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态；Worktree Isolation 把 standalone patch 与组合 Patch + Verify 放入 detached、locked worktree，不新增 API 或 `/chat` 顶层字段；Verified Patch Promotion 只在精确确认后把已验证 retained worktree 的 stored controlled patch 通过 approval-gated `patch_apply` 提升到主工作区。默认不接真实 LLM、不执行任意 shell、不自动 commit；显式环境配置只会把 OpenAI-compatible provider 接入 grounded answer 和 Long Task planner。共享 provider 可选记录 request-local latency、finish reason、model/fingerprint 和 token usage，但这些 metrics 不进入业务结果、公开响应或持久化 audit。`ModelPatchAuthoringProvider` 当前仅可通过依赖注入用于测试或自定义装配，默认 `AgentLoop` 不会因环境变量配置而启用真实 patch diff generation。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -246,9 +246,9 @@ V8 仍不引入 embedding、Milvus、Elasticsearch、PgVector、Qdrant、LLM rew
 
 V9 已完成 Embedding Retrieval + Hybrid Search：补 embedding provider 边界、轻量默认实现、repo-local embedding retrieval 和 hybrid fusion，同时保留 V8 lexical retrieval 作为一等通道。当前路线进一步明确为 grep-first, RAG-assisted：lexical/path/symbol evidence 是可审计强基线，embedding/hybrid 只作为辅助召回通道。V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或模型下载。
 
-V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery；V20 Worktree Isolation 已完成并归档。
+V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / Model Provider Boundary；V12 已完成 Query Rewrite + Rerank；V13 已完成 Memory；V14 已完成 Long Task / ReAct Skeleton；V15 已完成并归档 Assistant Control Surface；V16 已归档 Safe Patch Authoring；V17 已完成 Verification Runner；V18 已完成 Patch + Verify Loop；V19 已完成并归档 Persistent Audit / Recovery；V20-V25 worktree 生命周期能力已完成并归档。
 
-V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期状态和只读查询。worktree 清理、commit、merge、push、promote、subagents、connectors、notifications 和 always-on assistant 仍须通过后续独立 OpenSpec change、harness 边界和 review 才能进入 runtime。
+V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期状态和只读查询；V21-V25 逐步补齐 inventory/inspection、re-verification、disposal/reconciliation 和 verified promotion。commit、merge、push、branch/PR automation、runtime subagents、connectors、notifications 和 always-on assistant 仍须通过后续独立 OpenSpec change、harness 边界和 review 才能进入 runtime。
 
 V20 后的近期后端路线按 worktree 生命周期风险递增拆分，避免把只读检查、验证执行、
 不可逆清理和主工作区写入放入同一阶段：
@@ -270,10 +270,15 @@ V20 后的近期后端路线按 worktree 生命周期风险递增拆分，避免
    能力通过 `repopilot` CLI 稳定展示。CLI 只调用 `ChatService.handle_chat()`，
    输出只基于公开 `trace_id`、`answer`、`related_files`、`tool_calls` 分段呈现；
    不新增 `/chat` contract、provider runtime、默认 Patch wiring 或写入 executor。
+5. V25 Verified Patch Promotion 只处理精确确认后的 verified retained worktree
+   提升。它在主工作区 clean、`HEAD == base_commit`、Git/worktree metadata、
+   stored patch hash 与目标内容完整性均通过后，使用 stored controlled patch 经
+   approval-gated `patch_apply` 写入主工作区，并把 patch/worktree 标记为
+   `promoted`。
 
 V21-V23 均保持明确命令、scope 校验、`PermissionPolicy -> ApprovalGate ->
-ToolExecutor` 写入边界和脱敏 persistent audit。Verified Patch Promotion 顺延为
-V25/backlog 候选，届时必须重新进入独立 OpenSpec change；V24 归档后再重新评估
+ToolExecutor` 写入边界和脱敏 persistent audit；V25 继续复用这些边界并增加 stored
+patch integrity、expected base guard 和 promotion lifecycle。V25 后再重新评估
 Operator Control、Durable Execution、Background Worker、subagents、connectors 和
 notifications；不提前锁定公开 API 或后台执行模型。
 

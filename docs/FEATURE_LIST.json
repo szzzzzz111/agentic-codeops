@@ -250,6 +250,6 @@
       "no new /chat fields, network dependency, default CI change, provider wiring, arbitrary subprocess, or Verified Patch Promotion"
     ],
     "passes": true,
-    "notes": "Covered by tests/test_cli.py; implemented as a local console script entrypoint app.cli:main. V24 is CLI presentation/command mapping only; Verified Patch Promotion is deferred to V25/backlog."
+    "notes": "Covered by tests/test_cli.py; implemented as a local console script entrypoint app.cli:main. V24 is CLI presentation/command mapping only; Verified Patch Promotion was intentionally excluded from V24 and implemented later in V25."
   }
 ]

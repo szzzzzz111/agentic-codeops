@@ -1081,12 +1081,12 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：V24 `polish-demo-cli-capability-surface` 正在实现；继续完成 docs/spec 同步、
-  full verification、final implementation review 和 closeout。
-- 近期路线：V21 inspection、V22 re-verification 与 V23 disposal/reconciliation 已完成；
-  V24 为 CLI Capability Surface / Demo-ready Product Surface，Verified Patch Promotion
-  顺延为 V25/backlog 候选。
-- V24 CLI surface 完成后重新评估 Verified Patch Promotion、Operator Control、Durable Execution、Background Worker、
+- 当前建议：V25 `add-verified-patch-promotion` 已完成、归档、合并并推送到 `main`；
+  当前无 active OpenSpec change，下一阶段启动前先重新规划 allowed files、review checklist
+  和风险级别。
+- 近期路线：V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 CLI
+  Capability Surface / Demo-ready Product Surface 与 V25 Verified Patch Promotion 均已完成。
+- V25 完成后重新评估 Operator Control、Durable Execution、Background Worker、
   subagents、connectors、notifications、heartbeat/cron 和 always-on assistant；
   不要写成当前 runtime 已实现能力，也不要提前锁定公开 API。
 - 继续保持不执行 skill，除非后续阶段明确开放。
