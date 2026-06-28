@@ -3,25 +3,23 @@
 ## Purpose
 
 定义将已验证 retained patch worktree 受控提升到主工作区的 V25 边界。
-
 ## Requirements
-
 ### Requirement: Promotion Is Explicit, Scoped, And Fail-Closed
 
-系统 SHALL 只接受精确命令 `confirm promote worktree <worktree_id>` 或
-`确认提升 worktree <worktree_id>`。任何缺少确认、额外文本、不安全 id、路径、shell 语法、Git 参数或
-模糊续写 MUST 整体拒绝且不 fall through。
+系统 SHALL allow promotion only for the current `user_id + repo_key` scoped retained worktree whose worktree lifecycle is `verification_succeeded` and whose patch status is `applied_in_worktree`. It MUST check main workspace cleanliness, main `HEAD == base_commit`, expected worktree path, Git registry/lock, linked-worktree ownership, retained worktree `HEAD == base_commit`, stored diff hash, and target content integrity. Any exception or mismatch MUST fail before main workspace writes.
 
-Promotion MUST 只处理当前 `user_id + repo_key` scope 中 lifecycle 为
-`verification_succeeded` 的 retained worktree，且关联 patch 状态为
-`applied_in_worktree`。它 MUST 检查主工作区干净、主 `HEAD == base_commit`、预期 worktree
-path、Git registry/lock、linked-worktree ownership、retained worktree `HEAD == base_commit`、stored diff
-hash 和 target content integrity。任一异常或不一致 MUST 在主工作区写入前失败。
+Promotion preflight MUST use the shared hardened Git metadata runner for main workspace and retained worktree metadata reads. Metadata timeout, stdout oversize, reader failure, non-zero exit, malformed output, or exception MUST fail closed before promotion begins and MUST NOT expose raw Git output.
 
-#### Scenario: Tampered retained content is rejected
+#### Scenario: Ineligible worktree is rejected
 
-- **WHEN** retained worktree 的 target content 不等于 stored controlled patch 的预期结果
-- **THEN** promotion 拒绝且主工作区不变
+- **WHEN** a retained worktree is not `verification_succeeded`
+- **THEN** promotion fails before any main workspace write
+
+#### Scenario: Oversize metadata blocks promotion
+
+- **WHEN** a Git metadata command used by promotion preflight exceeds the configured output cap
+- **THEN** promotion fails closed before `patch_apply`
+- **AND** no raw Git output is exposed
 
 ### Requirement: Promotion Uses Stored Patch And Existing Harness
 

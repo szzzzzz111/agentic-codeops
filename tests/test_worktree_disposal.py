@@ -12,7 +12,11 @@ from app.patching.store import (
     SQLitePatchStore,
 )
 from app.worktrees.disposal import parse_worktree_disposal_request
-from app.worktrees.git_metadata import git_metadata_text, run_git_metadata
+from app.worktrees.git_metadata import (
+    GIT_METADATA_REAP_TIMEOUT_SECONDS,
+    git_metadata_text,
+    run_git_metadata,
+)
 from app.worktrees.manager import WorktreeManager
 from app.worktrees.store import (
     WORKTREE_STATUS_DISCARDED,
@@ -307,42 +311,173 @@ def test_git_metadata_runner_times_out_without_retry(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    calls = 0
-
     class TimeoutProcess:
+        def __init__(self, stdout_arg):
+            self.stdout_arg = stdout_arg
+            self.stdout = _BytesPipe(b"")
+            self.killed = False
+            self.wait_calls = []
+
         def wait(self, timeout=None):
-            nonlocal calls
-            calls += 1
-            if calls == 1:
+            self.wait_calls.append((self.killed, timeout))
+            if not self.killed:
                 raise subprocess.TimeoutExpired("git", timeout)
             return -9
 
         def kill(self):
-            return None
+            self.killed = True
 
-    monkeypatch.setattr("app.worktrees.git_metadata.subprocess.Popen", lambda *a, **k: TimeoutProcess())
+    created = []
+
+    def fake_popen(*args, **kwargs):
+        process = TimeoutProcess(kwargs["stdout"])
+        created.append(process)
+        return process
+
+    monkeypatch.setattr("app.worktrees.git_metadata.subprocess.Popen", fake_popen)
 
     assert run_git_metadata(tmp_path, "rev-parse", "HEAD", timeout=0.01) is None
-    assert calls == 2
+    assert len(created) == 1
+    assert created[0].stdout_arg is subprocess.PIPE
+    assert created[0].killed is True
+    assert created[0].wait_calls[-1] == (True, GIT_METADATA_REAP_TIMEOUT_SECONDS)
 
 
-def test_git_metadata_runner_checks_size_before_reading(
+def test_git_metadata_runner_returns_none_when_process_start_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    class OversizeProcess:
-        def __init__(self, output):
-            output.write(b"x" * 12)
+    def fail_start(*args, **kwargs):
+        raise OSError("git not found")
+
+    monkeypatch.setattr("app.worktrees.git_metadata.subprocess.Popen", fail_start)
+
+    assert run_git_metadata(tmp_path, "rev-parse", "HEAD") is None
+
+
+class _BytesPipe:
+    def __init__(self, data: bytes, *, fail_read: bool = False):
+        self._data = data
+        self._offset = 0
+        self._fail_read = fail_read
+
+    def read(self, size: int = -1) -> bytes:
+        if self._fail_read:
+            raise OSError("pipe read failed")
+        if self._offset >= len(self._data):
+            return b""
+        if size is None or size < 0:
+            size = len(self._data) - self._offset
+        chunk = self._data[self._offset : self._offset + size]
+        self._offset += len(chunk)
+        return chunk
+
+    def close(self) -> None:
+        return None
+
+
+def test_git_metadata_runner_kills_oversize_output_before_full_wait(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class BlockingOversizeProcess:
+        def __init__(self, stdout_arg):
+            self.stdout_arg = stdout_arg
+            self.stdout = _BytesPipe(b"x" * 12)
+            self.killed = False
+            self.wait_calls = []
 
         def wait(self, timeout=None):
-            return 0
+            self.wait_calls.append((self.killed, timeout))
+            if self.killed:
+                return -9
+            raise subprocess.TimeoutExpired("git", timeout)
+
+        def kill(self):
+            self.killed = True
+
+    created = []
+
+    def fake_popen(*args, **kwargs):
+        process = BlockingOversizeProcess(kwargs["stdout"])
+        created.append(process)
+        return process
 
     monkeypatch.setattr(
         "app.worktrees.git_metadata.subprocess.Popen",
-        lambda *a, **k: OversizeProcess(k["stdout"]),
+        fake_popen,
     )
 
+    assert run_git_metadata(tmp_path, "rev-parse", "HEAD", timeout=1.0, max_bytes=10) is None
+    assert created[0].stdout_arg is subprocess.PIPE
+    assert created[0].killed is True
+    pre_kill_waits = [timeout for killed, timeout in created[0].wait_calls if not killed]
+    assert all(timeout < 1.0 for timeout in pre_kill_waits)
+    assert created[0].wait_calls[-1] == (True, GIT_METADATA_REAP_TIMEOUT_SECONDS)
+
+
+def test_git_metadata_runner_rejects_pipe_read_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class ReadFailureProcess:
+        def __init__(self, stdout_arg):
+            self.stdout_arg = stdout_arg
+            self.stdout = _BytesPipe(b"", fail_read=True)
+            self.killed = False
+
+        def wait(self, timeout=None):
+            return -9 if self.killed else 0
+
+        def kill(self):
+            self.killed = True
+
+    created = []
+
+    def fake_popen(*args, **kwargs):
+        process = ReadFailureProcess(kwargs["stdout"])
+        created.append(process)
+        return process
+
+    monkeypatch.setattr("app.worktrees.git_metadata.subprocess.Popen", fake_popen)
+
+    assert run_git_metadata(tmp_path, "rev-parse", "HEAD") is None
+    assert created[0].stdout_arg is subprocess.PIPE
+    assert created[0].killed is True
+
+
+def test_git_metadata_runner_preserves_cap_edge_and_nonzero_exit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class PipeProcess:
+        def __init__(self, stdout_arg, data: bytes, return_code: int = 0):
+            self.stdout_arg = stdout_arg
+            self.stdout = _BytesPipe(data)
+            self.return_code = return_code
+            self.killed = False
+
+        def wait(self, timeout=None):
+            return -9 if self.killed else self.return_code
+
+        def kill(self):
+            self.killed = True
+
+    created = []
+    outputs = [b"x" * 10, b"x" * 11, b"ok"]
+    return_codes = [0, 0, 1]
+
+    def fake_popen(*args, **kwargs):
+        process = PipeProcess(kwargs["stdout"], outputs.pop(0), return_codes.pop(0))
+        created.append(process)
+        return process
+
+    monkeypatch.setattr("app.worktrees.git_metadata.subprocess.Popen", fake_popen)
+
+    assert run_git_metadata(tmp_path, "rev-parse", "HEAD", max_bytes=10) == b"x" * 10
     assert run_git_metadata(tmp_path, "rev-parse", "HEAD", max_bytes=10) is None
+    assert run_git_metadata(tmp_path, "rev-parse", "HEAD", max_bytes=10) is None
+    assert all(process.stdout_arg is subprocess.PIPE for process in created)
 
 
 def test_git_metadata_text_rejects_invalid_utf8(
@@ -507,6 +642,47 @@ def test_mutation_failure_stops_and_marks_only_worktree_failed(
     assert result.succeeded is False
     assert result.failed_step == "unlock"
     assert calls == 1
+    assert worktree is not None and worktree.status == WORKTREE_STATUS_DISPOSAL_FAILED
+    assert stored_patch is not None and stored_patch.status == PATCH_STATUS_APPLIED_IN_WORKTREE
+
+
+def test_postcheck_metadata_unavailability_after_mutation_is_failed_disposal(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _init_repo(tmp_path)
+    created, patch_store, patch, repo_key = _create_retained_worktree(tmp_path)
+    import app.worktrees.disposal as disposal
+
+    real_registry_entries = disposal.registry_entries
+    calls = 0
+
+    def fail_after_preflight(repo_root):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return real_registry_entries(repo_root)
+        return None
+
+    monkeypatch.setattr("app.worktrees.disposal.registry_entries", fail_after_preflight)
+
+    result = WorktreeManager().dispose(
+        repo_path=str(tmp_path),
+        user_id="u001",
+        worktree_id=created.worktree_id,
+        attempt_kind="discard",
+    )
+    worktree = SQLiteWorktreeStore.for_existing_repo(tmp_path)[0].get_worktree(
+        created.worktree_id,
+        user_id="u001",
+        repo_key=repo_key,
+    )
+    stored_patch = patch_store.get_patch(patch.patch_id, user_id="u001", repo_key=repo_key)
+
+    assert result.succeeded is False
+    assert result.reason == "mutation_failed"
+    assert result.completed_step == "remove"
+    assert result.failed_step == "postcheck"
     assert worktree is not None and worktree.status == WORKTREE_STATUS_DISPOSAL_FAILED
     assert stored_patch is not None and stored_patch.status == PATCH_STATUS_APPLIED_IN_WORKTREE
 

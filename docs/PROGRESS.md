@@ -1,5 +1,49 @@
 # 项目进度
 
+## Git Metadata Output Bounds Hardening（archived，2026-06-28）
+
+- OpenSpec change `harden-git-metadata-output-bounds` 已归档到
+  `openspec/changes/archive/2026-06-28-harden-git-metadata-output-bounds/`；当前分支：
+  `codex/harden-git-metadata-output-bounds`；风险级别：high。
+- Scope 仅限 `app/worktrees/git_metadata.py` shared Git metadata runner 的 stdout
+  pre-read hard cap、timeout kill/reap hardening，以及 `tests/test_worktree_disposal.py`
+  focused coverage、OpenSpec/Harness 和真实状态文档。不修改 destructive disposal
+  `_run_mutation()`、worktree create helper、inspection streaming diff、re-verification
+  runner、promotion state machine、public `/chat` contract、provider runtime、live eval 或默认 CI。
+- Planning gate 已完成：proposal/design/tasks/spec deltas 已创建；`.harness/allowed_files.md`
+  与 `.harness/review_checklist.md` 已同步；internal、Codex independent、OpenCode
+  independent plan review 均完成，findings 已按 `fix / clarify / reject / defer`
+  triage；`openspec validate harden-git-metadata-output-bounds --strict` 通过。
+- 当前 implementation 使用 TDD：新增 metadata timeout bounded reap、stdout oversize
+  pre-read cap、pipe read failure、non-zero exit、cap-edge 和 disposal postcheck metadata
+  unavailable 回归测试。
+- `run_git_metadata()` 已从 temporary-file capture 改为 `stdout=subprocess.PIPE` +
+  Windows-safe background reader；只保留最多 `MAX_GIT_METADATA_BYTES = 256_000`，允许
+  transient 读取 1 个额外字节用于 oversize detection 但不保留；timeout、oversize、reader
+  failure/non-completion、process-start failure 和 non-zero exit 均返回 `None`，并使用
+  `GIT_METADATA_REAP_TIMEOUT_SECONDS = 1.0` / `GIT_METADATA_READER_JOIN_TIMEOUT_SECONDS = 1.0`
+  做 bounded cleanup。
+- 当前验证 evidence：metadata focused tests 5 passed；`pytest tests/test_worktree_disposal.py -q`
+  为 38 passed；adjacent regressions 为 inspection 20 passed、re-verification 31 passed、
+  promotion 28 passed；改动文件 `ruff check app/worktrees/git_metadata.py tests/test_worktree_disposal.py`
+  通过；final full `scripts/verify.ps1` 通过，pytest 499 passed、1 skipped，ruff、stage docs
+  scan、skill eval structure scan 均通过；`openspec validate --all` 为 23 passed、0 failed；
+  `git diff --check` 无 whitespace error，仅 CRLF normalization warnings。
+- Final review evidence：internal review 无 P0/P1/P2；OpenCode final review 复用 session
+  `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，无 P0/P1/P2。两个 P3（Popen start-failure coverage、
+  reader thread name）已按 `fix` / `clarify/fix` 处理，focused re-review 确认关闭且无新
+  P0/P1/P2。
+- Focused Stage Debt Sweep 覆盖 changed runtime/tests/docs/OpenSpec/Harness 和直接依赖的
+  inspection、disposal/reconciliation、re-verification、promotion metadata caller；未发现
+  blocking debt。残余相邻债仍是 `app/worktrees/disposal.py::_run_mutation()` destructive
+  subprocess output cap，应独立阶段处理。
+- Archive evidence：`openspec archive harden-git-metadata-output-bounds --yes` 成功，同步
+  `verified-patch-promotion`、`worktree-disposal-reconciliation`、`worktree-inspection` 和
+  `worktree-reverification` 4 个长期 specs；archive 后 `openspec list` 为 No active changes
+  found，`openspec validate --all` 为 22 passed、0 failed；archive 后 full `scripts/verify.ps1`
+  通过，pytest 499 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过。
+  后续 merge/push 仍需用户明确授权。
+
 ## Worktree Inspection Timeout Hardening（archived，2026-06-28）
 
 - OpenSpec change `harden-worktree-inspection-timeouts` 已归档到
@@ -1153,9 +1197,9 @@ LLMGateway 设计备忘：
 
 ## 已知剩余代码债
 
-- `app/worktrees/manager.py`：V20 create、workspace preflight 与 rollback 的 Git subprocess
-  尚无独立 timeout，capture output 也无读取前硬上限。应在独立 worktree-create hardening
-  阶段统一固定 argv、timeout、bounded output 与失败/rollback 语义。
+- `app/worktrees/disposal.py`：destructive `_run_mutation()` 已有 fixed argv、`shell=False`
+  和 timeout，但仍使用 `capture_output=True`，没有 stdout/stderr 读取前硬上限；应在独立
+  disposal mutation hardening 阶段处理，不能混入 read-only/preflight metadata runner hardening。
 - `app/rag/evidence.py`：空 `snippet` 当前会被计为 `included=True` 且预算消耗为 `0`。真实 retriever 通常不会产空 chunk，但后续可改为空 snippet 直接 omitted 或跳过，以让 audit summary 更清晰。
 - `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
 - `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前 symbol/path 查询已要求 lexical anchor，后续如需更细粒度召回策略或审计，应把权重、阈值和 anchor 策略显式参数化。

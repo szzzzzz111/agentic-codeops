@@ -1,10 +1,12 @@
 # 当前 Harness 写入边界
 
 Active OpenSpec change：无。
-最近归档 OpenSpec change：`harden-worktree-create-timeouts`；风险级别：high。
+最近归档 OpenSpec change：`harden-git-metadata-output-bounds`，归档到
+`openspec/changes/archive/2026-06-28-harden-git-metadata-output-bounds/`。
+风险级别：high。
 
-该阶段已完成 V20 worktree create / workspace preflight / rollback Git subprocess
-timeout 与 bounded output hardening。
+该阶段已完成 shared Git metadata runner 的 stdout pre-read hard cap、timeout
+kill/reap hardening，以及对应测试、OpenSpec、Harness 和真实状态文档。
 
 ## 当前允许修改
 
@@ -12,20 +14,24 @@ timeout 与 bounded output hardening。
 - `.harness/review_checklist.md`
 - `docs/PROGRESS.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/changes/archive/2026-06-28-harden-worktree-create-timeouts/**`
-- `openspec/specs/worktree-isolation/spec.md`
+- `openspec/changes/archive/2026-06-28-harden-git-metadata-output-bounds/**`
+- `openspec/specs/worktree-inspection/spec.md`
+- `openspec/specs/worktree-disposal-reconciliation/spec.md`
+- `openspec/specs/worktree-reverification/spec.md`
+- `openspec/specs/verified-patch-promotion/spec.md`
 
 ## 最近阶段已修改
 
-- `app/worktrees/manager.py`
-- `tests/test_worktree_isolation.py`
+- `app/worktrees/git_metadata.py`
+- `tests/test_worktree_disposal.py`
 
 ## 本阶段不允许修改
 
-- `app/worktrees/inspection.py`
 - `app/worktrees/disposal.py`
+- `app/worktrees/inspection.py`
 - `app/worktrees/reverification.py`
 - `app/worktrees/promotion.py`
+- `app/worktrees/manager.py`
 - `app/harness/kernel.py`
 - `app/tools/**`
 - `app/verification/**`

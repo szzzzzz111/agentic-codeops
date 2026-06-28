@@ -23,11 +23,20 @@ Normal disposal MUST require lifecycle `patch_applied`, `verification_failed`, o
 
 Linked-worktree ownership MUST require a regular non-symlink `.git` file, expected-directory top-level identity, original-repo common Git directory identity, an administrative target under that common directory's `worktrees/` root, and an exact administrative `gitdir` back-reference. Before destructive mutation, the associated scoped patch MUST exist with status `applied_in_worktree`; complete idempotent or patch-only closeout MAY accept `discarded`.
 
+All Git metadata reads used by disposal and reconciliation preflight MUST use the shared hardened metadata runner. Metadata timeout, oversized stdout, reader failure, non-zero exit, malformed output, or exception MUST fail closed before mutation and MUST NOT expose raw Git output.
+
 #### Scenario: Unknown directory ownership is rejected
 
 - **WHEN** the expected directory exists but linked-worktree ownership cannot be proven
 - **THEN** disposal and reconciliation fail closed
 - **AND** the directory MUST NOT be deleted
+
+#### Scenario: Oversize preflight metadata fails before mutation
+
+- **WHEN** a Git metadata command used by disposal or reconciliation preflight exceeds the configured output cap
+- **THEN** the metadata runner kills and reaps the process when possible
+- **AND** disposal and reconciliation fail closed before unlock, remove, delete, or state transition
+- **AND** no raw Git output is exposed
 
 ### Requirement: Reconciliation Is Limited To Safe Disposal Residuals
 
