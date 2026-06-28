@@ -1304,3 +1304,43 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
 - Outcome handling remains paused: do not archive, merge to `main`, or push as a completed state. Any remediation or
   contract reshape must be a separate OpenSpec change; do not modify runtime/evaluator/profile/rubric inside this
   revalidation change.
+
+## Worktree Create Timeout Hardening (2026-06-28)
+
+- OpenSpec change `harden-worktree-create-timeouts` has been archived to
+  `openspec/changes/archive/2026-06-28-harden-worktree-create-timeouts/`; risk level remains high.
+- Scope is limited to worktree create / workspace preflight / rollback Git subprocess timeout and bounded output
+  hardening in `app/worktrees/manager.py` and focused coverage in `tests/test_worktree_isolation.py`.
+- Implemented a manager-local bounded Git subprocess helper with fixed argv, `shell=False`, `GIT_OPTIONAL_LOCKS=0`,
+  `WORKTREE_GIT_TIMEOUT_SECONDS = 10.0`, `WORKTREE_GIT_OUTPUT_MAX_BYTES = 256_000`, and Windows-safe capped reader
+  threads for stdout/stderr.
+- Timeout, oversized stdout/stderr, read failure, and fatal `git check-ignore` subprocess failures now fail closed
+  through existing worktree create failure semantics without exposing raw Git output or local absolute paths.
+- `git check-ignore` semantics are explicit: return code 0 means `.repopilot/placeholder` is ignored; return code 1
+  means it is not ignored and continues to map to existing `repopilot_not_ignored`; return code greater than 1 is a
+  fatal subprocess failure and maps to safe `create_failed` through the create boundary.
+- Rollback remains best-effort: unlock/remove subprocess failures are swallowed, filesystem cleanup remains
+  best-effort, and create failure never returns `created=True`.
+- Existing older debt notes that mention `app/worktrees/manager.py` create / rollback subprocess timeout are superseded
+  by this change and must not be interpreted as open debt after this stage.
+- Harness files for this stage were restored to readable UTF-8 Chinese and synchronized with the active OpenSpec
+  change.
+- Verification completed before final review:
+  - RED focused tests: 4 expected failures before implementation.
+  - `pytest tests/test_worktree_isolation.py -q`: 20 passed.
+  - Adjacent regressions: selected worktree / AgentLoop / API / promotion suites: 214 passed.
+  - `ruff check .`: passed.
+  - `openspec validate --all`: 23 passed, 0 failed.
+  - `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`: pytest 495 passed, 1 skipped; ruff, stage docs scan,
+    and skill eval structure scan passed.
+  - `git diff --check`: passed with CRLF normalization warnings only.
+- Final implementation review before archive:
+  - Internal review: no P0/P1/P2.
+  - OpenCode review reused session `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`: no P0/P1/P2. P3 `_is_bare_repo()` try/except
+    suggestion was handled as `reject/clarify` because propagating subprocess failure to `create_failed` is the safer
+    fail-closed behavior; P3 oversize extra-byte semantics was handled as `clarify` with a code comment.
+- Focused Stage Debt Sweep covered changed runtime/tests/docs/OpenSpec/Harness and directly dependent worktree create
+  paths. No blocking debt was found. Adjacent residual subprocess hardening remains in `app/worktrees/disposal.py` and
+  `app/worktrees/git_metadata.py`; those are outside this stage and should be separate small changes if prioritized.
+- Archive evidence: `openspec archive harden-worktree-create-timeouts --yes` succeeded; archive-after
+  `openspec list` reported no active changes; archive-after `openspec validate --all` passed with 22 passed, 0 failed.

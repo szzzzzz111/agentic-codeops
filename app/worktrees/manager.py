@@ -1,9 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
+import os
 from pathlib import Path
 import shutil
 import sqlite3
 import subprocess
+import threading
 from uuid import uuid4
 
 from app.worktrees.inspection import WorktreeInspectionResult, inspect_worktree
@@ -37,6 +39,13 @@ from app.worktrees.store import (
 )
 
 
+WORKTREE_GIT_TIMEOUT_SECONDS = 10.0
+WORKTREE_GIT_OUTPUT_MAX_BYTES = 256_000
+WORKTREE_GIT_READ_CHUNK_BYTES = 8_192
+WORKTREE_GIT_REAP_TIMEOUT_SECONDS = 1.0
+WORKTREE_GIT_READER_JOIN_TIMEOUT_SECONDS = 1.0
+
+
 @dataclass(frozen=True)
 class WorktreeCreateResult:
     created: bool
@@ -52,6 +61,13 @@ class WorktreeCreateResult:
 class WorktreeInventoryResult:
     store_present: bool
     records: list[WorktreeRecord]
+
+
+@dataclass
+class _BoundedGitPipe:
+    chunks: list[bytes] = field(default_factory=list)
+    oversize: bool = False
+    read_failed: bool = False
 
 
 class WorktreeManager:
@@ -368,15 +384,123 @@ def _failed(reason: str, summary: str) -> WorktreeCreateResult:
     )
 
 
-def _git(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *args],
+def _git(
+    *args: str,
+    cwd: Path,
+    check: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    command = ["git", *args]
+    env = os.environ.copy()
+    env["GIT_OPTIONAL_LOCKS"] = "0"
+    process = subprocess.Popen(
+        command,
         cwd=cwd,
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+        env=env,
     )
+    stdout = _BoundedGitPipe()
+    stderr = _BoundedGitPipe()
+    stdout_reader = _start_bounded_pipe_reader(process.stdout, stdout, process)
+    stderr_reader = _start_bounded_pipe_reader(process.stderr, stderr, process)
+
+    timed_out = False
+    try:
+        returncode = process.wait(timeout=WORKTREE_GIT_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        _kill_process(process)
+        returncode = _reap_process(process)
+
+    stdout_reader.join(timeout=WORKTREE_GIT_READER_JOIN_TIMEOUT_SECONDS)
+    stderr_reader.join(timeout=WORKTREE_GIT_READER_JOIN_TIMEOUT_SECONDS)
+
+    if timed_out:
+        raise subprocess.TimeoutExpired(command, WORKTREE_GIT_TIMEOUT_SECONDS)
+    if stdout_reader.is_alive() or stderr_reader.is_alive():
+        _kill_process(process)
+        _reap_process(process)
+        raise subprocess.SubprocessError("git output reader did not finish")
+    if stdout.oversize or stderr.oversize:
+        _kill_process(process)
+        _reap_process(process)
+        raise subprocess.SubprocessError("git output exceeded bounded limit")
+    if stdout.read_failed or stderr.read_failed:
+        _kill_process(process)
+        _reap_process(process)
+        raise subprocess.SubprocessError("git output read failed")
+
+    stdout_text = b"".join(stdout.chunks).decode("utf-8", errors="replace")
+    stderr_text = b"".join(stderr.chunks).decode("utf-8", errors="replace")
+    result = subprocess.CompletedProcess(
+        command,
+        returncode,
+        stdout=stdout_text,
+        stderr=stderr_text,
+    )
+    if check and returncode != 0:
+        raise subprocess.CalledProcessError(
+            returncode,
+            command,
+            output=stdout_text,
+            stderr=stderr_text,
+        )
+    return result
+
+
+def _start_bounded_pipe_reader(
+    pipe,
+    output: _BoundedGitPipe,
+    process: subprocess.Popen[bytes],
+) -> threading.Thread:
+    reader = threading.Thread(
+        target=_read_bounded_pipe,
+        args=(pipe, output, process),
+        daemon=True,
+    )
+    reader.start()
+    return reader
+
+
+def _read_bounded_pipe(
+    pipe,
+    output: _BoundedGitPipe,
+    process: subprocess.Popen[bytes],
+) -> None:
+    if pipe is None:
+        return
+    remaining = WORKTREE_GIT_OUTPUT_MAX_BYTES
+    try:
+        while True:
+            # Read one byte beyond the cap only to detect oversize output.
+            chunk = pipe.read(min(WORKTREE_GIT_READ_CHUNK_BYTES, remaining + 1))
+            if not chunk:
+                return
+            if len(chunk) > remaining:
+                output.oversize = True
+                _kill_process(process)
+                return
+            output.chunks.append(chunk)
+            remaining -= len(chunk)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        output.read_failed = True
+        _kill_process(process)
+
+
+def _kill_process(process: subprocess.Popen[bytes]) -> None:
+    try:
+        process.kill()
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def _reap_process(process: subprocess.Popen[bytes]) -> int:
+    try:
+        return process.wait(timeout=WORKTREE_GIT_REAP_TIMEOUT_SECONDS)
+    except (OSError, subprocess.SubprocessError):
+        return -1
 
 
 def _git_stdout(*args: str, cwd: Path) -> str:
@@ -402,15 +526,17 @@ def _is_bare_repo(repo_path: Path) -> bool:
 
 
 def _is_repopilot_ignored(repo_path: Path) -> bool:
-    result = subprocess.run(
-        ["git", "check-ignore", ".repopilot/placeholder"],
+    result = _git(
+        "check-ignore",
+        ".repopilot/placeholder",
         cwd=repo_path,
         check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
     )
-    return result.returncode == 0
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    raise subprocess.SubprocessError("git check-ignore failed")
 
 
 def _workspace_status(repo_path: Path) -> str:

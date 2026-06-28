@@ -1,9 +1,10 @@
 # 当前 Harness 写入边界
 
-当前 active OpenSpec change：无。
+Active OpenSpec change：无。
+最近归档 OpenSpec change：`harden-worktree-create-timeouts`；风险级别：high。
 
-最近归档 OpenSpec change：`harden-worktree-inspection-timeouts`；风险级别：high。
-该阶段已完成 V21 read-only worktree inspection streaming Git timeout hardening。
+该阶段已完成 V20 worktree create / workspace preflight / rollback Git subprocess
+timeout 与 bounded output hardening。
 
 ## 当前允许修改
 
@@ -11,18 +12,20 @@
 - `.harness/review_checklist.md`
 - `docs/PROGRESS.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/changes/archive/2026-06-28-harden-worktree-inspection-timeouts/**`
-- `openspec/specs/worktree-inspection/spec.md`
+- `openspec/changes/archive/2026-06-28-harden-worktree-create-timeouts/**`
+- `openspec/specs/worktree-isolation/spec.md`
 
 ## 最近阶段已修改
 
+- `app/worktrees/manager.py`
+- `tests/test_worktree_isolation.py`
+
+## 本阶段不允许修改
+
 - `app/worktrees/inspection.py`
-- `tests/test_worktree_inspection.py`
-
-## 当前不允许修改
-
-- `app/worktrees/manager.py`（worktree create / rollback timeout 债务另开阶段）
 - `app/worktrees/disposal.py`
+- `app/worktrees/reverification.py`
+- `app/worktrees/promotion.py`
 - `app/harness/kernel.py`
 - `app/tools/**`
 - `app/verification/**`

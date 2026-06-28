@@ -116,6 +116,186 @@ def test_worktree_manager_rolls_back_when_metadata_persistence_fails(
     assert not (tmp_path / ".repopilot" / "worktrees").exists()
 
 
+class _BytesPipe:
+    def __init__(self, chunks: list[bytes]) -> None:
+        self._chunks = list(chunks)
+
+    def read(self, _size: int = -1) -> bytes:
+        if not self._chunks:
+            return b""
+        return self._chunks.pop(0)
+
+
+class _FakeGitProcess:
+    def __init__(
+        self,
+        *,
+        stdout_chunks: list[bytes] | None = None,
+        stderr_chunks: list[bytes] | None = None,
+        wait_timeout: bool = False,
+        returncode: int = 0,
+    ) -> None:
+        self.args = ["git"]
+        self.stdout = _BytesPipe(stdout_chunks or [b""])
+        self.stderr = _BytesPipe(stderr_chunks or [b""])
+        self.wait_timeout = wait_timeout
+        self.returncode = returncode
+        self.killed = False
+        self.reaped = False
+        self.wait_timeouts: list[object] = []
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        return None
+
+    def communicate(self, input=None, timeout=None):
+        return "", ""
+
+    def poll(self) -> int:
+        return self.returncode
+
+    def wait(self, timeout=None) -> int:
+        self.wait_timeouts.append(timeout)
+        if self.wait_timeout and not self.killed:
+            raise subprocess.TimeoutExpired(self.args, timeout)
+        if self.killed:
+            self.reaped = True
+            return -9
+        return self.returncode
+
+    def kill(self) -> None:
+        self.killed = True
+
+
+def test_worktree_git_timeout_kills_reaps_and_raises(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    fake = _FakeGitProcess(wait_timeout=True)
+    monkeypatch.setattr(
+        worktree_manager_module.subprocess,
+        "Popen",
+        lambda *args, **kwargs: fake,
+    )
+
+    try:
+        worktree_manager_module._git("status", "--porcelain", cwd=tmp_path)
+    except subprocess.SubprocessError:
+        pass
+    else:
+        raise AssertionError("expected bounded Git timeout to fail closed")
+
+    assert fake.killed is True
+    assert fake.reaped is True
+    assert fake.wait_timeouts[0] is not None
+
+
+def test_worktree_git_output_oversize_kills_reaps_and_raises(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    fake = _FakeGitProcess(stdout_chunks=[b"abcdef", b""])
+    monkeypatch.setattr(worktree_manager_module, "WORKTREE_GIT_OUTPUT_MAX_BYTES", 3, raising=False)
+    monkeypatch.setattr(
+        worktree_manager_module.subprocess,
+        "Popen",
+        lambda *args, **kwargs: fake,
+    )
+
+    try:
+        worktree_manager_module._git("status", "--porcelain", cwd=tmp_path)
+    except subprocess.SubprocessError:
+        pass
+    else:
+        raise AssertionError("expected bounded Git stdout oversize to fail closed")
+
+    assert fake.killed is True
+    assert fake.reaped is True
+
+
+def test_worktree_git_stderr_oversize_kills_reaps_and_raises(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    fake = _FakeGitProcess(stderr_chunks=[b"abcdef", b""])
+    monkeypatch.setattr(worktree_manager_module, "WORKTREE_GIT_OUTPUT_MAX_BYTES", 3, raising=False)
+    monkeypatch.setattr(
+        worktree_manager_module.subprocess,
+        "Popen",
+        lambda *args, **kwargs: fake,
+    )
+
+    try:
+        worktree_manager_module._git("status", "--porcelain", cwd=tmp_path)
+    except subprocess.SubprocessError:
+        pass
+    else:
+        raise AssertionError("expected bounded Git stderr oversize to fail closed")
+
+    assert fake.killed is True
+    assert fake.reaped is True
+
+
+def test_check_ignore_return_code_one_is_business_not_ignored(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    def fake_git(*args, cwd: Path, check: bool = True):
+        assert check is False
+        return subprocess.CompletedProcess(["git", *args], 1, "", "")
+
+    monkeypatch.setattr(worktree_manager_module, "_git", fake_git)
+
+    assert worktree_manager_module._is_repopilot_ignored(tmp_path) is False
+
+
+def test_check_ignore_return_code_greater_than_one_fails_closed(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    def fake_git(*args, cwd: Path, check: bool = True):
+        assert check is False
+        return subprocess.CompletedProcess(["git", *args], 128, "", "fatal: bad git")
+
+    monkeypatch.setattr(worktree_manager_module, "_git", fake_git)
+
+    try:
+        worktree_manager_module._is_repopilot_ignored(tmp_path)
+    except subprocess.SubprocessError:
+        pass
+    else:
+        raise AssertionError("expected fatal check-ignore result to fail closed")
+
+
+def test_worktree_rollback_subprocess_failure_never_returns_created(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    _init_git_repo(tmp_path)
+
+    def fail_create_worktree(self, **kwargs):
+        raise sqlite3.OperationalError("metadata unavailable")
+
+    def timeout_git(*args, cwd: Path, **kwargs):
+        if args[:2] in {("worktree", "unlock"), ("worktree", "remove")}:
+            raise subprocess.TimeoutExpired(["git", *args], 0.01)
+        return _git(*args, cwd=cwd)
+
+    monkeypatch.setattr(SQLiteWorktreeStore, "create_worktree", fail_create_worktree)
+    monkeypatch.setattr(worktree_manager_module, "_git", timeout_git)
+
+    result = WorktreeManager().create(
+        repo_path=str(tmp_path),
+        user_id="u001",
+        patch_id="patch_20260607_abcdef",
+    )
+
+    assert result.created is False
+    assert result.reason == "create_failed"
+
+
 def test_worktree_manager_id_collision_does_not_remove_existing_worktree(
     tmp_path: Path,
     monkeypatch,
