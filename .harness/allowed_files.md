@@ -2,15 +2,35 @@
 
 当前 active OpenSpec change：无。
 
-`update-repo-stage-workflow-skill` 已归档到
-`openspec/changes/archive/2026-06-28-update-repo-stage-workflow-skill/`；当前没有开放的新阶段写入范围。
+最近归档 OpenSpec change：`harden-worktree-inspection-timeouts`；风险级别：high。
+该阶段已完成 V21 read-only worktree inspection streaming Git timeout hardening。
 
-## 下一阶段开始前
+## 当前允许修改
 
-- 先读取 `AGENTS.md` 及必读文档。
-- 先检查分支、工作树、最近提交、远端同步状态和 `openspec list`。
-- 新阶段必须先创建或选择 OpenSpec change，并同步本文件与 `.harness/review_checklist.md`。
-- 未同步新阶段边界前，不默认开放 `app/**`、`tests/**`、`docs/**`、`scripts/**` 或 `openspec/specs/**` 的语义修改。
+- `.harness/allowed_files.md`
+- `.harness/review_checklist.md`
+- `docs/PROGRESS.md`
+- `HANDOFF_TO_NEXT_CHAT.md`
+- `openspec/changes/archive/2026-06-28-harden-worktree-inspection-timeouts/**`
+- `openspec/specs/worktree-inspection/spec.md`
+
+## 最近阶段已修改
+
+- `app/worktrees/inspection.py`
+- `tests/test_worktree_inspection.py`
+
+## 当前不允许修改
+
+- `app/worktrees/manager.py`（worktree create / rollback timeout 债务另开阶段）
+- `app/worktrees/disposal.py`
+- `app/harness/kernel.py`
+- `app/tools/**`
+- `app/verification/**`
+- 其他 `tests/**`
+- `README.md`
+- `docs/ARCHITECTURE.md`
+- `docs/FEATURE_LIST.json`
+- provider runtime、live eval profile、默认 CI、public `/chat` contract
 
 ## 长期禁止行为
 

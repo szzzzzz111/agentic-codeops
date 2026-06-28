@@ -1,8 +1,11 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import subprocess
+import threading
+import time
 
 from app.tools import file_tools
 from app.worktrees.git_metadata import run_git_metadata
@@ -14,11 +17,12 @@ MAX_PREVIEW_FILES = 20
 MAX_PREVIEW_CHARS = 6000
 MAX_FILE_LINES = 80
 MAX_LINE_CHARS = 300
-STREAM_CHUNK_BYTES = 64_000
 MAX_RAW_LINE_BYTES = 4096
 MAX_PUBLIC_FIELD_CHARS = 120
 MAX_PUBLIC_PATH_CHARS = 300
 MAX_PUBLIC_CHANGED_FILES = 20
+INSPECTION_STREAM_TIMEOUT_SECONDS = 10.0
+INSPECTION_STREAM_REAP_TIMEOUT_SECONDS = 1.0
 
 _WINDOWS_PATH_RE = re.compile(r"\b[A-Za-z]:[\\/][^\s,;'\")\]]+")
 _POSIX_PATH_RE = re.compile(
@@ -213,7 +217,14 @@ def _numstat(cwd: Path, base_commit: str) -> tuple[int, int, int, bool]:
 
 
 def _stream_hunk_count(cwd: Path, base_commit: str) -> tuple[int, bool]:
-    process = _popen_git(
+    count = 0
+
+    def count_hunk(raw_line: bytes, _raw_truncated_bytes: int) -> None:
+        nonlocal count
+        if raw_line.startswith(b"@@ "):
+            count += 1
+
+    success = _consume_streaming_git(
         cwd,
         "diff",
         "--unified=0",
@@ -221,13 +232,9 @@ def _stream_hunk_count(cwd: Path, base_commit: str) -> tuple[int, bool]:
         "--no-textconv",
         base_commit,
         "--",
+        on_line=count_hunk,
     )
-    count = 0
-    assert process.stdout is not None
-    for raw_line, _ in _iter_bounded_lines(process.stdout):
-        if raw_line.startswith(b"@@ "):
-            count += 1
-    return count, process.wait() != 0
+    return count, not success
 
 
 def _untracked_count(cwd: Path) -> tuple[int, bool]:
@@ -267,19 +274,15 @@ def _format_preview(
         file_used_chars = 0
         file_truncated_lines = 0
         file_truncated_chars = 0
-        process = _popen_git(
-            cwd,
-            "diff",
-            "--no-ext-diff",
-            "--no-textconv",
-            base_commit,
-            "--",
-            path,
-        )
         file_lines = 0
         file_truncated = False
-        assert process.stdout is not None
-        for raw_line, raw_truncated_bytes in _iter_bounded_lines(process.stdout):
+
+        def add_preview_line(raw_line: bytes, raw_truncated_bytes: int) -> None:
+            nonlocal file_used_chars
+            nonlocal file_truncated
+            nonlocal file_truncated_chars
+            nonlocal file_truncated_lines
+            nonlocal file_lines
             line = raw_line.decode("utf-8", errors="replace").rstrip("\r\n")
             line = _redact(line)
             file_truncated_chars += raw_truncated_bytes
@@ -292,7 +295,7 @@ def _format_preview(
             if file_lines >= MAX_FILE_LINES:
                 file_truncated_lines += 1
                 file_truncated = True
-                continue
+                return
             if used_chars + file_used_chars + len(rendered) > MAX_PREVIEW_CHARS:
                 remaining = MAX_PREVIEW_CHARS - used_chars - file_used_chars
                 if remaining > 0:
@@ -302,11 +305,22 @@ def _format_preview(
                 else:
                     file_truncated_chars += len(rendered)
                 file_truncated = True
-                continue
+                return
             file_output.append(rendered)
             file_used_chars += len(rendered)
             file_lines += 1
-        if process.wait() != 0:
+
+        success = _consume_streaming_git(
+            cwd,
+            "diff",
+            "--no-ext-diff",
+            "--no-textconv",
+            base_commit,
+            "--",
+            path,
+            on_line=add_preview_line,
+        )
+        if not success:
             omitted_files += 1
             partial = True
             continue
@@ -371,6 +385,77 @@ def _popen_git(cwd: Path, *args: str) -> subprocess.Popen[bytes]:
     )
 
 
+def _consume_streaming_git(
+    cwd: Path,
+    *args: str,
+    on_line: Callable[[bytes, int], None],
+) -> bool:
+    """Run streaming Git with one deadline across stdout reads and final wait."""
+    try:
+        process = _popen_git(cwd, *args)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if process.stdout is None:
+        _kill_and_reap(process)
+        return False
+
+    timed_out = threading.Event()
+
+    def expire() -> None:
+        timed_out.set()
+        _kill_process(process)
+
+    timer = threading.Timer(INSPECTION_STREAM_TIMEOUT_SECONDS, expire)
+    timer.daemon = True
+    start = time.monotonic()
+    timer.start()
+    try:
+        try:
+            for raw_line, raw_truncated_bytes in _iter_bounded_lines(process.stdout):
+                if timed_out.is_set():
+                    break
+                on_line(raw_line, raw_truncated_bytes)
+        except (OSError, subprocess.SubprocessError):
+            _kill_and_reap(process)
+            return False
+        if timed_out.is_set():
+            _reap_process(process)
+            return False
+        remaining = max(
+            0.0,
+            INSPECTION_STREAM_TIMEOUT_SECONDS - (time.monotonic() - start),
+        )
+        try:
+            return process.wait(timeout=remaining) == 0
+        except subprocess.TimeoutExpired:
+            _kill_and_reap(process)
+            return False
+        except (OSError, subprocess.SubprocessError):
+            _kill_and_reap(process)
+            return False
+    finally:
+        timer.cancel()
+
+
+def _kill_and_reap(process: subprocess.Popen[bytes]) -> None:
+    _kill_process(process)
+    _reap_process(process)
+
+
+def _kill_process(process: subprocess.Popen[bytes]) -> None:
+    try:
+        process.kill()
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def _reap_process(process: subprocess.Popen[bytes]) -> None:
+    try:
+        process.wait(timeout=INSPECTION_STREAM_REAP_TIMEOUT_SECONDS)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
 def _normalized_path(path: Path) -> str:
     normalized = path.resolve().as_posix()
     return normalized.lower() if PureWindowsPath(normalized).drive else normalized
@@ -387,11 +472,6 @@ def _iter_bounded_lines(stream):
             chunk = stream.readline(MAX_RAW_LINE_BYTES + 1)
             omitted += len(chunk)
         yield kept, omitted
-
-
-def _drain_stream(stream) -> None:
-    while stream.read(STREAM_CHUNK_BYTES):
-        pass
 
 
 def _is_within(path: Path, parent: Path) -> bool:

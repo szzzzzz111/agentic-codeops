@@ -326,6 +326,143 @@ def test_inspection_git_start_failure_returns_safe_partial(
     assert result.preview == ""
 
 
+def test_stream_hunk_count_timeout_kills_reaps_and_returns_partial(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FakeStdout:
+        def __init__(self) -> None:
+            self._lines = [b"@@ -1 +1 @@\n", b""]
+
+        def readline(self, _size: int = -1) -> bytes:
+            return self._lines.pop(0)
+
+    class FakeProcess:
+        def __init__(self) -> None:
+            self.stdout = FakeStdout()
+            self.killed = False
+            self.wait_timeouts: list[object] = []
+
+        def wait(self, timeout=None):
+            self.wait_timeouts.append(timeout)
+            if self.killed:
+                return -9
+            raise subprocess.TimeoutExpired(["git", "diff"], timeout)
+
+        def kill(self) -> None:
+            self.killed = True
+
+    fake = FakeProcess()
+    monkeypatch.setattr("app.worktrees.inspection._popen_git", lambda *args: fake)
+
+    count, partial = worktree_inspection._stream_hunk_count(tmp_path, "a" * 40)
+
+    assert count == 1
+    assert partial is True
+    assert fake.killed is True
+    assert fake.wait_timeouts[0] is not None
+
+
+def test_stream_hunk_count_watchdog_read_timeout_kills_reaps_and_returns_partial(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    timers = []
+
+    class ImmediateTimer:
+        def __init__(self, _interval: float, callback) -> None:
+            self.callback = callback
+            self.daemon = False
+            self.started = False
+            self.cancelled = False
+            timers.append(self)
+
+        def start(self) -> None:
+            self.started = True
+            self.callback()
+
+        def cancel(self) -> None:
+            self.cancelled = True
+
+    class WatchdogClosedStdout:
+        def __init__(self, process) -> None:
+            self.process = process
+
+        def readline(self, _size: int = -1) -> bytes:
+            assert self.process.killed is True
+            return b""
+
+    class FakeProcess:
+        def __init__(self) -> None:
+            self.killed = False
+            self.reaped = False
+            self.stdout = WatchdogClosedStdout(self)
+
+        def wait(self, timeout=None):
+            if self.killed:
+                self.reaped = True
+                return -9
+            return 0
+
+        def kill(self) -> None:
+            self.killed = True
+
+    fake = FakeProcess()
+    monkeypatch.setattr("app.worktrees.inspection._popen_git", lambda *args: fake)
+    monkeypatch.setattr("app.worktrees.inspection.threading.Timer", ImmediateTimer)
+
+    count, partial = worktree_inspection._stream_hunk_count(tmp_path, "a" * 40)
+
+    assert count == 0
+    assert partial is True
+    assert fake.killed is True
+    assert fake.reaped is True
+    assert timers[0].started is True
+    assert timers[0].cancelled is True
+
+
+def test_preview_timeout_omits_affected_file_and_returns_partial(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "app.py").write_text("safe\n", encoding="utf-8")
+
+    class FakeStdout:
+        def __init__(self) -> None:
+            self._lines = [b"diff --git a/app.py b/app.py\n", b"+new\n", b""]
+
+        def readline(self, _size: int = -1) -> bytes:
+            return self._lines.pop(0)
+
+    class FakeProcess:
+        def __init__(self) -> None:
+            self.stdout = FakeStdout()
+            self.killed = False
+
+        def wait(self, timeout=None):
+            if self.killed:
+                return -9
+            raise subprocess.TimeoutExpired(["git", "diff"], timeout)
+
+        def kill(self) -> None:
+            self.killed = True
+
+    fake = FakeProcess()
+    monkeypatch.setattr("app.worktrees.inspection._popen_git", lambda *args: fake)
+
+    preview, omitted, truncated_files, truncated_lines, truncated_chars, partial = (
+        worktree_inspection._format_preview(tmp_path, "a" * 40, ["app.py"])
+    )
+
+    assert preview == ""
+    assert omitted == 1
+    assert truncated_files == 0
+    assert truncated_lines == 0
+    assert truncated_chars == 0
+    assert partial is True
+    assert fake.killed is True
+
+
 def test_inspection_metadata_cap_returns_safe_partial(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

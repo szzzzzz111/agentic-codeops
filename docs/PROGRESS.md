@@ -1,5 +1,33 @@
 # 项目进度
 
+## Worktree Inspection Timeout Hardening（archived，2026-06-28）
+
+- OpenSpec change `harden-worktree-inspection-timeouts` 已归档到
+  `openspec/changes/archive/2026-06-28-harden-worktree-inspection-timeouts/`；风险级别：high。
+- 本阶段修复 `app/worktrees/inspection.py` 中 V21 read-only worktree inspection 的 streaming
+  Git diff / hunk count / preview timeout 债务。Scope 仅限 inspection streaming Git process
+  handling，不修改 worktree create / rollback、disposal/reconciliation、re-verification、promotion、
+  repo mutation locking、public `/chat` contract、provider runtime、live eval 或默认 CI。
+- Planning gate 已完成：proposal/design/tasks/spec delta 已创建；`.harness/allowed_files.md`
+  与 `.harness/review_checklist.md` 已同步；internal plan review 按 `fix` 关闭 wait-only
+  timeout 不覆盖 blocked stdout read 的缺口；OpenCode plan review 复用 session
+  `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，无 P0/P1/P2，P3 均按 `clarify` 处理；Codex independent
+  plan review 由 subagent `Euler` 完成，无 P0/P1/P2，P3 residual risks 已纳入 implementation guardrails。
+- 当前 implementation 使用 TDD：新增 hunk count wait timeout、hunk count read timeout 和 preview
+  timeout 回归测试；初次 focused RED 证明旧实现会抛 `TimeoutExpired` 且不会 kill/reap；GREEN
+  后 `inspection.py` 通过 watchdog timer/thread 覆盖 stdout consumption 与 process wait，并在
+  timeout / subprocess failure 时 kill/reap、返回 partial，不暴露 raw stderr、raw exception 或 raw diff。
+- Final review evidence：internal implementation review 无 P0/P1/P2；OpenCode final review 复用
+  session `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，发现 P2 unrealistic read-timeout test，已按
+  `fix` 改成 timer fires -> kill -> EOF -> timed_out -> reap 的 watchdog path 测试；focused
+  OpenCode re-review 确认 P2 closed 且无新 P0/P1/P2。P3 docstring / dead-code cleanup 已处理。
+- 当前验证 evidence：`pytest tests/test_worktree_inspection.py -q` 为 20 passed；adjacent
+  worktree/AgentLoop/API regressions 为 183 passed；`openspec validate --all` 为 23 passed、
+  0 failed；`ruff check .` 通过；full `scripts/verify.ps1` 通过，pytest 489 passed、1 skipped，
+  ruff、stage docs scan、skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF
+  normalization warnings。Archive 后 `openspec list` 为 No active changes found，`openspec validate
+  --all` 为 22 passed、0 failed。
+
 ## Workflow Skill Update（archived，2026-06-28）
 
 - OpenSpec change `update-repo-stage-workflow-skill` 已归档到
@@ -1125,9 +1153,6 @@ LLMGateway 设计备忘：
 
 ## 已知剩余代码债
 
-- `app/worktrees/inspection.py`：V21 流式 hunk count / preview 仍使用直接 `Popen` 并在流消费后
-  无 timeout 等待；恶意或异常 Git 进程可能让只读 inspection 长时间挂起。应在独立 hardening
-  阶段设计可中止的 bounded streaming runner，并保持 preview 限长与脱敏语义。
 - `app/worktrees/manager.py`：V20 create、workspace preflight 与 rollback 的 Git subprocess
   尚无独立 timeout，capture output 也无读取前硬上限。应在独立 worktree-create hardening
   阶段统一固定 argv、timeout、bounded output 与失败/rollback 语义。
