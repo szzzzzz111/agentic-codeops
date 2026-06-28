@@ -653,7 +653,7 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "## 路线图" not in readme
     assert "## V20 Worktree Isolation 架构补充" in combined
     assert "consolidate-stage-documentation-sources" in combined
-    assert "Active OpenSpec change：无" in combined
+    assert "Active OpenSpec change：" in combined
     assert "2026-06-07-v20-worktree-isolation" in combined
     assert "V15：Assistant Control Surface" in combined
     assert "V16：Safe Patch Authoring" in combined

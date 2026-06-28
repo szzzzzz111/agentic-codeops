@@ -1,5 +1,25 @@
 # 项目进度
 
+## Workflow Skill Update（archived，2026-06-28）
+
+- OpenSpec change `update-repo-stage-workflow-skill` 已归档到
+  `openspec/changes/archive/2026-06-28-update-repo-stage-workflow-skill/`；风险级别：low。
+- 本阶段只更新 repo-local workflow/process 文档，不修改 RepoPilot runtime、public `/chat`
+  contract、provider runtime、live eval、默认 CI、网络依赖、后台任务、runtime subagent、
+  connector、notification 或自动 commit/merge/push 能力。
+- `repo-stage-workflow` 已吸收 OpenSpec + Superpowers-style 工作流优点：OpenSpec 负责规格基线
+  （需求、接口/模型、设计、任务、评审、变更和归档），执行纪律负责读规格、隔离、TDD、验证、
+  review、finish 和 skill/process 自检。需求变化、设计矛盾或 scope drift 必须先回 OpenSpec。
+- 同步修正 repo mutation locking closeout 后的 current-state 文档漂移，并把
+  `tests/test_chat_api.py` docs consistency assertion 从“active OpenSpec 必须为无”改为“必须存在
+  active-state 记录”，避免正常 active stage 触发误报。
+- 验证 evidence：focused docs consistency regression 1 passed；`openspec validate
+  update-repo-stage-workflow-skill --strict` 通过；archive 前 `openspec validate --all` 为
+  23 passed、0 failed；full `scripts/verify.ps1` 通过，pytest 486 passed、1 skipped，
+  ruff、stage docs scan、skill eval structure scan 均通过；archive 后 `openspec list`
+  为 No active changes found，`openspec validate --all` 为 22 passed、0 failed；
+  `git diff --check` 通过，仅有 CRLF normalization warnings。
+
 ## Repo Mutation Locking（archived，2026-06-28）
 
 - OpenSpec change `harden-repo-mutation-locking` 已归档到
@@ -29,7 +49,8 @@
   补 safe `runner_error` result 与释放锁回归测试，复核确认 P1 关闭且无新 P0/P1/P2。
 - Stage Debt Sweep 已覆盖 changed runtime/tests/docs/specs/Harness、直接依赖、共享状态
   与调用路径；未发现新的 blocking debt。Archive 后 `openspec list` 为 No active changes
-  found，`openspec validate --all` 为 22 passed、0 failed。尚未完成 merge 或 push。
+  found，`openspec validate --all` 为 22 passed、0 failed。该阶段已 fast-forward 合并并
+  推送到 `main`。
 
 ## Documentation Source Consolidation（archived，2026-06-27）
 
@@ -1122,7 +1143,7 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：`harden-repo-mutation-locking` 已完成并归档；若尚未提交、合并或推送，先完成 Git closeout；不要混入 skill/workflow 文档 hardening。
+- 当前建议：`update-repo-stage-workflow-skill` 已完成并归档；当前不启动新的 runtime stage。
 - 近期路线：V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 CLI
   Capability Surface / Demo-ready Product Surface 与 V25 Verified Patch Promotion 均已完成；
   当前不启动新的 runtime stage。

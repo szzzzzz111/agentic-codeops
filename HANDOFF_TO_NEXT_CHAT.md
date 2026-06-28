@@ -1,14 +1,20 @@
 # 交接给下一轮 Chat
 
-## 当前基线（2026-06-28，repo mutation locking archived）
+## 当前基线（2026-06-28，workflow skill update archived）
 
-- 当前分支：`codex/harden-repo-mutation-locking`。
+- 当前 Git 分支、HEAD 与远端同步状态以 live `git status --short --branch` / `git log`
+  / `git branch -vv` 为准；本交接不复制易漂移的精确 Git 状态。
 - Active OpenSpec change：无。
-- 最近完成阶段：`harden-repo-mutation-locking`，已归档到
-  `openspec/changes/archive/2026-06-28-harden-repo-mutation-locking/`。
+- 最近完成阶段：`update-repo-stage-workflow-skill`，已归档到
+  `openspec/changes/archive/2026-06-28-update-repo-stage-workflow-skill/`。
+- 此前完成阶段：`harden-repo-mutation-locking`，已归档到
+  `openspec/changes/archive/2026-06-28-harden-repo-mutation-locking/`，并已合并、推送到
+  `main`。
+- Workflow skill update 已吸收 OpenSpec 规格基线与 Superpowers-style execution discipline
+  的分工，并修正 closeout 后的 current-state 文档漂移。
 - 阶段目标：为 RepoPilot-owned patch/worktree/verification/promotion write-risk flows
   增加 repo-key scoped mutation lock，关闭 V25 后记录的极窄跨进程 HEAD/file/state race。
-- 本阶段不修改 `/chat` public contract、provider runtime、live eval、默认 CI、网络依赖、
+- 当前工作不修改 `/chat` public contract、provider runtime、live eval、默认 CI、网络依赖、
   后台任务、runtime subagent、connector、notification、commit/merge/push automation、
   branch/PR automation 或 `git worktree prune`。
 
@@ -50,5 +56,5 @@ openspec list
 openspec validate --all
 ```
 
-安全下一步：若本阶段尚未提交、合并或推送，先完成 Git closeout；不要混入新的 runtime
-stage 或 skill/workflow 文档 hardening。
+安全下一步：先查询 live Git / OpenSpec 状态；若本低风险 workflow update 尚未提交、合并或推送，
+先完成 Git closeout。不要混入新的 runtime stage。

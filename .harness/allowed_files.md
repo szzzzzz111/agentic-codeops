@@ -2,8 +2,8 @@
 
 当前 active OpenSpec change：无。
 
-`harden-repo-mutation-locking` 已归档到
-`openspec/changes/archive/2026-06-28-harden-repo-mutation-locking/`；当前没有开放的新阶段写入范围。
+`update-repo-stage-workflow-skill` 已归档到
+`openspec/changes/archive/2026-06-28-update-repo-stage-workflow-skill/`；当前没有开放的新阶段写入范围。
 
 ## 下一阶段开始前
 

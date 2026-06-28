@@ -9,7 +9,23 @@ description: Use when running a RepoPilot development stage end to end, from sco
 
 Run one risk-scaled stage as a controlled sequence. Preserve every required
 gate, but create evidence only once and keep each document and skill within its
-own responsibility.
+own responsibility. OpenSpec owns the specification baseline; execution
+discipline skills own how the approved baseline is implemented and verified.
+
+## Operating Split
+
+- OpenSpec owns requirement clarification, interface/model/design decisions,
+  task decomposition, spec review, requirement changes, and archive.
+- Superpowers-style execution discipline owns reading the approved baseline,
+  worktree/branch isolation when needed, TDD, deterministic verification, code
+  review, finishing, and skill/process self-checks.
+- If implementation reveals requirement drift, design contradiction, or scope
+  change, return to OpenSpec planning/exploration before implementation
+  resumes. Regenerate or update the execution plan from the new baseline.
+- Treat OpenSpec, Superpowers, local skills, MCP, plugins, and connectors as
+  development workflow references only. Do not describe them as RepoPilot
+  runtime capabilities unless a future runtime OpenSpec change explicitly says
+  so.
 
 ## Workflow
 
@@ -21,8 +37,10 @@ own responsibility.
    writable paths, required evidence, and confirmation boundary. Complete
    plan-level review before implementation: internal plan review, Codex
    independent plan review, and OpenCode independent plan review when required.
-4. Use `openspec-apply-change` and `superpowers:test-driven-development` for
-   implementation. Do not widen scope to repair unrelated debt.
+4. Use `openspec-apply-change` plus the relevant Superpowers execution skills
+   for implementation discipline: read the approved baseline, isolate work when
+   needed, write RED tests first for behavior changes, keep changes minimal, and
+   do not widen scope to repair unrelated debt.
 5. Run focused deterministic verification after each meaningful slice and the
    repository's full verification after runtime or tests change.
 6. Use `repo-stage-review-loop` after the final implementation change for final implementation review.
@@ -38,7 +56,8 @@ own responsibility.
    final runtime/test state has passed formal review and all blocking findings
    are resolved.
 10. Merge and push only with user authorization. Then use
-    `repo-stage-handoff` once to record the stable next-session context.
+    `repo-stage-handoff` once to record the stable next-session context and
+    update only documents whose owned facts actually changed.
 
 ## Stop Conditions
 
