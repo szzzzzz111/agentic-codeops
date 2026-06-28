@@ -1,5 +1,36 @@
 # 项目进度
 
+## Repo Mutation Locking（archived，2026-06-28）
+
+- OpenSpec change `harden-repo-mutation-locking` 已归档到
+  `openspec/changes/archive/2026-06-28-harden-repo-mutation-locking/`；风险级别：high。
+- Planning gate 已完成：proposal/design/tasks/spec delta 已创建；`.harness/allowed_files.md`
+  与 `.harness/review_checklist.md` 已同步；internal、Codex independent、OpenCode
+  independent plan review 均完成，findings 已按 `fix / clarify / reject / defer`
+  triage；`openspec validate harden-repo-mutation-locking --strict` 通过。
+- 当前 implementation 已新增 repo-key scoped SQLite mutation lock，用于 RepoPilot-owned
+  write-risk flows：ordinary patch apply、组合 Patch + Verify、standalone
+  verification、retained worktree re-verification、worktree disposal/reconciliation 和
+  verified patch promotion。锁 conflict/unavailable 在 mutation 前 fail closed；read-only
+  inventory/inspection/status/repo search 不获取 lock。
+- 写风险 permission context 现在要求 lock provenance；lock conflict、release failure 等
+  通过现有 `/chat.answer` 和 redacted persistent audit summary 表达，不新增 `/chat`
+  顶层字段。
+- 当前 verification evidence：`pytest tests/test_repo_mutation_locking.py -q` 为 17 passed；
+  adjacent patch/worktree/promotion/verification/AgentLoop regressions 为 227 passed；
+  `openspec validate --all` 为 23 passed、0 failed；full `scripts/verify.ps1` 通过，
+  pytest 486 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；
+  `git diff --check` 通过，仅有 CRLF normalization warnings。
+- Final review evidence：internal implementation review 已按 `fix` 关闭 lock acquisition
+  exception、acquired/released audit outcome、exception-handler release failure 和 trace
+  ordering；OpenCode final implementation review 复用 session
+  `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，无 P0/P1/P2。Codex independent final review
+  发现 P1 standalone `verification_run` runner exception 可能遗留 lock；已按 `fix`
+  补 safe `runner_error` result 与释放锁回归测试，复核确认 P1 关闭且无新 P0/P1/P2。
+- Stage Debt Sweep 已覆盖 changed runtime/tests/docs/specs/Harness、直接依赖、共享状态
+  与调用路径；未发现新的 blocking debt。Archive 后 `openspec list` 为 No active changes
+  found，`openspec validate --all` 为 22 passed、0 failed。尚未完成 merge 或 push。
+
 ## Documentation Source Consolidation（archived，2026-06-27）
 
 - OpenSpec change `consolidate-stage-documentation-sources` 已归档到 `openspec/changes/archive/2026-06-27-consolidate-stage-documentation-sources/`；风险级别：medium。
@@ -16,7 +47,7 @@
 - 已实现严格确认路由，位置在 V23 disposal/reconciliation 后、V22 re-verification 前；promotion 仅接受当前 scope 内 `verification_succeeded` + `applied_in_worktree` retained worktree，并检查主工作区干净、`HEAD == base_commit`、Git/worktree metadata、stored patch hash 和 worktree 内容完整性。
 - 主工作区写入只使用 stored controlled patch，并经既有 `ToolRegistry`、`PermissionPolicy`、`ApprovalGate` 与 `ToolExecutor.patch_apply`。promotion 专用写入使用 Git atomic apply，patch/worktree/journal 的 `promoted` 终态通过 SQLite cross-database transaction 提交；状态同步失败会使用受控逆向 patch 回滚主工作区与 lifecycle，不能把 partial promotion 作为成功返回。
 - V25 不实现 commit、merge、push、branch/PR、后台任务、自动 retry/repair、删除 retained worktree 或 `git worktree prune`。Fresh evidence：promotion focused tests 28 passed；adjacent patch/worktree/audit/AgentLoop/API regressions 172 passed；promotion + adjacent total 200 passed；archive 前 `openspec validate --all` 为 22 passed、0 failed；archive 后 `openspec list` 为 No active changes found，`openspec validate --all` 为 21 passed、0 failed；full `scripts/verify.ps1` 通过，pytest 469 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warnings。
-- Review evidence：internal final review 修复了 promotion partial-write、post-apply state truthfulness、dirty-worktree TOCTOU、failed journal retry 和 capability-status 文案漂移；Codex final review 的 P1/P2 已按 `fix` 关闭：atomic apply 增加 `expected_base_commit` guard、`finalize_promotion()` 增加 patch/worktree/journal 状态前置条件、promotion audit payload 增加安全 `patch_id`。OpenCode final review 复用 session `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`；focused re-review 确认上述 findings 已关闭且无新 P0/P1/P2。Stage Debt Sweep 已覆盖 changed runtime/tests/docs/specs/Harness；残余 P3 为无全局 repo lock 下的极窄跨进程 HEAD/file mutation race，记录为后续 hardening，不阻断 V25。
+- Review evidence：internal final review 修复了 promotion partial-write、post-apply state truthfulness、dirty-worktree TOCTOU、failed journal retry 和 capability-status 文案漂移；Codex final review 的 P1/P2 已按 `fix` 关闭：atomic apply 增加 `expected_base_commit` guard、`finalize_promotion()` 增加 patch/worktree/journal 状态前置条件、promotion audit payload 增加安全 `patch_id`。OpenCode final review 复用 session `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`；focused re-review 确认上述 findings 已关闭且无新 P0/P1/P2。Stage Debt Sweep 已覆盖 changed runtime/tests/docs/specs/Harness；当时残余 P3 为无全局 repo lock 下的极窄跨进程 HEAD/file mutation race，后续由 `harden-repo-mutation-locking` 处理。
 
 ## V24 CLI Capability Surface / Plan Review Workflow Hardening（2026-06-25）
 
@@ -1091,7 +1122,7 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：`consolidate-stage-documentation-sources` 已完成并归档；若尚未提交、合并或推送，先完成 Git closeout；完成后再启动下一阶段规划。
+- 当前建议：`harden-repo-mutation-locking` 已完成并归档；若尚未提交、合并或推送，先完成 Git closeout；不要混入 skill/workflow 文档 hardening。
 - 近期路线：V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 CLI
   Capability Surface / Demo-ready Product Surface 与 V25 Verified Patch Promotion 均已完成；
   当前不启动新的 runtime stage。

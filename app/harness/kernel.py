@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
+import sqlite3
 
 from app.audit.manager import (
     AuditManager,
@@ -15,6 +16,8 @@ from app.assistant.control_surface import AssistantControlSurface, is_assistant_
 from app.longtask.manager import LongTaskManager
 from app.longtask.planner import LongTaskPlanner
 from app.memory.manager import MemoryManager
+from app.memory.store import compute_repo_key
+from app.locks.repo_mutation import RepoMutationLock, RepoMutationLockStore
 from app.patching.manager import PatchManager
 from app.patching.parser import parse_patch_verify_confirmation
 from app.patching.types import ToolInvocationContext
@@ -338,6 +341,8 @@ def _decide_patch_apply(
 
 
 def _valid_patch_context(context: ToolInvocationContext | None) -> bool:
+    if not _valid_mutation_lock_context(context):
+        return False
     ordinary_apply = bool(
         context is not None
         and context.tool_name == PATCH_APPLY_TOOL
@@ -365,6 +370,8 @@ def _valid_patch_context(context: ToolInvocationContext | None) -> bool:
 def _patch_context_rejection_reason(context: ToolInvocationContext | None) -> str:
     if context is None or not context.confirmed:
         return "missing_confirmation"
+    if not _valid_mutation_lock_context(context):
+        return "repo_mutation_lock_required"
     if context.patch_status != "pending":
         return "patch_not_pending"
     if not context.diff_hash_match:
@@ -430,6 +437,7 @@ def _decide_worktree_dispose(
 def _valid_worktree_dispose_context(context: ToolInvocationContext | None) -> bool:
     return bool(
         context is not None
+        and _valid_mutation_lock_context(context)
         and context.tool_name == WORKTREE_DISPOSE_TOOL
         and context.intent in {"worktree_discard", "worktree_reconcile"}
         and context.confirmed
@@ -441,6 +449,7 @@ def _valid_worktree_dispose_context(context: ToolInvocationContext | None) -> bo
 def _valid_worktree_context(context: ToolInvocationContext | None) -> bool:
     return bool(
         context is not None
+        and _valid_mutation_lock_context(context)
         and context.tool_name == WORKTREE_CREATE_TOOL
         and context.intent == "worktree_create"
         and context.confirmed
@@ -456,6 +465,8 @@ def _worktree_context_rejection_reason(
 ) -> str:
     if context is None or not context.confirmed:
         return "missing_confirmation"
+    if not _valid_mutation_lock_context(context):
+        return "repo_mutation_lock_required"
     if context.patch_status != "pending":
         return "patch_not_pending"
     if not context.diff_hash_match:
@@ -470,6 +481,7 @@ def _worktree_context_rejection_reason(
 def _valid_verification_context(context: ToolInvocationContext | None) -> bool:
     return bool(
         context is not None
+        and _valid_mutation_lock_context(context)
         and context.tool_name == VERIFICATION_RUN_TOOL
         and context.intent == "verification_run"
         and context.confirmed
@@ -483,11 +495,22 @@ def _verification_context_rejection_reason(
 ) -> str:
     if context is None or not context.confirmed:
         return "missing_confirmation"
+    if not _valid_mutation_lock_context(context):
+        return "repo_mutation_lock_required"
     if not context.scope_valid:
         return "verification_scope_invalid"
     if command_argv(context.command_label) is None:
         return "verification_command_not_whitelisted"
     return "verification_context_invalid"
+
+
+def _valid_mutation_lock_context(context: ToolInvocationContext | None) -> bool:
+    return bool(
+        context is not None
+        and context.repo_key
+        and context.lock_owner_token
+        and context.lock_operation
+    )
 
 
 class AgentLoop:
@@ -536,6 +559,112 @@ class AgentLoop:
         self.patch_manager = patch_manager or PatchManager()
         self.audit_manager = audit_manager or AuditManager()
         self.grounded_answer = GroundedAnswerGenerator(provider=provider)
+
+    def _acquire_repo_mutation_lock(
+        self,
+        *,
+        repo_path: str,
+        operation: str,
+    ) -> RepoMutationLock:
+        repo_key = compute_repo_key(repo_path)
+        try:
+            return RepoMutationLockStore.for_repo(repo_path).acquire(
+                repo_key=repo_key,
+                operation=operation,
+            )
+        except (OSError, sqlite3.Error):
+            return RepoMutationLock(
+                repo_key=repo_key,
+                operation=operation,
+                owner_token="",
+                acquired=False,
+                reason="lock_unavailable",
+            )
+
+    def _release_repo_mutation_lock(self, *, repo_path: str, lock: RepoMutationLock) -> bool:
+        try:
+            return RepoMutationLockStore.for_repo(repo_path).release(lock)
+        except (OSError, sqlite3.Error):
+            return False
+
+    def _repo_mutation_lock_result(
+        self,
+        *,
+        operation: str,
+        reason: str,
+    ) -> AgentLoopResult:
+        safe_reason = safe_public_value(reason or "lock_unavailable")
+        outcome = "unavailable" if safe_reason == "lock_unavailable" else "conflict"
+        return AgentLoopResult(
+            answer=f"repo_mutation_lock_conflict: operation={safe_public_value(operation)}; reason={safe_reason}",
+            trace_events_internal=[
+                TraceEvent(
+                    event_type="repo_mutation_lock",
+                    status="error",
+                    summary=(
+                        f"operation={safe_public_value(operation)}; "
+                        f"outcome={outcome}; reason={safe_reason}"
+                    ),
+                )
+            ],
+        )
+
+    def _complete_with_repo_mutation_lock(
+        self,
+        *,
+        repo_path: str,
+        lock: RepoMutationLock,
+        result: AgentLoopResult,
+        pre_lock_event_count: int = 0,
+    ) -> AgentLoopResult:
+        released = self._release_repo_mutation_lock(repo_path=repo_path, lock=lock)
+        event_index = max(0, min(pre_lock_event_count, len(result.trace_events_internal)))
+        acquired_event = TraceEvent(
+            event_type="repo_mutation_lock",
+            status="ok",
+            summary=(
+                f"operation={safe_public_value(lock.operation)}; "
+                "outcome=acquired"
+            ),
+        )
+        base_events = [
+            *result.trace_events_internal[:event_index],
+            acquired_event,
+            *result.trace_events_internal[event_index:],
+        ]
+        if released:
+            return AgentLoopResult(
+                answer=result.answer,
+                related_files=result.related_files,
+                tool_calls=result.tool_calls,
+                trace_events_internal=[
+                    *base_events,
+                    TraceEvent(
+                        event_type="repo_mutation_lock",
+                        status="ok",
+                        summary=(
+                            f"operation={safe_public_value(lock.operation)}; "
+                            "outcome=released"
+                        ),
+                    ),
+                ],
+            )
+        return AgentLoopResult(
+            answer=f"{result.answer}\nrepo_mutation_lock_release_failed",
+            related_files=result.related_files,
+            tool_calls=result.tool_calls,
+            trace_events_internal=[
+                *base_events,
+                TraceEvent(
+                    event_type="repo_mutation_lock",
+                    status="error",
+                    summary=(
+                        f"operation={safe_public_value(lock.operation)}; "
+                        "outcome=release_failed; reason=lock_release_failed"
+                    ),
+                ),
+            ],
+        )
 
     def run(self, request: AgentLoopRequest) -> AgentLoopResult:
         result = self._run_inner(request)
@@ -1064,6 +1193,7 @@ class AgentLoop:
         request: AgentLoopRequest,
         command,
         trace_events: list[TraceEvent],
+        mutation_lock: RepoMutationLock,
     ) -> _PatchLoopWorktreeResult:
         context = ToolInvocationContext(
             tool_name=WORKTREE_CREATE_TOOL,
@@ -1076,6 +1206,9 @@ class AgentLoop:
             diff_hash_match=command.context.diff_hash_match,
             expires_at_valid=command.context.expires_at_valid,
             scope_valid=command.context.scope_valid,
+        ).with_lock(
+            owner_token=mutation_lock.owner_token,
+            operation=mutation_lock.operation,
         )
         tool_spec = self.tool_registry.get(WORKTREE_CREATE_TOOL)
         permission_decision = self.permission_policy.decide(
@@ -1154,41 +1287,69 @@ class AgentLoop:
         request: AgentLoopRequest,
         command,
     ) -> AgentLoopResult:
-        worktree_result = self._create_worktree_for_patch(
-            request=request,
-            command=command,
-            trace_events=[],
+        mutation_lock = self._acquire_repo_mutation_lock(
+            repo_path=request.repo_path,
+            operation="patch_apply",
         )
-        if worktree_result.tool_result.error or not worktree_result.execution_repo_path:
-            answer = (
-                getattr(
-                    getattr(worktree_result.tool_result, "worktree_create_result", None),
-                    "public_summary",
-                    "",
+        if not mutation_lock.acquired:
+            return self._repo_mutation_lock_result(
+                operation="patch_apply",
+                reason=mutation_lock.reason,
+            )
+        try:
+            worktree_result = self._create_worktree_for_patch(
+                request=request,
+                command=command,
+                trace_events=[],
+                mutation_lock=mutation_lock,
+            )
+            if worktree_result.tool_result.error or not worktree_result.execution_repo_path:
+                answer = (
+                    getattr(
+                        getattr(worktree_result.tool_result, "worktree_create_result", None),
+                        "public_summary",
+                        "",
+                    )
+                    or DENY_ANSWER
                 )
-                or DENY_ANSWER
-            )
-            return AgentLoopResult(
-                answer=answer,
-                tool_calls=[worktree_result.tool_result.call_summary()],
-                trace_events_internal=worktree_result.trace_events,
-            )
+                result = AgentLoopResult(
+                    answer=answer,
+                    tool_calls=[worktree_result.tool_result.call_summary()],
+                    trace_events_internal=worktree_result.trace_events,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
 
-        patch_result = self._apply_patch_for_loop(
-            request=request,
-            command=command,
-            trace_events=worktree_result.trace_events,
-            execution_repo_path=worktree_result.execution_repo_path,
-            worktree_id=worktree_result.worktree_id,
-        )
-        return AgentLoopResult(
-            answer=patch_result.completed.answer,
-            tool_calls=[
-                worktree_result.tool_result.call_summary(),
-                patch_result.tool_result.call_summary(),
-            ],
-            trace_events_internal=patch_result.trace_events,
-        )
+            patch_result = self._apply_patch_for_loop(
+                request=request,
+                command=command,
+                trace_events=worktree_result.trace_events,
+                execution_repo_path=worktree_result.execution_repo_path,
+                worktree_id=worktree_result.worktree_id,
+                mutation_lock=mutation_lock,
+            )
+            result = AgentLoopResult(
+                answer=patch_result.completed.answer,
+                tool_calls=[
+                    worktree_result.tool_result.call_summary(),
+                    patch_result.tool_result.call_summary(),
+                ],
+                trace_events_internal=patch_result.trace_events,
+            )
+            return self._complete_with_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+                result=result,
+            )
+        except Exception:
+            self._release_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+            )
+            raise
 
     def _run_patch_verify_loop(
         self,
@@ -1233,66 +1394,104 @@ class AgentLoop:
                 ],
             )
 
-        worktree_result = self._create_worktree_for_patch(
-            request=request,
-            command=patch_command,
-            trace_events=trace_events,
+        pre_lock_event_count = len(trace_events)
+        mutation_lock = self._acquire_repo_mutation_lock(
+            repo_path=request.repo_path,
+            operation="patch_verify",
         )
-        if worktree_result.tool_result.error or not worktree_result.execution_repo_path:
-            answer = (
-                getattr(
-                    getattr(worktree_result.tool_result, "worktree_create_result", None),
-                    "public_summary",
-                    "",
+        if not mutation_lock.acquired:
+            return self._repo_mutation_lock_result(
+                operation="patch_verify",
+                reason=mutation_lock.reason,
+            )
+        try:
+            worktree_result = self._create_worktree_for_patch(
+                request=request,
+                command=patch_command,
+                trace_events=trace_events,
+                mutation_lock=mutation_lock,
+            )
+            if worktree_result.tool_result.error or not worktree_result.execution_repo_path:
+                answer = (
+                    getattr(
+                        getattr(worktree_result.tool_result, "worktree_create_result", None),
+                        "public_summary",
+                        "",
+                    )
+                    or DENY_ANSWER
                 )
-                or DENY_ANSWER
-            )
-            return AgentLoopResult(
-                answer=answer,
-                tool_calls=[worktree_result.tool_result.call_summary()],
-                trace_events_internal=worktree_result.trace_events,
-            )
+                result = AgentLoopResult(
+                    answer=answer,
+                    tool_calls=[worktree_result.tool_result.call_summary()],
+                    trace_events_internal=worktree_result.trace_events,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                    pre_lock_event_count=pre_lock_event_count,
+                )
 
-        patch_result = self._apply_patch_for_loop(
-            request=request,
-            command=patch_command,
-            trace_events=worktree_result.trace_events,
-            execution_repo_path=worktree_result.execution_repo_path,
-            worktree_id=worktree_result.worktree_id,
-            include_patch_verify_summary=True,
-        )
-        apply_result = getattr(patch_result.tool_result, "patch_apply_result", None)
-        if patch_result.tool_result.error or apply_result is None or not apply_result.applied:
-            failed_answer = getattr(patch_result.completed, "answer", "") or DENY_ANSWER
-            return AgentLoopResult(
-                answer=failed_answer,
+            patch_result = self._apply_patch_for_loop(
+                request=request,
+                command=patch_command,
+                trace_events=worktree_result.trace_events,
+                execution_repo_path=worktree_result.execution_repo_path,
+                worktree_id=worktree_result.worktree_id,
+                include_patch_verify_summary=True,
+                mutation_lock=mutation_lock,
+            )
+            apply_result = getattr(patch_result.tool_result, "patch_apply_result", None)
+            if patch_result.tool_result.error or apply_result is None or not apply_result.applied:
+                failed_answer = getattr(patch_result.completed, "answer", "") or DENY_ANSWER
+                result = AgentLoopResult(
+                    answer=failed_answer,
+                    tool_calls=[
+                        worktree_result.tool_result.call_summary(),
+                        patch_result.tool_result.call_summary(),
+                    ],
+                    trace_events_internal=patch_result.trace_events,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                    pre_lock_event_count=pre_lock_event_count,
+                )
+
+            verification_result = self._verify_after_patch_apply(
+                request=request,
+                command_label=command_label,
+                trace_events=patch_result.trace_events,
+                execution_repo_path=worktree_result.execution_repo_path,
+                worktree_id=worktree_result.worktree_id,
+                mutation_lock=mutation_lock,
+            )
+            result = AgentLoopResult(
+                answer=_format_patch_verify_answer(
+                    patch_result.completed.answer,
+                    verification_result.answer,
+                    verification_result.tool_result.audit_summary,
+                ),
                 tool_calls=[
                     worktree_result.tool_result.call_summary(),
                     patch_result.tool_result.call_summary(),
+                    verification_result.tool_result.call_summary(),
                 ],
-                trace_events_internal=patch_result.trace_events,
+                trace_events_internal=verification_result.trace_events,
             )
-
-        verification_result = self._verify_after_patch_apply(
-            request=request,
-            command_label=command_label,
-            trace_events=patch_result.trace_events,
-            execution_repo_path=worktree_result.execution_repo_path,
-            worktree_id=worktree_result.worktree_id,
-        )
-        return AgentLoopResult(
-            answer=_format_patch_verify_answer(
-                patch_result.completed.answer,
-                verification_result.answer,
-                verification_result.tool_result.audit_summary,
-            ),
-            tool_calls=[
-                worktree_result.tool_result.call_summary(),
-                patch_result.tool_result.call_summary(),
-                verification_result.tool_result.call_summary(),
-            ],
-            trace_events_internal=verification_result.trace_events,
-        )
+            return self._complete_with_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+                result=result,
+                pre_lock_event_count=pre_lock_event_count,
+            )
+        except Exception:
+            self._release_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+            )
+            raise
 
     def _apply_patch_for_loop(
         self,
@@ -1302,9 +1501,13 @@ class AgentLoop:
         trace_events: list[TraceEvent],
         execution_repo_path: str,
         worktree_id: str,
+        mutation_lock: RepoMutationLock,
         include_patch_verify_summary: bool = False,
     ):
-        context = command.context
+        context = command.context.with_lock(
+            owner_token=mutation_lock.owner_token,
+            operation=mutation_lock.operation,
+        )
         tool_spec = self.tool_registry.get(PATCH_APPLY_TOOL)
         permission_decision = self.permission_policy.decide(
             tool_spec,
@@ -1419,14 +1622,19 @@ class AgentLoop:
         trace_events: list[TraceEvent],
         execution_repo_path: str,
         worktree_id: str,
+        mutation_lock: RepoMutationLock,
     ):
         context = ToolInvocationContext(
             tool_name=VERIFICATION_RUN_TOOL,
             user_id=request.user_id,
+            repo_key=mutation_lock.repo_key,
             intent="verification_run",
             command_label=command_label,
             confirmed=True,
             scope_valid=_valid_repo_scope(request.repo_path),
+        ).with_lock(
+            owner_token=mutation_lock.owner_token,
+            operation=mutation_lock.operation,
         )
         tool_spec = self.tool_registry.get(VERIFICATION_RUN_TOOL)
         permission_decision = self.permission_policy.decide(
@@ -1523,13 +1731,26 @@ class AgentLoop:
         request: AgentLoopRequest,
         command_label: str,
     ) -> AgentLoopResult:
+        mutation_lock = self._acquire_repo_mutation_lock(
+            repo_path=request.repo_path,
+            operation=VERIFICATION_RUN_TOOL,
+        )
+        if not mutation_lock.acquired:
+            return self._repo_mutation_lock_result(
+                operation=VERIFICATION_RUN_TOOL,
+                reason=mutation_lock.reason,
+            )
         context = ToolInvocationContext(
             tool_name=VERIFICATION_RUN_TOOL,
             user_id=request.user_id,
+            repo_key=mutation_lock.repo_key,
             intent="verification_run",
             command_label=command_label,
             confirmed=True,
             scope_valid=_valid_repo_scope(request.repo_path),
+        ).with_lock(
+            owner_token=mutation_lock.owner_token,
+            operation=mutation_lock.operation,
         )
         tool_spec = self.tool_registry.get(VERIFICATION_RUN_TOOL)
         permission_decision = self.permission_policy.decide(
@@ -1555,33 +1776,56 @@ class AgentLoop:
             ),
         ]
         if permission_decision.status == "deny":
-            return AgentLoopResult(
-                answer=DENY_ANSWER,
-                trace_events_internal=[
-                    *trace_events,
-                    TraceEvent(
-                        event_type="tool_rejected",
-                        tool_name=VERIFICATION_RUN_TOOL,
-                        status="error",
-                        summary=f"reason={permission_decision.reason}",
-                    ),
-                ],
+            return self._complete_with_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+                result=AgentLoopResult(
+                    answer=DENY_ANSWER,
+                    trace_events_internal=[
+                        *trace_events,
+                        TraceEvent(
+                            event_type="tool_rejected",
+                            tool_name=VERIFICATION_RUN_TOOL,
+                            status="error",
+                            summary=f"reason={permission_decision.reason}",
+                        ),
+                    ],
+                ),
             )
         if not self.approval_gate.evaluate(permission_decision, context=context):
-            return AgentLoopResult(
-                answer=ASK_ANSWER,
-                trace_events_internal=[
-                    *trace_events,
-                    TraceEvent(
-                        event_type="approval_required",
-                        tool_name=VERIFICATION_RUN_TOOL,
-                    ),
-                ],
+            return self._complete_with_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+                result=AgentLoopResult(
+                    answer=ASK_ANSWER,
+                    trace_events_internal=[
+                        *trace_events,
+                        TraceEvent(
+                            event_type="approval_required",
+                            tool_name=VERIFICATION_RUN_TOOL,
+                        ),
+                    ],
+                ),
             )
-        tool_result = self.tool_executor.verification_run(
-            repo_path=request.repo_path,
-            command_label=command_label,
-        )
+        try:
+            tool_result = self.tool_executor.verification_run(
+                repo_path=request.repo_path,
+                command_label=command_label,
+            )
+        except Exception:
+            tool_result = ToolExecutionResult(
+                tool_name=VERIFICATION_RUN_TOOL,
+                parameters={"command_label": command_label},
+                error="runner_error",
+                audit_summary={
+                    "command_label": command_label,
+                    "status": "failed",
+                    "exit_code": "",
+                    "duration_ms": 0,
+                    "timed_out": "false",
+                    "truncated": "false",
+                },
+            )
         trace_events.append(
             TraceEvent(
                 event_type="tool_result",
@@ -1600,10 +1844,14 @@ class AgentLoop:
                 summary=_verification_trace_summary(tool_result.audit_summary),
             )
         )
-        return AgentLoopResult(
-            answer=_verification_answer_from_tool_result(tool_result),
-            tool_calls=[tool_result.call_summary()],
-            trace_events_internal=trace_events,
+        return self._complete_with_repo_mutation_lock(
+            repo_path=request.repo_path,
+            lock=mutation_lock,
+            result=AgentLoopResult(
+                answer=_verification_answer_from_tool_result(tool_result),
+                tool_calls=[tool_result.call_summary()],
+                trace_events_internal=trace_events,
+            ),
         )
 
     def _run_repo_rag(
@@ -1766,116 +2014,165 @@ class AgentLoop:
                 reason=reason or "invalid_request",
                 confirmation=confirmed,
             )
-        preflight = self.worktree_manager.prepare_promotion(
+        mutation_lock = self._acquire_repo_mutation_lock(
             repo_path=request.repo_path,
-            user_id=request.user_id,
-            worktree_id=worktree_id,
+            operation="patch_promotion",
         )
-        if not preflight.accepted or preflight.patch is None:
-            return self._verified_patch_promotion_result(
-                worktree_id=safe_id,
-                status="error",
-                reason=preflight.reason,
-            )
-        context = ToolInvocationContext(
-            tool_name=PATCH_APPLY_TOOL,
-            user_id=request.user_id,
-            repo_key=preflight.repo_key,
-            intent="patch_promotion_apply",
-            patch_id=preflight.patch.patch_id,
-            worktree_id=worktree_id,
-            confirmed=True,
-            patch_status=preflight.patch.status,
-            diff_hash_match=True,
-            expires_at_valid=True,
-            scope_valid=True,
-            promotion_preflight_valid=True,
-        )
-        decision = self.permission_policy.decide(
-            self.tool_registry.get(PATCH_APPLY_TOOL),
-            tool_name=PATCH_APPLY_TOOL,
-            context=context,
-        )
-        if decision.status == "deny" or not self.approval_gate.evaluate(
-            decision,
-            context=context,
-        ):
-            return self._verified_patch_promotion_result(
-                worktree_id=safe_id,
-                status="error",
-                reason=decision.reason,
-                preflight="passed",
-                patch_id=preflight.patch.patch_id,
-            )
-        if not self.worktree_manager.begin_promotion(preflight):
-            return self._verified_patch_promotion_result(
-                worktree_id=safe_id,
-                status="error",
-                reason="promotion_journal_unavailable",
-                preflight="passed",
-                patch_id=preflight.patch.patch_id,
+        if not mutation_lock.acquired:
+            return self._repo_mutation_lock_result(
+                operation="patch_promotion",
+                reason=mutation_lock.reason,
             )
         try:
-            tool_result = self.tool_executor.patch_apply(
-                request.repo_path,
-                preflight.patch.diff_text,
-                require_atomic=True,
-                expected_base_commit=preflight.record.base_commit,
+            preflight = self.worktree_manager.prepare_promotion(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+                worktree_id=worktree_id,
             )
-        except Exception:
-            self.worktree_manager.mark_promotion_apply_failed(preflight)
-            return self._verified_patch_promotion_result(
-                worktree_id=safe_id,
-                status="error",
-                reason="patch_apply_error",
-                preflight="passed",
-                execution_attempted=True,
+            if not preflight.accepted or preflight.patch is None:
+                result = self._verified_patch_promotion_result(
+                    worktree_id=safe_id,
+                    status="error",
+                    reason=preflight.reason,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+            context = ToolInvocationContext(
+                tool_name=PATCH_APPLY_TOOL,
+                user_id=request.user_id,
+                repo_key=preflight.repo_key,
+                intent="patch_promotion_apply",
                 patch_id=preflight.patch.patch_id,
+                worktree_id=worktree_id,
+                confirmed=True,
+                patch_status=preflight.patch.status,
+                diff_hash_match=True,
+                expires_at_valid=True,
+                scope_valid=True,
+                promotion_preflight_valid=True,
+            ).with_lock(
+                owner_token=mutation_lock.owner_token,
+                operation=mutation_lock.operation,
             )
-        apply_result = tool_result.patch_apply_result
-        if apply_result is None or not apply_result.applied:
-            self.worktree_manager.mark_promotion_apply_failed(preflight)
-            return self._verified_patch_promotion_result(
-                worktree_id=safe_id,
-                status="error",
-                reason="patch_apply_failed",
-                preflight="passed",
-                execution_attempted=True,
-                tool_calls=[tool_result.call_summary()],
-                patch_id=preflight.patch.patch_id,
+            decision = self.permission_policy.decide(
+                self.tool_registry.get(PATCH_APPLY_TOOL),
+                tool_name=PATCH_APPLY_TOOL,
+                context=context,
             )
-        completion = self.worktree_manager.complete_promotion(preflight)
-        tool_calls = [tool_result.call_summary()]
-        reason = completion.reason
-        if not completion.succeeded:
+            if decision.status == "deny" or not self.approval_gate.evaluate(
+                decision,
+                context=context,
+            ):
+                result = self._verified_patch_promotion_result(
+                    worktree_id=safe_id,
+                    status="error",
+                    reason=decision.reason,
+                    preflight="passed",
+                    patch_id=preflight.patch.patch_id,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+            if not self.worktree_manager.begin_promotion(preflight):
+                result = self._verified_patch_promotion_result(
+                    worktree_id=safe_id,
+                    status="error",
+                    reason="promotion_journal_unavailable",
+                    preflight="passed",
+                    patch_id=preflight.patch.patch_id,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
             try:
-                rollback_result = self.tool_executor.patch_apply(
+                tool_result = self.tool_executor.patch_apply(
                     request.repo_path,
-                    preflight.rollback_diff,
+                    preflight.patch.diff_text,
                     require_atomic=True,
-                    require_clean=False,
                     expected_base_commit=preflight.record.base_commit,
                 )
             except Exception:
-                rollback_result = None
-            if (
-                rollback_result is None
-                or rollback_result.patch_apply_result is None
-                or not rollback_result.patch_apply_result.applied
-            ):
-                reason = "promotion_rollback_failed"
-            else:
                 self.worktree_manager.mark_promotion_apply_failed(preflight)
-                tool_calls.append(rollback_result.call_summary())
-        return self._verified_patch_promotion_result(
-            worktree_id=safe_id,
-            status="ok" if completion.succeeded else "error",
-            reason=reason,
-            preflight="passed",
-            execution_attempted=True,
-            tool_calls=tool_calls,
-            patch_id=preflight.patch.patch_id,
-        )
+                result = self._verified_patch_promotion_result(
+                    worktree_id=safe_id,
+                    status="error",
+                    reason="patch_apply_error",
+                    preflight="passed",
+                    execution_attempted=True,
+                    patch_id=preflight.patch.patch_id,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+            apply_result = tool_result.patch_apply_result
+            if apply_result is None or not apply_result.applied:
+                self.worktree_manager.mark_promotion_apply_failed(preflight)
+                result = self._verified_patch_promotion_result(
+                    worktree_id=safe_id,
+                    status="error",
+                    reason="patch_apply_failed",
+                    preflight="passed",
+                    execution_attempted=True,
+                    tool_calls=[tool_result.call_summary()],
+                    patch_id=preflight.patch.patch_id,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+            completion = self.worktree_manager.complete_promotion(preflight)
+            tool_calls = [tool_result.call_summary()]
+            reason = completion.reason
+            if not completion.succeeded:
+                try:
+                    rollback_result = self.tool_executor.patch_apply(
+                        request.repo_path,
+                        preflight.rollback_diff,
+                        require_atomic=True,
+                        require_clean=False,
+                        expected_base_commit=preflight.record.base_commit,
+                    )
+                except Exception:
+                    rollback_result = None
+                if (
+                    rollback_result is None
+                    or rollback_result.patch_apply_result is None
+                    or not rollback_result.patch_apply_result.applied
+                ):
+                    reason = "promotion_rollback_failed"
+                else:
+                    self.worktree_manager.mark_promotion_apply_failed(preflight)
+                    tool_calls.append(rollback_result.call_summary())
+            result = self._verified_patch_promotion_result(
+                worktree_id=safe_id,
+                status="ok" if completion.succeeded else "error",
+                reason=reason,
+                preflight="passed",
+                execution_attempted=True,
+                tool_calls=tool_calls,
+                patch_id=preflight.patch.patch_id,
+            )
+            return self._complete_with_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+                result=result,
+            )
+        except Exception:
+            self._release_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+            )
+            raise
 
     def _verified_patch_promotion_result(
         self,
@@ -1942,129 +2239,164 @@ class AgentLoop:
                 ],
             )
 
-        preflight = self.worktree_manager.prepare_reverification(
+        mutation_lock = self._acquire_repo_mutation_lock(
             repo_path=request.repo_path,
-            user_id=request.user_id,
-            worktree_id=worktree_id,
+            operation=VERIFICATION_RUN_TOOL,
         )
-
-        if not preflight.accepted or not preflight.execution_repo_path:
-            summary = (
-                f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
-                f"command_label={command_label}; execution_attempted=false; "
-                f"preflight_status=failed; reason={safe_public_value(preflight.reason)}"
+        if not mutation_lock.acquired:
+            return self._repo_mutation_lock_result(
+                operation=VERIFICATION_RUN_TOOL,
+                reason=mutation_lock.reason,
             )
-            return AgentLoopResult(
-                answer=f"worktree re-verification preflight_failed: {safe_public_value(preflight.reason)}",
-                trace_events_internal=[
-                    TraceEvent(
-                        event_type="worktree_reverification_summarized",
-                        status="error",
-                        summary=summary,
-                    )
-                ],
+        try:
+            preflight = self.worktree_manager.prepare_reverification(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+                worktree_id=worktree_id,
             )
 
-        context = ToolInvocationContext(
-            tool_name=VERIFICATION_RUN_TOOL,
-            user_id=request.user_id,
-            intent="verification_run",
-            command_label=command_label,
-            confirmed=True,
-            scope_valid=True,
-        )
-        tool_spec = self.tool_registry.get(VERIFICATION_RUN_TOOL)
-        permission_decision = self.permission_policy.decide(
-            tool_spec,
-            tool_name=VERIFICATION_RUN_TOOL,
-            context=context,
-        )
-        trace_events = [
-            TraceEvent(
-                event_type="permission_checked",
+            if not preflight.accepted or not preflight.execution_repo_path:
+                summary = (
+                    f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
+                    f"command_label={command_label}; execution_attempted=false; "
+                    f"preflight_status=failed; reason={safe_public_value(preflight.reason)}"
+                )
+                result = AgentLoopResult(
+                    answer=f"worktree re-verification preflight_failed: {safe_public_value(preflight.reason)}",
+                    trace_events_internal=[
+                        TraceEvent(
+                            event_type="worktree_reverification_summarized",
+                            status="error",
+                            summary=summary,
+                        )
+                    ],
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+
+            context = ToolInvocationContext(
                 tool_name=VERIFICATION_RUN_TOOL,
-                status="ok" if permission_decision.status == "ask" else "error",
-                summary=(
-                    f"tool={VERIFICATION_RUN_TOOL}; decision={permission_decision.status}; "
-                    f"reason={permission_decision.reason}"
-                ),
+                user_id=request.user_id,
+                repo_key=mutation_lock.repo_key,
+                intent="verification_run",
+                command_label=command_label,
+                confirmed=True,
+                scope_valid=True,
+            ).with_lock(
+                owner_token=mutation_lock.owner_token,
+                operation=mutation_lock.operation,
             )
-        ]
-        if permission_decision.status == "deny" or not self.approval_gate.evaluate(
-            permission_decision,
-            context=context,
-        ):
+            tool_spec = self.tool_registry.get(VERIFICATION_RUN_TOOL)
+            permission_decision = self.permission_policy.decide(
+                tool_spec,
+                tool_name=VERIFICATION_RUN_TOOL,
+                context=context,
+            )
+            trace_events = [
+                TraceEvent(
+                    event_type="permission_checked",
+                    tool_name=VERIFICATION_RUN_TOOL,
+                    status="ok" if permission_decision.status == "ask" else "error",
+                    summary=(
+                        f"tool={VERIFICATION_RUN_TOOL}; decision={permission_decision.status}; "
+                        f"reason={permission_decision.reason}"
+                    ),
+                )
+            ]
+            if permission_decision.status == "deny" or not self.approval_gate.evaluate(
+                permission_decision,
+                context=context,
+            ):
+                summary = (
+                    f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
+                    f"command_label={command_label}; execution_attempted=false; "
+                    f"preflight_status=passed; reason={safe_public_value(permission_decision.reason)}"
+                )
+                result = AgentLoopResult(
+                    answer=DENY_ANSWER,
+                    trace_events_internal=[
+                        *trace_events,
+                        TraceEvent(
+                            event_type="worktree_reverification_summarized",
+                            status="error",
+                            summary=summary,
+                        ),
+                    ],
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+
+            try:
+                tool_result = self.tool_executor.verification_run(
+                    repo_path=preflight.execution_repo_path,
+                    command_label=command_label,
+                )
+            except Exception:
+                tool_result = ToolExecutionResult(
+                    tool_name=VERIFICATION_RUN_TOOL,
+                    parameters={"command_label": command_label},
+                    error="runner_error",
+                    audit_summary={
+                        "command_label": command_label,
+                        "status": "failed",
+                        "exit_code": "",
+                        "duration_ms": 0,
+                        "timed_out": "false",
+                        "truncated": "false",
+                    },
+                )
+            succeeded = tool_result.audit_summary.get("status") == "success"
+            self.worktree_manager.record_verification_result(
+                repo_path=request.repo_path,
+                user_id=request.user_id,
+                worktree_id=worktree_id,
+                command_label=command_label,
+                succeeded=succeeded,
+            )
+            audit = _verification_trace_summary(tool_result.audit_summary)
             summary = (
                 f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
-                f"command_label={command_label}; execution_attempted=false; "
-                f"preflight_status=passed; reason={safe_public_value(permission_decision.reason)}"
+                f"execution_attempted=true; preflight_status=passed; {audit}"
             )
-            return AgentLoopResult(
-                answer=DENY_ANSWER,
+            result = AgentLoopResult(
+                answer=(
+                    f"worktree_id={safe_worktree_id}; "
+                    f"{_verification_answer_from_tool_result(tool_result, repo_path=preflight.execution_repo_path)}"
+                ),
+                tool_calls=[tool_result.call_summary()],
                 trace_events_internal=[
                     *trace_events,
                     TraceEvent(
+                        event_type="tool_result",
+                        tool_name=VERIFICATION_RUN_TOOL,
+                        status="ok" if succeeded else "error",
+                        summary=f"status={tool_result.audit_summary.get('status', '')}",
+                    ),
+                    TraceEvent(
                         event_type="worktree_reverification_summarized",
-                        status="error",
+                        tool_name=VERIFICATION_RUN_TOOL,
+                        status="ok" if succeeded else "error",
                         summary=summary,
                     ),
                 ],
             )
-
-        try:
-            tool_result = self.tool_executor.verification_run(
-                repo_path=preflight.execution_repo_path,
-                command_label=command_label,
+            return self._complete_with_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+                result=result,
             )
         except Exception:
-            tool_result = ToolExecutionResult(
-                tool_name=VERIFICATION_RUN_TOOL,
-                parameters={"command_label": command_label},
-                error="runner_error",
-                audit_summary={
-                    "command_label": command_label,
-                    "status": "failed",
-                    "exit_code": "",
-                    "duration_ms": 0,
-                    "timed_out": "false",
-                    "truncated": "false",
-                },
+            self._release_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
             )
-        succeeded = tool_result.audit_summary.get("status") == "success"
-        self.worktree_manager.record_verification_result(
-            repo_path=request.repo_path,
-            user_id=request.user_id,
-            worktree_id=worktree_id,
-            command_label=command_label,
-            succeeded=succeeded,
-        )
-        audit = _verification_trace_summary(tool_result.audit_summary)
-        summary = (
-            f"attempt_kind=worktree_reverification; worktree_id={safe_worktree_id}; "
-            f"execution_attempted=true; preflight_status=passed; {audit}"
-        )
-        return AgentLoopResult(
-            answer=(
-                f"worktree_id={safe_worktree_id}; "
-                f"{_verification_answer_from_tool_result(tool_result, repo_path=preflight.execution_repo_path)}"
-            ),
-            tool_calls=[tool_result.call_summary()],
-            trace_events_internal=[
-                *trace_events,
-                TraceEvent(
-                    event_type="tool_result",
-                    tool_name=VERIFICATION_RUN_TOOL,
-                    status="ok" if succeeded else "error",
-                    summary=f"status={tool_result.audit_summary.get('status', '')}",
-                ),
-                TraceEvent(
-                    event_type="worktree_reverification_summarized",
-                    tool_name=VERIFICATION_RUN_TOOL,
-                    status="ok" if succeeded else "error",
-                    summary=summary,
-                ),
-            ],
-        )
+            raise
 
     def _run_worktree_disposal(
         self,
@@ -2085,89 +2417,133 @@ class AgentLoop:
                 reason=reason or "invalid_request",
                 confirmation=False,
             )
-        preflight = self.worktree_manager.prepare_disposal(
+        mutation_lock = self._acquire_repo_mutation_lock(
             repo_path=request.repo_path,
-            user_id=request.user_id,
-            worktree_id=worktree_id,
-            attempt_kind=attempt_kind,
+            operation=WORKTREE_DISPOSE_TOOL,
         )
-        if not preflight.accepted:
-            return self._worktree_disposal_result(
-                worktree_id=safe_id,
-                attempt_kind=attempt_kind,
-                status="error",
-                reason=preflight.reason,
-                preflight=preflight.classification or "failed",
-            )
-        context = ToolInvocationContext(
-            tool_name=WORKTREE_DISPOSE_TOOL,
-            user_id=request.user_id,
-            repo_key=preflight.repo_key,
-            intent=f"worktree_{attempt_kind}",
-            worktree_id=worktree_id,
-            confirmed=True,
-            scope_valid=True,
-        )
-        decision = self.permission_policy.decide(
-            self.tool_registry.get(WORKTREE_DISPOSE_TOOL),
-            tool_name=WORKTREE_DISPOSE_TOOL,
-            context=context,
-        )
-        if decision.status == "deny" or not self.approval_gate.evaluate(
-            decision,
-            context=context,
-        ):
-            return self._worktree_disposal_result(
-                worktree_id=safe_id,
-                attempt_kind=attempt_kind,
-                status="error",
-                reason=decision.reason,
-                preflight=preflight.classification,
+        if not mutation_lock.acquired:
+            return self._repo_mutation_lock_result(
+                operation=WORKTREE_DISPOSE_TOOL,
+                reason=mutation_lock.reason,
             )
         try:
-            tool_result = self.tool_executor.worktree_dispose(
+            preflight = self.worktree_manager.prepare_disposal(
                 repo_path=request.repo_path,
                 user_id=request.user_id,
                 worktree_id=worktree_id,
                 attempt_kind=attempt_kind,
             )
+            if not preflight.accepted:
+                result = self._worktree_disposal_result(
+                    worktree_id=safe_id,
+                    attempt_kind=attempt_kind,
+                    status="error",
+                    reason=preflight.reason,
+                    preflight=preflight.classification or "failed",
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+            context = ToolInvocationContext(
+                tool_name=WORKTREE_DISPOSE_TOOL,
+                user_id=request.user_id,
+                repo_key=preflight.repo_key,
+                intent=f"worktree_{attempt_kind}",
+                worktree_id=worktree_id,
+                confirmed=True,
+                scope_valid=True,
+            ).with_lock(
+                owner_token=mutation_lock.owner_token,
+                operation=mutation_lock.operation,
+            )
+            decision = self.permission_policy.decide(
+                self.tool_registry.get(WORKTREE_DISPOSE_TOOL),
+                tool_name=WORKTREE_DISPOSE_TOOL,
+                context=context,
+            )
+            if decision.status == "deny" or not self.approval_gate.evaluate(
+                decision,
+                context=context,
+            ):
+                result = self._worktree_disposal_result(
+                    worktree_id=safe_id,
+                    attempt_kind=attempt_kind,
+                    status="error",
+                    reason=decision.reason,
+                    preflight=preflight.classification,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+            try:
+                tool_result = self.tool_executor.worktree_dispose(
+                    repo_path=request.repo_path,
+                    user_id=request.user_id,
+                    worktree_id=worktree_id,
+                    attempt_kind=attempt_kind,
+                )
+            except Exception:
+                result = self._worktree_disposal_result(
+                    worktree_id=safe_id,
+                    attempt_kind=attempt_kind,
+                    status="error",
+                    reason="runner_error",
+                    preflight=preflight.classification,
+                    execution_attempted=True,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=result,
+                )
+            result = tool_result.worktree_disposal_result
+            if result is None:
+                disposal_result = self._worktree_disposal_result(
+                    worktree_id=safe_id,
+                    attempt_kind=attempt_kind,
+                    status="error",
+                    reason="runner_error",
+                    preflight=preflight.classification,
+                    execution_attempted=True,
+                )
+                return self._complete_with_repo_mutation_lock(
+                    repo_path=request.repo_path,
+                    lock=mutation_lock,
+                    result=disposal_result,
+                )
+            answer = self._worktree_disposal_result(
+                worktree_id=safe_id,
+                attempt_kind=attempt_kind,
+                status="ok" if result.succeeded else "error",
+                reason=result.reason,
+                preflight=result.preflight_classification,
+                execution_attempted=True,
+                completed_step=result.completed_step,
+                failed_step=result.failed_step,
+                worktree_status=result.worktree_status,
+                patch_status=result.patch_status,
+            )
+            disposal_result = AgentLoopResult(
+                answer=answer.answer,
+                related_files=[],
+                tool_calls=[tool_result.call_summary()],
+                trace_events_internal=answer.trace_events_internal,
+            )
+            return self._complete_with_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
+                result=disposal_result,
+            )
         except Exception:
-            return self._worktree_disposal_result(
-                worktree_id=safe_id,
-                attempt_kind=attempt_kind,
-                status="error",
-                reason="runner_error",
-                preflight=preflight.classification,
-                execution_attempted=True,
+            self._release_repo_mutation_lock(
+                repo_path=request.repo_path,
+                lock=mutation_lock,
             )
-        result = tool_result.worktree_disposal_result
-        if result is None:
-            return self._worktree_disposal_result(
-                worktree_id=safe_id,
-                attempt_kind=attempt_kind,
-                status="error",
-                reason="runner_error",
-                preflight=preflight.classification,
-                execution_attempted=True,
-            )
-        answer = self._worktree_disposal_result(
-            worktree_id=safe_id,
-            attempt_kind=attempt_kind,
-            status="ok" if result.succeeded else "error",
-            reason=result.reason,
-            preflight=result.preflight_classification,
-            execution_attempted=True,
-            completed_step=result.completed_step,
-            failed_step=result.failed_step,
-            worktree_status=result.worktree_status,
-            patch_status=result.patch_status,
-        )
-        return AgentLoopResult(
-            answer=answer.answer,
-            related_files=[],
-            tool_calls=[tool_result.call_summary()],
-            trace_events_internal=answer.trace_events_internal,
-        )
+            raise
 
     def _worktree_disposal_result(
         self,

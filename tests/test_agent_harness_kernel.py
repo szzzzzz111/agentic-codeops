@@ -406,7 +406,7 @@ def test_permission_policy_allows_patch_apply_only_via_confirmation_context() ->
         diff_hash_match=True,
         expires_at_valid=True,
         scope_valid=True,
-    )
+    ).with_lock(owner_token="owner_1", operation="patch_apply")
 
     decision = policy.decide(spec, tool_name="patch_apply", context=context)
 
@@ -434,11 +434,12 @@ def test_permission_policy_allows_verification_run_only_via_context() -> None:
     )
     context = ToolInvocationContext(
         tool_name="verification_run",
+        repo_key="repo_a",
         intent="verification_run",
         command_label="verify",
         confirmed=True,
         scope_valid=True,
-    )
+    ).with_lock(owner_token="owner_1", operation="verification_run")
 
     decision = policy.decide(spec, tool_name="verification_run", context=context)
 
@@ -487,7 +488,7 @@ def test_permission_policy_allows_worktree_create_only_via_context() -> None:
         diff_hash_match=True,
         expires_at_valid=True,
         scope_valid=True,
-    )
+    ).with_lock(owner_token="owner_1", operation="patch_apply")
 
     decision = policy.decide(spec, tool_name="worktree_create", context=context)
 
@@ -967,10 +968,12 @@ def test_agent_loop_runs_verification_after_patch_and_before_repo_search(
         }
     ]
     assert [event.event_type for event in result.trace_events_internal] == [
+        "repo_mutation_lock",
         "verification_command",
         "permission_checked",
         "tool_result",
         "verification_summarized",
+        "repo_mutation_lock",
     ]
 
 
@@ -1048,6 +1051,7 @@ def test_agent_loop_patch_verify_combination_applies_then_runs_verification(
     assert result.tool_calls[2]["tool_name"] == "verification_run"
     assert [event.event_type for event in result.trace_events_internal] == [
         "patch_verify_loop_started",
+        "repo_mutation_lock",
         "permission_checked",
         "worktree_create_summarized",
         "patch_command",
@@ -1060,6 +1064,7 @@ def test_agent_loop_patch_verify_combination_applies_then_runs_verification(
         "tool_result",
         "patch_verify_verification_summarized",
         "worktree_verification_summarized",
+        "repo_mutation_lock",
     ]
 
 
@@ -1214,6 +1219,7 @@ def test_agent_loop_confirm_patch_runs_apply_inside_worktree(tmp_path: Path) -> 
     assert result.tool_calls[0]["tool_name"] == "worktree_create"
     assert result.tool_calls[1]["tool_name"] == "patch_apply"
     assert [event.event_type for event in result.trace_events_internal] == [
+        "repo_mutation_lock",
         "permission_checked",
         "worktree_create_summarized",
         "patch_command",
@@ -1221,6 +1227,7 @@ def test_agent_loop_confirm_patch_runs_apply_inside_worktree(tmp_path: Path) -> 
         "tool_result",
         "patch_apply_summarized",
         "worktree_patch_summarized",
+        "repo_mutation_lock",
     ]
 
 

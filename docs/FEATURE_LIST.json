@@ -236,6 +236,21 @@
     "notes": "Covered by tests/test_verified_patch_promotion.py, adjacent patch/worktree/audit/AgentLoop/API regressions, OpenSpec validation, full verify, implementation review triage, and archive evidence for add-verified-patch-promotion."
   },
   {
+    "id": "repo-mutation-locking",
+    "category": "agent",
+    "description": "Repo-key scoped mutation lock serializes RepoPilot-owned write-risk patch, verification, worktree, disposal, and promotion flows.",
+    "acceptance_criteria": [
+      "same-repo concurrent mutation attempts fail closed before repository mutation",
+      "write-risk ToolInvocationContext values require lock provenance before PermissionPolicy and ApprovalGate approval",
+      "ordinary patch apply, combined Patch + Verify, standalone verification, retained worktree re-verification, disposal/reconciliation, and verified promotion are covered",
+      "read-only inventory, inspection, audit recovery, capability status, memory/task status, and repo search remain unlocked",
+      "lock conflict, unavailable storage, stale ownership, owner mismatch, and release failure use safe redacted answer/audit semantics",
+      "no /chat top-level fields, scheduler, queue, background retry, automatic repair, commit/merge/push, branch/PR automation, connector, notification, direct worktree copy, or git worktree prune"
+    ],
+    "passes": true,
+    "notes": "Covered by tests/test_repo_mutation_locking.py, adjacent patch/worktree/promotion/verification/AgentLoop/API regressions, OpenSpec validation, and full scripts/verify.ps1 evidence for harden-repo-mutation-locking."
+  },
+  {
     "id": "demo-ready-agent-cli",
     "category": "cli",
     "description": "Local repopilot CLI thinly maps demo commands to existing ChatService and AgentLoop behavior with a demo-ready capability surface.",

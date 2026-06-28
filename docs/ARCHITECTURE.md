@@ -1,8 +1,22 @@
 # 架构说明
 
+## Repo Mutation Locking
+
+当前写风险路径在进入 mutable preflight / execution 前会尝试获取 repo-key scoped
+mutation lock：ordinary patch apply、组合 Patch + Verify、retained worktree
+re-verification、worktree disposal/reconciliation、verified patch promotion 和 standalone
+verification。锁按 normalized `repo_key` 跨 user 串行同仓库 RepoPilot-owned mutation；
+业务 eligibility 仍按 `user_id + repo_key` 校验。
+
+锁 conflict 或 unavailable 时 fail closed，并通过现有 `/chat.answer` 返回安全摘要，不新增
+`/chat` 顶层字段。read-only inventory/inspection、audit recovery、capability/status、
+memory/task status 和 repo search 不获取 mutation lock。该能力不实现 scheduler、queue、
+后台 retry、automatic repair、commit/merge/push、branch/PR automation、connector、
+notification 或 `git worktree prune`。
+
 ## V25 Verified Patch Promotion
 
-V25 当前链路为 `AgentLoop -> scoped promotion preflight -> ToolRegistry -> PermissionPolicy ->
+V25 当前链路为 `AgentLoop -> repo mutation lock -> scoped promotion preflight -> ToolRegistry -> PermissionPolicy ->
 ApprovalGate -> ToolExecutor.patch_apply(main workspace, stored patch) -> lifecycle/audit summary`；路由在 V23 disposal/reconciliation 后、V22 re-verification 前，只接受精确确认命令。
 
 Preflight 要求当前 `user_id + repo_key`、`verification_succeeded` + `applied_in_worktree`、主工作区干净、主 `HEAD == base_commit`、Git/worktree ownership/registry/lock 一致，以及 stored patch hash 与 retained worktree 内容和受控 patch 预期一致。worktree 内容只作完整性证据，不是写入源。promotion 专用 `patch_apply` 使用固定 argv 的 Git atomic apply；patch/worktree/journal 的 `promoted` 终态通过 SQLite cross-database transaction 一起提交。状态同步失败时以受控逆向 patch 回滚主工作区。V25 不 commit、merge、push、建分支/PR、删除 worktree、prune、后台重试或自动修复。
@@ -85,6 +99,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
   -> LongTaskManager(command/status/step audit)
   -> AssistantControlSurface(read-only status)
   -> PatchManager(proposal/apply confirmation)
+  -> RepoMutationLockStore(repo-key scoped mutation guard)
   -> WorktreeManager(scoped create / inventory / inspection / disposal / re-verification / promotion preflight)
   -> PatchVerifyLoop(explicit apply+verify confirmation)
   -> VerificationRunner(whitelisted pytest/ruff/verify)
@@ -102,13 +117,13 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `MemoryManager` 负责明确 memory 指令、repo-local SQLite PREF/LTM、进程内 STM 和脱敏 memory audit。Memory command 在 `RequestRouter` / keyword 路由前识别。
 - `LongTaskManager` 负责明确长任务指令、repo-local SQLite task store、deterministic task-type plan、pause/resume、scratch 摘要和 ReAct trace skeleton。Long Task 控制命令在 memory command 之后、`RequestRouter` / keyword 路由前处理；只有显式 resume/run 当前 step 才能调用只读 `repo_rag`。
 - `AssistantControlSurface` 负责明确状态类请求的只读聚合，返回当前能力、Memory 计数、Long Task 摘要和下一步命令建议。它在 Memory command 和 Long Task command 之后、Patch/Verification/Audit Recovery 之前处理，不调用 `repo_rag`，不写 memory/tasks 状态；V19 为所有 `/chat` 请求写入轻量 persistent audit trace envelope。
-- `PatchManager` 负责明确 patch proposal 请求和明确 patch apply 确认。Proposal 先走 repo evidence；apply 只接受 `确认 patch <patch_id>` / `应用 patch <patch_id>` 等明确语法，并在权限检查前生成已归一化 `ToolInvocationContext`。
+- `PatchManager` 负责明确 patch proposal 请求和明确 patch apply 确认。Proposal 先走 repo evidence；apply 只接受 `确认 patch <patch_id>` / `应用 patch <patch_id>` 等明确语法，并在权限检查前生成已归一化 `ToolInvocationContext`；写入路径由 `AgentLoop` 先获取 repo mutation lock。
 - `PatchVerifyLoop` 负责明确组合确认请求，例如 `确认 patch <patch_id> 并运行验证`。组合确认在 Patch command 分支内优先于纯 Verification intent 处理；请求必须同时包含 patch id 和白名单 verification label，半解析或不安全 label 会整体拒绝且不 apply。
 - `VerificationRunner` 负责明确验证请求、固定白名单标签、输出截断和脱敏。它在 Patch command / Patch intent 之后、capability-status / repo_search 之前处理，只允许 `pytest`、`ruff` 和 `verify`，并通过 `verification_run` 权限/审批边界执行。
 - `AuditManager` 负责 V19 repo-local `.repopilot/audit.sqlite3` 持久审计与只读恢复。它记录脱敏 trace、patch attempt、verification result 和 long task event 摘要；recovery/status intent 在 patch/verification 之后、capability-status/repo_search 之前处理，命中后不调用 `repo_rag`，不执行 patch、verification、task resume 或 repo mutation。
 - `QueryUnderstanding` 负责 deterministic 检索前理解，产出 `SearchPlan`。
 - `QueryRewriteProvider` 负责 bounded deterministic multi-query rewrite，默认生成 `original` 和最多 3 条 Code Evidence variants。
-- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag`、受控 `worktree_create`、受控写入 `patch_apply` 和受控验证 `verification_run`。
+- `ToolExecutor` 统一收口工具执行，当前包装只读 `search_code`、`repo_rag`、受控 `worktree_create`、受控写入 `patch_apply` 和受控验证 `verification_run`；写风险执行依赖上游 lock provenance 与 permission context。
 - `LexicalRepoRetriever` 负责 repo-local chunk、lexical scoring、dedup 和 citation。
 - `EmbeddingRepoRetriever` 使用本地确定性 embedding provider 对 repo chunk 做轻量 embedding retrieval。
 - `HybridRepoRetriever` 负责合并 lexical 与 embedding retrieval 结果。
@@ -121,7 +136,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - `file_tools` 提供安全仓库文件工具，不处理 HTTP 或 Agent 决策。
 - Trace 贯穿请求生命周期，由 `ChatService` 创建请求级唯一 `trace_id`，并随 `/chat` 响应返回。V19 `AuditManager` 持久化脱敏 trace envelope 和关键事件摘要；完整 raw internal trace、hybrid retrieval channel detail、Evidence Pack content 和 provider content 不持久化，也不作为 `/chat` 顶层字段暴露。
 
-当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery 和 V20-V25 worktree 生命周期。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态；Worktree Isolation 把 standalone patch 与组合 Patch + Verify 放入 detached、locked worktree，不新增 API 或 `/chat` 顶层字段；Verified Patch Promotion 只在精确确认后把已验证 retained worktree 的 stored controlled patch 通过 approval-gated `patch_apply` 提升到主工作区。默认不接真实 LLM、不执行任意 shell、不自动 commit；显式环境配置只会把 OpenAI-compatible provider 接入 grounded answer 和 Long Task planner。共享 provider 可选记录 request-local latency、finish reason、model/fingerprint 和 token usage，但这些 metrics 不进入业务结果、公开响应或持久化 audit。`ModelPatchAuthoringProvider` 当前仅可通过依赖注入用于测试或自定义装配，默认 `AgentLoop` 不会因环境变量配置而启用真实 patch diff generation。
+当前 `/chat` 已通过 hybrid repo RAG 与 grounded answer 边界返回带 citation 的证据约束回答，并支持 repo-local SQLite-backed Memory 指令、Long Task Control Plane、Assistant Control Surface、Safe Patch Authoring、Verification Runner、Patch + Verify Loop、Persistent Audit / Recovery、Repo Mutation Locking 和 V20-V25 worktree 生命周期。Assistant Control Surface 只读聚合状态并通过现有 `answer` 返回；Safe Patch Authoring 通过现有 `answer` 返回 patch proposal / apply 结果；Verification Runner 与 Patch + Verify Loop 通过现有 `answer` 返回白名单验证或组合执行摘要；Persistent Audit / Recovery 记录脱敏事件摘要并通过现有 `answer` 返回只读恢复状态；Repo Mutation Locking 只序列化同 repo 的 RepoPilot-owned 写风险路径，不改变公开响应 schema；Worktree Isolation 把 standalone patch 与组合 Patch + Verify 放入 detached、locked worktree，不新增 API 或 `/chat` 顶层字段；Verified Patch Promotion 只在精确确认后把已验证 retained worktree 的 stored controlled patch 通过 approval-gated `patch_apply` 提升到主工作区。默认不接真实 LLM、不执行任意 shell、不自动 commit；显式环境配置只会把 OpenAI-compatible provider 接入 grounded answer 和 Long Task planner。共享 provider 可选记录 request-local latency、finish reason、model/fingerprint 和 token usage，但这些 metrics 不进入业务结果、公开响应或持久化 audit。`ModelPatchAuthoringProvider` 当前仅可通过依赖注入用于测试或自定义装配，默认 `AgentLoop` 不会因环境变量配置而启用真实 patch diff generation。
 
 ## 检索设计原则：grep-first, RAG-assisted
 
@@ -250,7 +265,7 @@ V10 已完成 Evidence Pack + Context Budget；V11 已完成 Grounded Answer / M
 
 V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期状态和只读查询；V21-V25 逐步补齐 inventory/inspection、re-verification、disposal/reconciliation 和 verified promotion。commit、merge、push、branch/PR automation、runtime subagents、connectors、notifications 和 always-on assistant 仍须通过后续独立 OpenSpec change、harness 边界和 review 才能进入 runtime。
 
-Worktree lifecycle 的稳定边界是：只读检查、白名单验证、不可逆清理和主工作区写入分别由独立阶段引入；每个写入阶段继续经过 `PermissionPolicy -> ApprovalGate -> ToolExecutor`，并保持明确命令、scope 校验、脱敏 persistent audit 和 fail-closed 失败语义。后续 Operator Control、Durable Execution、Background Worker、runtime subagents、connectors 和 notifications 仍只是候选方向；不得在没有独立 OpenSpec change 和 Harness review 前写成 runtime 能力。
+Worktree lifecycle 的稳定边界是：只读检查、白名单验证、不可逆清理和主工作区写入分别由独立阶段引入；每个写入阶段继续经过 repo mutation lock、`PermissionPolicy -> ApprovalGate -> ToolExecutor`，并保持明确命令、scope 校验、脱敏 persistent audit 和 fail-closed 失败语义。后续 Operator Control、Durable Execution、Background Worker、runtime subagents、connectors 和 notifications 仍只是候选方向；不得在没有独立 OpenSpec change 和 Harness review 前写成 runtime 能力。
 
 ## V9 架构补充：Embedding Retrieval + Hybrid Search
 

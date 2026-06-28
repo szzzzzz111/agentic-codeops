@@ -398,6 +398,7 @@ def test_permission_policy_accepts_only_fully_preflighted_promotion_context() ->
     )
     promotion = ToolInvocationContext(
         tool_name="patch_apply",
+        repo_key="repo_a",
         intent="patch_promotion_apply",
         confirmed=True,
         patch_status=PATCH_STATUS_APPLIED_IN_WORKTREE,
@@ -405,7 +406,7 @@ def test_permission_policy_accepts_only_fully_preflighted_promotion_context() ->
         expires_at_valid=True,
         scope_valid=True,
         promotion_preflight_valid=True,
-    )
+    ).with_lock(owner_token="owner_1", operation="patch_promotion")
 
     assert policy.decide(tool, context=ordinary).status == "deny"
     assert policy.decide(tool, context=promotion).status == "ask"
