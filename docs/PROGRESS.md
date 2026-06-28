@@ -3,8 +3,8 @@
 ## Git Metadata Output Bounds Hardening（archived，2026-06-28）
 
 - OpenSpec change `harden-git-metadata-output-bounds` 已归档到
-  `openspec/changes/archive/2026-06-28-harden-git-metadata-output-bounds/`；当前分支：
-  `codex/harden-git-metadata-output-bounds`；风险级别：high。
+  `openspec/changes/archive/2026-06-28-harden-git-metadata-output-bounds/`，并已 fast-forward
+  合并并推送到 `main`；风险级别：high。
 - Scope 仅限 `app/worktrees/git_metadata.py` shared Git metadata runner 的 stdout
   pre-read hard cap、timeout kill/reap hardening，以及 `tests/test_worktree_disposal.py`
   focused coverage、OpenSpec/Harness 和真实状态文档。不修改 destructive disposal
@@ -42,7 +42,9 @@
   `worktree-reverification` 4 个长期 specs；archive 后 `openspec list` 为 No active changes
   found，`openspec validate --all` 为 22 passed、0 failed；archive 后 full `scripts/verify.ps1`
   通过，pytest 499 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过。
-  后续 merge/push 仍需用户明确授权。
+- Merge/push evidence：`main` fast-forward 到 commit `6a16f5e` 并推送到
+  `agentic-codeops/main`；merge 后 full `scripts/verify.ps1` 通过，pytest 499 passed、1 skipped，
+  ruff、stage docs scan、skill eval structure scan 均通过。
 
 ## Worktree Inspection Timeout Hardening（archived，2026-06-28）
 

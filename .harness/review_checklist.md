@@ -52,3 +52,5 @@ Active OpenSpec change：无。
 - [x] Archive 后 `openspec list`：No active changes found。
 - [x] Archive 后 `openspec validate --all`：22 passed，0 failed。
 - [x] Archive 后 full `scripts/verify.ps1`：pytest 499 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。
+- [x] Fast-forward merge 到 `main` 并推送到 `agentic-codeops/main`。
+- [x] Merge 后 full `scripts/verify.ps1`：pytest 499 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。
