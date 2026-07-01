@@ -3,8 +3,9 @@
 ## Worktree Disposal Mutation Output Bounds Hardening（archived，2026-07-01）
 
 - OpenSpec change `harden-worktree-disposal-mutation-output-bounds` 已归档到
-  `openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/`；风险级别：high；当前分支：
-  `codex/harden-worktree-disposal-mutation-output-bounds`，尚未合并。
+  `openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/`；风险级别：high；implementation
+  commit `6c3ae95` 已 fast-forward 合入 `main`，closeout docs commit 已推送到
+  `agentic-codeops/main`。
 - Scope 仅限 `app/worktrees/disposal.py::_run_mutation()` destructive Git worktree mutation
   subprocess 的 stdout/stderr pre-read hard cap、timeout kill/reap hardening，以及
   `tests/test_worktree_disposal.py` focused coverage、OpenSpec/Harness 和真实状态文档。不修改

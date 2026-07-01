@@ -92,3 +92,6 @@ Archive readiness:
 - [x] Archive 后 `openspec validate --all`：22 passed, 0 failed。
 - [x] Archive 后 full `scripts/verify.ps1`：pytest 510 passed, 1 skipped；ruff、stage docs scan、skill eval structure scan passed。
 - [x] Archive 后 `git diff --check`：passed，仅 CRLF normalization warnings。
+- [x] Implementation commit `6c3ae95` 已 fast-forward 合入 `main`。
+- [x] Merge 后 full `scripts/verify.ps1`：pytest 510 passed, 1 skipped；ruff、stage docs scan、skill eval structure scan passed。
+- [x] Push 到 `agentic-codeops/main`。

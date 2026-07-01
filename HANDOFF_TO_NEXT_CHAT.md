@@ -2,7 +2,7 @@
 
 ## 当前基线
 
-- 当前分支：`codex/harden-worktree-disposal-mutation-output-bounds`。
+- 当前分支：`main`。
 - Active OpenSpec change：无。
 - 最近归档 OpenSpec change：`harden-worktree-disposal-mutation-output-bounds`，归档到
   `openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/`。
@@ -50,7 +50,8 @@ openspec validate --all
 
 - Final implementation review 和 focused Stage Debt Sweep 已完成，findings 已按
   `fix / clarify / reject / defer` 记录到 `.harness/review_checklist.md`。
-- Archive 和 archive-after validation 已完成；下一步可提交、合并、推送。
+- Archive 和 archive-after validation 已完成；implementation commit `6c3ae95` 已 fast-forward
+  合入 `main`，closeout docs commit 已推送到 `agentic-codeops/main`。
 
 ## 剩余债
 
