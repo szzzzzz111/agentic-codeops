@@ -1,5 +1,46 @@
 # 项目进度
 
+## Worktree Disposal Mutation Output Bounds Hardening（archived，2026-07-01）
+
+- OpenSpec change `harden-worktree-disposal-mutation-output-bounds` 已归档到
+  `openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/`；风险级别：high；当前分支：
+  `codex/harden-worktree-disposal-mutation-output-bounds`，尚未合并。
+- Scope 仅限 `app/worktrees/disposal.py::_run_mutation()` destructive Git worktree mutation
+  subprocess 的 stdout/stderr pre-read hard cap、timeout kill/reap hardening，以及
+  `tests/test_worktree_disposal.py` focused coverage、OpenSpec/Harness 和真实状态文档。不修改
+  disposal preflight、ownership、registry parsing、metadata runner、postcheck semantics、repo lock、
+  ToolExecutor/PermissionPolicy/ApprovalGate、promotion、public `/chat` contract、provider runtime、
+  live eval 或默认 CI。
+- Planning gate 已完成：proposal/design/tasks/spec delta 已创建；`.harness/allowed_files.md`
+  与 `.harness/review_checklist.md` 已同步；internal、Codex independent（用户授权 subagent）、
+  OpenCode independent plan review 均完成，findings 已按 `fix / clarify / reject / defer`
+  triage；`openspec validate harden-worktree-disposal-mutation-output-bounds --strict` 通过。
+- Implementation 使用 TDD：新增 mutation fixed argv/shell/env regression、timeout kill/bounded reap、
+  stdout/stderr oversize、pipe read failure、process start failure、non-zero exit、安全异常摘要、
+  AgentLoop/audit 不泄漏 raw output/path/traceback-like/diff-like 内容，以及既有 disposal lifecycle
+  回归覆盖。
+- `_run_mutation()` 已从 `subprocess.run(..., capture_output=True)` 改为 disposal-local
+  `subprocess.Popen(stdout=PIPE, stderr=PIPE, shell=False)` + Windows-safe bounded reader threads。
+  stdout/stderr 各自最多计数/保留 `WORKTREE_DISPOSAL_MUTATION_OUTPUT_MAX_BYTES = 256_000`；reader
+  可为 oversize detection 临时读取 1 byte sentinel，但不保留、不解码、不暴露 cap 外内容。Timeout、
+  oversize、reader failure/non-completion、start failure 和 non-zero exit 均转为 caller 可捕获的安全
+  `subprocess.SubprocessError`，不暴露 raw Git output、stderr、exception text 或本机路径。
+- 当前验证 evidence：RED focused tests 7 expected failures before implementation；
+  `pytest tests/test_worktree_disposal.py -q -k "mutation_runner"` 为 7 passed；
+  mutation/lifecycle focused subset 为 11 passed；final review fix subset 为 3 passed；
+  `pytest tests/test_worktree_disposal.py -q` 为 49 passed；
+  `pytest tests/test_repo_mutation_locking.py -q` 为 17 passed；
+  `ruff check .` passed；`openspec validate --all` 为 23 passed、0 failed；final full
+  `scripts/verify.ps1` 通过，pytest 510 passed、1 skipped，ruff、stage docs scan、skill eval
+  structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warnings。
+  Final implementation review 已完成：Codex independent review 的 3 个 P2 均按 `fix` 关闭，
+  OpenCode final review 无 P0/P1/P2，P3 已按 `clarify/defer` 记录。Focused Stage Debt Sweep
+  覆盖 changed runtime/tests/docs/OpenSpec/Harness 与 manager/tool/audit/kernel 直接依赖，未发现
+  新增 blocking debt。Archive 已同步长期 `worktree-disposal-reconciliation` spec；archive-after
+  `openspec validate --all` 为 22 passed、0 failed；archive-after full `scripts/verify.ps1`
+  通过，pytest 510 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；
+  archive-after `git diff --check` 通过，仅有 CRLF normalization warnings。
+
 ## Git Metadata Output Bounds Hardening（archived，2026-06-28）
 
 - OpenSpec change `harden-git-metadata-output-bounds` 已归档到
@@ -1199,9 +1240,6 @@ LLMGateway 设计备忘：
 
 ## 已知剩余代码债
 
-- `app/worktrees/disposal.py`：destructive `_run_mutation()` 已有 fixed argv、`shell=False`
-  和 timeout，但仍使用 `capture_output=True`，没有 stdout/stderr 读取前硬上限；应在独立
-  disposal mutation hardening 阶段处理，不能混入 read-only/preflight metadata runner hardening。
 - `app/rag/evidence.py`：空 `snippet` 当前会被计为 `included=True` 且预算消耗为 `0`。真实 retriever 通常不会产空 chunk，但后续可改为空 snippet 直接 omitted 或跳过，以让 audit summary 更清晰。
 - `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
 - `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前 symbol/path 查询已要求 lexical anchor，后续如需更细粒度召回策略或审计，应把权重、阈值和 anchor 策略显式参数化。

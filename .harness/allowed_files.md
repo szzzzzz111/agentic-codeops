@@ -1,33 +1,28 @@
 # 当前 Harness 写入边界
 
 Active OpenSpec change：无。
-最近归档 OpenSpec change：`harden-git-metadata-output-bounds`，归档到
-`openspec/changes/archive/2026-06-28-harden-git-metadata-output-bounds/`。
+最近归档 OpenSpec change：`harden-worktree-disposal-mutation-output-bounds`，归档到
+`openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/`。
 风险级别：high。
 
-该阶段已完成 shared Git metadata runner 的 stdout pre-read hard cap、timeout
-kill/reap hardening，以及对应测试、OpenSpec、Harness 和真实状态文档。
+本阶段已完成 `app/worktrees/disposal.py::_run_mutation()` destructive Git mutation
+subprocess 的 stdout/stderr pre-read hard cap、timeout kill/reap hardening。当前处于
+archive 后 closeout 状态；除必要的验证记录、handoff、commit/merge/push closeout 外，不再扩展 scope。
 
-## 当前允许修改
+## Archive / Closeout 阶段允许修改
 
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
 - `docs/PROGRESS.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/changes/archive/2026-06-28-harden-git-metadata-output-bounds/**`
-- `openspec/specs/worktree-inspection/spec.md`
 - `openspec/specs/worktree-disposal-reconciliation/spec.md`
-- `openspec/specs/worktree-reverification/spec.md`
-- `openspec/specs/verified-patch-promotion/spec.md`
-
-## 最近阶段已修改
-
-- `app/worktrees/git_metadata.py`
-- `tests/test_worktree_disposal.py`
+- `openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/**`
 
 ## 本阶段不允许修改
 
-- `app/worktrees/disposal.py`
+- `app/worktrees/disposal.py`，除非 archive-after verification 发现 blocking regression。
+- `tests/test_worktree_disposal.py`，除非 archive-after verification 发现 blocking regression。
+- `app/worktrees/git_metadata.py`
 - `app/worktrees/inspection.py`
 - `app/worktrees/reverification.py`
 - `app/worktrees/promotion.py`

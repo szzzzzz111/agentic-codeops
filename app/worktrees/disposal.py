@@ -5,6 +5,8 @@ import re
 import shutil
 import sqlite3
 import subprocess
+import threading
+import time
 
 from app.patching.store import (
     PATCH_STATUS_APPLIED_IN_WORKTREE,
@@ -40,6 +42,12 @@ _ELIGIBLE = {
     WORKTREE_STATUS_VERIFICATION_FAILED,
     WORKTREE_STATUS_VERIFICATION_SUCCEEDED,
 }
+WORKTREE_DISPOSAL_MUTATION_TIMEOUT_SECONDS = 20.0
+WORKTREE_DISPOSAL_MUTATION_OUTPUT_MAX_BYTES = 256_000
+WORKTREE_DISPOSAL_MUTATION_REAP_TIMEOUT_SECONDS = 1.0
+WORKTREE_DISPOSAL_MUTATION_READER_JOIN_TIMEOUT_SECONDS = 1.0
+_WORKTREE_DISPOSAL_MUTATION_WAIT_POLL_SECONDS = 0.05
+_WORKTREE_DISPOSAL_MUTATION_READ_CHUNK_BYTES = 8192
 
 
 @dataclass(frozen=True)
@@ -74,6 +82,14 @@ class WorktreeDisposalResult:
             f"kind={self.attempt_kind}; reason={self.reason}; "
             f"completed_step={self.completed_step or 'none'}"
         )
+
+
+@dataclass
+class _MutationReadState:
+    stream_name: str
+    bytes_read: int = 0
+    oversized: bool = False
+    failed: bool = False
 
 
 @dataclass(frozen=True)
@@ -461,15 +477,138 @@ def _ownership_matches(repo_root: Path, expected: Path, base_commit: str) -> boo
 def _run_mutation(cwd: Path, *args: str) -> None:
     env = os.environ.copy()
     env["GIT_OPTIONAL_LOCKS"] = "0"
-    subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        env=env,
-        check=True,
-        capture_output=True,
-        timeout=20,
-        shell=False,
+    try:
+        process = subprocess.Popen(
+            ["git", *args],
+            cwd=cwd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=False,
+        )
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        raise subprocess.SubprocessError("git mutation failed: start_failed") from exc
+    if process.stdout is None or process.stderr is None:
+        _kill_and_reap_mutation(process)
+        raise subprocess.SubprocessError("git mutation failed: pipe_unavailable")
+    stdout_state = _MutationReadState("stdout")
+    stderr_state = _MutationReadState("stderr")
+    readers = [
+        threading.Thread(
+            target=_read_mutation_output,
+            args=(
+                process.stdout,
+                WORKTREE_DISPOSAL_MUTATION_OUTPUT_MAX_BYTES,
+                stdout_state,
+            ),
+            daemon=True,
+            name="worktree-disposal-mutation-stdout-reader",
+        ),
+        threading.Thread(
+            target=_read_mutation_output,
+            args=(
+                process.stderr,
+                WORKTREE_DISPOSAL_MUTATION_OUTPUT_MAX_BYTES,
+                stderr_state,
+            ),
+            daemon=True,
+            name="worktree-disposal-mutation-stderr-reader",
+        ),
+    ]
+    for reader in readers:
+        reader.start()
+    states = [stdout_state, stderr_state]
+    return_code = _wait_for_mutation_process(
+        process,
+        states,
+        WORKTREE_DISPOSAL_MUTATION_TIMEOUT_SECONDS,
     )
+    if return_code is None:
+        _kill_and_reap_mutation(process)
+        _join_mutation_readers(readers)
+        reason = _mutation_failure_reason(states) or "timeout"
+        raise subprocess.SubprocessError(f"git mutation failed: {reason}")
+    _join_mutation_readers(readers)
+    if any(reader.is_alive() for reader in readers):
+        _kill_and_reap_mutation(process)
+        _join_mutation_readers(readers)
+        raise subprocess.SubprocessError("git mutation failed: reader_incomplete")
+    reason = _mutation_failure_reason(states)
+    if reason:
+        _kill_and_reap_mutation(process)
+        raise subprocess.SubprocessError(f"git mutation failed: {reason}")
+    if return_code != 0:
+        _kill_and_reap_mutation(process)
+        raise subprocess.SubprocessError("git mutation failed: nonzero_exit")
+
+
+def _wait_for_mutation_process(
+    process: subprocess.Popen[bytes],
+    states: list[_MutationReadState],
+    timeout: float,
+) -> int | None:
+    deadline = time.monotonic() + timeout
+    while True:
+        if _mutation_failure_reason(states):
+            return None
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return None
+        try:
+            return process.wait(
+                timeout=min(remaining, _WORKTREE_DISPOSAL_MUTATION_WAIT_POLL_SECONDS)
+            )
+        except subprocess.TimeoutExpired:
+            continue
+        except (OSError, subprocess.SubprocessError):
+            return None
+
+
+def _read_mutation_output(stdout_or_stderr, max_bytes: int, state: _MutationReadState) -> None:
+    try:
+        while True:
+            remaining = max_bytes - state.bytes_read
+            read_size = min(_WORKTREE_DISPOSAL_MUTATION_READ_CHUNK_BYTES, remaining + 1)
+            chunk = stdout_or_stderr.read(read_size)
+            if not chunk:
+                return
+            if state.bytes_read + len(chunk) > max_bytes:
+                state.bytes_read = max_bytes
+                state.oversized = True
+                return
+            state.bytes_read += len(chunk)
+    except Exception:
+        state.failed = True
+    finally:
+        try:
+            stdout_or_stderr.close()
+        except (OSError, ValueError):
+            pass
+
+
+def _mutation_failure_reason(states: list[_MutationReadState]) -> str:
+    for state in states:
+        if state.oversized:
+            return f"{state.stream_name}_oversized"
+        if state.failed:
+            return f"{state.stream_name}_read_failed"
+    return ""
+
+
+def _kill_and_reap_mutation(process: subprocess.Popen[bytes]) -> None:
+    try:
+        process.kill()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        process.wait(timeout=WORKTREE_DISPOSAL_MUTATION_REAP_TIMEOUT_SECONDS)
+    except (OSError, subprocess.SubprocessError):
+        pass
+
+
+def _join_mutation_readers(readers: list[threading.Thread]) -> None:
+    for reader in readers:
+        reader.join(timeout=WORKTREE_DISPOSAL_MUTATION_READER_JOIN_TIMEOUT_SECONDS)
 
 
 def _is_reparse(path: Path) -> bool:

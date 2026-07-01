@@ -11,6 +11,7 @@ from app.patching.store import (
     PATCH_STATUS_DISCARDED,
     SQLitePatchStore,
 )
+import app.worktrees.disposal as disposal
 from app.worktrees.disposal import parse_worktree_disposal_request
 from app.worktrees.git_metadata import (
     GIT_METADATA_REAP_TIMEOUT_SECONDS,
@@ -356,12 +357,21 @@ def test_git_metadata_runner_returns_none_when_process_start_fails(
 
 
 class _BytesPipe:
-    def __init__(self, data: bytes, *, fail_read: bool = False):
+    def __init__(
+        self,
+        data: bytes,
+        *,
+        fail_read: bool = False,
+        fail_read_exception: Exception | None = None,
+    ):
         self._data = data
         self._offset = 0
         self._fail_read = fail_read
+        self._fail_read_exception = fail_read_exception
 
     def read(self, size: int = -1) -> bytes:
+        if self._fail_read_exception is not None:
+            raise self._fail_read_exception
         if self._fail_read:
             raise OSError("pipe read failed")
         if self._offset >= len(self._data):
@@ -374,6 +384,228 @@ class _BytesPipe:
 
     def close(self) -> None:
         return None
+
+
+class _MutationProcess:
+    def __init__(
+        self,
+        *,
+        stdout: bytes = b"",
+        stderr: bytes = b"",
+        return_code: int = 0,
+        block_until_killed: bool = False,
+        fail_stdout_read: bool = False,
+        fail_stderr_read: bool = False,
+        fail_stdout_read_exception: Exception | None = None,
+        fail_stderr_read_exception: Exception | None = None,
+    ):
+        self.stdout_arg = None
+        self.stderr_arg = None
+        self.stdout = _BytesPipe(
+            stdout,
+            fail_read=fail_stdout_read,
+            fail_read_exception=fail_stdout_read_exception,
+        )
+        self.stderr = _BytesPipe(
+            stderr,
+            fail_read=fail_stderr_read,
+            fail_read_exception=fail_stderr_read_exception,
+        )
+        self.return_code = return_code
+        self.block_until_killed = block_until_killed
+        self.killed = False
+        self.wait_calls = []
+
+    def wait(self, timeout=None):
+        self.wait_calls.append((self.killed, timeout))
+        if self.killed:
+            return -9
+        if self.block_until_killed:
+            raise subprocess.TimeoutExpired("git", timeout)
+        return self.return_code
+
+    def kill(self):
+        self.killed = True
+
+
+def _forbid_disposal_subprocess_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    def forbidden_run(*args, **kwargs):
+        raise AssertionError("disposal mutations must use bounded Popen runner")
+
+    monkeypatch.setattr(disposal.subprocess, "run", forbidden_run)
+
+
+def _install_mutation_process(
+    monkeypatch: pytest.MonkeyPatch,
+    process: _MutationProcess,
+    *,
+    command_log: list[tuple[tuple, dict]] | None = None,
+) -> None:
+    def fake_popen(*args, **kwargs):
+        process.stdout_arg = kwargs.get("stdout")
+        process.stderr_arg = kwargs.get("stderr")
+        if command_log is not None:
+            command_log.append((args, kwargs))
+        return process
+
+    monkeypatch.setattr(disposal.subprocess, "Popen", fake_popen)
+    _forbid_disposal_subprocess_run(monkeypatch)
+
+
+def test_mutation_runner_uses_fixed_argv_shell_false_and_locks_disabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _MutationProcess()
+    command_log = []
+    _install_mutation_process(monkeypatch, process, command_log=command_log)
+
+    disposal._run_mutation(tmp_path, "worktree", "unlock", "example")
+
+    assert len(command_log) == 1
+    args, kwargs = command_log[0]
+    assert args[0] == ["git", "worktree", "unlock", "example"]
+    assert kwargs["cwd"] == tmp_path
+    assert kwargs["shell"] is False
+    assert kwargs["stdout"] is subprocess.PIPE
+    assert kwargs["stderr"] is subprocess.PIPE
+    assert kwargs["env"]["GIT_OPTIONAL_LOCKS"] == "0"
+    assert process.stdout_arg is subprocess.PIPE
+    assert process.stderr_arg is subprocess.PIPE
+
+
+def test_mutation_runner_times_out_and_reaps_without_retry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _MutationProcess(block_until_killed=True)
+    _install_mutation_process(monkeypatch, process)
+    monkeypatch.setattr(disposal, "WORKTREE_DISPOSAL_MUTATION_TIMEOUT_SECONDS", 0.01, raising=False)
+
+    with pytest.raises(subprocess.SubprocessError):
+        disposal._run_mutation(tmp_path, "worktree", "remove", "--force", "example")
+
+    assert process.killed is True
+    assert process.wait_calls[-1] == (
+        True,
+        disposal.WORKTREE_DISPOSAL_MUTATION_REAP_TIMEOUT_SECONDS,
+    )
+
+
+@pytest.mark.parametrize(
+    ("stream_name", "stdout", "stderr"),
+    [
+        ("stdout", b"x" * 12, b""),
+        ("stderr", b"", b"y" * 12),
+    ],
+)
+def test_mutation_runner_kills_oversize_stdout_or_stderr_without_exposing_output(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stream_name: str,
+    stdout: bytes,
+    stderr: bytes,
+) -> None:
+    process = _MutationProcess(stdout=stdout, stderr=stderr, block_until_killed=True)
+    _install_mutation_process(monkeypatch, process)
+    monkeypatch.setattr(disposal, "WORKTREE_DISPOSAL_MUTATION_OUTPUT_MAX_BYTES", 10, raising=False)
+
+    with pytest.raises(subprocess.SubprocessError) as excinfo:
+        disposal._run_mutation(tmp_path, "worktree", "unlock", "example")
+
+    assert process.killed is True
+    assert stream_name in str(excinfo.value)
+    assert "xxxxxxxx" not in str(excinfo.value)
+    assert "yyyyyyyy" not in str(excinfo.value)
+
+
+def test_mutation_runner_rejects_pipe_read_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _MutationProcess(fail_stderr_read=True)
+    _install_mutation_process(monkeypatch, process)
+
+    with pytest.raises(subprocess.SubprocessError):
+        disposal._run_mutation(tmp_path, "worktree", "unlock", "example")
+
+    assert process.killed is True
+
+
+def test_mutation_runner_rejects_unexpected_pipe_read_exception(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _MutationProcess(fail_stdout_read_exception=RuntimeError("traceback C:\\secret"))
+    _install_mutation_process(monkeypatch, process)
+
+    with pytest.raises(subprocess.SubprocessError) as excinfo:
+        disposal._run_mutation(tmp_path, "worktree", "unlock", "example")
+
+    assert process.killed is True
+    assert "traceback" not in str(excinfo.value)
+    assert "secret" not in str(excinfo.value)
+
+
+def test_mutation_runner_rejects_reader_non_completion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _MutationProcess()
+    _install_mutation_process(monkeypatch, process)
+
+    class NeverFinishingReader:
+        def __init__(self, *args, **kwargs):
+            self.join_calls = []
+
+        def start(self):
+            return None
+
+        def join(self, timeout=None):
+            self.join_calls.append(timeout)
+
+        def is_alive(self):
+            return True
+
+    monkeypatch.setattr(disposal.threading, "Thread", NeverFinishingReader)
+
+    with pytest.raises(subprocess.SubprocessError) as excinfo:
+        disposal._run_mutation(tmp_path, "worktree", "unlock", "example")
+
+    assert process.killed is True
+    assert "reader_incomplete" in str(excinfo.value)
+
+
+def test_mutation_runner_process_start_failure_is_safe(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_start(*args, **kwargs):
+        raise OSError(f"missing git at {tmp_path}\\secret\\git.exe")
+
+    monkeypatch.setattr(disposal.subprocess, "Popen", fail_start)
+    _forbid_disposal_subprocess_run(monkeypatch)
+
+    with pytest.raises(subprocess.SubprocessError) as excinfo:
+        disposal._run_mutation(tmp_path, "worktree", "unlock", "example")
+
+    assert str(tmp_path) not in str(excinfo.value)
+    assert "secret" not in str(excinfo.value)
+
+
+def test_mutation_runner_nonzero_exit_is_safe_and_bounded(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = _MutationProcess(stderr=f"fatal path {tmp_path}\\repo.sqlite3".encode(), return_code=128)
+    _install_mutation_process(monkeypatch, process)
+
+    with pytest.raises(subprocess.SubprocessError) as excinfo:
+        disposal._run_mutation(tmp_path, "worktree", "unlock", "example")
+
+    assert process.wait_calls
+    assert str(tmp_path) not in str(excinfo.value)
+    assert "repo.sqlite3" not in str(excinfo.value)
 
 
 def test_git_metadata_runner_kills_oversize_output_before_full_wait(
@@ -644,6 +876,77 @@ def test_mutation_failure_stops_and_marks_only_worktree_failed(
     assert calls == 1
     assert worktree is not None and worktree.status == WORKTREE_STATUS_DISPOSAL_FAILED
     assert stored_patch is not None and stored_patch.status == PATCH_STATUS_APPLIED_IN_WORKTREE
+
+
+def test_mutation_failure_does_not_expose_sensitive_output_or_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _init_repo(tmp_path)
+    created, _, _, repo_key = _create_retained_worktree(tmp_path)
+    sensitive_values = [
+        str(tmp_path),
+        "raw stderr payload",
+        "Traceback (most recent call last)",
+        "repo.sqlite3",
+        "diff --git a/app.py b/app.py",
+    ]
+
+    def fail_with_sensitive_details(*args, **kwargs):
+        raise subprocess.SubprocessError("; ".join(sensitive_values))
+
+    monkeypatch.setattr("app.worktrees.disposal._run_mutation", fail_with_sensitive_details)
+    result = AgentLoop().run(
+        AgentLoopRequest(
+            message=f"confirm discard worktree {created.worktree_id}",
+            repo_path=str(tmp_path),
+            trace_id="trace_sensitive_disposal_failure",
+            user_id="u001",
+            session_id="s001",
+        )
+    )
+    events = SQLiteAuditStore.for_existing_repo(tmp_path)[0].recent_events(
+        user_id="u001",
+        repo_key=repo_key,
+        limit=20,
+    )
+    attempts = [event for event in events if event.event_type == "worktree_disposal"]
+    public = f"{result.answer} {result.tool_calls} {result.trace_events_internal}"
+    audit_text = " ".join(f"{event.summary} {event.payload}" for event in attempts)
+
+    assert "mutation_failed" in public
+    assert len(attempts) == 1
+    assert "mutation_failed" in audit_text
+    for value in sensitive_values:
+        assert value not in public
+        assert value not in audit_text
+
+
+def test_disposal_result_public_summary_does_not_expose_sensitive_mutation_details(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _init_repo(tmp_path)
+    created, _, _, _ = _create_retained_worktree(tmp_path)
+
+    def fail_with_sensitive_details(*args, **kwargs):
+        raise subprocess.SubprocessError(
+            f"raw stderr payload; Traceback (most recent call last); {tmp_path}\\repo.sqlite3"
+        )
+
+    monkeypatch.setattr("app.worktrees.disposal._run_mutation", fail_with_sensitive_details)
+    result = WorktreeManager().dispose(
+        repo_path=str(tmp_path),
+        user_id="u001",
+        worktree_id=created.worktree_id,
+        attempt_kind="discard",
+    )
+
+    assert "mutation_failed" in result.public_summary
+    assert "raw stderr payload" not in result.public_summary
+    assert "Traceback" not in result.public_summary
+    assert str(tmp_path) not in result.public_summary
+    assert "repo.sqlite3" not in result.public_summary
 
 
 def test_postcheck_metadata_unavailability_after_mutation_is_failed_disposal(
