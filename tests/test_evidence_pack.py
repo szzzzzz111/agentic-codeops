@@ -100,6 +100,98 @@ def test_context_budget_includes_omits_and_truncates_items() -> None:
     assert pack.budget.truncated_count == 1
 
 
+def test_empty_snippet_is_omitted_without_consuming_budget() -> None:
+    pack = build_evidence_pack(
+        [
+            {
+                "file_path": "empty.py",
+                "start_line": 4,
+                "end_line": 4,
+                "score": 500,
+                "line_text": "",
+            }
+        ],
+        original_query="empty",
+        question_type="unknown",
+        retrieval_mode="hybrid",
+        max_context_chars=7,
+    )
+
+    assert len(pack.items) == 1
+    assert pack.items[0].snippet == ""
+    assert pack.items[0].included is False
+    assert pack.items[0].truncated is False
+    assert pack.budget.budget_used_chars == 0
+    assert pack.budget.budget_remaining_chars == 7
+    assert pack.budget.included_count == 0
+    assert pack.budget.omitted_count == 1
+    assert pack.budget.truncated_count == 0
+
+
+def test_whitespace_only_snippet_is_omitted_after_normalization() -> None:
+    pack = build_evidence_pack(
+        [
+            {
+                "file_path": "blank.py",
+                "start_line": 2,
+                "end_line": 2,
+                "score": 400,
+                "line_text": " \n\t ",
+            }
+        ],
+        original_query="blank",
+        question_type="unknown",
+        retrieval_mode="hybrid",
+        max_context_chars=3,
+    )
+
+    assert len(pack.items) == 1
+    assert pack.items[0].snippet == ""
+    assert pack.items[0].included is False
+    assert pack.items[0].truncated is False
+    assert pack.budget.budget_used_chars == 0
+    assert pack.budget.budget_remaining_chars == 3
+    assert pack.budget.included_count == 0
+    assert pack.budget.omitted_count == 1
+    assert pack.budget.truncated_count == 0
+
+
+def test_empty_snippet_does_not_prevent_later_non_empty_inclusion() -> None:
+    pack = build_evidence_pack(
+        [
+            {
+                "file_path": "empty.py",
+                "start_line": 1,
+                "end_line": 1,
+                "score": 500,
+                "line_text": "",
+            },
+            {
+                "file_path": "next.py",
+                "start_line": 3,
+                "end_line": 3,
+                "score": 600,
+                "line_text": "abc",
+            },
+        ],
+        original_query="mixed",
+        question_type="unknown",
+        retrieval_mode="hybrid",
+        max_context_chars=3,
+    )
+
+    assert [item.file_path for item in pack.items] == ["empty.py", "next.py"]
+    assert pack.items[0].included is False
+    assert pack.items[0].snippet == ""
+    assert pack.items[1].included is True
+    assert pack.items[1].snippet == "abc"
+    assert pack.budget.budget_used_chars == 3
+    assert pack.budget.budget_remaining_chars == 0
+    assert pack.budget.included_count == 1
+    assert pack.budget.omitted_count == 1
+    assert pack.budget.truncated_count == 0
+
+
 def test_evidence_pack_audit_summary_uses_fixed_keys() -> None:
     pack = build_evidence_pack(
         [

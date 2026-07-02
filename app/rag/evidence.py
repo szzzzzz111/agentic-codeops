@@ -78,7 +78,9 @@ def build_evidence_pack(
         included = False
         truncated = False
 
-        if remaining > 0 and len(original_snippet) <= remaining:
+        if not original_snippet:
+            omitted_count += 1
+        elif remaining > 0 and len(original_snippet) <= remaining:
             snippet = original_snippet
             remaining -= len(snippet)
             included = True

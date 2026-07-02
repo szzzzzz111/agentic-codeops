@@ -7,9 +7,7 @@
 RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexical/path/symbol search remains the primary auditable baseline, while embedding/hybrid retrieval is an auxiliary channel for semantic recall.
 
 该能力不默认接入真实外部 embedding 服务、Milvus、Elasticsearch、PgVector、Qdrant、LLM query rewrite、LLM rerank、memory 或 context compression。Grounded answer 和 model provider 属于 `grounded-answer-model-provider` capability。
-
 ## Requirements
-
 ### Requirement: 系统执行确定性 Query Understanding
 
 系统 SHALL 在 repo-local 检索前执行确定性 Query Understanding。Query Understanding MUST NOT 调用 LLM、embedding provider、向量库或外部服务。
@@ -154,10 +152,13 @@ V12 SHALL 对 rewrite variants 执行 bounded multi-query retrieval，并在 Evi
 
 系统 MUST 按 retrieval 既有稳定排序纳入 evidence items。系统 MUST NOT 在 context budget 阶段执行 LLM rerank、query rewrite、context compression 或语义合并。
 
-#### Scenario: evidence snippets 在预算内全部纳入
+空或仅空白的 evidence snippet 在 normalized snippet 为空后 MUST 保留 evidence item 以便审计，但 MUST NOT 计入 `included_count`，MUST NOT 消耗 context budget，MUST NOT 标记为 `truncated`，并 MUST 计入 `omitted_count`。
 
-- **WHEN** evidence snippets 的总字符数不超过 `max_context_chars`
-- **THEN** context budget MUST 纳入全部 evidence items
+#### Scenario: non-empty evidence snippets 在预算内全部纳入
+
+- **WHEN** retrieval results contain no empty or whitespace-only snippets
+- **AND** evidence snippets 的总字符数不超过 `max_context_chars`
+- **THEN** context budget MUST 纳入全部非空 evidence items
 - **AND** `omitted_count` MUST 为 `0`
 - **AND** `truncated_count` MUST 为 `0`
 
@@ -168,6 +169,14 @@ V12 SHALL 对 rewrite variants 执行 bounded multi-query retrieval，并在 Evi
 - **AND** 超出预算的 evidence MUST 被裁剪或省略
 - **AND** 预算摘要 MUST 记录 `omitted_count` 或 `truncated_count`
 - **AND** `budget_used_chars` MUST NOT 大于 `max_context_chars`
+
+#### Scenario: empty snippet is omitted without consuming budget
+
+- **WHEN** a retrieval result has an empty or whitespace-only snippet after normalization
+- **THEN** the Evidence Pack keeps the evidence item with `included=False`
+- **AND** the item is not marked `truncated`
+- **AND** context budget does not count the item as included
+- **AND** context budget records the item as omitted without consuming characters
 
 ### Requirement: Evidence Pack 审计不改变 chat 顶层 contract
 

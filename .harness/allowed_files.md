@@ -1,13 +1,14 @@
 # 当前 Harness 写入边界
 
 Active OpenSpec change：无。
-最近归档 OpenSpec change：`harden-worktree-disposal-mutation-output-bounds`，归档到
-`openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/`。
-风险级别：high。
+最近归档 OpenSpec change：`omit-empty-evidence-snippets`，归档到
+`openspec/changes/archive/2026-07-02-omit-empty-evidence-snippets/`。
+风险级别：medium。
 
-本阶段已完成 `app/worktrees/disposal.py::_run_mutation()` destructive Git mutation
-subprocess 的 stdout/stderr pre-read hard cap、timeout kill/reap hardening。当前处于
-archive 后 closeout 状态；除必要的验证记录、handoff、commit/merge/push closeout 外，不再扩展 scope。
+本阶段已完成 `app/rag/evidence.py` 中 empty / whitespace-only evidence snippet 的
+Context Budget 计数语义修正：空 snippet 保留 evidence item 但不计入 included evidence，
+不消耗 budget，并计入 omitted。当前处于 archive 后 closeout 状态；除必要的验证记录、
+handoff、commit/merge/push closeout 外，不再扩展 scope。
 
 ## Archive / Closeout 阶段允许修改
 
@@ -15,22 +16,20 @@ archive 后 closeout 状态；除必要的验证记录、handoff、commit/merge/
 - `.harness/review_checklist.md`
 - `docs/PROGRESS.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/specs/worktree-disposal-reconciliation/spec.md`
-- `openspec/changes/archive/2026-07-01-harden-worktree-disposal-mutation-output-bounds/**`
+- `openspec/specs/repo-query-understanding-rag/spec.md`
+- `openspec/changes/archive/2026-07-02-omit-empty-evidence-snippets/**`
 
 ## 本阶段不允许修改
 
-- `app/worktrees/disposal.py`，除非 archive-after verification 发现 blocking regression。
-- `tests/test_worktree_disposal.py`，除非 archive-after verification 发现 blocking regression。
-- `app/worktrees/git_metadata.py`
-- `app/worktrees/inspection.py`
-- `app/worktrees/reverification.py`
-- `app/worktrees/promotion.py`
-- `app/worktrees/manager.py`
+- `app/rag/evidence.py`，除非 archive-after verification 发现 blocking regression。
+- `tests/test_evidence_pack.py`，除非 archive-after verification 发现 blocking regression。
+- `app/rag/repo_rag.py`
 - `app/harness/kernel.py`
+- `app/answering/**`
+- `app/providers/**`
 - `app/tools/**`
-- `app/verification/**`
-- 其他 `tests/**`
+- `app/worktrees/**`
+- 其他 `tests/**`，除非 implementation review 证明必须补 adjacent RAG/grounded answer regression。
 - `README.md`
 - `docs/ARCHITECTURE.md`
 - `docs/FEATURE_LIST.json`

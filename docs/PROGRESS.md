@@ -1,5 +1,38 @@
 # 项目进度
 
+## Evidence Pack Empty Snippet Omission（archived，2026-07-02）
+
+- OpenSpec change `omit-empty-evidence-snippets` 已归档到
+  `openspec/changes/archive/2026-07-02-omit-empty-evidence-snippets/`；当前分支：
+  `codex/omit-empty-evidence-snippets`；风险级别：medium。
+- Scope 仅限 `app/rag/evidence.py::build_evidence_pack()` 对 empty / whitespace-only
+  snippet 的 Context Budget 计数语义，以及 `tests/test_evidence_pack.py` focused
+  coverage、OpenSpec/Harness 和真实状态文档。不修改 retriever、grounded answer assembly、
+  provider runtime、public `/chat` contract、live eval、默认 CI 或网络依赖。
+- Planning gate 已完成：proposal/design/tasks/spec delta 已创建；`.harness/allowed_files.md`
+  与 `.harness/review_checklist.md` 已同步；internal、Codex independent 和 OpenCode
+  independent plan review 均完成，findings 已按 `clarify` 处理；`openspec validate
+  omit-empty-evidence-snippets --strict` 通过。
+- Implementation 使用 TDD：新增 empty snippet、whitespace-only snippet 和 empty-before-non-empty
+  mixed ordering RED coverage；旧实现下 3 个新增测试按预期失败，因为 empty snippet 被计为
+  `included=True`。GREEN 后 empty / whitespace-only snippet 保留 evidence item 以便审计，但
+  `included=False`、`truncated=False`、不消耗 budget，并计入 `omitted_count`；后续非空 item
+  仍可正常纳入预算。
+- 当前验证 evidence：RED focused tests 为 3 expected failures；focused
+  `pytest tests/test_evidence_pack.py -q` 为 7 passed；adjacent
+  `pytest tests/test_grounded_answer.py tests/test_chat_api.py tests/test_repo_rag.py -q`
+  为 43 passed；`ruff check .` passed；`openspec validate --all` 为 23 passed、0 failed；
+  full `scripts/verify.ps1` 通过，pytest 513 passed、1 skipped，ruff、stage docs scan、
+  skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warnings。
+  Final implementation review 已完成：Codex final review 的 P3 gate backfill finding 已按
+  `fix` 关闭，OpenCode final review 无 findings。Focused Stage Debt Sweep 覆盖 changed
+  runtime/tests/docs/OpenSpec/Harness 与 `grounded_answer`、`tool_executor`、`kernel`
+  直接依赖，未发现新增 blocking debt。Archive 已同步长期 `repo-query-understanding-rag`
+  spec；archive 后 `openspec list` 为 No active changes found，`openspec validate --all`
+  为 22 passed、0 failed；archive-after full `scripts/verify.ps1` 通过，pytest 513 passed、
+  1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；archive-after
+  `git diff --check` 通过，仅有 CRLF normalization warnings。
+
 ## Worktree Disposal Mutation Output Bounds Hardening（archived，2026-07-01）
 
 - OpenSpec change `harden-worktree-disposal-mutation-output-bounds` 已归档到
@@ -1241,7 +1274,6 @@ LLMGateway 设计备忘：
 
 ## 已知剩余代码债
 
-- `app/rag/evidence.py`：空 `snippet` 当前会被计为 `included=True` 且预算消耗为 `0`。真实 retriever 通常不会产空 chunk，但后续可改为空 snippet 直接 omitted 或跳过，以让 audit summary 更清晰。
 - `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
 - `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前 symbol/path 查询已要求 lexical anchor，后续如需更细粒度召回策略或审计，应把权重、阈值和 anchor 策略显式参数化。
 - tests：仍有少量历史阶段命名测试保留，用于表达旧阶段边界；后续做测试命名清理时可统一改成阶段无关的 repo_rag / hybrid_repo_rag 命名。
