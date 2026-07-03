@@ -2,11 +2,12 @@
 
 ## 当前基线
 
-- 当前分支：`codex/cleanup-control-routing-and-test-names`。
+- 当前分支：`main`。
 - Active OpenSpec change：无；`openspec list` 为 No active changes found。
 - 最近归档 OpenSpec change：`cleanup-control-routing-and-test-names`，归档到
   `openspec/changes/archive/2026-07-03-cleanup-control-routing-and-test-names/`。
-- 最近 pushed main 提交：`c79482f Document hybrid fusion closeout status`。
+- 最近已完成 implementation commit：`b3c92f5 Clean up control routing classifier`，已 fast-forward
+  合并到 `main`；closeout 文档随当前 `main` 一起推送。
 - 当前阶段风险级别：medium。
 - 当前阶段目标：清理 control routing（控制路由）和 test naming（测试命名）小代码债，不扩展
   Assistant Control Surface 自然语言触发词，不改变 `/chat` public contract。
@@ -53,7 +54,7 @@ openspec validate --all
 
 ## 下一步
 
-- 执行 final `git diff --check` / 必要验证后提交、merge/push。
+- 当前无 active OpenSpec change。后续如启动新阶段，先创建新的 OpenSpec change 并同步 Harness。
 
 ## 剩余债
 

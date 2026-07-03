@@ -4,7 +4,7 @@
 
 - OpenSpec change：`cleanup-control-routing-and-test-names`，已归档到
   `openspec/changes/archive/2026-07-03-cleanup-control-routing-and-test-names/`；当前分支：
-  `codex/cleanup-control-routing-and-test-names`；风险级别：medium。
+  `main`；implementation commit `b3c92f5` 已 fast-forward 合并到 `main`；风险级别：medium。
 - Scope 仅限 control routing cleanup（控制路由整理）和测试命名清理：`app/harness/kernel.py`
   的 capability-status（能力状态）识别收拢为内部 classifier/helper；相关 tests 改成能力导向命名；
   Assistant Control Surface parser（助手控制面解析器）保持小而明确，本阶段不扩展自然语言触发词。
@@ -33,7 +33,7 @@
   `assistant-control-surface` specs；archive-after `openspec list` 为 No active changes found；
   archive-after `openspec validate --all` 为 22 passed、0 failed；archive-after full
   `scripts/verify.ps1` 通过，pytest 519 passed、1 skipped，ruff、stage docs scan、
-  skill eval structure scan 均通过。Merge/push 尚未完成。
+  skill eval structure scan 均通过。Closeout 文档随当前 `main` 一起推送。
 
 ## Hybrid Fusion Settings Parameterization（archived，2026-07-03）
 
