@@ -1,35 +1,44 @@
 # 当前 Harness 写入边界
 
 Active OpenSpec change：无。
-最近归档 OpenSpec change：`omit-empty-evidence-snippets`，归档到
-`openspec/changes/archive/2026-07-02-omit-empty-evidence-snippets/`。
+最近归档 OpenSpec change：`parameterize-hybrid-fusion-settings`，归档到
+`openspec/changes/archive/2026-07-03-parameterize-hybrid-fusion-settings/`。
 风险级别：medium。
 
-本阶段已完成 `app/rag/evidence.py` 中 empty / whitespace-only evidence snippet 的
-Context Budget 计数语义修正：空 snippet 保留 evidence item 但不计入 included evidence，
-不消耗 budget，并计入 omitted。当前处于 archive 后 closeout 状态；除必要的验证记录、
-handoff、commit/merge/push closeout 外，不再扩展 scope。
+Scope 仅限 `app/rag/repo_rag.py` 中 hybrid fusion settings（hybrid fusion 的混合打分配方）
+参数化，以及 `ToolExecutor` 对有效 settings 的内部 audit summary 透传：把 lexical /
+embedding 权重和 `min_fused_score` 从分散默认值收束为显式、可校验、可审计的
+deterministic settings。默认行为必须保持不变，不新增 `/chat` 字段、网络依赖或用户可调 API。
 
-## Archive / Closeout 阶段允许修改
+## Planning 阶段允许修改
 
+- `openspec/changes/parameterize-hybrid-fusion-settings/**`
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
+
+## 用户批准 implementation 后允许修改
+
+- `app/rag/repo_rag.py`
+- `app/tools/tool_executor.py`
+- `tests/test_repo_rag.py`
+- `tests/test_tool_executor.py`
+- `tests/test_agent_harness_kernel.py`，仅用于 final review 要求的 adjacent AgentLoop trace regression。
 - `docs/PROGRESS.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/specs/repo-query-understanding-rag/spec.md`
-- `openspec/changes/archive/2026-07-02-omit-empty-evidence-snippets/**`
+- `openspec/specs/repo-query-understanding-rag/spec.md`，仅 archive 应用 spec delta 后。
 
 ## 本阶段不允许修改
 
-- `app/rag/evidence.py`，除非 archive-after verification 发现 blocking regression。
-- `tests/test_evidence_pack.py`，除非 archive-after verification 发现 blocking regression。
-- `app/rag/repo_rag.py`
-- `app/harness/kernel.py`
+- `app/rag/query_understanding.py`
+- `app/rag/query_rewrite.py`
+- `app/rag/rerank.py`
+- `app/rag/evidence.py`
 - `app/answering/**`
 - `app/providers/**`
-- `app/tools/**`
+- `app/harness/kernel.py`
+- `app/tools/**`，但允许上文列出的 `app/tools/tool_executor.py`。
 - `app/worktrees/**`
-- 其他 `tests/**`，除非 implementation review 证明必须补 adjacent RAG/grounded answer regression。
+- 其他 `tests/**`，除非 implementation review 证明必须补 adjacent AgentLoop/API RAG contract regression。
 - `README.md`
 - `docs/ARCHITECTURE.md`
 - `docs/FEATURE_LIST.json`

@@ -44,7 +44,10 @@ class VariantOnlyRetriever:
             "mode": "hybrid",
             "lexical_results": 0,
             "embedding_results": 0,
+            "anchored_embedding_results": 0,
             "fused_results": 0,
+            "lexical_weight": 0.7,
+            "embedding_weight": 0.3,
             "min_fused_score": 0.35,
         }
         if plan.original_query != "usage replacement_token":
@@ -66,6 +69,21 @@ class VariantOnlyRetriever:
                 score=100,
             )
         ]
+
+
+class MissingSettingsSummaryRetriever:
+    def __init__(self) -> None:
+        self.last_channel_summary: dict[str, int | str] = {}
+
+    def retrieve(self, repo_path: str, plan: SearchPlan) -> list[RetrievalResult]:
+        self.last_channel_summary = {
+            "mode": "hybrid",
+            "lexical_results": 0,
+            "embedding_results": 0,
+            "anchored_embedding_results": 0,
+            "fused_results": 0,
+        }
+        return []
 
 
 def test_tool_executor_keeps_variant_results_when_strong_original_has_no_hits() -> None:
@@ -94,3 +112,35 @@ def test_tool_executor_keeps_variant_results_when_strong_original_has_no_hits() 
     assert retriever.queries == ["MissingSymbol 在哪里实现?", "usage replacement_token"]
     assert [item["file_path"] for item in result.results] == ["app/service.py"]
     assert result.audit_summary["rewrite_provider"] == "variant_only"
+    assert result.audit_summary["lexical_weight"] == 0.7
+    assert result.audit_summary["embedding_weight"] == 0.3
+    assert result.audit_summary["min_fused_score"] == 0.35
+    assert "lexical_weight" not in result.call_summary()
+    assert "embedding_weight" not in result.call_summary()
+    assert "min_fused_score" not in result.call_summary()
+
+
+def test_tool_executor_does_not_synthesize_missing_fusion_settings() -> None:
+    executor = ToolExecutor(
+        repo_retriever=MissingSettingsSummaryRetriever(),
+        query_rewrite_provider=VariantOnlyRewriteProvider(),
+    )
+    plan = SearchPlan(
+        original_query="NoHits",
+        question_type="implementation_explanation",
+        keywords=["NoHits"],
+        symbols=[],
+        path_hints=[],
+        max_results=3,
+        retrieval_mode="hybrid",
+    )
+
+    result = executor.search_repo_rag(
+        repo_path=".",
+        keyword="NoHits",
+        search_plan=plan,
+    )
+
+    assert "lexical_weight" not in result.audit_summary
+    assert "embedding_weight" not in result.audit_summary
+    assert "min_fused_score" not in result.audit_summary

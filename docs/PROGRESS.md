@@ -1,5 +1,39 @@
 # 项目进度
 
+## Hybrid Fusion Settings Parameterization（archived，2026-07-03）
+
+- OpenSpec change `parameterize-hybrid-fusion-settings` 已归档到
+  `openspec/changes/archive/2026-07-03-parameterize-hybrid-fusion-settings/`；当前分支：
+  `codex/parameterize-hybrid-fusion-settings`；风险级别：medium。
+- Scope 仅限 `app/rag/repo_rag.py` 的 hybrid fusion settings（混合检索打分配方）参数化，
+  以及 `app/tools/tool_executor.py` 对有效 settings 的内部 audit summary 透传。不修改
+  query understanding、rewrite、rerank、Evidence Pack、grounded answer、provider runtime、
+  public `/chat` contract、live eval、默认 CI 或网络依赖。
+- Planning gate 已完成：proposal/design/tasks/spec delta 已创建；`.harness/allowed_files.md`
+  与 `.harness/review_checklist.md` 已同步；internal、Codex independent 和 OpenCode
+  independent plan review 均完成，findings 已按 `fix/clarify` 处理；`openspec validate
+  parameterize-hybrid-fusion-settings --strict` 通过。
+- Implementation 使用 TDD：新增 default settings、custom settings、invalid settings、lexical anchor
+  和 `ToolExecutor` internal audit pass-through RED coverage。旧实现下 focused tests 按预期失败：
+  `HybridFusionSettings` 不存在，retriever audit summary 缺少权重，`ToolExecutor` 未透传权重。
+  GREEN 后 lexical / embedding 权重和 `min_fused_score` 由显式 settings 表达，默认配方保持
+  `0.65 / 0.35 / 0.35`，公开 `call_summary()` 不暴露这些内部配方值。
+- 当前验证 evidence：focused/adjacent
+  `pytest tests/test_repo_rag.py tests/test_tool_executor.py tests/test_agent_harness_kernel.py tests/test_chat_api.py -q`
+  为 100 passed；`ruff check .` passed；`openspec validate --all` 为 23 passed、0 failed；
+  full `scripts/verify.ps1` 通过，pytest 517 passed、1 skipped，ruff、stage docs scan、
+  skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warnings。
+  Final implementation review 已完成：
+  Codex final review 的流程记录 backfill finding 已按 `fix` 关闭，OpenCode final review 无 findings。
+  Focused Stage Debt Sweep 覆盖 changed runtime/tests/docs/OpenSpec/Harness 与
+  `app/harness/kernel.py` public/internal summary 边界；其两个 `fix` findings 已关闭：
+  `ToolExecutor` 不再为缺失 fusion settings 合成默认 audit values，AgentLoop internal trace regression
+  已覆盖 `lexical_weight` / `embedding_weight` / `min_fused_score`。Codex/OpenCode fix verification
+  均确认 no findings。Archive 已同步长期 `repo-query-understanding-rag` spec；archive-after
+  `openspec validate --all` 为 22 passed、0 failed；archive-after full `scripts/verify.ps1`
+  通过，pytest 517 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；
+  archive-after `git diff --check` 通过，仅有 CRLF normalization warnings。Merge/push 尚未完成。
+
 ## Evidence Pack Empty Snippet Omission（archived，2026-07-02）
 
 - OpenSpec change `omit-empty-evidence-snippets` 已归档到
@@ -1275,7 +1309,6 @@ LLMGateway 设计备忘：
 ## 已知剩余代码债
 
 - `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
-- `app/rag/repo_rag.py`：hybrid fusion 的权重和 `min_fused_score` 仍是硬编码常量；当前 symbol/path 查询已要求 lexical anchor，后续如需更细粒度召回策略或审计，应把权重、阈值和 anchor 策略显式参数化。
 - tests：仍有少量历史阶段命名测试保留，用于表达旧阶段边界；后续做测试命名清理时可统一改成阶段无关的 repo_rag / hybrid_repo_rag 命名。
 - V15 Assistant Control Surface 触发词当前保持小而明确；后续如要支持更自然的状态问法，应单独扩展 parser，避免误吞 capability-status 或 repo_search 问题。
 

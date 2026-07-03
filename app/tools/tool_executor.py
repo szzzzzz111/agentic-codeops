@@ -125,11 +125,14 @@ class ToolExecutor:
                             "embedding_results": 0,
                             "anchored_embedding_results": 0,
                             "fused_results": 0,
-                            "min_fused_score": channel_summary.get(
-                                "min_fused_score",
-                                0.35,
-                            ),
                         }
+                        for key in (
+                            "lexical_weight",
+                            "embedding_weight",
+                            "min_fused_score",
+                        ):
+                            if key in channel_summary:
+                                aggregate_channel_summary[key] = channel_summary[key]
                     aggregate_channel_summary["lexical_results"] = int(
                         aggregate_channel_summary["lexical_results"]
                     ) + int(channel_summary.get("lexical_results", 0))

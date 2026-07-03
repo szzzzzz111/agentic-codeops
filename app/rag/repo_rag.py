@@ -7,7 +7,32 @@ import re
 from app.rag.query_understanding import SearchPlan
 from app.tools.file_tools import list_files, read_file
 
+DEFAULT_LEXICAL_WEIGHT = 0.65
+DEFAULT_EMBEDDING_WEIGHT = 0.35
 DEFAULT_MIN_FUSED_SCORE = 0.35
+
+
+@dataclass(frozen=True)
+class HybridFusionSettings:
+    lexical_weight: float = DEFAULT_LEXICAL_WEIGHT
+    embedding_weight: float = DEFAULT_EMBEDDING_WEIGHT
+    min_fused_score: float = DEFAULT_MIN_FUSED_SCORE
+
+    def __post_init__(self) -> None:
+        _validate_non_negative_finite(
+            self.lexical_weight,
+            field_name="lexical_weight",
+        )
+        _validate_non_negative_finite(
+            self.embedding_weight,
+            field_name="embedding_weight",
+        )
+        _validate_non_negative_finite(
+            self.min_fused_score,
+            field_name="min_fused_score",
+        )
+        if self.lexical_weight == 0 and self.embedding_weight == 0:
+            raise ValueError("at least one fusion weight must be positive")
 
 
 @dataclass(frozen=True)
@@ -123,9 +148,11 @@ class HybridRepoRetriever:
         *,
         lexical_retriever: LexicalRepoRetriever | None = None,
         embedding_retriever: EmbeddingRepoRetriever | None = None,
+        fusion_settings: HybridFusionSettings | None = None,
     ) -> None:
         self.lexical_retriever = lexical_retriever or LexicalRepoRetriever()
         self.embedding_retriever = embedding_retriever or EmbeddingRepoRetriever()
+        self.fusion_settings = fusion_settings or DEFAULT_HYBRID_FUSION_SETTINGS
         self.last_channel_summary: dict[str, str | int | float] = {}
 
     def retrieve(self, repo_path: str, plan: SearchPlan) -> list[RetrievalResult]:
@@ -143,16 +170,17 @@ class HybridRepoRetriever:
             lexical_results,
             embedding_results,
             max_results=plan.max_results,
+            settings=self.fusion_settings,
         )
-        # Keep the audit value tied to the fusion default until threshold tuning
-        # becomes an explicit retriever parameter in a later stage.
         self.last_channel_summary = {
             "mode": "hybrid",
             "lexical_results": len(lexical_results),
             "embedding_results": raw_embedding_result_count,
             "anchored_embedding_results": len(embedding_results),
             "fused_results": len(fused_results),
-            "min_fused_score": DEFAULT_MIN_FUSED_SCORE,
+            "lexical_weight": self.fusion_settings.lexical_weight,
+            "embedding_weight": self.fusion_settings.embedding_weight,
+            "min_fused_score": self.fusion_settings.min_fused_score,
         }
         return fused_results
 
@@ -162,22 +190,34 @@ def hybrid_fuse(
     embedding_results: list[RetrievalResult],
     *,
     max_results: int,
-    lexical_weight: float = 0.65,
-    embedding_weight: float = 0.35,
+    settings: HybridFusionSettings | None = None,
+    lexical_weight: float = DEFAULT_LEXICAL_WEIGHT,
+    embedding_weight: float = DEFAULT_EMBEDDING_WEIGHT,
     min_fused_score: float = DEFAULT_MIN_FUSED_SCORE,
 ) -> list[RetrievalResult]:
+    effective_settings = settings or HybridFusionSettings(
+        lexical_weight=lexical_weight,
+        embedding_weight=embedding_weight,
+        min_fused_score=min_fused_score,
+    )
     lexical_max = max((result.score for result in lexical_results), default=0)
     embedding_max = max((result.score for result in embedding_results), default=0)
     fused: dict[tuple[str, int, int], tuple[RetrievalResult, float]] = {}
 
     for result in lexical_results:
         key = _citation_key(result.citation)
-        fused[key] = (result, _normalized(result.score, lexical_max) * lexical_weight)
+        fused[key] = (
+            result,
+            _normalized(result.score, lexical_max) * effective_settings.lexical_weight,
+        )
 
     for result in embedding_results:
         key = _citation_key(result.citation)
         existing = fused.get(key)
-        score = _normalized(result.score, embedding_max) * embedding_weight
+        score = (
+            _normalized(result.score, embedding_max)
+            * effective_settings.embedding_weight
+        )
         if existing:
             fused[key] = (existing[0], existing[1] + score)
         else:
@@ -190,7 +230,7 @@ def hybrid_fuse(
             score=int(round(score * 1000)),
         )
         for result, score in (item for item in fused.values())
-        if score >= min_fused_score
+        if score >= effective_settings.min_fused_score
     ]
     results.sort(key=lambda item: (-item.score, item.citation.file_path, item.citation.start_line))
     return results[:max_results]
@@ -272,6 +312,19 @@ def _normalized(score: int, max_score: int) -> float:
     if max_score <= 0:
         return 0.0
     return score / max_score
+
+
+def _validate_non_negative_finite(value: float, *, field_name: str) -> None:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int | float)
+        or not math.isfinite(value)
+        or value < 0
+    ):
+        raise ValueError(f"{field_name} must be a non-negative finite number")
+
+
+DEFAULT_HYBRID_FUSION_SETTINGS = HybridFusionSettings()
 
 
 def _citation_key(citation: Citation) -> tuple[str, int, int]:

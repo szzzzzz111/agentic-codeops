@@ -1,5 +1,7 @@
 from pathlib import Path
+import pytest
 
+from app.rag import repo_rag
 from app.rag.query_understanding import QueryUnderstanding
 from app.rag.repo_rag import (
     Citation,
@@ -175,6 +177,45 @@ def test_hybrid_fusion_merges_duplicate_chunks_and_keeps_stable_order() -> None:
     assert results[0].score > results[1].score
 
 
+def test_default_hybrid_fusion_settings_preserve_existing_scores() -> None:
+    settings_cls = getattr(repo_rag, "HybridFusionSettings", None)
+    assert settings_cls is not None
+    settings = settings_cls()
+    first_chunk = RepoChunk(
+        chunk_id="app/service.py:1-2",
+        file_path="app/service.py",
+        start_line=1,
+        end_line=2,
+        text="class PaymentService:\n    pass",
+    )
+    second_chunk = RepoChunk(
+        chunk_id="docs/service.md:1-1",
+        file_path="docs/service.md",
+        start_line=1,
+        end_line=1,
+        text="Payment service overview",
+    )
+
+    results = hybrid_fuse(
+        [
+            RetrievalResult(first_chunk, Citation("app/service.py", 1, 2), 20),
+            RetrievalResult(second_chunk, Citation("docs/service.md", 1, 1), 10),
+        ],
+        [
+            RetrievalResult(first_chunk, Citation("app/service.py", 1, 2), 60),
+            RetrievalResult(second_chunk, Citation("docs/service.md", 1, 1), 60),
+        ],
+        max_results=4,
+        settings=settings,
+    )
+
+    assert [result.citation.file_path for result in results] == [
+        "app/service.py",
+        "docs/service.md",
+    ]
+    assert [result.score for result in results] == [1000, 675]
+
+
 def test_hybrid_fusion_filters_results_below_minimum_score() -> None:
     weak_chunk = RepoChunk(
         chunk_id="docs/weak.md:1-1",
@@ -194,6 +235,85 @@ def test_hybrid_fusion_filters_results_below_minimum_score() -> None:
     results = hybrid_fuse([], embedding, max_results=4, min_fused_score=0.5)
 
     assert results == []
+
+
+def test_custom_hybrid_fusion_settings_control_threshold_and_weight_mix() -> None:
+    settings_cls = getattr(repo_rag, "HybridFusionSettings", None)
+    assert settings_cls is not None
+    lexical_chunk = RepoChunk(
+        chunk_id="app/lexical.py:1-1",
+        file_path="app/lexical.py",
+        start_line=1,
+        end_line=1,
+        text="direct symbol match",
+    )
+    embedding_chunk = RepoChunk(
+        chunk_id="docs/semantic.md:1-1",
+        file_path="docs/semantic.md",
+        start_line=1,
+        end_line=1,
+        text="semantic-only match",
+    )
+    lexical = [
+        RetrievalResult(
+            lexical_chunk,
+            Citation("app/lexical.py", 1, 1),
+            score=100,
+        )
+    ]
+    embedding = [
+        RetrievalResult(
+            embedding_chunk,
+            Citation("docs/semantic.md", 1, 1),
+            score=100,
+        )
+    ]
+
+    embedding_first = hybrid_fuse(
+        lexical,
+        embedding,
+        max_results=4,
+        settings=settings_cls(
+            lexical_weight=0.2,
+            embedding_weight=0.8,
+            min_fused_score=0.1,
+        ),
+    )
+    strict_threshold = hybrid_fuse(
+        lexical,
+        embedding,
+        max_results=4,
+        settings=settings_cls(
+            lexical_weight=0.2,
+            embedding_weight=0.8,
+            min_fused_score=0.5,
+        ),
+    )
+
+    assert [result.citation.file_path for result in embedding_first] == [
+        "docs/semantic.md",
+        "app/lexical.py",
+    ]
+    assert [result.score for result in embedding_first] == [800, 200]
+    assert [result.citation.file_path for result in strict_threshold] == [
+        "docs/semantic.md"
+    ]
+
+
+def test_hybrid_fusion_settings_reject_invalid_values() -> None:
+    settings_cls = getattr(repo_rag, "HybridFusionSettings", None)
+    assert settings_cls is not None
+
+    with pytest.raises(ValueError, match="lexical_weight"):
+        settings_cls(lexical_weight=-0.1)
+    with pytest.raises(ValueError, match="lexical_weight"):
+        settings_cls(lexical_weight=True)
+    with pytest.raises(ValueError, match="embedding_weight"):
+        settings_cls(embedding_weight=float("nan"))
+    with pytest.raises(ValueError, match="at least one"):
+        settings_cls(lexical_weight=0.0, embedding_weight=0.0)
+    with pytest.raises(ValueError, match="min_fused_score"):
+        settings_cls(min_fused_score=float("inf"))
 
 
 def test_hybrid_fusion_keeps_embedding_only_results_by_default() -> None:
@@ -256,6 +376,9 @@ def test_hybrid_retriever_requires_lexical_anchor_for_symbol_queries(
     assert plan.symbols == ["UNIQUE_BUG_TOKEN"]
     assert retriever.last_channel_summary["embedding_results"] >= 1
     assert retriever.last_channel_summary["anchored_embedding_results"] == 0
+    assert retriever.last_channel_summary["lexical_weight"] == 0.65
+    assert retriever.last_channel_summary["embedding_weight"] == 0.35
+    assert retriever.last_channel_summary["min_fused_score"] == 0.35
 
 
 def test_hybrid_retriever_keeps_symbol_results_when_lexical_anchor_exists(
