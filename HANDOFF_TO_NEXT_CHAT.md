@@ -2,10 +2,12 @@
 
 ## 当前基线
 
-- 当前分支：`codex/parameterize-hybrid-fusion-settings`。
+- 当前分支：`main`。
 - Active OpenSpec change：无。
 - 最近归档 OpenSpec change：`parameterize-hybrid-fusion-settings`，归档到
   `openspec/changes/archive/2026-07-03-parameterize-hybrid-fusion-settings/`。
+- 最近提交：`c5946bf Parameterize hybrid fusion settings`，已 fast-forward 合并并推送到
+  `agentic-codeops/main`。
 - 当前阶段风险级别：medium。
 - 当前阶段目标：把 `app/rag/repo_rag.py` 的 hybrid fusion settings（混合检索打分配方）
   参数化，并让 `ToolExecutor` 内部 audit summary 能记录有效配方。
@@ -52,10 +54,15 @@ openspec validate --all
 - Archive-after：`openspec validate --all` 为 22 passed、0 failed；full `scripts/verify.ps1`
   为 pytest 517 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；
   `git diff --check` passed，仅 CRLF normalization warnings。
+- Merge/push：`main` 已 fast-forward 到 `c5946bf` 并推送；merge-after `openspec list`
+  为 No active changes found，`openspec validate --all` 为 22 passed、0 failed；merge-after
+  full `scripts/verify.ps1` 为 pytest 517 passed、1 skipped，ruff、stage docs scan、skill eval
+  structure scan 均通过。
 
 ## 下一步
 
-- 提交当前分支，fast-forward merge 回 `main`，push。
+- 无 active OpenSpec change。下一步如继续还债，优先从 `docs/PROGRESS.md` 的“已知剩余代码债”
+  选择一个小阶段，并先走 OpenSpec/Harness planning。
 
 ## 剩余债
 

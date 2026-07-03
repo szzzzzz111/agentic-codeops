@@ -4,7 +4,8 @@
 
 - OpenSpec change `parameterize-hybrid-fusion-settings` 已归档到
   `openspec/changes/archive/2026-07-03-parameterize-hybrid-fusion-settings/`；当前分支：
-  `codex/parameterize-hybrid-fusion-settings`；风险级别：medium。
+  `main`；implementation commit `c5946bf` 已 fast-forward 合并并推送到
+  `agentic-codeops/main`；风险级别：medium。
 - Scope 仅限 `app/rag/repo_rag.py` 的 hybrid fusion settings（混合检索打分配方）参数化，
   以及 `app/tools/tool_executor.py` 对有效 settings 的内部 audit summary 透传。不修改
   query understanding、rewrite、rerank、Evidence Pack、grounded answer、provider runtime、
@@ -32,7 +33,10 @@
   均确认 no findings。Archive 已同步长期 `repo-query-understanding-rag` spec；archive-after
   `openspec validate --all` 为 22 passed、0 failed；archive-after full `scripts/verify.ps1`
   通过，pytest 517 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；
-  archive-after `git diff --check` 通过，仅有 CRLF normalization warnings。Merge/push 尚未完成。
+  archive-after `git diff --check` 通过，仅有 CRLF normalization warnings。Merge 后
+  `openspec list` 为 No active changes found，`openspec validate --all` 为 22 passed、0 failed；
+  merge-after full `scripts/verify.ps1` 通过，pytest 517 passed、1 skipped，ruff、stage docs scan、
+  skill eval structure scan 均通过；commit `c5946bf` 已推送到 `agentic-codeops/main`。
 
 ## Evidence Pack Empty Snippet Omission（archived，2026-07-02）
 
