@@ -1,80 +1,88 @@
 # 当前 Review 清单
 
 Active OpenSpec change：无。
-最近归档 OpenSpec change：`parameterize-hybrid-fusion-settings`，归档到
-`openspec/changes/archive/2026-07-03-parameterize-hybrid-fusion-settings/`。
+最近归档 OpenSpec change：`cleanup-control-routing-and-test-names`，归档到
+`openspec/changes/archive/2026-07-03-cleanup-control-routing-and-test-names/`。
 风险级别：medium。
 
-目标是修复 `app/rag/repo_rag.py` 中 hybrid fusion settings（混合检索打分配方）
-硬编码债：lexical / embedding 权重和 `min_fused_score` 必须成为显式、可校验、
-可审计的 deterministic settings；默认排序行为、lexical anchor、公开 `/chat` contract 均保持不变。
+目标是一次小修正清理剩余代码债：capability-status（能力状态）识别收拢为内部
+classifier/helper；历史阶段命名测试改成更稳定的能力命名；Assistant Control Surface parser
+保持小而明确，本阶段不扩展自然语言触发词。
 
 ## Planning / Harness
 
 - [x] 已读取 `AGENTS.md`、必读文档、OpenSpec README、Harness rules、workflow/planning skills。
 - [x] 已检查 branch、worktree、recent commits、remote sync 和 active OpenSpec changes。
-- [x] 已选择代码债：`app/rag/repo_rag.py` hybrid fusion weights / threshold 硬编码语义。
+- [x] 已选择小代码债：control routing cleanup + test naming cleanup，不扩展状态问法。
 - [x] 已创建 OpenSpec proposal、design、tasks、spec delta。
 - [x] 已同步 `.harness/allowed_files.md` 与本 checklist。
 
 ## Plan Review Gate
 
-- [x] Internal plan review：proposal/design/tasks/spec delta/test plan/Harness 边界。Finding：`fix`，test plan threshold wording corrected from "higher threshold passes" to deterministic pass/filter behavior.
-- [x] Codex independent plan review：Codex subagent `019f2584-652b-7920-88f1-7c1ca2e95cec` 只读 review，no blocking findings after scope fix。
-- [x] OpenCode independent plan review：已先运行 `opencode session list`，并复用 `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，no blocking findings。
+- [x] Internal plan review：proposal/design/tasks/spec delta/test plan/Harness 边界。
+- [x] Codex independent plan review：no blocking findings；clarify findings 已处理。
+- [x] OpenCode independent plan review：已先运行 `opencode session list`，并复用 `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`；no blocking findings；clarify findings 已处理。
 - [x] 所有 plan findings 按 `fix / clarify / reject / defer` 分类并处理。
-- [x] `openspec validate parameterize-hybrid-fusion-settings --strict` 通过。
-- [x] 停在 implementation confirmation gate；用户已确认继续推进代码债。
+- [x] `openspec validate cleanup-control-routing-and-test-names --strict` 通过。
+- [x] 停在 implementation confirmation gate；用户已确认继续小修正。
 
 Plan findings:
 
-- `fix`（internal）：test plan threshold wording corrected from "higher threshold passes" to deterministic pass/filter behavior。
-- `clarify`（OpenCode）：settings must be the single source of truth when provided；standalone compatibility kwargs apply only when `settings` is omitted，已补 design。
-- `clarify`（OpenCode）：`max_results` remains a per-call cap rather than a fusion settings field，已补 design。
-- `clarify`（OpenCode）：settings validation is construction-time fail fast，已补 design。
-- `fix`（Codex）：allowed files were too narrow to fulfill internal audit/trace contract；已扩大 scope 到 `app/tools/tool_executor.py` 和 `tests/test_tool_executor.py`，并补 audit pass-through 测试计划。
-- `clarify`（Codex）：OpenCode findings 已记录但 gate 仍 pending；已同步 gate 状态。
+- `clarify`（internal）：`HANDOFF_TO_NEXT_CHAT.md` 的 latest commit / merge-push state 属于本阶段文档状态修正范围；该修正不改变 runtime scope。
+- `clarify`（OpenCode）：classifier extraction is routing-only；`_capability_status_answer()` and `_asks_about_unimplemented_v10_stack()` answer-selection behavior remains unchanged。
+- `clarify`（OpenCode）：test naming cleanup must preserve existing route and answer assertions after rename。
+- `clarify`（OpenCode）：`test_v6_kernel_does_not_expose_future_runtime_components` is in scope for capability-oriented rename because it asserts stable AgentLoop composition, not V6-only behavior。
+- `clarify`（Codex）：long-term specs listed in proposal impact are archive-only paths, not implementation-edit paths。
+- `clarify`（Codex）：capability-status classifier must remain inside `RequestRouter` and must not move ahead of AgentLoop pre-router routes。
 
-## Implementation Gate（用户确认后）
+## Implementation Gate（plan review 后）
 
-- [x] RED tests：默认 settings 保持当前 hybrid fusion score 和稳定排序。
-- [x] RED tests：custom settings 可确定性改变 fusion mix / threshold，并记录 retriever audit summary。
-- [x] RED tests：ToolExecutor 内部 audit summary 透传 effective settings，但 public `call_summary()` 不暴露。
-- [x] RED tests：negative、non-finite、all-zero weights 等 invalid settings fail fast。
-- [x] Regression：lexical anchor 与 public `/chat` contract 不改变。
-- [x] Runtime：`HybridFusionSettings` 最小实现，不改 query understanding、rewrite、rerank、Evidence Pack、grounded answer、provider 或 `/chat` contract。
+- [x] RED tests：capability-status classifier 保持 route/keyword/reason，且不调用 repo RAG。
+- [x] RED tests：包含 location/search 意图的问题不被 capability-status 吞掉。
+- [x] RED tests：Assistant Control Surface parser 仍只接受明确状态触发词，不吞 capability-status、Memory 或 Long Task command。
+- [x] Test naming cleanup：历史阶段命名测试改成能力导向命名，不削弱断言。
+- [x] Runtime：`app/harness/kernel.py` 最小 helper/classifier 抽取，不改 public `/chat` contract。
+
+Implementation evidence:
+
+- RED focused test failed as expected because `CapabilityStatusClassifier` did not exist。
+- GREEN focused classifier/parser tests：3 passed。
+- Adjacent AgentLoop / Assistant Control Surface / Chat API tests：93 passed。
+- Local ruff for changed runtime/tests：passed。
 
 ## Final Review / Verification（implementation 后）
 
-- [x] Focused/adjacent `pytest tests/test_repo_rag.py tests/test_tool_executor.py tests/test_agent_harness_kernel.py tests/test_chat_api.py -q`：100 passed。
+- [x] Focused routing/parser tests：3 passed。
+- [x] Adjacent `/chat` contract tests：`pytest tests/test_agent_harness_kernel.py tests/test_assistant_control_surface.py tests/test_chat_api.py -q` 为 93 passed。
 - [x] `ruff check .`：passed。
 - [x] `openspec validate --all`：23 passed，0 failed。
-- [x] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：pytest 517 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。
+- [x] `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：pytest 519 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。
 - [x] `git diff --check`：passed，仅 CRLF normalization warnings。
 - [x] Final implementation review and finding triage。
 - [x] Focused Stage Debt Sweep。
 - [x] Archive readiness check。
+- [x] OpenSpec archive completed。
+- [x] Archive-after `openspec list`：No active changes found。
+- [x] Archive-after `openspec validate --all`：22 passed，0 failed。
+- [x] Archive-after full `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`：pytest 519 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。
 
 Final implementation review findings:
 
-- `fix`（Codex）：final verification / review checklist / progress / handoff status had not yet been backfilled after implementation verification；已补齐。
-- OpenCode final implementation review：no `fix` / `clarify` / `reject` / `defer` findings；no blocking findings。
-- `fix`（Stage Debt Sweep）：`ToolExecutor` 不应在 retriever 未提供 fusion settings 时合成默认 audit values；已改为仅复制明确提供的 effective settings，并补 `tests/test_tool_executor.py` regression。
-- `fix`（Stage Debt Sweep）：AgentLoop internal trace regression 只覆盖 `min_fused_score`，未覆盖新增 `lexical_weight` / `embedding_weight`；已补 `tests/test_agent_harness_kernel.py` adjacent regression，并同步 allowed files。
+- `fix`（Codex）：`docs/PROGRESS.md` and `HANDOFF_TO_NEXT_CHAT.md` still described final verification as incomplete after full verification had passed；已补齐 current verification and final review status。
+- `clarify`（Codex）：spec deltas described `capability/status intent` like an independent pre-router route；已澄清为 `RequestRouter` 内部 capability_status / repo_search / chat_only routing，且 classifier 不得 hoist 到 AgentLoop pre-router routes 之前。
+- OpenCode final re-review：复用 `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`；confirmed Codex findings closed；no findings。
 
 Stage Debt Sweep:
 
-- 覆盖 changed runtime/tests/docs/OpenSpec/Harness：`app/rag/repo_rag.py`、`app/tools/tool_executor.py`、`tests/test_repo_rag.py`、`tests/test_tool_executor.py`、active OpenSpec artifacts、`.harness/allowed_files.md`、`.harness/review_checklist.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`。
-- 覆盖直接依赖：`app/harness/kernel.py` 的 public `call_summary()` 和 internal trace/audit summary 路径。
-- 结论：Stage Debt Sweep 的两个 `fix` findings 已关闭。新增 settings 仅进入内部审计摘要，不进入 public `call_summary()` 或 `/chat` 顶层 contract；缺失 settings 时不会合成虚假的默认 audit values。
+- 覆盖 changed runtime/tests/docs/OpenSpec/Harness：`app/harness/kernel.py`、`tests/test_agent_harness_kernel.py`、`tests/test_assistant_control_surface.py`、active OpenSpec artifacts、`.harness/allowed_files.md`、`.harness/review_checklist.md`、`docs/PROGRESS.md`、`HANDOFF_TO_NEXT_CHAT.md`。
+- 覆盖直接依赖：`app/assistant/control_surface.py` explicit status parser、`AgentLoop._run_inner()` pre-router order、`RequestRouter.route()` fallback boundary、`AgentLoopResult.to_agent_result()` public contract。
+- 结论：未发现新增 blocking debt。`CapabilityStatusClassifier` remains inside `RequestRouter`；answer-selection behavior and Assistant Control Surface triggers remain unchanged；public `/chat` contract remains unchanged。
 
 Archive readiness:
 
-- Blocking findings closed；Codex/OpenCode fix verification 均 no findings；focused/adjacent tests、OpenSpec all、ruff、full verify 和 `git diff --check` 已通过。可进入 archive。
+- Blocking findings closed；Codex final review findings 已处理；OpenCode final re-review no findings；focused/adjacent tests、OpenSpec all、ruff、full verify 和 `git diff --check` 已通过。最终文档/spec 修正后已重跑 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`，结果仍为 pytest 519 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。
 
-## Archive / Closeout
+Archive evidence:
 
-- [x] `openspec archive parameterize-hybrid-fusion-settings --yes` 成功，归档到 `openspec/changes/archive/2026-07-03-parameterize-hybrid-fusion-settings/`，并同步 `openspec/specs/repo-query-understanding-rag/spec.md`。
-- [x] Archive 后 `openspec validate --all`：22 passed，0 failed。
-- [x] Archive 后 full `scripts/verify.ps1`：pytest 517 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。
-- [x] Archive 后 `git diff --check`：passed，仅 CRLF normalization warnings。
+- `openspec archive cleanup-control-routing-and-test-names --yes` succeeded；长期 `agent-loop-tool-execution` 和 `assistant-control-surface` specs 已同步；archive-after `openspec validate --all` 为 22 passed，0 failed。
+- Archive-after full `scripts/verify.ps1` passed：pytest 519 passed，1 skipped；ruff、stage docs scan、skill eval structure scan passed。

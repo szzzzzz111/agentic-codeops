@@ -4,6 +4,7 @@ from app.harness.kernel import (
     ApprovalGate,
     AgentLoop,
     AgentLoopRequest,
+    CapabilityStatusClassifier,
     PermissionDecision,
     PermissionPolicy,
     RequestRouter,
@@ -1513,6 +1514,29 @@ def test_request_router_routes_capability_status_separately() -> None:
     )
 
 
+def test_capability_status_classifier_preserves_route_decision() -> None:
+    classification = CapabilityStatusClassifier().classify(
+        "Does RepoPilot support grounded answer?"
+    )
+
+    assert classification == RouteDecision(
+        route="capability_status",
+        keyword="capability_status",
+        reason="capability_status_question",
+    )
+
+
+def test_capability_status_classifier_keeps_location_questions_searchable() -> None:
+    classification = CapabilityStatusClassifier().classify(
+        "Where is model provider implemented?"
+    )
+    route = RequestRouter().route("Where is ModelProvider implemented?")
+
+    assert classification is None
+    assert route.route == "repo_search"
+    assert route.reason == "searchable_token"
+
+
 def test_agent_loop_uses_tool_executor_for_repo_rag(tmp_path: Path) -> None:
     executor = RecordingRepoRagExecutor()
     loop = AgentLoop(tool_executor=executor)
@@ -1571,7 +1595,7 @@ def test_agent_loop_result_adapts_to_chat_contract(tmp_path: Path) -> None:
     }
 
 
-def test_v6_kernel_does_not_expose_future_runtime_components() -> None:
+def test_agent_loop_composition_does_not_expose_future_runtime_components() -> None:
     loop = AgentLoop()
 
     assert not hasattr(loop, "provider")

@@ -1,47 +1,49 @@
 # 当前 Harness 写入边界
 
 Active OpenSpec change：无。
-最近归档 OpenSpec change：`parameterize-hybrid-fusion-settings`，归档到
-`openspec/changes/archive/2026-07-03-parameterize-hybrid-fusion-settings/`。
+最近归档 OpenSpec change：`cleanup-control-routing-and-test-names`，归档到
+`openspec/changes/archive/2026-07-03-cleanup-control-routing-and-test-names/`。
 风险级别：medium。
 
-Scope 仅限 `app/rag/repo_rag.py` 中 hybrid fusion settings（hybrid fusion 的混合打分配方）
-参数化，以及 `ToolExecutor` 对有效 settings 的内部 audit summary 透传：把 lexical /
-embedding 权重和 `min_fused_score` 从分散默认值收束为显式、可校验、可审计的
-deterministic settings。默认行为必须保持不变，不新增 `/chat` 字段、网络依赖或用户可调 API。
+Scope 仅限 control routing cleanup（控制路由整理）和测试命名清理：把
+`app/harness/kernel.py` 中 capability-status（能力状态）识别收拢为内部 deterministic
+classifier/helper，保持现有 route、answer 和 `/chat` contract 不变；清理少量历史阶段测试命名；
+明确 Assistant Control Surface parser（助手控制面解析器）本阶段不扩展自然语言触发词。
 
-## Planning 阶段允许修改
+## 本次已完成的 Planning 阶段允许修改
 
-- `openspec/changes/parameterize-hybrid-fusion-settings/**`
+- `openspec/changes/archive/2026-07-03-cleanup-control-routing-and-test-names/**`
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
 
-## 用户批准 implementation 后允许修改
+## 本次用户批准 implementation 后允许修改
 
-- `app/rag/repo_rag.py`
-- `app/tools/tool_executor.py`
-- `tests/test_repo_rag.py`
-- `tests/test_tool_executor.py`
-- `tests/test_agent_harness_kernel.py`，仅用于 final review 要求的 adjacent AgentLoop trace regression。
+- `app/harness/kernel.py`
+- `tests/test_agent_harness_kernel.py`
+- `tests/test_assistant_control_surface.py`
+- `tests/test_chat_api.py`
 - `docs/PROGRESS.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `openspec/specs/repo-query-understanding-rag/spec.md`，仅 archive 应用 spec delta 后。
+- `openspec/specs/agent-loop-tool-execution/spec.md`，仅 archive 应用 spec delta 后。
+- `openspec/specs/assistant-control-surface/spec.md`，仅 archive 应用 spec delta 后。
+
+当前无新的 active implementation scope；后续如启动新阶段，必须重新创建 OpenSpec change 并同步本文件。
 
 ## 本阶段不允许修改
 
-- `app/rag/query_understanding.py`
-- `app/rag/query_rewrite.py`
-- `app/rag/rerank.py`
-- `app/rag/evidence.py`
-- `app/answering/**`
-- `app/providers/**`
-- `app/harness/kernel.py`
-- `app/tools/**`，但允许上文列出的 `app/tools/tool_executor.py`。
-- `app/worktrees/**`
-- 其他 `tests/**`，除非 implementation review 证明必须补 adjacent AgentLoop/API RAG contract regression。
 - `README.md`
 - `docs/ARCHITECTURE.md`
 - `docs/FEATURE_LIST.json`
+- `app/rag/**`
+- `app/answering/**`
+- `app/providers/**`
+- `app/tools/**`
+- `app/memory/**`
+- `app/longtask/**`
+- `app/patching/**`
+- `app/verification/**`
+- `app/worktrees/**`
+- 其他 `tests/**`，除非 final review 证明必须补 adjacent regression。
 - provider runtime、live eval profile、默认 CI、public `/chat` contract
 
 ## 长期禁止行为

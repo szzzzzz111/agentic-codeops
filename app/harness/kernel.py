@@ -128,6 +128,17 @@ class RouteDecision:
     reason: str
 
 
+class CapabilityStatusClassifier:
+    def classify(self, message: str) -> RouteDecision | None:
+        if not _asks_about_unimplemented_vector_stack(message):
+            return None
+        return RouteDecision(
+            route="capability_status",
+            keyword=CAPABILITY_STATUS_KEYWORD,
+            reason="capability_status_question",
+        )
+
+
 @dataclass(frozen=True)
 class ToolSpec:
     name: str
@@ -190,13 +201,18 @@ class _PatchLoopVerificationResult:
 
 
 class RequestRouter:
+    def __init__(
+        self,
+        capability_status_classifier: CapabilityStatusClassifier | None = None,
+    ) -> None:
+        self.capability_status_classifier = (
+            capability_status_classifier or CapabilityStatusClassifier()
+        )
+
     def route(self, message: str) -> RouteDecision:
-        if _asks_about_unimplemented_vector_stack(message):
-            return RouteDecision(
-                route="capability_status",
-                keyword=CAPABILITY_STATUS_KEYWORD,
-                reason="capability_status_question",
-            )
+        capability_status = self.capability_status_classifier.classify(message)
+        if capability_status is not None:
+            return capability_status
         keyword = _extract_search_keyword(message)
         if keyword:
             return RouteDecision(

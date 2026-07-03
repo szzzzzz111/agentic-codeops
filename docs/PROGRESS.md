@@ -1,5 +1,40 @@
 # 项目进度
 
+## Control Routing And Test Naming Cleanup（archived，2026-07-03）
+
+- OpenSpec change：`cleanup-control-routing-and-test-names`，已归档到
+  `openspec/changes/archive/2026-07-03-cleanup-control-routing-and-test-names/`；当前分支：
+  `codex/cleanup-control-routing-and-test-names`；风险级别：medium。
+- Scope 仅限 control routing cleanup（控制路由整理）和测试命名清理：`app/harness/kernel.py`
+  的 capability-status（能力状态）识别收拢为内部 classifier/helper；相关 tests 改成能力导向命名；
+  Assistant Control Surface parser（助手控制面解析器）保持小而明确，本阶段不扩展自然语言触发词。
+  不修改 `/chat` public contract、provider runtime、live eval、默认 CI、patch/worktree、RAG、Memory
+  或 Long Task 行为。
+- Planning gate 已完成：proposal/design/tasks/spec delta 已创建；`.harness/allowed_files.md`
+  与 `.harness/review_checklist.md` 已同步；internal、Codex independent 和 OpenCode independent
+  plan review 均完成，findings 均按 `clarify` 处理；`openspec validate
+  cleanup-control-routing-and-test-names --strict` 通过。
+- Implementation 使用 TDD：新增 capability-status classifier route regression、location/search
+  non-swallow regression 和 Assistant Control Surface narrow parser regression。RED 阶段
+  `CapabilityStatusClassifier` import 按预期失败；GREEN 后 classifier 仍留在 `RequestRouter`
+  内，不前移到 AgentLoop pre-router routes；`_capability_status_answer()` answer-selection 行为
+  不变。
+- 当前验证 evidence：focused classifier/parser tests 为 3 passed；adjacent
+  `pytest tests/test_agent_harness_kernel.py tests/test_assistant_control_surface.py tests/test_chat_api.py -q`
+  为 93 passed；`ruff check .` passed；`openspec validate --all` 为 23 passed、0 failed；
+  full `scripts/verify.ps1` 通过，pytest 519 passed、1 skipped，ruff、stage docs scan、
+  skill eval structure scan 均通过；`git diff --check` 通过，仅有 CRLF normalization warnings。
+  Final implementation review 已完成初轮：Codex final review 的 documentation backfill finding
+  和 spec wording finding 已按 `fix` / `clarify` 处理；OpenCode final re-review 复用
+  `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，确认 findings closed 且 no findings。Focused Stage Debt
+  Sweep 覆盖 changed runtime/tests/docs/OpenSpec/Harness 与 `app/assistant/control_surface.py`、
+  `AgentLoop._run_inner()`、`RequestRouter.route()`、`AgentLoopResult.to_agent_result()` 直接边界，
+  未发现新增 blocking debt。Archive 已同步长期 `agent-loop-tool-execution` 和
+  `assistant-control-surface` specs；archive-after `openspec list` 为 No active changes found；
+  archive-after `openspec validate --all` 为 22 passed、0 failed；archive-after full
+  `scripts/verify.ps1` 通过，pytest 519 passed、1 skipped，ruff、stage docs scan、
+  skill eval structure scan 均通过。Merge/push 尚未完成。
+
 ## Hybrid Fusion Settings Parameterization（archived，2026-07-03）
 
 - OpenSpec change `parameterize-hybrid-fusion-settings` 已归档到
@@ -1312,9 +1347,8 @@ LLMGateway 设计备忘：
 
 ## 已知剩余代码债
 
-- `app/harness/kernel.py`：capability-status 识别仍是字符串规则集合；当前已支持中英文常见问法并独立 route，后续能力项增多时可抽成小型 capability classifier。
-- tests：仍有少量历史阶段命名测试保留，用于表达旧阶段边界；后续做测试命名清理时可统一改成阶段无关的 repo_rag / hybrid_repo_rag 命名。
-- V15 Assistant Control Surface 触发词当前保持小而明确；后续如要支持更自然的状态问法，应单独扩展 parser，避免误吞 capability-status 或 repo_search 问题。
+- 当前记录的小代码债已由 archived change `cleanup-control-routing-and-test-names` 处理；final review
+  与 Stage Debt Sweep 未发现新增 blocking debt。若后续发现新债，再按真实证据补充。
 
 ## 下一步建议
 

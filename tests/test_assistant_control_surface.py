@@ -21,6 +21,7 @@ def test_status_trigger_rejects_capability_and_repo_search_questions() -> None:
     assert is_assistant_status_request("memory 实现了吗?") is False
     assert is_assistant_status_request("MemoryStore 在哪里实现?") is False
     assert is_assistant_status_request("创建长任务：查看助手状态") is False
+    assert is_assistant_status_request("你现在能不能介绍一下项目?") is False
 
 
 def test_status_answer_does_not_create_repo_local_state(tmp_path: Path) -> None:
