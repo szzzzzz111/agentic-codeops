@@ -3,16 +3,12 @@
 ## 当前基线
 
 - 当前分支：`main`。
-- Active OpenSpec change：无；`openspec list` 为 No active changes found。
+- Active OpenSpec change：无；继续前运行 `openspec list` 刷新确认。
 - 最近归档 OpenSpec change：`cleanup-control-routing-and-test-names`，归档到
   `openspec/changes/archive/2026-07-03-cleanup-control-routing-and-test-names/`。
-- 最近已完成 implementation commit：`b3c92f5 Clean up control routing classifier`，已 fast-forward
-  合并到 `main`；closeout 文档随当前 `main` 一起推送。
-- 当前阶段风险级别：medium。
-- 当前阶段目标：清理 control routing（控制路由）和 test naming（测试命名）小代码债，不扩展
-  Assistant Control Surface 自然语言触发词，不改变 `/chat` public contract。
+- 当前无 runtime 阶段进行中；后续如启动新阶段，先刷新 live state。
 
-继续前先刷新 live state：
+建议先运行：
 
 ```powershell
 git status --short --branch
@@ -21,42 +17,31 @@ openspec list
 openspec validate --all
 ```
 
-## 已完成内容
+## 最新流程规则
 
-- Planning gate 已完成并记录在 `.harness/review_checklist.md`：internal、Codex independent
-  和 OpenCode independent plan review 均完成，plan findings 已按 `clarify` triage。
-- `openspec validate cleanup-control-routing-and-test-names --strict` 已通过。
-- TDD RED 已完成：`CapabilityStatusClassifier` import 在旧实现下按预期失败。
-- GREEN 实现已完成：capability-status classifier/helper 已抽出并留在 `RequestRouter` 内；
-  `_capability_status_answer()` answer-selection 行为不变；Assistant Control Surface parser 未扩展。
-
-## 当前验证
-
-- RED：focused classifier test 在旧实现下 import failed，因为 `CapabilityStatusClassifier` 不存在。
-- GREEN focused：classifier/parser tests 3 passed。
-- Adjacent：`pytest tests/test_agent_harness_kernel.py tests/test_assistant_control_surface.py tests/test_chat_api.py -q`：93 passed。
-- `ruff check .`：passed。
-- `openspec validate --all`：23 passed，0 failed。
-- Full `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：pytest 519 passed、1 skipped；
-  ruff、stage docs scan、skill eval structure scan 均通过。
-- `git diff --check`：passed，仅 CRLF normalization warnings。
-- Archive-after `openspec validate --all`：22 passed，0 failed。
-- `openspec archive cleanup-control-routing-and-test-names --yes` 已成功，长期
-  `agent-loop-tool-execution` 和 `assistant-control-surface` specs 已同步。
-- Archive-after full `powershell -ExecutionPolicy Bypass -File scripts\verify.ps1`：pytest 519 passed、
-  1 skipped；ruff、stage docs scan、skill eval structure scan 均通过。
-- Codex final review：documentation backfill finding 和 spec wording finding 已按 `fix` / `clarify`
-  处理；OpenCode final re-review 复用 `ses_1018bd2aeffeKLTCcQhhuQ1jFZ`，confirmed findings closed，
-  no findings。
-- Focused Stage Debt Sweep：覆盖 changed runtime/tests/docs/OpenSpec/Harness 与
-  `app/assistant/control_surface.py`、`AgentLoop._run_inner()`、`RequestRouter.route()`、
-  `AgentLoopResult.to_agent_result()` 直接边界，未发现新增 blocking debt。
+- 普通窄阶段使用 summary approval（摘要确认）：Agent 阅读完整 OpenSpec
+  proposal/design/tasks/spec，并向用户输出中文高信号摘要、风险级别、touched file families、
+  non-goals 和 implementation confirmation gate；用户不需要逐字审 OpenSpec artifacts。
+- 高风险、公开/runtime 行为变化、术语模糊或用户明确要求时，提升为更完整的 plan/spec review。
+- MCP、Skill、subagent、connector、runtime plugin、background worker、durable execution、
+  always-on assistant 等容易膨胀或误导的主题，应在 OpenSpec 落笔前做轻量 Grilling Gate
+  （需求拷问关），明确 canonical terms、counterexamples、runtime availability、
+  approval/audit boundary 和 non-goals。
+- Code review（代码审查）按分层模式执行：scope、business logic、architecture boundary、
+  minimality、failure semantics、security/privacy、test adequacy、maintainability。
+  Agent 默认负责底层实现、测试、安全和维护性审查，并把结论翻译成用户可判断的中文摘要；
+  用户主要确认方向、边界、行为语义、风险接受和残余风险。
 
 ## 下一步
 
-- 当前无 active OpenSpec change。后续如启动新阶段，先创建新的 OpenSpec change 并同步 Harness。
+- 如继续讨论 MCP + Skill 方向，建议先用 Grilling Gate 压实 capability catalog、MCP-compatible
+  descriptor、Skill descriptor、runtime availability、development-only workflow、approval/audit
+  boundary 和 non-goals，再进入 OpenSpec planning。
+- OpenSpec、skills、MCP、plugins 仍是开发流程或外部协作范式；除非新阶段明确实现，不得写成
+  RepoPilot runtime 能力。
 
 ## 剩余债
 
-- 本阶段已处理 `docs/PROGRESS.md` 记录的 control routing / test naming 小代码债。
-- Final review 与 Focused Stage Debt Sweep 未发现新增 blocking debt。
+- `docs/PROGRESS.md` 当前记录的小代码债已由 archived change
+  `cleanup-control-routing-and-test-names` 处理。
+- 最近 final review 与 Focused Stage Debt Sweep 未发现新增 blocking debt。

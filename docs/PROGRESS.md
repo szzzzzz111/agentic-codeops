@@ -1,5 +1,25 @@
 # 项目进度
 
+## Workflow Collaboration Rules Update（process-only，2026-07-05）
+
+- 本次只更新 RepoPilot 开发流程和 review 规则，不修改 runtime、tests、public `/chat` contract、
+  provider runtime、live eval、默认 CI 或产品能力。
+- 普通窄阶段改为 summary approval（摘要确认）：Agent 负责阅读完整 OpenSpec
+  proposal/design/tasks/spec，并向用户输出中文高信号摘要、风险级别、touched file families、non-goals
+  和 implementation confirmation gate；用户不需要逐字审 OpenSpec artifacts，除非阶段高风险、
+  改公开/runtime 行为、术语模糊或用户明确要求。
+- MCP、Skill、subagent、connector、runtime plugin、background worker、durable execution、
+  always-on assistant 等容易膨胀或误导的主题，在 OpenSpec 落笔前使用轻量 Grilling Gate
+  压实术语、反例、runtime availability、approval/audit boundary 和 non-goals；普通 bugfix、文档修正、
+  已知窄代码债不默认运行该 gate。
+- Code review（代码审查）固定为分层审查：scope、business logic、architecture boundary、
+  minimality、failure semantics、security/privacy、test adequacy、maintainability。Agent 默认负责底层
+  实现、测试、安全和维护性判断，并把结论翻译成用户可判断的中文摘要；用户主要确认方向、边界、
+  行为语义、风险接受和残余风险。
+- 已同步 `docs/AGENT_RULES.md`、`.harness/rules.md`、repo-local `repo-stage-workflow` /
+  `repo-stage-review-loop` skills，以及长期 `harness-development-workflow` spec。OpenSpec、skills、
+  MCP 和 plugins 仍是开发流程参考，不能因此写成 RepoPilot runtime 能力。
+
 ## Control Routing And Test Naming Cleanup（archived，2026-07-03）
 
 - OpenSpec change：`cleanup-control-routing-and-test-names`，已归档到

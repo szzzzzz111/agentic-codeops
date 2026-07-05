@@ -24,21 +24,29 @@ Codex independent, and OpenCode independent review before implementation.
 1. Read the active OpenSpec contract, changed files or plan contract, tests,
    allowed paths, and current review checklist.
 2. Confirm the review occurs after the latest runtime/test change.
-3. Report severity-ordered findings with file/line evidence, trigger,
+3. Review in layers: scope, business logic, architecture boundary, minimality,
+   failure semantics, security/privacy, test adequacy, and maintainability.
+   For user-facing summaries in Chinese, keep precise English terms and add a
+   short Chinese explanation or concrete example when the term is non-obvious.
+4. Report severity-ordered findings with file/line evidence, trigger,
    consequence, and missing regression coverage. If there are no findings,
    state inspected areas and residual risk.
-4. Use `external-review-triage` for external findings. Classify each as `fix`,
+5. Use `external-review-triage` for external findings. Classify each as `fix`,
    `clarify`, `reject`, or `defer`; never accept it by authority alone.
-5. After remediation, rerun affected verification and review changed behavior.
-6. Perform a focused Stage Debt Sweep over changed paths and directly dependent
+6. After remediation, rerun affected verification and review changed behavior.
+7. Perform a focused Stage Debt Sweep over changed paths and directly dependent
    older paths. Record inspected paths, concrete findings, dispositions, and
    residual debt.
-7. Block archive when tasks are unchecked, review evidence is stale, validation
+8. Block archive when tasks are unchecked, review evidence is stale, validation
    failed, blocking findings remain, or delta operations do not match long-term
    specs.
 
 ## Review Priorities
 
+- stage scope and user-visible behavior match the approved contract
+- business logic, state transitions, and failure paths match intended semantics
+- code remains in the correct architectural layer and reuses existing boundaries
+- functions/classes stay minimal enough to avoid hidden behavior coupling
 - public contract and state-transition correctness
 - fail-closed permissions, approval, identity, path, and lifecycle checks
 - interruption, retry, rollback, and reconciliation behavior

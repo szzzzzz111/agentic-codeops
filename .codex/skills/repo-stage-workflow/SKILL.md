@@ -33,29 +33,39 @@ discipline skills own how the approved baseline is implemented and verified.
    commits, active OpenSpec changes, and unrelated local edits.
 2. Classify the stage as `low`, `medium`, or `high` risk using
    `references/workflow-contract.md`.
-3. Use `openspec-stage-planner` to define the stage contract, non-goals,
+3. For fuzzy or high-expansion themes such as MCP, Skill, subagent, connector,
+   runtime plugin, background worker, durable execution, or always-on assistant,
+   run a lightweight Grilling Gate before writing OpenSpec artifacts. Pin down
+   terminology, counterexamples, runtime availability, approval/audit boundary,
+   and non-goals. Skip this gate for ordinary narrow bugfix, documentation, or
+   known-debt stages unless the user asks.
+4. Use `openspec-stage-planner` to define the stage contract, non-goals,
    writable paths, required evidence, and confirmation boundary. Complete
    plan-level review before implementation: internal plan review, Codex
    independent plan review, and OpenCode independent plan review when required.
-4. Use `openspec-apply-change` plus the relevant Superpowers execution skills
+   For ordinary narrow stages, the agent reads the full proposal/design/tasks/spec
+   and gives the user a concise Chinese summary plus one implementation
+   confirmation gate; do not require the user to review every artifact line by
+   default.
+5. Use `openspec-apply-change` plus the relevant Superpowers execution skills
    for implementation discipline: read the approved baseline, isolate work when
    needed, write RED tests first for behavior changes, keep changes minimal, and
    do not widen scope to repair unrelated debt.
-5. Run focused deterministic verification after each meaningful slice and the
+6. Run focused deterministic verification after each meaningful slice and the
    repository's full verification after runtime or tests change.
-6. Use `repo-stage-review-loop` after the final implementation change for final implementation review.
+7. Use `repo-stage-review-loop` after the final implementation change for final implementation review.
    Review requirements, code, tests, safety boundaries, and changed dependencies.
-7. When external review is requested or the risk level requires it, give the
+8. When external review is requested or the risk level requires it, give the
    reviewer an adversarial brief. This applies to plan-level review and final
    implementation review as separate gates. Use `external-review-triage` to
    classify each finding as `fix`, `clarify`, `reject`, or `defer`.
-8. Perform a focused Stage Debt Sweep over changed paths and the older paths
+9. Perform a focused Stage Debt Sweep over changed paths and the older paths
    they directly depend on. Record only concrete findings, dispositions, and
    residual risks.
-9. Re-run affected verification after every remediation. Archive only when the
+10. Re-run affected verification after every remediation. Archive only when the
    final runtime/test state has passed formal review and all blocking findings
    are resolved.
-10. Merge and push only with user authorization. Then use
+11. Merge and push only with user authorization. Then use
     `repo-stage-handoff` once to record the stable next-session context and
     update only documents whose owned facts actually changed.
 

@@ -18,6 +18,13 @@
 - `medium`：局部 runtime 行为，公开 contract 基本稳定；增加聚焦外部 review。
 - `high`：Git/subprocess、持久化、权限、patch 生命周期、公开 API；要求完整独立对抗式 review。
 - 风险分级只调整 review 深度，不取消 TDD、验证和安全边界。
+- 普通窄阶段默认由 Agent 阅读完整 OpenSpec artifacts，并向用户输出高信号中文摘要和一个
+  implementation confirmation gate；用户不需要逐字审 proposal/design/tasks/spec，除非风险、scope
+  或用户要求使其必要。
+- MCP、Skill、subagent、connector、runtime plugin、background worker、always-on assistant 等
+  容易膨胀或误导的主题，应在 OpenSpec 落笔前使用轻量 Grilling Gate（需求拷问关）压实术语、
+  scope、反例、runtime availability、approval/audit boundary 和 non-goals。普通 bugfix、文档修正、
+  已知窄代码债不默认运行该 gate。
 - 端到端阶段使用 `repo-stage-workflow`；planning、review、handoff skill 各自只承担单一职责。
 - 实现确认前必须对 proposal、design、tasks、spec deltas、测试计划和 Harness 边界完成
   plan review；medium/high 阶段默认包含 internal plan review、Codex independent plan
@@ -39,6 +46,9 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - 正式 final implementation review 必须针对最终 runtime/test 状态，并在 archive/merge 前完成；
   它不能替代实现前 plan review，plan review 也不能替代最终实现 review。
 - 测试、OpenSpec validation、checklist marker 和零散自检不能替代正式 review。
+- Code review（代码审查）应覆盖需求范围、业务逻辑、架构边界、最小功能、失败语义、安全/隐私、
+  测试充分性和可维护性。Agent 默认负责底层实现、测试、安全和维护性审查，并把结论翻译成用户
+  可判断的中文摘要；用户主要确认方向、边界、行为语义、风险接受和残余风险。
 - 外部 reviewer 应寻找独立反例；plan finding 和 implementation finding 都按
   `fix / clarify / reject / defer` 处理。
 - archive 后如再改 runtime，必须重新验证、review，并重新判断 archive readiness。

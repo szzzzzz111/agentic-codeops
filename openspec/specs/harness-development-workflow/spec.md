@@ -218,6 +218,17 @@ as current truth merely because they contain old stage wording.
 系统 SHALL classify each stage as low, medium, or high risk before implementation. Risk level MUST control review
 depth and external-review expectations, but MUST NOT remove TDD, deterministic validation, or safety boundaries.
 
+For ordinary narrow stages, the agent SHALL read the full OpenSpec artifacts and present the user with a concise
+Chinese summary, risk level, touched file families, non-goals, and implementation confirmation gate. The user is not
+required to read every proposal/design/tasks/spec line unless the stage is high risk, changes public/runtime behavior,
+has fuzzy product terminology, or the user explicitly asks for full detail.
+
+For themes prone to scope inflation or roadmap confusion, including MCP, Skill, subagent, connector, runtime plugin,
+background worker, durable execution, or always-on assistant, the workflow SHOULD run a lightweight Grilling Gate before
+OpenSpec drafting. The gate SHOULD clarify canonical terms, counterexamples, runtime availability, approval/audit
+boundaries, and non-goals. It MUST remain a planning discipline and MUST NOT turn process skills into runtime
+capabilities by itself.
+
 #### Scenario: High-risk stateful stage
 
 - **WHEN** a stage changes Git/subprocess execution, persistence, permissions, patch lifecycle, or public API contracts
@@ -227,6 +238,17 @@ depth and external-review expectations, but MUST NOT remove TDD, deterministic v
 
 - **WHEN** a stage changes only development documentation, local skills, or deterministic process checks
 - **THEN** internal review and relevant structural validation are sufficient unless external review is requested
+
+#### Scenario: Narrow stage uses summary approval
+
+- **WHEN** an ordinary narrow stage reaches implementation confirmation
+- **THEN** the agent summarizes the OpenSpec baseline instead of requiring user line-by-line review
+- **AND** product, workflow, risk, or scope decisions are still escalated to the user
+
+#### Scenario: Fuzzy runtime-adjacent stage uses Grilling Gate
+
+- **WHEN** a stage uses ambiguous terms such as MCP, Skill, connector, subagent, or runtime plugin
+- **THEN** the workflow clarifies what is runtime-available, development-only, explicitly out of scope, and auditable before implementation planning
 
 ### Requirement: V24 CLI Surface Replaces Previous Promotion Slot
 
@@ -271,10 +293,20 @@ Plan-level review MUST include internal plan review, Codex independent plan revi
 severity, location, trigger, consequence, and a suggested regression test. External feedback MUST be classified as
 `fix`, `clarify`, `reject`, or `defer` against repository evidence.
 
+Code review SHALL assess layered concerns: scope, business logic, architecture boundaries, minimality, failure
+semantics, security/privacy, test adequacy, and maintainability. The agent SHALL own low-level implementation review
+by default and translate findings into user-facing Chinese summaries when the user needs to judge product behavior,
+workflow semantics, risk acceptance, or residual risk.
+
 #### Scenario: External review repeats implementation status
 
 - **WHEN** external feedback only repeats tasks or passing tests without an independent failure hypothesis
 - **THEN** it MUST NOT be treated as meaningful diversity evidence
+
+#### Scenario: User-facing review summary explains terms
+
+- **WHEN** review results include non-obvious engineering terms
+- **THEN** the summary keeps the precise term and adds a short Chinese explanation or concrete example
 
 #### Scenario: Plan reviewer reports findings
 

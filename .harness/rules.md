@@ -20,6 +20,10 @@
 3. 创建或更新一个 OpenSpec change，明确 scope、non-goals、失败行为和验收证据。
 4. 先同步 allowed files 和 review checklist，再修改 specs、tests 或 runtime。
 5. 只列出事实所有权发生变化的 durable docs，不默认更新所有文档。
+6. 普通窄阶段由 Agent 阅读完整 plan/spec 并给用户摘要确认；不要求用户逐字审阅 OpenSpec
+   artifacts。高风险、概念模糊、公开行为变化或用户要求时，再提升为完整 plan/spec review。
+7. 涉及 MCP、Skill、subagent、connector、runtime plugin、background worker 等容易误解为
+   runtime 能力的主题时，先做轻量 Grilling Gate，明确术语、反例、non-goals 和安全边界。
 
 ## TDD 与验证
 
@@ -37,6 +41,9 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 
 - 正式 review 必须晚于最后一次 runtime/test 变更，早于 archive/merge。
 - finding 应包含 severity、位置、触发条件、后果和缺失测试。
+- 审查层次包括 scope、business logic、architecture boundary、minimality、failure semantics、
+  security/privacy、test adequacy 和 maintainability。报告给用户时保留英文工程术语，并给出中文
+  解释或例子。
 - 外部 review 应寻找独立反例；不得只是重复 tasks 和测试状态。
 - 外部 finding 按 `fix / clarify / reject / defer` 分类，并以仓库事实为准。
 - `medium/high` 风险阶段默认需要独立外部 review；`low` 风险阶段按需进行。
