@@ -46,6 +46,28 @@ def test_status_answer_does_not_create_repo_local_state(tmp_path: Path) -> None:
     assert not (tmp_path / ".repopilot").exists()
 
 
+def test_status_answer_uses_passed_runtime_capability_summary(tmp_path: Path) -> None:
+    surface = AssistantControlSurface(
+        memory_manager=MemoryManager(),
+        long_task_manager=LongTaskManager(),
+    )
+
+    answer = surface.answer_status(
+        user_id="u001",
+        session_id="s001",
+        repo_path=tmp_path,
+        capability_summary="当前能力：runtime-derived test summary。",
+    )
+
+    assert "runtime-derived test summary" in answer
+    assert "基于仓库证据回答代码问题" not in answer
+    assert "V11" not in answer
+    assert "V12" not in answer
+    assert "V13" not in answer
+    assert "V16" not in answer
+    assert "V25" not in answer
+
+
 def test_status_answer_summarizes_memory_counts_without_values(tmp_path: Path) -> None:
     memory = MemoryManager()
     memory.remember(

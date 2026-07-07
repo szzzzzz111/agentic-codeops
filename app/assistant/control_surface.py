@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
+from app.harness.capabilities import (
+    default_runtime_capability_facts,
+    format_control_surface_capability_summary,
+)
 from app.longtask.manager import LongTaskManager
 from app.memory.manager import MemoryManager
 
@@ -60,6 +64,7 @@ class AssistantControlSurface:
         user_id: str,
         session_id: str,
         repo_path: str | Path,
+        capability_summary: str | None = None,
     ) -> str:
         status = self.collect_status(
             user_id=user_id,
@@ -77,9 +82,11 @@ class AssistantControlSurface:
             else "状态可用。"
         )
         tasks = "；".join(status.recent_tasks) if status.recent_tasks else "无"
+        current_capabilities = capability_summary or format_control_surface_capability_summary(
+            default_runtime_capability_facts()
+        )
         return (
-            "当前能力：可以基于仓库证据回答代码问题，管理明确 Memory 指令，"
-            "管理 repo-local Long Task，并保持只读权限、审批和审计边界。\n"
+            f"{current_capabilities}\n"
             "当前状态："
             f"{unavailable_note} "
             f"Memory PREF={status.pref_count}，LTM={status.ltm_count}，"

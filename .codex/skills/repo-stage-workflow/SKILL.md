@@ -45,8 +45,9 @@ discipline skills own how the approved baseline is implemented and verified.
    independent plan review, and OpenCode independent plan review when required.
    For ordinary narrow stages, the agent reads the full proposal/design/tasks/spec
    and gives the user a concise Chinese summary plus one implementation
-   confirmation gate; do not require the user to review every artifact line by
-   default.
+   confirmation gate. Calibrate the human plan-review depth using the
+   "Human Review Depth" section below; do not require the user to review every
+   artifact line by default.
 5. Use `openspec-apply-change` plus the relevant Superpowers execution skills
    for implementation discipline: read the approved baseline, isolate work when
    needed, write RED tests first for behavior changes, keep changes minimal, and
@@ -55,6 +56,8 @@ discipline skills own how the approved baseline is implemented and verified.
    repository's full verification after runtime or tests change.
 7. Use `repo-stage-review-loop` after the final implementation change for final implementation review.
    Review requirements, code, tests, safety boundaries, and changed dependencies.
+   Prepare a concise human review packet before archive/merge review when the
+   stage is L2 or L3, or when the user asks for one.
 8. When external review is requested or the risk level requires it, give the
    reviewer an adversarial brief. This applies to plan-level review and final
    implementation review as separate gates. Use `external-review-triage` to
@@ -68,6 +71,61 @@ discipline skills own how the approved baseline is implemented and verified.
 11. Merge and push only with user authorization. Then use
     `repo-stage-handoff` once to record the stable next-session context and
     update only documents whose owned facts actually changed.
+
+## Human Review Depth
+
+Choose the human review depth by risk trigger, not by line count alone. Small
+diffs can still be high-risk when they touch public contracts, mutation,
+approval, audit, sandbox, persistence, provider runtime, network behavior, or
+new runtime capability boundaries.
+
+### L1: Small / Low-Risk
+
+Use L1 for wording, test naming, internal helpers, local cleanup, or docs that
+do not change public contracts, mutation paths, routing semantics, permission,
+approval, audit, persistence, provider runtime, or user-visible runtime
+behavior.
+
+Before implementation, give the user a concise summary, decision points,
+non-goals, and planned test coverage. Do not ask for line-by-line review of
+`proposal.md`, `design.md`, `tasks.md`, or spec deltas unless the user asks or
+scope is unclear.
+
+After implementation, point the user to the changed diff and the tests that
+prove the original boundary still holds.
+
+### L2: Medium / User-Visible Or Routing-Sensitive
+
+Use L2 when the stage changes user-visible behavior, status wording, routing,
+`ToolRegistry`/tool metadata interpretation, Assistant Control Surface wording,
+or other control-plane behavior, while avoiding new permission, persistence,
+public API field, provider runtime, network, or mutation-policy changes.
+
+Before implementation, summarize the stage and ask the user to review the
+decision-level parts only: `design.md` Goals/Non-Goals, Decisions,
+Alternatives, Risks/Trade-offs, and `tasks.md` test coverage. The agent still
+owns low-level implementation choices.
+
+After implementation, provide a human review packet with changed file map,
+behavior changes, focused and full verification evidence, residual risks, and
+the key code paths the user should inspect.
+
+### L3: Large / High-Risk
+
+Use L3 for new runtime APIs, persistence or audit models, permission/approval
+or sandbox changes, provider runtime changes, network dependencies, dynamic
+tool registration, real MCP/Skill/connector/subagent execution, durable
+execution loops, or any stage where failure behavior materially changes user
+risk.
+
+Before implementation, ask the user to review full `design.md`, full
+`tasks.md`, and the spec delta MUST/SHALL scenarios. When useful, run an
+adversarial review focused on counterexamples, non-goals, permission boundary,
+failure behavior, and missing tests before implementation starts.
+
+After implementation, provide the human review packet, final review findings,
+test and verification evidence, and the archive/merge risk summary. Do not
+archive or merge while blocking human-review questions remain open.
 
 ## Stop Conditions
 

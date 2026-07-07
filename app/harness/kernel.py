@@ -13,6 +13,16 @@ from app.audit.manager import (
 )
 from app.answering.grounded_answer import GroundedAnswerGenerator
 from app.assistant.control_surface import AssistantControlSurface, is_assistant_status_request
+from app.harness.capabilities import (
+    PATCH_APPLY_TOOL,
+    REPO_RAG_TOOL,
+    VERIFICATION_RUN_TOOL,
+    WORKTREE_CREATE_TOOL,
+    WORKTREE_DISPOSE_TOOL,
+    derive_runtime_capability_facts,
+    format_capability_status_answer,
+    format_control_surface_capability_summary,
+)
 from app.longtask.manager import LongTaskManager
 from app.longtask.planner import LongTaskPlanner
 from app.memory.manager import MemoryManager
@@ -50,11 +60,6 @@ WORKTREE_INVENTORY_PATTERN = re.compile(
     re.IGNORECASE,
 )
 ALLOWED_TOOL_RISK = "low"
-REPO_RAG_TOOL = "repo_rag"
-PATCH_APPLY_TOOL = "patch_apply"
-WORKTREE_CREATE_TOOL = "worktree_create"
-WORKTREE_DISPOSE_TOOL = "worktree_dispose"
-VERIFICATION_RUN_TOOL = "verification_run"
 _ROUTING_STOPWORDS = {
     "hello",
     "hi",
@@ -78,38 +83,6 @@ DENY_ANSWER = "仓库工具未通过权限策略校验，因此本次没有执�
 ASK_ANSWER = "工具调用需要人工审批，因此本次没有执行仓库工具。"
 NO_TOOL_ANSWER = "未提取到可搜索关键词，因此没有调用仓库工具。"
 CAPABILITY_STATUS_KEYWORD = "capability_status"
-V11_CAPABILITY_STATUS_ANSWER = (
-    "V11 提供 Grounded Answer 和 Model Provider Boundary；"
-    "默认 fake provider 保持离线可验证，显式配置后可使用 OpenAI-compatible provider；"
-    "V12 提供 deterministic query rewrite 和 rerank；"
-    "V13 提供 SQLite-backed Memory（PREF/LTM 和进程内 STM）；"
-    "当前仍未实现真实 LLM rewrite/rerank、向量 memory、自动 memory 总结、"
-    "跨 repo 智能召回或 context compression。"
-)
-V12_CAPABILITY_STATUS_ANSWER = (
-    "V12 提供 deterministic query rewrite 和 rerank；"
-    "V13 已实现 Memory；"
-    "当前仍未实现真实 LLM rewrite/rerank、向量 memory、自动 memory 总结、"
-    "跨 repo 智能召回或 context compression。"
-)
-V13_CAPABILITY_STATUS_ANSWER = (
-    "V13 提供 SQLite-backed PREF/LTM 和进程内 STM；"
-    "支持明确 memory 指令和内部 memory audit；"
-    "当前未实现向量记忆、自动模型总结、跨 repo 智能召回或 context compression。"
-)
-VECTOR_CAPABILITY_STATUS_ANSWER = (
-    "V9 提供轻量 embedding retrieval 和 hybrid search；"
-    "当前未默认接入 Milvus、Elasticsearch、PgVector、Qdrant 或真实外部 embedding 服务。"
-)
-V16_CAPABILITY_STATUS_ANSWER = (
-    "V16 提供 Safe Patch Authoring：可基于仓库证据生成 patch proposal，"
-    "并在明确确认后受控 apply；V17 提供独立 Verification Runner；"
-    "V18 提供明确组合确认下的 Patch + Verify Loop；"
-    "V19 提供 Persistent Audit / Recovery；"
-    "V20-V23 提供隔离 worktree 生命周期，包括创建、检查、重验证和丢弃/对账；"
-    "V25 提供精确确认后的 Verified Patch Promotion；"
-    "当前未实现自动 commit/push，默认不生成真实 diff。"
-)
 
 
 @dataclass(frozen=True)
@@ -274,6 +247,9 @@ class ToolRegistry:
 
     def get(self, name: str) -> ToolSpec | None:
         return self._specs.get(name)
+
+    def list_specs(self) -> tuple[ToolSpec, ...]:
+        return tuple(self._specs.values())
 
 
 class PermissionPolicy:
@@ -735,10 +711,16 @@ class AgentLoop:
             )
 
         if is_assistant_status_request(request.message):
+            capability_facts = derive_runtime_capability_facts(
+                self.tool_registry.list_specs()
+            )
             answer = self.assistant_control_surface.answer_status(
                 user_id=request.user_id,
                 session_id=request.session_id,
                 repo_path=request.repo_path,
+                capability_summary=format_control_surface_capability_summary(
+                    capability_facts
+                ),
             )
             return AgentLoopResult(
                 answer=answer,
@@ -855,8 +837,14 @@ class AgentLoop:
         ]
 
         if decision.route == "capability_status":
+            capability_facts = derive_runtime_capability_facts(
+                self.tool_registry.list_specs()
+            )
             return AgentLoopResult(
-                answer=_capability_status_answer(request.message),
+                answer=format_capability_status_answer(
+                    request.message,
+                    capability_facts,
+                ),
                 trace_events_internal=trace_events,
             )
 
@@ -2733,44 +2721,6 @@ def _asks_about_unimplemented_vector_stack(message: str) -> bool:
             "has",
         )
     )
-
-
-def _asks_about_unimplemented_v10_stack(message: str) -> bool:
-    lower = message.lower()
-    return any(
-        term in lower
-        for term in (
-            "grounded answer",
-            "model provider",
-            "rerank",
-            "context compression",
-            "query rewrite",
-        )
-    )
-
-
-def _capability_status_answer(message: str) -> str:
-    lower = message.lower()
-    asks_patch = "patch" in lower or "补丁" in message
-    asks_memory = "memory" in lower or "记忆" in message
-    asks_rewrite_or_rerank = any(term in lower for term in ("query rewrite", "rerank"))
-    asks_vector_stack = any(
-        term in lower
-        for term in ("embedding", "milvus", "elasticsearch", "pgvector", "qdrant", "vector")
-    )
-    if asks_patch:
-        return V16_CAPABILITY_STATUS_ANSWER
-    if asks_memory and asks_vector_stack:
-        return f"{VECTOR_CAPABILITY_STATUS_ANSWER}；{V13_CAPABILITY_STATUS_ANSWER}"
-    if asks_memory and asks_rewrite_or_rerank:
-        return f"{V12_CAPABILITY_STATUS_ANSWER}；{V13_CAPABILITY_STATUS_ANSWER}"
-    if asks_memory:
-        return V13_CAPABILITY_STATUS_ANSWER
-    if asks_rewrite_or_rerank:
-        return V12_CAPABILITY_STATUS_ANSWER
-    if _asks_about_unimplemented_v10_stack(message):
-        return V11_CAPABILITY_STATUS_ANSWER
-    return VECTOR_CAPABILITY_STATUS_ANSWER
 
 
 def _unique_related_files(results: list[dict[str, str | int]]) -> list[str]:

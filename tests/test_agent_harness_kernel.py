@@ -315,6 +315,23 @@ def test_tool_registry_only_stores_metadata_and_does_not_decide_policy() -> None
     assert not hasattr(registry, "rejection_reason")
 
 
+def test_tool_registry_exposes_read_only_spec_snapshot() -> None:
+    registry = ToolRegistry.with_default_tools()
+
+    specs = registry.list_specs()
+
+    assert isinstance(specs, tuple)
+    assert {spec.name for spec in specs} >= {
+        "repo_rag",
+        "patch_apply",
+        "worktree_create",
+        "worktree_dispose",
+        "verification_run",
+    }
+    assert all(isinstance(spec, ToolSpec) for spec in specs)
+    assert not hasattr(registry, "dispatch")
+
+
 def test_permission_policy_allows_low_risk_read_only_tool() -> None:
     decision = PermissionPolicy().decide(
         ToolSpec(
@@ -1271,10 +1288,7 @@ def test_agent_loop_worktree_status_query_uses_v21_safe_inspection(tmp_path: Pat
 def test_agent_loop_reports_current_patch_capability_without_repo_search(
     tmp_path: Path,
 ) -> None:
-    loop = AgentLoop(
-        tool_registry=ToolRegistry(),
-        tool_executor=FailingSearchExecutor(),
-    )
+    loop = AgentLoop(tool_executor=FailingSearchExecutor())
 
     result = loop.run(
         AgentLoopRequest(
@@ -1701,13 +1715,111 @@ def test_agent_loop_reports_v13_memory_capability_status_without_repo_search(
     assert result.tool_calls == []
 
 
-def test_agent_loop_answers_english_capability_status_without_repo_search(
+def test_agent_loop_patch_capability_status_uses_active_tool_registry(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(
+        tool_registry=ToolRegistry(
+            [
+                ToolSpec(
+                    name="repo_rag",
+                    description="Search code in a repository.",
+                    read_only=True,
+                    risk="low",
+                )
+            ]
+        ),
+        tool_executor=FailingSearchExecutor(),
+    )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="is patch supported?",
+            repo_path=str(tmp_path),
+            trace_id="trace_patch_missing_primitives",
+        )
+    )
+
+    assert "patch_apply 未注册" in result.answer
+    assert "verification_run 未注册" in result.answer
+    assert "worktree_create 未注册" in result.answer
+    assert "worktree_dispose 未注册" in result.answer
+    assert "受控 apply" not in result.answer
+    assert "独立 Verification Runner" not in result.answer
+    assert "Verified Patch Promotion" not in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "request_routed",
+    ]
+
+
+def test_agent_loop_default_patch_capability_status_uses_registered_primitives(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=FailingSearchExecutor())
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="is patch supported?",
+            repo_path=str(tmp_path),
+            trace_id="trace_patch_default_primitives",
+        )
+    )
+
+    assert "V16 提供 Safe Patch Authoring" in result.answer
+    assert "V17 提供独立 Verification Runner" in result.answer
+    assert "V18 提供明确组合确认下的 Patch + Verify Loop" in result.answer
+    assert "V19 提供 Persistent Audit / Recovery" in result.answer
+    assert "V20-V23 提供隔离 worktree 生命周期" in result.answer
+    assert "V25 提供精确确认后的 Verified Patch Promotion" in result.answer
+    assert "branch/PR automation" in result.answer
+    assert "connector" in result.answer
+    assert "background retry" in result.answer
+    assert "runtime subagent" in result.answer
+    assert "当前未实现 Persistent Audit / Recovery" not in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+
+
+def test_agent_loop_assistant_status_uses_active_tool_registry(
     tmp_path: Path,
 ) -> None:
     loop = AgentLoop(
         tool_registry=ToolRegistry(),
-        tool_executor=FailingSearchExecutor(),
+        tool_executor=FailingAssistantStatusExecutor(),
     )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="assistant status",
+            repo_path=str(tmp_path),
+            trace_id="trace_assistant_status_empty_registry",
+        )
+    )
+
+    assert "repo_rag 未注册" in result.answer
+    assert "基于仓库证据回答代码问题" not in result.answer
+    assert "V11" not in result.answer
+    assert "V12" not in result.answer
+    assert "V13" not in result.answer
+    assert "V16" not in result.answer
+    assert "V25" not in result.answer
+    assert "MCP" not in result.answer
+    assert "Skill execution" not in result.answer
+    assert "connector" not in result.answer
+    assert "runtime subagent" not in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "assistant_control_surface",
+    ]
+
+
+def test_agent_loop_answers_english_capability_status_without_repo_search(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(tool_executor=FailingSearchExecutor())
 
     result = loop.run(
         AgentLoopRequest(
@@ -1724,6 +1836,31 @@ def test_agent_loop_answers_english_capability_status_without_repo_search(
     assert "当前未实现 query rewrite、rerank、memory" not in result.answer
     assert "真实 LLM rewrite/rerank" in result.answer
     assert "context compression" in result.answer
+    assert result.related_files == []
+    assert result.tool_calls == []
+    assert [event.event_type for event in result.trace_events_internal] == [
+        "request_routed",
+    ]
+
+
+def test_agent_loop_grounded_answer_status_uses_active_repo_rag_primitive(
+    tmp_path: Path,
+) -> None:
+    loop = AgentLoop(
+        tool_registry=ToolRegistry(),
+        tool_executor=FailingSearchExecutor(),
+    )
+
+    result = loop.run(
+        AgentLoopRequest(
+            message="Does RepoPilot support grounded answer or model provider?",
+            repo_path=str(tmp_path),
+            trace_id="trace_grounded_missing_repo_rag",
+        )
+    )
+
+    assert "repo_rag 未注册" in result.answer
+    assert "V11 提供 Grounded Answer 和 Model Provider Boundary" not in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
     assert [event.event_type for event in result.trace_events_internal] == [
@@ -1794,7 +1931,8 @@ def test_capability_status_question_does_not_require_search_tool_registration(
         )
     )
 
-    assert "未默认接入" in result.answer
+    assert "repo_rag 未注册" in result.answer
+    assert "V9 提供轻量 embedding retrieval 和 hybrid search" not in result.answer
     assert result.related_files == []
     assert result.tool_calls == []
     assert [event.event_type for event in result.trace_events_internal] == [

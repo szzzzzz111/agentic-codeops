@@ -19,6 +19,46 @@
 - 已同步 `docs/AGENT_RULES.md`、`.harness/rules.md`、repo-local `repo-stage-workflow` /
   `repo-stage-review-loop` skills，以及长期 `harness-development-workflow` spec。OpenSpec、skills、
   MCP 和 plugins 仍是开发流程参考，不能因此写成 RepoPilot runtime 能力。
+- 2026-07-05 追加 human review depth（人工审查深度）规则到 repo-local
+  `repo-stage-workflow` skill：L1 小改动看摘要/拍板点/non-goals/测试项并在实现后审 diff；
+  L2 用户可见或 routing-sensitive 改动要求实现前扫 `design.md` 决策/风险和 `tasks.md`
+  测试项，实现后提供 human review packet；L3 高风险改动要求完整审 `design.md`、
+  `tasks.md` 和 spec MUST/SHALL 场景。该调整仅改变协作流程，不改变 runtime 能力。
+
+## Runtime-Derived Capability Status（archived，2026-07-06）
+
+- OpenSpec change：`derive-capability-status-from-runtime` 已归档到
+  `openspec/changes/archive/2026-07-06-derive-capability-status-from-runtime/`；风险级别：medium。
+  Scope 是让 capability-status（能力状态）和 Assistant Control Surface（助手控制面）的当前能力摘要
+  从 active `ToolRegistry` backing primitives（支撑运行时原语）和固定安全边界派生，避免静态文案漂移。
+- 已实现最小内部 adapter：新增 `app/harness/capabilities.py`，由 `ToolRegistry.list_specs()`
+  的只读 `ToolSpec` snapshot 派生 structured runtime capability facts；`ToolRegistry`
+  仍只存元数据，不 dispatch，不负责用户文案。
+- `AgentLoop` 的 capability-status 路径现在通过 adapter 生成回答；当 custom `ToolRegistry`
+  缺少 `patch_apply`、`verification_run`、`worktree_create` 或 `worktree_dispose` 时，不再宣称对应
+  patch execution path 当前可用。默认 registry 仍报告 Safe Patch Authoring、Verification Runner、
+  Patch + Verify、Persistent Audit / Recovery、worktree lifecycle 和 Verified Patch Promotion。
+- Assistant Control Surface 现在接受 `AgentLoop` 显式传入的 active registry-derived capability summary；
+  `AgentLoop(tool_registry=ToolRegistry(...))` 处理 `assistant status` 时不会回退到 default registry。
+  控制面仍保持简短状态句，不输出 V11/V12/V13/V16/V25 阶段 marker，不新增 `/chat` 字段。
+- 当前验证 evidence：RED focused tests 初次失败 4 项，覆盖缺少 `ToolRegistry.list_specs()`、
+  capability-status 无视 custom registry、Assistant Control Surface 无视 active registry summary、
+  `answer_status()` 不接受 injected summary。Internal final review 又发现 repo RAG backed status
+  在 `repo_rag` 缺失时仍宣称 V11/V9 当前可用，已补 regression 并 fail-closed 到 `repo_rag 未注册`。
+  OpenCode final review 发现 default patch answer 漏列 spec 要求的 `branch/PR automation`、`connector`、
+  `background retry`、`runtime subagent` non-goals，已补 answer 和 test；focused re-review 确认 finding closed，
+  no new in-scope findings。GREEN 后
+  `pytest tests/test_agent_harness_kernel.py tests/test_assistant_control_surface.py -q`
+  为 77 passed；`pytest tests/test_chat_api.py -q` 为 22 passed；`ruff check .` passed；
+  `openspec validate derive-capability-status-from-runtime --strict` passed；
+  `openspec validate --all` 为 23 passed、0 failed。Full `scripts/verify.ps1` 通过：pytest
+  525 passed、1 skipped；ruff、stage docs scan、skill eval structure scan passed。`git diff --check`
+  passed，仅 CRLF normalization warnings。Final implementation review 和 Focused Stage Debt Sweep
+  未发现剩余 blocking debt。Archive 已同步长期 `agent-loop-tool-execution` 和
+  `assistant-control-surface` specs；archive-after `openspec list` 为 No active changes found；
+  `openspec validate --all` 为 22 passed、0 failed；archive-after full `scripts/verify.ps1`
+  通过，pytest 525 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；
+  archive-after `git diff --check` 通过，仅有 CRLF normalization warnings。
 
 ## Control Routing And Test Naming Cleanup（archived，2026-07-03）
 
@@ -1367,8 +1407,9 @@ LLMGateway 设计备忘：
 
 ## 已知剩余代码债
 
-- 当前记录的小代码债已由 archived change `cleanup-control-routing-and-test-names` 处理；final review
-  与 Stage Debt Sweep 未发现新增 blocking debt。若后续发现新债，再按真实证据补充。
+- 当前记录的小代码债已由 archived change `cleanup-control-routing-and-test-names` 处理；archived
+  change `derive-capability-status-from-runtime` 已完成 final review 与 Stage Debt Sweep，未发现新的
+  blocking debt。若后续发现新债，再按真实证据补充。
 
 ## 下一步建议
 
@@ -1376,7 +1417,7 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：`update-repo-stage-workflow-skill` 已完成并归档；当前不启动新的 runtime stage。
+- 当前建议：先完成 archive-after verification，再由用户决定是否 commit/merge/push 或启动新的 runtime stage。
 - 近期路线：V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 CLI
   Capability Surface / Demo-ready Product Surface 与 V25 Verified Patch Promotion 均已完成；
   当前不启动新的 runtime stage。
