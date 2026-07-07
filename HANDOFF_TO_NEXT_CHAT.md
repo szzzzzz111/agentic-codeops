@@ -2,14 +2,14 @@
 
 ## 当前基线
 
-- 当前分支：`main`。
+- 当前分支：`main`，已推送到 `agentic-codeops/main`。
 - Active OpenSpec change：无；继续前运行 `openspec list` 刷新确认。
 - 最近归档 OpenSpec change：`derive-capability-status-from-runtime`，归档到
   `openspec/changes/archive/2026-07-06-derive-capability-status-from-runtime/`。
 - 当前 runtime 阶段实现、final review、Focused Stage Debt Sweep 和 full verify 已完成：
   capability-status（能力状态）和 Assistant Control Surface（助手控制面）已接入
   runtime-derived capability facts（从真实运行时工具派生的能力事实）；OpenSpec archive 已同步长期 specs，
-  archive-after verification 已通过，当前等待后续 commit/merge/push 授权。
+  archive-after verification 已通过，implementation/archive commit 已推送。
 
 建议先运行：
 
@@ -66,8 +66,8 @@ openspec validate --all
 
 ## 下一步
 
-- 下一步由用户决定是否 commit/merge/push，或在当前归档状态上启动新的 runtime stage。
-- 新阶段只能在用户明确要求后启动；commit、merge、push 也都需要用户明确授权。
+- 下一步由用户决定是否启动新的 runtime stage。
+- 新阶段只能在用户明确要求后启动；commit、merge、push 仍需要用户明确授权。
 - OpenSpec、skills、MCP、plugins 仍是开发流程或外部协作范式；除非新阶段明确实现，不得写成
   RepoPilot runtime 能力。
 

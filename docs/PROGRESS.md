@@ -58,7 +58,8 @@
   `assistant-control-surface` specs；archive-after `openspec list` 为 No active changes found；
   `openspec validate --all` 为 22 passed、0 failed；archive-after full `scripts/verify.ps1`
   通过，pytest 525 passed、1 skipped，ruff、stage docs scan、skill eval structure scan 均通过；
-  archive-after `git diff --check` 通过，仅有 CRLF normalization warnings。
+  archive-after `git diff --check` 通过，仅有 CRLF normalization warnings。Implementation/archive
+  commit `ec301b9` 已推送到 `agentic-codeops/main`。
 
 ## Control Routing And Test Naming Cleanup（archived，2026-07-03）
 
