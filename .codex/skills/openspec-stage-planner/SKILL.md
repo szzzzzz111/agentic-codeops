@@ -20,16 +20,33 @@ Harness owns the writable and review boundary.
 5. Update `.harness/allowed_files.md` and `.harness/review_checklist.md` before
    implementation.
 6. Name only the durable docs whose owned facts will actually change.
-7. Define the internal review target and whether Codex independent plan review
-   and OpenCode independent plan review are required. Medium/high stages require
-   both before implementation.
+7. Define the internal review target and the required independent slots.
+   Medium/high stages require internal plan review plus two independent plan-review slots
+   before implementation; reviewer providers are adapters,
+   not gate authorities.
 8. Complete internal plan review of proposal, design, tasks, spec deltas, test
    plan, and Harness boundaries against each other. Fix contradictions before
    validation.
-9. For required external plan review, collect Codex independent plan review and
-   OpenCode independent plan review findings or explicit no-findings conclusions,
-   then triage every finding before implementation.
-10. Validate the change, summarize stage-level decisions in plain language, and
+9. For each first-round independent slot, use a reviewer instance distinct from
+   the implementer and other slots, give it the same frozen packet, prevent
+   access to other first-round conclusions, and require no inherited context.
+   Codex may use a new empty-context task or a subagent with
+   `fork_turns="none"`; inherited or unknown context keeps the gate open.
+10. Triage every finding before implementation. Same-slot remediation re-review
+   may reuse the original reviewer, but every required slot must refresh its
+   final receipt against the same final content-addressed baseline.
+11. For each required independent plan-review gate, store the actual receipt set
+   at `.harness/reviews/<stage-id>/plan/review-set.json` and run the validator
+   with the risk-contract count. Medium/high plan review uses `--required-slots 2`;
+   a low-risk stage uses its explicit checklist-required slot count, and a
+   low-risk stage with no independent-review requirement does not manufacture a
+   receipt set. The command is
+   `python scripts/validate_independent_review.py --project-root . --receipt-set .harness/reviews/<stage-id>/plan/review-set.json --expected-stage <stage-id> --expected-phase plan --required-slots <count>`.
+   Missing receipts, skipped validation, or nonzero exit keeps a
+   required gate open. A zero exit proves mechanical consistency only and keeps
+   `gate_ready=false`; separately consume host-native dispatch provenance and
+   pre-change-authority activation-sequence checks before counting slots.
+12. Validate the change, summarize stage-level decisions in plain language, and
    stop at the implementation confirmation gate.
 
 ## Scope Guards
@@ -39,9 +56,15 @@ Harness owns the writable and review boundary.
 - Do not claim roadmap capabilities are implemented.
 - Do not make every durable document mandatory by default.
 - Planning validation proves artifact structure, not design quality.
-- OpenCode plan review should reuse a relevant existing review session when
-  possible; terminal timeout is not a verdict until the session is inspected for
-  final assistant review text.
+- OpenCode first-round review uses a new/proven-isolated session. Session reuse
+  is limited to same-slot remediation re-review or recovering the same timed-out
+  attempt; timeout is not a verdict until final assistant review text is checked.
+- A task/subagent used here belongs to the development workflow, not RepoPilot
+  runtime. Do not claim runtime subagent support.
+- A gate introduced by the current change activates only under the pre-change
+  process authority after implementation, negative tests, and workflow wiring.
+  The repository validator may bind the activation record hash but cannot prove
+  chronology; do not manufacture retroactive plan PASS.
 - Ask the human partner about intent, non-goals, and sequencing, not line-level
   code review.
 

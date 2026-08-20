@@ -1,0 +1,97 @@
+{
+  "schema_version": "repopilot.independent_review_packet/v1",
+  "stage_id": "generalize-independent-review-provider",
+  "phase": "implementation",
+  "baseline_note": "Frozen non-self-referential implementation/spec/skill/test/docs packet. Dynamic tasks/checklist and review evidence are excluded because they are updated only after review.",
+  "artifacts": [
+    {
+      "path": ".codex/skills/openspec-stage-planner/SKILL.md",
+      "sha256": "6a9fd2705f99226d24ca68054b940898b9bcde955189078d7e43438a5dc1894b"
+    },
+    {
+      "path": ".codex/skills/repo-stage-review-loop/SKILL.md",
+      "sha256": "3e620e85b17d667eb2ccb1ada16b97703bb7b50892f3578648446befff11266a"
+    },
+    {
+      "path": ".codex/skills/repo-stage-review-loop/references/evals.md",
+      "sha256": "d4d614e5956bcdda84fb19210d46fd1d48d060471772fd617c248042663b76c5"
+    },
+    {
+      "path": ".codex/skills/repo-stage-workflow/SKILL.md",
+      "sha256": "2c676fe5911361813f1def6ebb67a130b3c85e8d207ec8a0abe08f5974f3a283"
+    },
+    {
+      "path": ".codex/skills/repo-stage-workflow/references/evals.md",
+      "sha256": "91c13ab5fff646a0072f3d5370f2239632fce87e6c579faee31e8e7421e5702a"
+    },
+    {
+      "path": ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+      "sha256": "38c3bf7c507e4051ca8a2d82beb6379a3c116c5da2b3138803db53a535deafda"
+    },
+    {
+      "path": ".harness/allowed_files.md",
+      "sha256": "e6f33339785556b80e44ff43926f360e6692a32fff5584ad63d8f5b5c7ca9690"
+    },
+    {
+      "path": ".harness/rules.md",
+      "sha256": "6221a1f0ddb336e27bcb47e77750acea0ef8a17dac61b96c5bd88bd156ea655e"
+    },
+    {
+      "path": ".harness/templates/independent-review-receipt.template.json",
+      "sha256": "d1e9f5a3e5edc3860b2e3605df209e28d03174bd07ac10d4bfaf688b5998c126"
+    },
+    {
+      "path": ".opencode/skills/openspec-plan-review/SKILL.md",
+      "sha256": "fa634896d87b6179cdc78c207836eeb579434cf803673859b2ddad7f8bfe808d"
+    },
+    {
+      "path": "HANDOFF_TO_NEXT_CHAT.md",
+      "sha256": "b1399d8407d16657b4e4583b130784d0c91948f638759ed97b08104437f1eb1f"
+    },
+    {
+      "path": "docs/AGENT_RULES.md",
+      "sha256": "0b05431437f3f22b7c9130eda55815c4343427079cc931470389e0d385b1226e"
+    },
+    {
+      "path": "docs/PROGRESS.md",
+      "sha256": "1f32352000c428b434bd88c76bdf264c68dc3f61dadf2f345174d45e8f48bf81"
+    },
+    {
+      "path": "openspec/changes/generalize-independent-review-provider/.openspec.yaml",
+      "sha256": "ec0accf47d569b8f60d01e96573f6813f1f2b7d5f135a60e3fc07159f84e74c8"
+    },
+    {
+      "path": "openspec/changes/generalize-independent-review-provider/design.md",
+      "sha256": "b9db989092f5b1e75f9c9919b8f8ab8e458c2368c00f60be91a88efc2b455268"
+    },
+    {
+      "path": "openspec/changes/generalize-independent-review-provider/plan-review.md",
+      "sha256": "eee07e846ca916abcfa0d2485ee1c731bb0d9f76357493f143a45e8dbffabbdc"
+    },
+    {
+      "path": "openspec/changes/generalize-independent-review-provider/proposal.md",
+      "sha256": "016eaf3462dd467cd682c5fa2c0711b0577264be88ab03bc1c29ee6766e71212"
+    },
+    {
+      "path": "openspec/changes/generalize-independent-review-provider/specs/harness-development-workflow/spec.md",
+      "sha256": "12e1ef5cee428f59571c949e84fcf12e1915fa958ba53b6372f040aea11f6f9c"
+    },
+    {
+      "path": "openspec/specs/harness-development-workflow/spec.md",
+      "sha256": "2442e75a40f725936c83309472b184b35d600e4f1d1fcb9219b2c93e003e3e1d"
+    },
+    {
+      "path": "scripts/validate_independent_review.py",
+      "sha256": "681cf30e68545c6ef8046a27bebccf8ecaf4630c20cbfe6d4e69f0206df335b3"
+    },
+    {
+      "path": "tests/test_cli.py",
+      "sha256": "62a1c69e07c8d8cbe4f0d0984fe9eb9a3f5118466c035f157f536614fe2959eb"
+    },
+    {
+      "path": "tests/test_independent_review_validation.py",
+      "sha256": "617a04fde187618bcb69e96e4d62306999609850aaf42fa98dcec9f1f1168a8b"
+    }
+  ],
+  "packet_sha256": "44d2dbd713a00442785b221bf8ec1a15729fe37f1cbb8204cf8186417184d234"
+}

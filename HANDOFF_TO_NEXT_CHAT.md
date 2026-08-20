@@ -2,16 +2,14 @@
 
 ## 当前基线
 
-- 当前分支：`main`，已推送到 `agentic-codeops/main`。
-- Active OpenSpec change：无；继续前运行 `openspec list` 刷新确认。
-- 最近归档 OpenSpec change：`derive-capability-status-from-runtime`，归档到
-  `openspec/changes/archive/2026-07-06-derive-capability-status-from-runtime/`。
-- 当前 runtime 阶段实现、final review、Focused Stage Debt Sweep 和 full verify 已完成：
-  capability-status（能力状态）和 Assistant Control Surface（助手控制面）已接入
-  runtime-derived capability facts（从真实运行时工具派生的能力事实）；OpenSpec archive 已同步长期 specs，
-  archive-after verification 已通过，implementation/archive commit 已推送。
+- 当前隔离分支：`codex/independent-review-provider`；工作目录：
+  `/private/tmp/agentic-codeops-independent-review.H3nBHU`。
+- Active OpenSpec change：`generalize-independent-review-provider`，当前未 archive。
+- 本阶段从稳定 `main` 基线 `17010b6` 建立隔离 worktree；原
+  `/Users/chelaile/agentic-codeops` 的 storage/Harness 未提交修改不属于本阶段，禁止覆盖或带入。
+- 本阶段没有执行 commit、merge 或 push，也未获得这些动作的授权。
 
-建议先运行：
+继续前先运行：
 
 ```powershell
 git status --short --branch
@@ -20,60 +18,61 @@ openspec list
 openspec validate --all
 ```
 
-## 最新流程规则
+## Active OpenSpec change
 
-- 普通窄阶段使用 summary approval（摘要确认）：Agent 阅读完整 OpenSpec
-  proposal/design/tasks/spec，并向用户输出中文高信号摘要、风险级别、touched file families、
-  non-goals 和 implementation confirmation gate；用户不需要逐字审 OpenSpec artifacts。
-- 高风险、公开/runtime 行为变化、术语模糊或用户明确要求时，提升为更完整的 plan/spec review。
-- MCP、Skill、subagent、connector、runtime plugin、background worker、durable execution、
-  always-on assistant 等容易膨胀或误导的主题，应在 OpenSpec 落笔前做轻量 Grilling Gate
-  （需求拷问关），明确 canonical terms、counterexamples、runtime availability、
-  approval/audit boundary 和 non-goals。
-- Code review（代码审查）按分层模式执行：scope、business logic、architecture boundary、
-  minimality、failure semantics、security/privacy、test adequacy、maintainability。
-  Agent 默认负责底层实现、测试、安全和维护性审查，并把结论翻译成用户可判断的中文摘要；
-  用户主要确认方向、边界、行为语义、风险接受和残余风险。
-- Human review depth（人工审查深度）按风险触发，不只按 diff 行数：L1 小改动看摘要/拍板点/
-  non-goals/测试项并在实现后审 diff；L2 用户可见或 routing-sensitive 改动看 `design.md`
-  决策/风险和 `tasks.md` 测试项，实现后需要 human review packet；L3 高风险改动完整审
-  `design.md`、`tasks.md` 和 spec MUST/SHALL 场景，必要时先做反例审查。
+`generalize-independent-review-provider` 把开发工作流中的独立评审从固定 Agent 品牌改成可验证的 reviewer
+slots，同时保持评审强度：
+
+- Medium/high plan review 仍为 internal review 加两个 independent plan-review slots。
+- Final implementation review 的 required slot 数量继续由阶段风险合同决定。
+- Codex 只有通过新的 empty-context task 或宿主明确记录 `fork_turns="none"` 的 subagent 才能替代任一 slot；
+  inherited/unknown context 不计数。
+- 首轮 reviewer 彼此盲审同一个冻结 packet；same-slot remediation re-review 可以复用原 reviewer，但所有
+  required slots 最终必须绑定同一个 content-addressed baseline。
+- OpenCode skill 仍保留为 adapter；首轮必须新建/证明隔离 session，session reuse 只用于同一 slot 的修复复审
+  或恢复同一次 timeout。
+- 这些 task/subagent 是 development workflow 手段，不是 RepoPilot runtime capability。
 
 ## 当前实现状态
 
-- 新增 `app/harness/capabilities.py`：内部 capability adapter，从 `ToolRegistry.list_specs()`
-  派生 structured runtime capability facts。
-- `ToolRegistry` 新增只读 `list_specs()`；仍不 dispatch、不负责 policy、不负责用户文案。
-- `AgentLoop` capability-status 路径已改为使用 active registry-derived facts；custom registry 缺少
-  `patch_apply`、`verification_run`、`worktree_create` 或 `worktree_dispose` 时，不宣称对应 execution
-  path 当前可用。
-- `AssistantControlSurface.answer_status()` 支持 injected `capability_summary`；`AgentLoop` 调用时传入
-  同一 active registry-derived summary，避免回退到 default registry。
-- 已跑验证：RED focused tests 初次失败 4 项；GREEN 后
-  `pytest tests/test_agent_harness_kernel.py tests/test_assistant_control_surface.py -q` 为 77 passed；
-  `pytest tests/test_chat_api.py -q` 为 22 passed；`ruff check .` passed；
-  `openspec validate derive-capability-status-from-runtime --strict` passed；
-  `openspec validate --all` 为 23 passed、0 failed。
-- Full `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1` 通过：pytest 525 passed、
-  1 skipped；ruff、stage docs scan、skill eval structure scan passed。`git diff --check` passed，
-  仅 CRLF normalization warnings。
-- Archive-after verification：`openspec list` 为 No active changes found；`openspec validate --all`
-  为 22 passed、0 failed；full `scripts/verify.ps1` 仍为 pytest 525 passed、1 skipped；
-  `git diff --check` passed，仅 CRLF normalization warnings。
-- Final review：internal review 修复 repo RAG backed status 在 `repo_rag` 缺失时仍宣称 V11/V9 可用的问题；
-  OpenCode final review F1/P2 修复 default patch answer 漏列 non-goals 的问题，focused re-review
-  确认 closed 且 no new in-scope findings。Stage Debt Sweep 未发现新增 blocking debt。
+- Workflow rules、long-term spec、stage planner/workflow/review-loop skills 和 OpenCode adapter 已同步到同一合同。
+- 已新增固定 receipt template 和 `scripts/validate_independent_review.py`；validator 校验固定 receipt-set 路径、
+  stage/phase/count、声明的 reviewer/implementer/context/首轮可见性、canonical artifact paths/hashes、packet hash、
+  闭合 final conclusion 和 content-hashed original receipt-bound remediation lineage。它只证明机械一致性，
+  固定 `gate_ready=false`；宿主 dispatch provenance 和 activation sequence 仍是外部门禁。
+- 新 validator 不追溯验证本 change 的 plan review；`plan-review.md` 保留变更前 manual contract 的冻结 hashes、
+  8 个已修复 findings 和 same-slot re-review 记录。
+- 当前未修改 `app/**`、runtime API、provider runtime、权限、持久化、Git/subprocess 执行或默认 CI。
 
-## 下一步
+## 已有验证
 
-- 下一步由用户决定是否启动新的 runtime stage。
-- 新阶段只能在用户明确要求后启动；commit、merge、push 仍需要用户明确授权。
-- OpenSpec、skills、MCP、plugins 仍是开发流程或外部协作范式；除非新阶段明确实现，不得写成
-  RepoPilot runtime 能力。
+- RED：原 workflow/OpenCode 结构断言失败；validator 模块缺失；新增固定路径用例在路径未校验时失败。
+- GREEN：聚焦 workflow/validator tests `32 passed`；changed Python files Ruff PASS；`git diff --check` PASS。
+- OpenSpec：strict active-change validation PASS；`openspec validate --all` 为 `23 passed, 0 failed`。
+- 当前环境没有 `powershell`/`pwsh`，所以 `scripts/verify.ps1`、`check_stage_docs.ps1` 和
+  `check_skill_evals.ps1` 未直接运行；翻译后的 stage-doc/skill-eval 结构检查退出 0。
+- 全仓 pytest 为 `537 passed, 3 failed`：失败均在本阶段未修改路径，分别是 recursion-depth provider 用例和
+  两个依赖 `python` 命令名的 verification-runner 用例。全仓 Ruff 有 97 个既有问题；不要据此宣称 full verify
+  PASS，也不要在这个 process-only change 中越界修复。
 
-## 剩余债
+## Resume / Completion Check
 
-- `docs/PROGRESS.md` 当前记录的小代码债已由 archived change
-  `cleanup-control-routing-and-test-names` 处理。
-- Archived change `derive-capability-status-from-runtime` final review 与 Focused Stage Debt Sweep
-  未发现新增 blocking debt。
+先检查 `.harness/reviews/generalize-independent-review-provider/implementation/review-set.json`：
+
+- 若文件不存在，必须对冻结的 implementation/spec/skill/test/docs packet 运行一个新的 empty-context Codex
+  independent review。若有 finding，按 `fix / clarify / reject / defer` 处理；修复后复用同一 slot 做 remediation
+  re-review，并重新冻结 baseline，然后创建实际 receipt set。
+- 若文件存在，运行下面的 validator；只有零退出、宿主控制器已直接核对 native dispatch metadata、变更前流程
+  authority 已核对 activation sequence、active tasks/checklist 已完成且没有后续 implementation/spec/skill/test/docs
+  变更，才能把 final independent review 计为完成。Repository receipt 中自填字段不能替代前两项外部核对。
+
+```text
+python scripts/validate_independent_review.py \
+  --project-root . \
+  --receipt-set .harness/reviews/generalize-independent-review-provider/implementation/review-set.json \
+  --expected-stage generalize-independent-review-provider \
+  --expected-phase implementation \
+  --required-slots 1
+```
+
+完成后仍保持 change active，停止于未 commit/merge/push 状态；只有用户后续明确授权时才能执行相应 Git closeout。

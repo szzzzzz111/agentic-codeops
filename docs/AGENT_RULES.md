@@ -27,12 +27,25 @@
   已知窄代码债不默认运行该 gate。
 - 端到端阶段使用 `repo-stage-workflow`；planning、review、handoff skill 各自只承担单一职责。
 - 实现确认前必须对 proposal、design、tasks、spec deltas、测试计划和 Harness 边界完成
-  plan review；medium/high 阶段默认包含 internal plan review、Codex independent plan
-  review 和 OpenCode independent plan review。OpenSpec validation 不替代该语义检查。
-- OpenCode 计划 review 优先复用已有相关会话：先 `opencode session list`，再
-  `opencode run --session <session_id> ...`。终端超时后必须先检查 session 是否已产出
-  final assistant review text，不能直接算失败或通过；没有 final text 默认是 blocker，
-  除非用户明确降级授权。
+  plan review；medium/high 阶段默认包含 internal plan review 和两个独立 plan-review slots。
+  Reviewer provider 是适配器，不是门禁 authority；OpenSpec validation 不替代该语义检查。
+- 首轮独立 reviewer 必须与 implementer 和其他 reviewer 实例分离、审阅同一个冻结 packet、
+  不继承实现对话且看不到其他首轮结论。Codex 可使用新的空上下文 task，或显式
+  `fork_turns="none"` 的 subagent；inherited/unknown context 不得计数。这里的 task/subagent
+  只属于 development workflow，不是 RepoPilot runtime capability。
+- Remediation re-review 可以复用产生 finding 的原 reviewer 会话，但仍只占原 slot；修复后
+  每个 required slot 都必须刷新到 same final content-addressed baseline。适配器失败时换用另一个
+  独立实例，不能减少 required slot 数量。Receipt 必须通过 content-hashed `review_history` 解析到原
+  first-round receipt 的同一 slot/reviewer/finding IDs。
+- 实际回执集固定写入 `.harness/reviews/<stage-id>/<phase>/review-set.json`，并运行
+  `python scripts/validate_independent_review.py --project-root . --receipt-set <path> --expected-stage <stage-id> --expected-phase <plan|implementation> --required-slots <count>`。
+  Receipt 缺失、命令未运行或非零退出时 review gate 保持打开。Validator 只给出
+  `mechanical_consistency_only`，固定 `gate_ready=false`；宿主控制器还必须直接核对 native dispatch
+  metadata，变更前流程 authority 必须核对 activation sequence。仓库内自填字段不能单独证明这两项事实。
+- OpenCode 首轮必须使用新的隔离 review session，或提供宿主证据证明候选 session 没有实现对话和
+  其他 reviewer 结论；`opencode session list` 与 `opencode run --session <session_id> ...` 只用于
+  same-slot remediation re-review 或恢复同一次 timeout。超时本身不是 verdict，必须检查 final
+  assistant review text。
 
 ## 验证与 Review
 
@@ -45,6 +58,9 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 
 - 正式 final implementation review 必须针对最终 runtime/test 状态，并在 archive/merge 前完成；
   它不能替代实现前 plan review，plan review 也不能替代最终实现 review。
+- Final implementation review 的 required slot 数量由阶段风险合同决定；每一个 required slot
+  都必须满足相同的实例/上下文隔离、冻结 packet、回执和 validator 合同。Medium/high plan review
+  的两个独立 slots 不应被误写成所有 final review 都固定两个 slots。
 - 测试、OpenSpec validation、checklist marker 和零散自检不能替代正式 review。
 - Code review（代码审查）应覆盖需求范围、业务逻辑、架构边界、最小功能、失败语义、安全/隐私、
   测试充分性和可维护性。Agent 默认负责底层实现、测试、安全和维护性审查，并把结论翻译成用户

@@ -16,8 +16,11 @@ Passing tests and completed tasks are inputs to review, not substitutes for it.
 For plan review, read the proposed plan or active OpenSpec artifacts, Harness
 boundaries, relevant specs, and directly implicated runtime/docs. Report
 severity-ordered findings against intent, scope, non-goals, test plan,
-review gates, and roadmap truth. Medium/high plans should receive internal,
-Codex independent, and OpenCode independent review before implementation.
+review gates, and roadmap truth. Medium/high plans require internal plan review
+plus two independent plan-review slots before implementation. Each first-round
+slot must use a distinct reviewer with no inherited implementation context or
+other first-round conclusion; Codex may use an empty-context task or
+`fork_turns="none"`. Inherited or unknown context keeps the slot open.
 
 ## Review Loop
 
@@ -34,10 +37,18 @@ Codex independent, and OpenCode independent review before implementation.
 5. Use `external-review-triage` for external findings. Classify each as `fix`,
    `clarify`, `reject`, or `defer`; never accept it by authority alone.
 6. After remediation, rerun affected verification and review changed behavior.
-7. Perform a focused Stage Debt Sweep over changed paths and directly dependent
+   A same-slot remediation re-review may reuse the original reviewer for finding
+   lineage, but every required slot must refresh to the same final content-addressed baseline.
+7. Materialize `.harness/reviews/<stage-id>/<phase>/review-set.json` and run
+   `python scripts/validate_independent_review.py --project-root . --receipt-set <path> --expected-stage <stage-id> --expected-phase <plan|implementation> --required-slots <count>`.
+   Missing receipt evidence, skipped execution, or nonzero exit keeps the gate open.
+   A zero exit is mechanical consistency only (`gate_ready=false`); verify
+   host-native dispatch provenance and pre-change-authority activation sequence
+   separately before counting slots.
+8. Perform a focused Stage Debt Sweep over changed paths and directly dependent
    older paths. Record inspected paths, concrete findings, dispositions, and
    residual debt.
-8. Block archive when tasks are unchecked, review evidence is stale, validation
+9. Block archive when tasks are unchecked, review evidence is stale, validation
    failed, blocking findings remain, or delta operations do not match long-term
    specs.
 
@@ -56,6 +67,9 @@ Codex independent, and OpenCode independent review before implementation.
 
 External review should seek independent counterexamples, especially for
 medium/high-risk stages. Repeating the task checklist is not useful diversity.
+Reviewer tasks/subagents are development workflow adapters, not RepoPilot runtime
+capabilities. Final implementation review uses the risk-contract required-slot
+count; the two-slot rule is specific to medium/high plan review.
 
 ## Evidence Boundary
 

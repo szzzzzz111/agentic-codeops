@@ -1,0 +1,72 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "<stage-id>",
+  "phase": "<plan|implementation>",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "<change-that-enabled-the-gate>",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "<project-relative-frozen-activation-record>",
+    "activation_ref_sha256": "<64-lowercase-hex-sha256>",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "<verified-by-host-controller>",
+      "evidence_ref": "<host-native-dispatch-reference>"
+    },
+    "activation_sequence": {
+      "status": "<verified-by-pre-change-process-authority>",
+      "evidence_ref": "<activation-record-and-verification-reference>"
+    }
+  },
+  "implementer": {
+    "instance_id": "<host-implementer-instance-id>"
+  },
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:<packet-sha256>",
+    "artifacts": [
+      {
+        "path": "<project-relative-reviewed-artifact>",
+        "sha256": "<64-lowercase-hex-sha256>"
+      }
+    ],
+    "packet_sha256": "<sha256-of-canonical-sorted-artifact-manifest>"
+  },
+  "review_history": [],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "<stage-id>",
+      "phase": "<plan|implementation>",
+      "slot_id": "<slot-id>",
+      "implementer_instance_id": "<host-implementer-instance-id>",
+      "reviewer": {
+        "provider": "<provider>",
+        "model": "<model>",
+        "instance_id": "<host-reviewer-instance-id>"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "<first_round|remediation_re_review>",
+      "reviewed_packet_sha256": "<packet-sha256>",
+      "reviewed_artifacts": [
+        {
+          "path": "<project-relative-reviewed-artifact>",
+          "sha256": "<64-lowercase-hex-sha256>"
+        }
+      ],
+      "conclusion": {
+        "status": "<findings|no_findings>",
+        "findings": [],
+        "gate_verdict": "<ready|blocked>",
+        "residual_uncertainty": "<what-this-review-cannot-prove>"
+      },
+      "lineage": null
+    }
+  ]
+}

@@ -48,6 +48,33 @@ powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
 - 外部 finding 按 `fix / clarify / reject / defer` 分类，并以仓库事实为准。
 - `medium/high` 风险阶段默认需要独立外部 review；`low` 风险阶段按需进行。
 - runtime 在正式 review 或 archive 后再次变化，旧 review/verification 证据失效。
+- Medium/high plan review 保留 internal review 和两个 independent review slots；final implementation
+  review 的 required slot 数量继续由风险合同决定。Provider/model 只作为适配器与 residual-risk
+  证据，不能替代 reviewer instance 和 context isolation。
+- 首轮 reviewer 必须与 implementer/其他 slot 实例分离，审同一冻结 packet，不继承实现上下文，
+  也不能先看其他首轮结论。Codex 替代 slot 时使用新的空上下文 task 或 `fork_turns="none"`
+  subagent；inherited or unknown context fail closed。开发环境 subagent 不属于 RepoPilot runtime。
+- Same-slot remediation re-review 可复用原 reviewer 以保持 finding lineage，但不能增加 slot；
+  修复后所有 required slots 的最终回执必须绑定 same final content-addressed baseline；lineage 必须解析
+  content-hashed 原始 first-round receipt 的同一 slot/reviewer/finding IDs。
+- 实际回执集位于 `.harness/reviews/<stage-id>/<phase>/review-set.json`。Review gate 必须消费：
+
+```text
+python scripts/validate_independent_review.py \
+  --project-root . \
+  --receipt-set .harness/reviews/<stage-id>/<phase>/review-set.json \
+  --expected-stage <stage-id> \
+  --expected-phase <plan|implementation> \
+  --required-slots <risk-contract-count>
+```
+
+- 缺失 receipt set、跳过该命令或 validator 非零退出时，任何 independent slot 都不得计为完成。
+  Validator 只声明 `mechanical_consistency_only` 并保持 `gate_ready=false`；宿主控制器必须另外核对 native
+  dispatch provenance，变更前流程 authority 必须另外核对 activation sequence。仓库 receipt 自填字段不是
+  这两项事实的机器证明。
+- 新增 validator/gate 的 change 只能由变更前流程 authority 在实现、负样本与 workflow wiring 通过后激活；
+  validator 只核对 activation record path/hash，不证明时序，也不得追溯声称它验证了自己实现前的 plan
+  review。激活后从该 change 的 final review 和后续适用 review 生效。
 
 ## Stage Debt Sweep
 

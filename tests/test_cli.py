@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from app.schemas.chat import ChatResponse
 from app.patching.parser import is_patch_proposal_request
+from app.schemas.chat import ChatResponse
 
 
 class RecordingChatService:
@@ -299,21 +299,35 @@ def test_workflow_skills_define_plan_review_gates() -> None:
     stage_planner = Path(".codex/skills/openspec-stage-planner/SKILL.md").read_text(encoding="utf-8")
     workflow = Path(".codex/skills/repo-stage-workflow/SKILL.md").read_text(encoding="utf-8")
     review_loop = Path(".codex/skills/repo-stage-review-loop/SKILL.md").read_text(encoding="utf-8")
-    triage = Path(".codex/skills/external-review-triage/SKILL.md").read_text(encoding="utf-8")
 
     assert "internal plan review" in stage_planner
-    assert "Codex independent plan review" in stage_planner
-    assert "OpenCode independent plan review" in stage_planner
+    assert "two independent plan-review slots" in stage_planner
+    assert 'fork_turns="none"' in stage_planner
+    assert "inherited or unknown context" in stage_planner
+    assert "same final content-addressed baseline" in stage_planner
+    assert "validate_independent_review.py" in stage_planner
+    assert "low-risk stage uses its explicit checklist-required slot count" in stage_planner
     assert "plan-level review" in workflow
     assert "final implementation review" in workflow
+    assert "development workflow" in workflow
+    assert "RepoPilot runtime" in workflow
+    assert "same-slot remediation re-review" in workflow
+    assert "validate_independent_review.py" in workflow
     assert "plan contract" in review_loop
-    assert "external plan findings" in triage
+    assert "same final content-addressed baseline" in review_loop
+    assert "validate_independent_review.py" in review_loop
 
 
-def test_opencode_plan_review_skill_documents_session_reuse() -> None:
+def test_opencode_plan_review_skill_limits_session_reuse() -> None:
     skill = Path(".opencode/skills/openspec-plan-review/SKILL.md").read_text(encoding="utf-8")
 
+    assert "new isolated review session" in skill
+    assert "first-round review" in skill
     assert "opencode session list" in skill
     assert "opencode run --session <session_id>" in skill
+    assert "same slot's remediation re-review" in skill
+    assert "MUST NOT reuse an implementation session" in skill
     assert "terminal output times out" in skill
     assert "final assistant review text" in skill
+    assert "Codex review, or OpenCode review gates" not in skill
+    assert "risk-contract required independent review slots" in skill

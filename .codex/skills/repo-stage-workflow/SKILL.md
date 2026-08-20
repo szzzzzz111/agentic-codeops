@@ -41,8 +41,14 @@ discipline skills own how the approved baseline is implemented and verified.
    known-debt stages unless the user asks.
 4. Use `openspec-stage-planner` to define the stage contract, non-goals,
    writable paths, required evidence, and confirmation boundary. Complete
-   plan-level review before implementation: internal plan review, Codex
-   independent plan review, and OpenCode independent plan review when required.
+   plan-level review before implementation: internal plan review plus two
+   independent plan-review slots for medium/high stages. Provider choice does
+   not change the slot count. A Codex reviewer must use a new empty-context task
+   or `fork_turns="none"`; inherited/unknown context cannot satisfy a slot.
+   First-round slots review the same frozen packet without seeing each other's
+   conclusions. A same-slot remediation re-review may reuse its original
+   reviewer, but all required slots must refresh to the same final
+   content-addressed baseline.
    For ordinary narrow stages, the agent reads the full proposal/design/tasks/spec
    and gives the user a concise Chinese summary plus one implementation
    confirmation gate. Calibrate the human plan-review depth using the
@@ -60,15 +66,24 @@ discipline skills own how the approved baseline is implemented and verified.
    stage is L2 or L3, or when the user asks for one.
 8. When external review is requested or the risk level requires it, give the
    reviewer an adversarial brief. This applies to plan-level review and final
-   implementation review as separate gates. Use `external-review-triage` to
-   classify each finding as `fix`, `clarify`, `reject`, or `defer`.
-9. Perform a focused Stage Debt Sweep over changed paths and the older paths
+   implementation review as separate gates. Final implementation review keeps
+   the risk-contract slot count; it does not inherit the medium/high plan count
+   automatically. Use `external-review-triage` to classify each finding as
+   `fix`, `clarify`, `reject`, or `defer`.
+9. For every required independent-review gate, materialize the actual receipt
+   set under `.harness/reviews/<stage-id>/<phase>/review-set.json` and consume:
+   `python scripts/validate_independent_review.py --project-root . --receipt-set <path> --expected-stage <stage-id> --expected-phase <plan|implementation> --required-slots <count>`.
+   Missing receipts, skipped invocation, or nonzero exit leaves the gate open.
+   Zero exit is `mechanical_consistency_only`, not `gate_ready`: also verify
+   host-native dispatch provenance and the pre-change authority's activation
+   sequence. Repository-authored labels cannot prove either external fact.
+10. Perform a focused Stage Debt Sweep over changed paths and the older paths
    they directly depend on. Record only concrete findings, dispositions, and
    residual risks.
-10. Re-run affected verification after every remediation. Archive only when the
+11. Re-run affected verification after every remediation. Archive only when the
    final runtime/test state has passed formal review and all blocking findings
    are resolved.
-11. Merge and push only with user authorization. Then use
+12. Merge and push only with user authorization. Then use
     `repo-stage-handoff` once to record the stable next-session context and
     update only documents whose owned facts actually changed.
 
@@ -138,6 +153,8 @@ HEAD hashes into several documents; query Git when exact state is needed.
 
 ## Evidence Boundary
 
+- Empty-context tasks and subagents in this skill are development workflow
+  reviewer adapters, not RepoPilot runtime capabilities.
 - `.harness/review_checklist.md`: operation and gate evidence.
 - `docs/PROGRESS.md`: durable capability, decision, validation, and debt facts.
 - `HANDOFF_TO_NEXT_CHAT.md`: only what the next session needs to act safely.

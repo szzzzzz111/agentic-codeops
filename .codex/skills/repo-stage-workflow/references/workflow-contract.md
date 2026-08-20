@@ -41,22 +41,47 @@ what was inspected and the residual uncertainty.
 ## Plan Review Contract
 
 Medium and high risk stages require plan-level review before implementation:
-internal plan review, Codex independent plan review, and OpenCode independent
-plan review. Plan-level review checks proposal/design/tasks/spec deltas/test
-plan/Harness boundaries and roadmap truth. It is separate from final
-implementation review.
+internal plan review plus two independent plan-review slots. Plan-level review
+checks proposal/design/tasks/spec deltas/test plan/Harness boundaries and roadmap
+truth. It is separate from final implementation review, whose required slot
+count remains defined by the risk contract.
 
-For OpenCode review, prefer reusing a relevant existing review session:
+Each first-round slot uses a reviewer instance distinct from the implementer and
+other slots, reviews the same frozen packet, inherits no implementation context,
+and sees no other first-round conclusion. Codex may fill a slot through a new
+empty-context task or a subagent invoked with `fork_turns="none"`; inherited or
+unknown context is invalid. Provider/model diversity is useful residual-risk
+evidence, not a substitute for context and instance isolation.
 
-```powershell
-opencode session list
-opencode run --session <session_id> "<adversarial plan review brief>"
+Same-slot remediation re-review may reuse the original reviewer to preserve
+finding lineage. Its receipt must resolve a content-hashed original first-round
+receipt with the same slot, reviewer, and finding IDs. It cannot create another
+slot, and every required slot must refresh a final receipt against the same
+final content-addressed baseline.
+OpenCode first-round review uses a new/proven-isolated session; session reuse is
+limited to remediation for that slot or recovery of the same timed-out attempt.
+
+Store actual review sets at `.harness/reviews/<stage-id>/<phase>/review-set.json`
+and run:
+
+```text
+python scripts/validate_independent_review.py \
+  --project-root . \
+  --receipt-set .harness/reviews/<stage-id>/<phase>/review-set.json \
+  --expected-stage <stage-id> \
+  --expected-phase <plan|implementation> \
+  --required-slots <risk-contract-count>
 ```
 
-If terminal output times out or does not print the final answer, inspect the
-OpenCode session for final assistant review text before declaring the gate
-failed. Missing final text is a blocker unless the user explicitly authorizes a
-downgrade. Codex subagent review does not replace OpenCode review.
+Missing receipts, skipped invocation, or nonzero validation keeps the gate open.
+Zero exit proves `mechanical_consistency_only` and keeps `gate_ready=false`:
+the host controller must separately verify native dispatch provenance, and the
+pre-change process authority must verify activation sequence. A change that
+introduces the gate activates it only under that prior authority after
+implementation, negative tests, and workflow wiring; the validator may bind an
+activation record hash but cannot prove chronology or retroactively validate its
+own pre-implementation plan. Empty-context tasks/subagents are development
+workflow mechanisms, not RepoPilot runtime capabilities.
 
 ## Focused Stage Debt Sweep
 

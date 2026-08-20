@@ -1594,3 +1594,33 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
   `app/worktrees/git_metadata.py`; those are outside this stage and should be separate small changes if prioritized.
 - Archive evidence: `openspec archive harden-worktree-create-timeouts --yes` succeeded; archive-after
   `openspec list` reported no active changes; archive-after `openspec validate --all` passed with 22 passed, 0 failed.
+
+## Independent Review Provider Generalization (2026-08-20)
+
+- Active OpenSpec change：`generalize-independent-review-provider`；这是 low-risk、process-only 的项目开发流程变更，
+  不修改 `app/**`、公开 API、权限、持久化、provider runtime 或 RepoPilot runtime subagent 能力。
+- Medium/high plan review 保留 internal review 加两个 independent review slots；OpenCode、Codex 或其他受支持
+  工程 Agent 只作为 reviewer adapter，不再成为固定门禁。Final implementation review 的 slot 数量仍由阶段风险
+  合同决定，不统一改成两个。
+- Codex 首轮 reviewer 只能使用新的 empty-context task，或宿主明确记录 `fork_turns="none"` 的 subagent；
+  inherited/unknown context、与 implementer 身份重合、先看到其他首轮结论或不同 slot 复用同一 reviewer 均 fail closed。
+- Remediation re-review 可以复用原 slot 的 reviewer 以保留 finding lineage，但所有 required slots 最终必须刷新到
+  同一个 content-addressed baseline。
+- 新增 `.harness/templates/independent-review-receipt.template.json` 和
+  `scripts/validate_independent_review.py`。实际回执集固定在
+  `.harness/reviews/<stage-id>/<phase>/review-set.json`；validator 会重算 artifact SHA-256 和 packet hash，校验
+  stage/phase/slot 数量、声明的身份/上下文/首轮盲审、canonical baseline、闭合结论与原 receipt-bound
+  remediation lineage，并以结构化 JSON/非零退出 fail closed。其 claim ceiling 固定为
+  `mechanical_consistency_only`/`gate_ready=false`；宿主 dispatch provenance 与 activation 时序仍需外部门禁。
+- Self-bootstrap 边界保持真实时序：本 change 的 pre-implementation plan review 继续保留变更前 manual contract
+  和冻结 hashes，不追溯声称新 validator 已运行；新 gate 在实现、负样本与 workflow wiring 通过后激活，
+  从本 change 的 final implementation review 和后续适用 review 生效。
+- 当前确定性验证：聚焦 workflow/validator tests `32 passed`；changed Python files 的 Ruff 检查通过；
+  OpenSpec strict change validation 通过，`openspec validate --all` 为 `23 passed, 0 failed`；`git diff --check`
+  通过。当前主机没有 `powershell`/`pwsh`，因此 `.ps1` 总入口未运行；等价 stage-doc/skill-eval 结构扫描退出 0。
+- 全仓验证没有形成 PASS claim：pytest 为 `537 passed, 3 failed`，失败位于未修改的 recursion-depth provider
+  用例和两个依赖 `python` 可执行名的 verification-runner 用例；全仓 Ruff 报告 97 个既有问题，而本阶段 changed
+  Python files 的 Ruff 为 PASS。这些基线问题不在当前 process-only allowed files 内。
+- 当前 change 保持 active，且本阶段不 archive、commit、merge 或 push。Final implementation review 的完成事实
+  只以 `.harness/reviews/generalize-independent-review-provider/implementation/review-set.json`、validator 零退出和
+  宿主 dispatch/activation external checks、active tasks/checklist 为准；不得从本段流程说明反推 review 已完成。

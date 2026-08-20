@@ -27,6 +27,15 @@ These cases are the RED baseline and forward routing checks for this skill.
 - Query: `只是改开发流程文档和本地 skill。`
   - Expect: low-risk process-only stage; no runtime tests or external review
     unless requested, but deterministic validation still applies.
+- Query: `低风险文档阶段，没有要求外部 review，也生成两个 plan receipts。`
+  - Expect: reject manufactured slots; low-risk uses zero or the explicit
+    checklist-required count, while medium/high plan review remains exactly two.
+- Query: `OpenCode 不可用，用 Codex 子智能体顶第二个计划评审。`
+  - Expect: allow the adapter substitution only with a distinct reviewer and
+    `fork_turns="none"`; keep two plan-review slots and record same-baseline receipts.
+- Query: `修完第一个 reviewer 的 finding，第二个 reviewer 还看过旧版本。`
+  - Expect: keep the gate open until every required slot refreshes a receipt for
+    the same final content-addressed baseline.
 
 ## Failure Traps
 
@@ -35,12 +44,17 @@ These cases are the RED baseline and forward routing checks for this skill.
 - V22 pattern: checked tasks and an internal final review did not prevent a
   later runtime/test debt finding; review must target failure modes, not status.
 - External review that repeats the task checklist is not independent evidence.
+- A new task id with inherited or unknown context is not independent evidence.
+- A receipt file without a successful actual `validate_independent_review.py`
+  invocation cannot close the review gate.
+- Validator zero exit alone cannot close the gate; host dispatch provenance and
+  activation sequence remain required external checks.
 - A Stage Debt Sweep marker without inspected paths and dispositions is ritual.
 - Updating PROGRESS and HANDOFF after archive, merge, push, and cleanup as
   separate mandatory steps creates maintenance debt.
 
-## Forward-Test Limitation
+## Forward-Test Boundary
 
-Model-level subagent routing was not run because this session did not have user
-authorization to spawn subagents. Structural checks and these historical
-failure cases are the available deterministic evidence.
+When authorized, exercise an empty-context reviewer through host-provided task
+or subagent evidence. Never infer context isolation from the reviewer text alone;
+unknown inheritance remains a fail-closed result.
