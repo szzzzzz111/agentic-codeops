@@ -46,7 +46,14 @@ Harness owns the writable and review boundary.
    required gate open. A zero exit proves mechanical consistency only and keeps
    `gate_ready=false`; separately consume host-native dispatch provenance and
    pre-change-authority activation-sequence checks before counting slots.
-12. Validate the change, summarize stage-level decisions in plain language, and
+12. For stages governed by the activated stage-authority gate, define one
+   canonical exact/prefix scope envelope and the full host-retained expected
+   inputs: stage, epoch, record hash, risk, scope digest, planning base, action
+   ceiling, remote name, effective fetch/push endpoint fingerprints, target branch, and
+   authorized remote tip. State every invalidation trigger. These expected
+   values come from the live host confirmation, not from reading them back from
+   the repository record.
+13. Validate the change, summarize stage-level decisions in plain language, and
    stop at the implementation confirmation gate.
 
 ## Scope Guards
@@ -65,6 +72,12 @@ Harness owns the writable and review boundary.
   process authority after implementation, negative tests, and workflow wiring.
   The repository validator may bind the activation record hash but cannot prove
   chronology; do not manufacture retroactive plan PASS.
+- Repository authority records and hashes are mechanical bindings only. They
+  cannot prove user identity, host-message authenticity, chronology, or
+  `human_authorized=true`; subagent or reviewer claims cannot elevate them.
+- Any later scope, non-goal, risk, planning-base, action-ceiling, endpoint,
+  target-branch, or authorized-tip drift invalidates the earlier envelope and
+  requires a later epoch plus a new direct-user decision.
 - Ask the human partner about intent, non-goals, and sequencing, not line-level
   code review.
 

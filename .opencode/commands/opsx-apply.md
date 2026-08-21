@@ -49,7 +49,20 @@ Implement tasks from an OpenSpec change.
    - **spec-driven**: proposal, specs, design, tasks
    - Other schemas: follow the contextFiles from CLI output
 
-5. **Show current progress**
+5. **Run the stage-authority preflight**
+
+   After activation, run `scripts/validate_stage_authority.py` with
+   `--required-action implement` and the exact flags documented in
+   `.harness/test_commands.md` before the first implementation mutation. The
+   host must supply exact expected stage, epoch, record hash, risk, scope
+   digest, planning base, action ceiling, remote name, effective fetch/push endpoint
+   fingerprints, target branch, and authorized remote tip retained from the
+   live direct-user confirmation; never copy them from the record being
+   validated. Missing/stale/insufficient authority, lineage or expected-input
+   mismatch, and scope/path drift are hard stops. PASS is mechanical-only and
+   does not establish live human authority.
+
+6. **Show current progress**
 
    Display:
    - Schema being used
@@ -57,7 +70,7 @@ Implement tasks from an OpenSpec change.
    - Remaining tasks overview
    - Dynamic instruction from CLI
 
-6. **Implement tasks (loop until done or blocked)**
+7. **Implement tasks (loop until done or blocked)**
 
    For each pending task:
    - Show which task is being worked on
@@ -72,7 +85,7 @@ Implement tasks from an OpenSpec change.
    - Error or blocker encountered → report and wait for guidance
    - User interrupts
 
-7. **On completion or pause, show status**
+8. **On completion or pause, show status**
 
    Display:
    - Tasks completed this session
@@ -140,6 +153,9 @@ What would you like to do?
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
+- After activation, do not warning-and-continue around the shared `implement`
+  authority gate
+- Merge and push remain controller-only actions under `repo-stage-workflow`
 
 **Fluid Workflow Integration**
 

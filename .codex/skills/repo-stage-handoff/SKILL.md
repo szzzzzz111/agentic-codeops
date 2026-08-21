@@ -1,28 +1,38 @@
 ---
 name: repo-stage-handoff
-description: Use when a RepoPilot stage has reached its final archived, merged, and pushed state and the next session needs one concise, accurate handoff.
+description: Use when final RepoPilot closeout must prepare durable handoff facts before the reviewed packet and emit one read-only handoff after archived, merged, and pushed state is verified.
 ---
 
 # Repo Stage Handoff
 
 ## Core Rule
 
-Write one final handoff from live repository facts. Do not turn every archive,
-merge, push, or cleanup action into another mandatory documentation cycle.
+Prepare repository-owned durable facts before the final reviewed packet, then
+emit one final handoff from live repository facts without another repository
+write after the exact candidate commit. Do not turn every archive, merge, push,
+or cleanup action into another mandatory documentation cycle.
 
 ## Workflow
 
-1. Check live Git state, recent commits, branch containment, remote state, and
-   `openspec list`.
-2. Read `docs/PROGRESS.md`, `HANDOFF_TO_NEXT_CHAT.md`, and only the durable docs
+1. Before freezing the final delivery packet, check live Git/OpenSpec state and
+   read `docs/PROGRESS.md`, `HANDOFF_TO_NEXT_CHAT.md`, and only the durable docs
    whose owned facts changed.
-3. Update `docs/PROGRESS.md` with durable facts: completed capability or process
+2. Update `docs/PROGRESS.md` with durable facts: completed capability or process
    change, important decisions, verification evidence, and unresolved debt.
-4. Rewrite `HANDOFF_TO_NEXT_CHAT.md` as short next-session context: baseline,
+3. Rewrite `HANDOFF_TO_NEXT_CHAT.md` as short next-session context: baseline,
    blockers, active change if any, and the next safe action.
-5. Reset `.harness/allowed_files.md` and `.harness/review_checklist.md` only when
+4. Reset `.harness/allowed_files.md` and `.harness/review_checklist.md` only when
    no active stage remains.
-6. Run relevant deterministic validation and report anything not run.
+5. Include these final document bytes in the exhaustive reviewed-change
+   manifest and final delivery packet. After the packet, permit only the
+   schema-valid final implementation `review-set.json` and
+   `delivery-binding.json`; after the finite exact candidate commit, do not
+   write PROGRESS, HANDOFF, Harness state, or any other repository file.
+6. After controller-owned merge/push, query live Git state, exact effective
+   endpoint, target ref, and OpenSpec state. Emit one report-only final handoff
+   and identify anything not verified. Separately report `technical_ready`,
+   external `human_authorized`, and `vcs_pushed` (`not_attempted`, `unknown`, or
+   `verified`).
 
 ## Boundaries
 
@@ -33,6 +43,11 @@ merge, push, or cleanup action into another mandatory documentation cycle.
   exposed new evidence. The reviewed sweep belongs before archive.
 - A runtime correction after archive reopens review; it is not handoff cleanup.
 - Do not start or imply V-next during closeout.
+- Repository authority records and hashes are mechanical-only and cannot assert
+  live human authority or push success.
+- If push outcome is unknown, do not write a reassuring handoff or retry. Report
+  `UNKNOWN_PUSH_OUTCOME` and allow only controller-owned, read-only
+  reconciliation against the same effective endpoint.
 
 ## References
 

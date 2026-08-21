@@ -1,0 +1,30 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "<stage-id>",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "<bounded-host-reference-without-message-content>"
+  },
+  "scope": {
+    "risk": "<low|medium|high>",
+    "summary": "<bounded-stage-summary>",
+    "allowed_path_rules": {
+      "exact": ["<canonical-project-relative-path>"],
+      "prefixes": ["<canonical-project-relative-directory-prefix/>" ]
+    },
+    "non_goals": ["<canonical-non-goal>"],
+    "active_allowed_files_sha256": "<64-lowercase-hex-sha256>"
+  },
+  "scope_sha256": "<sha256-of-canonical-scope-object>",
+  "planning_baseline": {"commit": "<40-lowercase-hex-git-oid>"},
+  "action_ceiling": "<plan|implement|commit|archive|merge|push>",
+  "vcs_target": {
+    "remote_name": "<remote-name>",
+    "effective_fetch_url_sha256": "<64-lowercase-hex-sha256>",
+    "effective_push_url_sha256": "<64-lowercase-hex-sha256>",
+    "target_branch": "<branch-name>",
+    "authorized_remote_tip": "<40-lowercase-hex-git-oid>"
+  }
+}

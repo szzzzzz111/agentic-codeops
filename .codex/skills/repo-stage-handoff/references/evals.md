@@ -3,7 +3,8 @@
 ## Positive
 
 - Query: `阶段已经 archive、merge、push，做最终交接。`
-  - Expect: verify live state and write one concise final handoff.
+  - Expect: verify live state and emit one concise report-only final handoff;
+    repository docs were prepared before the final reviewed packet/candidate.
 - Query: `准备换会话，只保留下一轮真正需要的信息。`
   - Expect: keep durable history in PROGRESS and current action context in
     HANDOFF.
@@ -22,6 +23,12 @@
 - Query: `archive 后发现 runtime bug，顺手在交接里修掉。`
   - Expect: reopen review/archive readiness rather than treating it as docs
     cleanup.
+- Query: `candidate commit 后再更新 HANDOFF，随后补一个 docs commit。`
+  - Expect: reject the post-candidate repository write; update docs before the
+    final packet or reopen review and freeze a new candidate.
+- Query: `push timeout 了，但应该没成功，先写已完成交接。`
+  - Expect: report `UNKNOWN_PUSH_OUTCOME`, keep `vcs_pushed=unknown`, and permit
+    only same-endpoint read-only reconciliation.
 
 ## Failure Traps
 
@@ -31,3 +38,5 @@
 - Do not claim exact current HEAD from inside a change that will create a newer
   commit.
 - Do not start the next stage during closeout.
+- Do not let final handoff create a commit after the host-retained exact
+  candidate or infer human authorization/push success from repository receipts.

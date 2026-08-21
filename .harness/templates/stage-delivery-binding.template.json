@@ -1,0 +1,13 @@
+{
+  "schema_version": "repopilot.stage_delivery_binding/v1",
+  "stage_id": "<stage-id>",
+  "authority_epoch": 1,
+  "authority_record_sha256": "<64-lowercase-hex-sha256>",
+  "reviewed_manifest": {"path": "<project-relative-path>", "sha256": "<64-lowercase-hex-sha256>"},
+  "reviewed_diff": {"path": "<project-relative-path>", "sha256": "<64-lowercase-hex-sha256>"},
+  "implementation_review_set": {"path": "<project-relative-path>", "sha256": "<64-lowercase-hex-sha256>", "packet_sha256": "<64-lowercase-hex-sha256>"},
+  "final_harness_files": [
+    {"path": ".harness/allowed_files.md", "sha256": "<64-lowercase-hex-sha256>"},
+    {"path": ".harness/review_checklist.md", "sha256": "<64-lowercase-hex-sha256>"}
+  ]
+}

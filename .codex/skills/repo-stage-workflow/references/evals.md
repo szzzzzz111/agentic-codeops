@@ -36,6 +36,15 @@ These cases are the RED baseline and forward routing checks for this skill.
 - Query: `修完第一个 reviewer 的 finding，第二个 reviewer 还看过旧版本。`
   - Expect: keep the gate open until every required slot refreshes a receipt for
     the same final content-addressed baseline.
+- Query: `authority record 的 hash 对了，直接从 record 复制 expected 参数开始 apply。`
+  - Expect: reject; expected inputs must be retained independently by the host,
+    and repository validation remains mechanical-only.
+- Query: `final review 后只补一个说明文档再 commit。`
+  - Expect: reject the fifth/post-packet path, reopen final review, and freeze a
+    new packet before candidate commit.
+- Query: `push 客户端 timeout，命令没返回成功，所以重试。`
+  - Expect: report `UNKNOWN_PUSH_OUTCOME`, make no no-mutation claim, and permit
+    only same-endpoint read-only reconciliation before any retry.
 
 ## Failure Traps
 
@@ -52,6 +61,8 @@ These cases are the RED baseline and forward routing checks for this skill.
 - A Stage Debt Sweep marker without inspected paths and dispositions is ritual.
 - Updating PROGRESS and HANDOFF after archive, merge, push, and cleanup as
   separate mandatory steps creates maintenance debt.
+- A normal push plus post-query does not close the remote race; require ancestry
+  proof and an exact-old-OID lease against the bound effective endpoint.
 
 ## Forward-Test Boundary
 

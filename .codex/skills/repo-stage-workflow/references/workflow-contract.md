@@ -104,3 +104,40 @@ dependency or finding justifies it.
 - Exact branch, commit, and remote state comes from Git, not duplicated prose.
 - Merge/push/cleanup creates one final handoff, not a chain of self-invalidating
   documentation commits.
+
+## Stage Authority And Delivery Binding
+
+- After activation, apply and archive consume the same fail-closed authority
+  validator with host-retained exact expected stage, epoch, record hash, risk,
+  scope digest, planning base, action ceiling, remote name, endpoint fingerprints, target
+  branch, and authorized old tip. Expected values are not read back from the
+  repository record.
+- Repository authority evidence is `mechanical_consistency_only`; live human
+  authority and host provenance remain external facts.
+- The real Git change set includes committed, staged, unstaged, untracked,
+  rename, and deletion paths from the planning base. Any exact/prefix scope
+  escape or material envelope drift requires a later epoch and direct-user
+  decision.
+- Final review binds a byte-stable exhaustive manifest/diff. Its subject excludes
+  exactly these four metadata paths and no others:
+  `.harness/reviews/<stage-id>/implementation/reviewed-change-manifest.json`,
+  `.harness/reviews/<stage-id>/implementation/reviewed-change.diff`,
+  `.harness/reviews/<stage-id>/implementation/review-set.json`, and
+  `.harness/authority/<stage-id>/delivery-binding.json`. The only post-packet
+  evidence tail is the latter two schema-valid JSON files.
+- Merge/push are controller-only. They bind the host-retained exact candidate,
+  exact merge source/target state, one effective endpoint, authorized old tip,
+  ancestry proof, explicit refspec, and exact-old-OID lease.
+- A pre-mutation process failure blocks without mutation. Ambiguity after push
+  starts is `UNKNOWN_PUSH_OUTCOME`; reconciliation is read-only against the
+  same endpoint, and its target branch must equal the separately host-retained
+  expected target branch. No automatic retry or history change is allowed.
+- POSIX process-group cleanup is valid only for read-only commands. A
+  mutation-capable command requires host/cgroup/container/VM whole-tree
+  containment or returns `PROCESS_ISOLATION_UNAVAILABLE` before spawn. On
+  Windows, start the child suspended, attach it to a kill-on-close Job Object
+  before resume, and use cross-platform pipe readers. Mutation intent is
+  mandatory, recognizable `git push` cannot be read-only, and pre-resume
+  isolation failure is deterministic rather than an unknown push outcome.
+- `technical_ready`, `human_authorized`, and `vcs_pushed` are independent
+  verdicts. A technical or repository receipt cannot imply another verdict.

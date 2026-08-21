@@ -1,5 +1,36 @@
 # 项目进度
 
+## Stage Authority Binding And Invalidation（archived，2026-08-20）
+
+- OpenSpec change `bind-stage-authority-and-invalidation` 已归档到
+  `openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/`；风险级别为 high，属于
+  process-only repository development workflow change。它没有修改 `app/**`、公开 API、provider runtime、
+  RepoPilot runtime subagent、后台任务、credential handling 或产品级 Git automation。
+- 新增长期 `stage-authority-binding` capability，并同步 `harness-development-workflow`：宿主观察到的
+  direct-user instruction 是唯一 human-authority 来源；repo-local append-only epoch record、delivery binding、
+  hashes 和 validator 只提供 `mechanical_consistency_only`，不能证明用户身份、消息真实性、授权时序或
+  `human_authorized=true`。
+- Authority gate 绑定 exact stage/epoch/record、risk、scope digest、planning base、action ceiling、remote name、
+  effective fetch/push endpoint fingerprints、target branch 与 authorized old tip。Validator 从 planning base
+  重算 committed/dirty/untracked/rename/delete scope，要求 canonical authority directory、严格可逆的 Git `-z`
+  path transport 和结构化 malformed-rule failures；endpoint equality 与两项 fingerprint 未在本地通过前不得
+  触发 `ls-remote`、credential helper 或 network contact。
+- Archive/merge/push 绑定实际 independent implementation review set、穷尽 reviewed-change manifest、精确四路径
+  metadata exclusion、两文件 evidence tail 与 host-retained exact candidate。Merge/push 仍是 controller-only；
+  push 只允许 ancestry 已证明 fast-forward 后的 explicit refspec + exact-old-OID lease，ambiguous outcome 保持
+  `UNKNOWN_PUSH_OUTCOME` 并只做 same-endpoint read-only reconciliation。
+- Final implementation review 的 A/B 两个首轮 reviewer 发现的 blocking P1 均经原 same-slot remediation re-review
+  关闭；Focused Stage Debt Sweep 已完成，没有遗留新的 in-scope blocking debt。该结论不替代后续 final packet、
+  candidate、merge 或 push gate。
+- 验证 evidence：focused authority remediation tests `92 passed`；authority + independent-review + CLI 组合测试
+  `163 passed`；changed Python Ruff PASS；OpenSpec pre-archive strict change PASS / all `24 passed, 0 failed`，
+  post-archive all `23 passed, 0 failed`；`git diff --check` PASS。Full pytest 为 `645 passed, 3 failed`，3 项均为未修改路径的
+  inherited baseline：model-provider recursion-depth 1 项，以及当前 shell 无 `python` 命令导致的
+  verification-runner 2 项。Full Ruff 的 96 项也属于既有 baseline，因此不宣称 full repository verification
+  PASS。
+- Claim ceiling：OpenSpec archive 和上述 review/verification 事实已完成；finite candidate commit、merge、push、
+  remote parity 与 `vcs_pushed=verified` 尚未由本记录证明，仍属于 tasks 4.5–4.8 的 controller closeout。
+
 ## Workflow Collaboration Rules Update（process-only，2026-07-05）
 
 - 本次只更新 RepoPilot 开发流程和 review 规则，不修改 runtime、tests、public `/chat` contract、

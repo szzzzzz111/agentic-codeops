@@ -45,10 +45,18 @@ other first-round conclusion; Codex may use an empty-context task or
    A zero exit is mechanical consistency only (`gate_ready=false`); verify
    host-native dispatch provenance and pre-change-authority activation sequence
    separately before counting slots.
-8. Perform a focused Stage Debt Sweep over changed paths and directly dependent
+8. For final implementation review, consume the canonical byte-stable
+   reviewed-change manifest and bounded diff derived from the planning base.
+   The review subject excludes exactly four metadata paths: the manifest, diff,
+   final review set, and delivery binding. No other path is implicitly excluded.
+   Every required slot must bind the same host-retained final packet hash and
+   exactly every existing manifest subject plus the manifest and deterministic
+   inventory tail; any omission, arbitrary inventory, fifth metadata path, or
+   non-tail change after the packet reopens review.
+9. Perform a focused Stage Debt Sweep over changed paths and directly dependent
    older paths. Record inspected paths, concrete findings, dispositions, and
    residual debt.
-9. Block archive when tasks are unchecked, review evidence is stale, validation
+10. Block archive when tasks are unchecked, review evidence is stale, validation
    failed, blocking findings remain, or delta operations do not match long-term
    specs.
 
@@ -70,6 +78,11 @@ medium/high-risk stages. Repeating the task checklist is not useful diversity.
 Reviewer tasks/subagents are development workflow adapters, not RepoPilot runtime
 capabilities. Final implementation review uses the risk-contract required-slot
 count; the two-slot rule is specific to medium/high plan review.
+
+Review receipts and packet hashes never establish live human authority. Archive
+must additionally pass the shared stage-authority `archive` preflight; merge and
+push must bind the same final manifest/review set and host-retained exact
+candidate under the controller workflow.
 
 ## Evidence Boundary
 

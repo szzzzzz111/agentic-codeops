@@ -1,0 +1,74 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "bind-stage-authority-and-invalidation",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "codex-thread:01a01908-92e2-7c50-b1f4-08ffbe65935b;direct-user-confirmation:archive-path-envelope-v1"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Bind the RepoPilot development stage to exact human authority, invalidation, reviewed delivery, fast-forward merge, and exact-lease push without changing runtime capability.",
+    "allowed_path_rules": {
+      "exact": [
+        ".codex/skills/openspec-apply-change/SKILL.md",
+        ".codex/skills/openspec-stage-planner/SKILL.md",
+        ".codex/skills/openspec-stage-planner/references/stage-template.md",
+        ".codex/skills/repo-stage-handoff/SKILL.md",
+        ".codex/skills/repo-stage-handoff/references/evals.md",
+        ".codex/skills/repo-stage-handoff/references/stale-state-checklist.md",
+        ".codex/skills/repo-stage-review-loop/SKILL.md",
+        ".codex/skills/repo-stage-review-loop/references/evals.md",
+        ".codex/skills/repo-stage-workflow/SKILL.md",
+        ".codex/skills/repo-stage-workflow/references/evals.md",
+        ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+        ".harness/allowed_files.md",
+        ".harness/review_checklist.md",
+        ".harness/rules.md",
+        ".harness/templates/stage-authority-record.template.json",
+        ".harness/templates/stage-delivery-binding.template.json",
+        ".harness/templates/stage_closeout.md",
+        ".harness/templates/stage_planning.md",
+        ".harness/test_commands.md",
+        ".opencode/commands/opsx-apply.md",
+        ".opencode/commands/opsx-archive.md",
+        ".opencode/skills/openspec-apply-change/SKILL.md",
+        ".opencode/skills/openspec-archive-change/SKILL.md",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "docs/AGENT_RULES.md",
+        "docs/PROGRESS.md",
+        "openspec/specs/harness-development-workflow/spec.md",
+        "openspec/specs/stage-authority-binding/spec.md",
+        "scripts/validate_stage_authority.py",
+        "tests/test_stage_authority_validation.py"
+      ],
+      "prefixes": [
+        ".codex/skills/openspec-archive-change/",
+        ".harness/authority/bind-stage-authority-and-invalidation/",
+        ".harness/reviews/bind-stage-authority-and-invalidation/",
+        "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/",
+        "openspec/changes/bind-stage-authority-and-invalidation/"
+      ]
+    },
+    "non_goals": [
+      "credential handling",
+      "hosted approval or identity service",
+      "non-fast-forward push, rebase, or history rewrite",
+      "PR, branch, or background automation",
+      "RepoPilot runtime Git automation or public API changes",
+      "runtime subagent, MCP, or connector capability"
+    ],
+    "active_allowed_files_sha256": "aa284c59221253178be0019b46f823a0cbf1cc0cf596e216d17399404b33cdbf"
+  },
+  "scope_sha256": "55d086802a340a88cc23efe348b275001ee5914ac3c2b6fdf6db4b9856c9bbd4",
+  "planning_baseline": {"commit": "88ee2d52bb6edddf52a2a1012580fcf0b693c066"},
+  "action_ceiling": "push",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "88ee2d52bb6edddf52a2a1012580fcf0b693c066"
+  }
+}

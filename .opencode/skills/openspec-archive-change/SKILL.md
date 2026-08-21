@@ -50,7 +50,20 @@ Archive a completed change in the experimental workflow.
 
    **If no tasks file exists:** Proceed without task-related warning.
 
-4. **Assess delta spec sync state**
+4. **Run the stage-authority archive gate**
+
+   After activation, archive and any pre-archive spec sync are fail-closed
+   mutations. Before offering or invoking any sync action, run
+   `scripts/validate_stage_authority.py` with `--required-action archive`, the
+   exact flags documented in `.harness/test_commands.md`, the full
+   host-retained exact envelope including remote name, the actual implementation
+   review set, required slot count, and host-retained reviewed packet hash. The
+   validator must consume the exhaustive current review manifest and
+   independent-review validator. Any mismatch blocks sync and archive before
+   mutation. PASS is mechanical-only and does not establish live human
+   authority.
+
+5. **Assess delta spec sync state**
 
    Check for delta specs at `openspec/changes/<name>/specs/`. If none exist, proceed without sync prompt.
 
@@ -63,9 +76,9 @@ Archive a completed change in the experimental workflow.
    - If changes needed: "Sync now (recommended)", "Archive without syncing"
    - If already synced: "Archive now", "Sync anyway", "Cancel"
 
-   If user chooses sync, use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). Proceed to archive regardless of choice.
+   If user chooses sync, use Task tool (subagent_type: "general-purpose", prompt: "Use Skill tool to invoke openspec-sync-specs for change '<name>'. Delta spec analysis: <include the analyzed delta spec summary>"). A sync mutation invalidates the pre-sync manifest and review packet: rerun affected verification, regenerate the exhaustive manifest/inventory, refresh every required implementation-review slot, and rerun `scripts/validate_stage_authority.py --required-action archive` against the new host-retained packet before proceeding. If sync is skipped or unnecessary, the first gate remains the archive preflight.
 
-5. **Perform the archive**
+6. **Perform the archive**
 
    Create the archive directory if it doesn't exist:
    ```bash
@@ -82,7 +95,7 @@ Archive a completed change in the experimental workflow.
    mv openspec/changes/<name> openspec/changes/archive/YYYY-MM-DD-<name>
    ```
 
-6. **Display summary**
+7. **Display summary**
 
    Show archive completion summary including:
    - Change name
@@ -112,3 +125,6 @@ All artifacts complete. All tasks complete.
 - Show clear summary of what happened
 - If sync is requested, use openspec-sync-specs approach (agent-driven)
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
+- After activation, never downgrade a failed/missing shared archive gate to a
+  warning or interactive override
+- Archive does not authorize merge or push; those remain controller-only

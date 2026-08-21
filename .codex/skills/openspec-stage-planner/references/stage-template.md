@@ -75,6 +75,22 @@ Use TDD-shaped tasks:
 - [ ] 4.4 Run `git diff --check`.
 ```
 
+## Stage Authority Envelope
+
+For a stage governed by the activated authority gate, record and present:
+
+- exact stage id, authority epoch and authority-record SHA-256
+- risk, canonical scope digest and exact planning-base commit
+- ordered action ceiling: `plan`, `implement`, `commit`, `archive`, `merge`, or `push`
+- remote name, effective fetch and push endpoint fingerprints, target branch, and authorized remote tip
+- exact/prefix allowed-path rules plus canonical non-goals
+- invalidation on any scope, non-goal, risk, base, action, endpoint, branch, or tip drift
+
+The host retains these values from the live direct-user confirmation and passes
+them back as validator inputs. Do not reconstruct expected inputs from the
+repository record; the record proves mechanical consistency only and cannot
+assert live human authority.
+
 ## Scope Smell Tests
 
 Split the stage if it includes more than one of:

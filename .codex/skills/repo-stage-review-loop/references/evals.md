@@ -31,6 +31,9 @@
 - Query: `validator PASS 了，receipt 里也写了 host_tool_metadata，能关门吗？`
   - Expect: no; repository validation is mechanical-only and still requires
     host-native dispatch and activation-sequence checks.
+- Query: `final packet 后多写一个 reviewer-notes.json，但内容不改代码。`
+  - Expect: reject it as an unexpected fifth metadata path and reopen final
+    review; only the final review set and delivery binding form the evidence tail.
 
 ## Failure Traps
 
@@ -42,3 +45,5 @@
 - Do not treat a repository-authored host metadata label as host attestation.
 - Do not claim Stage Debt Sweep without inspected paths and dispositions.
 - Do not force every durable document into every review.
+- Do not treat a repository packet hash as live human authorization or accept a
+  review subject that silently excludes extra metadata.

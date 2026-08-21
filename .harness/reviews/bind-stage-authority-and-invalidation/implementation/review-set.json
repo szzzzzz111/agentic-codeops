@@ -1,0 +1,1118 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "bind-stage-authority-and-invalidation",
+  "phase": "implementation",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "bind-stage-authority-and-invalidation",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/activation-record.md",
+    "activation_ref_sha256": "f5880b28e776f3efff6dabb1e253651651cb386c896a5959a32ee36423203a9a",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "verified-by-host-controller",
+      "evidence_ref": "host-dispatch:/root/official_prearchive_review_a,/root/official_prearchive_review_b;fork_turns=none"
+    },
+    "activation_sequence": {
+      "status": "verified-by-pre-change-process-authority",
+      "evidence_ref": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/activation-record.md;activated-before-final-delivery-review"
+    }
+  },
+  "implementer": {
+    "instance_id": "/root"
+  },
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:44c43ddcf994dd13d2ec6a9a27c8faafd1e5b1675db0ba234711c9ce7973ebc3",
+    "artifacts": [
+      {
+        "path": ".codex/skills/openspec-apply-change/SKILL.md",
+        "sha256": "5feb11469479a865f3b5191ccba0ea2169e9fbd6c8b8132981e455695039e79b"
+      },
+      {
+        "path": ".codex/skills/openspec-archive-change/SKILL.md",
+        "sha256": "7beba7ffe3321ad4cc76cc26fc49edd0668d06d15e6ca17b20765c2305e89023"
+      },
+      {
+        "path": ".codex/skills/openspec-archive-change/references/evals.md",
+        "sha256": "cc74906d18838b49c6f1c59e38a7062f95101f93af1fb3642eb086b19a0f3aed"
+      },
+      {
+        "path": ".codex/skills/openspec-stage-planner/SKILL.md",
+        "sha256": "039ba6ae6da4dcea59e0a1c68d4da89918b616bf4bbad0a81140481918c27c20"
+      },
+      {
+        "path": ".codex/skills/openspec-stage-planner/references/stage-template.md",
+        "sha256": "537c5c6ab5e858ff23970a1636c849232e960e6763214e33d7cded4da79e9cbf"
+      },
+      {
+        "path": ".codex/skills/repo-stage-handoff/SKILL.md",
+        "sha256": "14b765dfc03a9aee140f03d817427dac2eb598f5324e94a7900ad55a4180d4ce"
+      },
+      {
+        "path": ".codex/skills/repo-stage-handoff/references/evals.md",
+        "sha256": "4868d06af40f1b06a3af9dd4639a19a4bbf998e1a85c9c0ad3363f5e8e2b5afd"
+      },
+      {
+        "path": ".codex/skills/repo-stage-handoff/references/stale-state-checklist.md",
+        "sha256": "52b9973dc265b3eb3e6863c05fac7e11c84fbb15383a0840b3c09b141fb434af"
+      },
+      {
+        "path": ".codex/skills/repo-stage-review-loop/SKILL.md",
+        "sha256": "329878128da527ecaf6704b72112596cb2dd54cb5525c0536c1cab2251b06c5f"
+      },
+      {
+        "path": ".codex/skills/repo-stage-review-loop/references/evals.md",
+        "sha256": "6dfc0fe052b1ff8fd042e0f16d1a41f2299fd255cd83a81c724bba6eb69c4513"
+      },
+      {
+        "path": ".codex/skills/repo-stage-workflow/SKILL.md",
+        "sha256": "b92cbf3990b80e6a0881353df028bb67ac940c1eccb3c907468801ceae3cfb00"
+      },
+      {
+        "path": ".codex/skills/repo-stage-workflow/references/evals.md",
+        "sha256": "d9a83928f5f2a4584a5b8530ddbc5a150e77b82ab437ac2de3b88543417a16c2"
+      },
+      {
+        "path": ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+        "sha256": "863f472e9828ec45ba129a188a38b88c93799a604e49781e8fce8eec7306e5e3"
+      },
+      {
+        "path": ".harness/allowed_files.md",
+        "sha256": "b989f1fe5ba075fb501288baffe5094c4697ba5eac3b9def58a0b56005c3331d"
+      },
+      {
+        "path": ".harness/authority/bind-stage-authority-and-invalidation/epoch-0001.json",
+        "sha256": "6f87a32790f302b8924919aa30f42ab5d97d41cf2824129054858f80411f38de"
+      },
+      {
+        "path": ".harness/review_checklist.md",
+        "sha256": "63771e315cea80e9c9e997f94753819467bf9214981a82a25e1d9b20a9f9a849"
+      },
+      {
+        "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change-manifest.json",
+        "sha256": "d857522a70da3abda8f6d805115ef4e87f2b3565df3e759dd033cdd2fa7822dc"
+      },
+      {
+        "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change.diff",
+        "sha256": "41c817ed4c0b39474e8c78119612a2930d31ef4d285f8cfc5bfbf4de10bd72dc"
+      },
+      {
+        "path": ".harness/reviews/bind-stage-authority-and-invalidation/plan/review-set.json",
+        "sha256": "e5878138006d38d2f3b6a7c0dc7001d399f5edcdb0da9d9bf6608c6f09312a67"
+      },
+      {
+        "path": ".harness/rules.md",
+        "sha256": "92933649fda93282de5f596946618cf489f82fbe8499bba6540a52efc516bcde"
+      },
+      {
+        "path": ".harness/templates/stage-authority-record.template.json",
+        "sha256": "86195ead1096fe46fe024b2ceb1e1844aa1155ecf95ad223819503c16966a2b7"
+      },
+      {
+        "path": ".harness/templates/stage-delivery-binding.template.json",
+        "sha256": "e6b8fcdb62487db0c03db805081c61ca6b3a096d8148162bd2380813e01923d0"
+      },
+      {
+        "path": ".harness/templates/stage_closeout.md",
+        "sha256": "4dd077fcc7a50a118abbbc3e7d7c98a9cba0cb62b3c81303338141d1b553b388"
+      },
+      {
+        "path": ".harness/templates/stage_planning.md",
+        "sha256": "8bb2b1ff210c5d0a3d247188e047413d99a3672a5d1b48afa737886d2069a6e2"
+      },
+      {
+        "path": ".harness/test_commands.md",
+        "sha256": "783512c65b9e3e0a6ffe9f471f219505e83b8323dfe3380d648d81feaca8a611"
+      },
+      {
+        "path": ".opencode/commands/opsx-apply.md",
+        "sha256": "a89332c3cd4d73a2a0c64b7fd8beef75146fc63cdd678ff97db6289770124ca3"
+      },
+      {
+        "path": ".opencode/commands/opsx-archive.md",
+        "sha256": "abe3455fa0292694fc31cc8d9e93d6b8cc1f65f81611f5a3be974344d5105810"
+      },
+      {
+        "path": ".opencode/skills/openspec-apply-change/SKILL.md",
+        "sha256": "5038b8476781627e5d9d92b6d90abeaac1076116009f0d91dc084b1bcd0b6f58"
+      },
+      {
+        "path": ".opencode/skills/openspec-archive-change/SKILL.md",
+        "sha256": "abd531891204c59009be187ab1cd7de1cc982948ea7615228a1e9fe11b9d9b56"
+      },
+      {
+        "path": "HANDOFF_TO_NEXT_CHAT.md",
+        "sha256": "3e19c8e75623ce2fb6efe04f488e7a61f01b8d4ccd536b1bf8b44dd40e969e97"
+      },
+      {
+        "path": "docs/AGENT_RULES.md",
+        "sha256": "564a10901aac114e5938c79e6d1d4c543c3a303b038dec23a4fc2d8c8532c7ea"
+      },
+      {
+        "path": "docs/PROGRESS.md",
+        "sha256": "aa1ef92cc12b2364da5d9f805b7ac6819496862d4a9e430b19f32555506e8e60"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/.openspec.yaml",
+        "sha256": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/activation-record.md",
+        "sha256": "f5880b28e776f3efff6dabb1e253651651cb386c896a5959a32ee36423203a9a"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/design.md",
+        "sha256": "21078f50adcb8ecd4a6930ab0ce2c28d17398003e3eec1b6c47fc513940dff3f"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/plan-review.md",
+        "sha256": "6e67553009189e9bd29518eaed5f673f9a88a64afb77b491b3b5cbcc90149938"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/proposal.md",
+        "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md",
+        "sha256": "08167d942a6026cc940c20372a54d570a33ae742719e44fd4b8bd8fbe1b85291"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md",
+        "sha256": "69b319caa3bc73479607c18dafb537c245c1722a52d102919b823da9b702bc7d"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/stage_planning.md",
+        "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/tasks.md",
+        "sha256": "fd146aedb7155295c74b76d20e715043e5c6c0959b581c02129348c25c7045db"
+      },
+      {
+        "path": "openspec/specs/harness-development-workflow/spec.md",
+        "sha256": "a16134ea7897cf6333ca27833f3b66e082a8a0f1fdf741b0a361b0b50dd156b3"
+      },
+      {
+        "path": "openspec/specs/stage-authority-binding/spec.md",
+        "sha256": "ffe66460404908a86b6ded9d0325b3e8be740fb9ed32363f0a1babccd2d3eb03"
+      },
+      {
+        "path": "scripts/validate_stage_authority.py",
+        "sha256": "bafb9fdd7e634175471574a010567e092d96ec9faa0f69a8b89b4232fd031b94"
+      },
+      {
+        "path": "tests/test_stage_authority_validation.py",
+        "sha256": "c5d4d2ca266b47df96cc476ed1eb6cf9193cb08130c506840e0a7d8d3d74425e"
+      }
+    ],
+    "packet_sha256": "44c43ddcf994dd13d2ec6a9a27c8faafd1e5b1675db0ba234711c9ce7973ebc3"
+  },
+  "review_history": [
+    {
+      "review_ref": "host-review:/root/official_prearchive_review_a#first-round",
+      "receipt_sha256": "5c34d503436ed23f86d0b963ffd3ef8422f526b90b72c1d659178836b71e4793",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "bind-stage-authority-and-invalidation",
+        "phase": "implementation",
+        "slot_id": "official-prearchive-review-a",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI",
+          "model": "gpt-5",
+          "instance_id": "/root/official_prearchive_review_a"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "0b22697be1ceef37f82c38b92c7053b47b9c31cdd29cdafaca6d1511e5eba295",
+        "reviewed_artifacts": [
+          {
+            "path": ".codex/skills/openspec-apply-change/SKILL.md",
+            "sha256": "5feb11469479a865f3b5191ccba0ea2169e9fbd6c8b8132981e455695039e79b"
+          },
+          {
+            "path": ".codex/skills/openspec-archive-change/SKILL.md",
+            "sha256": "7beba7ffe3321ad4cc76cc26fc49edd0668d06d15e6ca17b20765c2305e89023"
+          },
+          {
+            "path": ".codex/skills/openspec-archive-change/references/evals.md",
+            "sha256": "cc74906d18838b49c6f1c59e38a7062f95101f93af1fb3642eb086b19a0f3aed"
+          },
+          {
+            "path": ".codex/skills/openspec-stage-planner/SKILL.md",
+            "sha256": "039ba6ae6da4dcea59e0a1c68d4da89918b616bf4bbad0a81140481918c27c20"
+          },
+          {
+            "path": ".codex/skills/openspec-stage-planner/references/stage-template.md",
+            "sha256": "537c5c6ab5e858ff23970a1636c849232e960e6763214e33d7cded4da79e9cbf"
+          },
+          {
+            "path": ".codex/skills/repo-stage-handoff/SKILL.md",
+            "sha256": "14b765dfc03a9aee140f03d817427dac2eb598f5324e94a7900ad55a4180d4ce"
+          },
+          {
+            "path": ".codex/skills/repo-stage-handoff/references/evals.md",
+            "sha256": "4868d06af40f1b06a3af9dd4639a19a4bbf998e1a85c9c0ad3363f5e8e2b5afd"
+          },
+          {
+            "path": ".codex/skills/repo-stage-handoff/references/stale-state-checklist.md",
+            "sha256": "52b9973dc265b3eb3e6863c05fac7e11c84fbb15383a0840b3c09b141fb434af"
+          },
+          {
+            "path": ".codex/skills/repo-stage-review-loop/SKILL.md",
+            "sha256": "329878128da527ecaf6704b72112596cb2dd54cb5525c0536c1cab2251b06c5f"
+          },
+          {
+            "path": ".codex/skills/repo-stage-review-loop/references/evals.md",
+            "sha256": "6dfc0fe052b1ff8fd042e0f16d1a41f2299fd255cd83a81c724bba6eb69c4513"
+          },
+          {
+            "path": ".codex/skills/repo-stage-workflow/SKILL.md",
+            "sha256": "b92cbf3990b80e6a0881353df028bb67ac940c1eccb3c907468801ceae3cfb00"
+          },
+          {
+            "path": ".codex/skills/repo-stage-workflow/references/evals.md",
+            "sha256": "d9a83928f5f2a4584a5b8530ddbc5a150e77b82ab437ac2de3b88543417a16c2"
+          },
+          {
+            "path": ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+            "sha256": "863f472e9828ec45ba129a188a38b88c93799a604e49781e8fce8eec7306e5e3"
+          },
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "aa284c59221253178be0019b46f823a0cbf1cc0cf596e216d17399404b33cdbf"
+          },
+          {
+            "path": ".harness/authority/bind-stage-authority-and-invalidation/epoch-0001.json",
+            "sha256": "6f87a32790f302b8924919aa30f42ab5d97d41cf2824129054858f80411f38de"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "d06e4be5e27214a27e629d786dea054a0fd670067c2a87bf81dfc7eeee1f484c"
+          },
+          {
+            "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change-manifest.json",
+            "sha256": "6859611d5c4d32caf103f263f62099ea0e3b88a02a47edbaeac0af91e9e15d16"
+          },
+          {
+            "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change.diff",
+            "sha256": "a8f39e312f89fb117bcd003a23b57696898a6dc4b5fb7c20c627ae7a39d88cc4"
+          },
+          {
+            "path": ".harness/reviews/bind-stage-authority-and-invalidation/plan/review-set.json",
+            "sha256": "e5878138006d38d2f3b6a7c0dc7001d399f5edcdb0da9d9bf6608c6f09312a67"
+          },
+          {
+            "path": ".harness/rules.md",
+            "sha256": "bb78da95fe1c0446627aca21cdd0b7e75a3c3bd7c1cbdf0cfd0b9af72a95172e"
+          },
+          {
+            "path": ".harness/templates/stage-authority-record.template.json",
+            "sha256": "86195ead1096fe46fe024b2ceb1e1844aa1155ecf95ad223819503c16966a2b7"
+          },
+          {
+            "path": ".harness/templates/stage-delivery-binding.template.json",
+            "sha256": "e6b8fcdb62487db0c03db805081c61ca6b3a096d8148162bd2380813e01923d0"
+          },
+          {
+            "path": ".harness/templates/stage_closeout.md",
+            "sha256": "4dd077fcc7a50a118abbbc3e7d7c98a9cba0cb62b3c81303338141d1b553b388"
+          },
+          {
+            "path": ".harness/templates/stage_planning.md",
+            "sha256": "8bb2b1ff210c5d0a3d247188e047413d99a3672a5d1b48afa737886d2069a6e2"
+          },
+          {
+            "path": ".harness/test_commands.md",
+            "sha256": "783512c65b9e3e0a6ffe9f471f219505e83b8323dfe3380d648d81feaca8a611"
+          },
+          {
+            "path": ".opencode/commands/opsx-apply.md",
+            "sha256": "a89332c3cd4d73a2a0c64b7fd8beef75146fc63cdd678ff97db6289770124ca3"
+          },
+          {
+            "path": ".opencode/commands/opsx-archive.md",
+            "sha256": "abe3455fa0292694fc31cc8d9e93d6b8cc1f65f81611f5a3be974344d5105810"
+          },
+          {
+            "path": ".opencode/skills/openspec-apply-change/SKILL.md",
+            "sha256": "5038b8476781627e5d9d92b6d90abeaac1076116009f0d91dc084b1bcd0b6f58"
+          },
+          {
+            "path": ".opencode/skills/openspec-archive-change/SKILL.md",
+            "sha256": "abd531891204c59009be187ab1cd7de1cc982948ea7615228a1e9fe11b9d9b56"
+          },
+          {
+            "path": "docs/AGENT_RULES.md",
+            "sha256": "859d3fd749d85acaf5139f326b77e559e146644307d4083f509c4a186c4fd865"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/.openspec.yaml",
+            "sha256": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/activation-record.md",
+            "sha256": "f5880b28e776f3efff6dabb1e253651651cb386c896a5959a32ee36423203a9a"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/design.md",
+            "sha256": "29902fe1cebdc245ba0f280ccf7b0050734dd16ccdae8c2b8b31c738c416314f"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/plan-review.md",
+            "sha256": "6e67553009189e9bd29518eaed5f673f9a88a64afb77b491b3b5cbcc90149938"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/proposal.md",
+            "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md",
+            "sha256": "c15ee6aa829673272e2ccfbb6c48ac40e2afbeea558209156c25802f00632611"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md",
+            "sha256": "c0ff94e1b2e8bdadfa36c9f8f87672ab7d602fd1dfe4cf9c7a5b894e093572ac"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/stage_planning.md",
+            "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/tasks.md",
+            "sha256": "bfc8ca8dee757fe644f3a735b0b1dec1e9a05c4a95c632d45129fd73aa4871c0"
+          },
+          {
+            "path": "openspec/specs/harness-development-workflow/spec.md",
+            "sha256": "405d214a94581e02f012dc9d0fc0adce8543af40296d135af02d48bf12e4618e"
+          },
+          {
+            "path": "openspec/specs/stage-authority-binding/spec.md",
+            "sha256": "3335265efbb2f163a18dd9c2e3628413db4bc74056eb919fba8759f60dc04fa2"
+          },
+          {
+            "path": "scripts/validate_stage_authority.py",
+            "sha256": "96deb19de1f7217dc10d0ab7a88f9a85bab77753a29d97739a6a23c70a0f453d"
+          },
+          {
+            "path": "tests/test_stage_authority_validation.py",
+            "sha256": "073b5aca40e170e263a6269c8b28ea0cc429b2acd876b91908cfed1a04c83d22"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "OFFICIAL-A-P1-001",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "OFFICIAL-A-P1-002",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "OFFICIAL-A-P1-003",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Windows Job Object behavior was not executed on Windows; host dispatch provenance and live human authority remain external."
+        },
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "host-review:/root/official_prearchive_review_b#first-round",
+      "receipt_sha256": "43794ad73a4c7fea47f64d772deda4300953faaedd12d61c5c08da957311b8c3",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "bind-stage-authority-and-invalidation",
+        "phase": "implementation",
+        "slot_id": "implementation-b",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "openai",
+          "model": "gpt-5-codex",
+          "instance_id": "/root/official_prearchive_review_b"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "0b22697be1ceef37f82c38b92c7053b47b9c31cdd29cdafaca6d1511e5eba295",
+        "reviewed_artifacts": [
+          {
+            "path": ".codex/skills/openspec-apply-change/SKILL.md",
+            "sha256": "5feb11469479a865f3b5191ccba0ea2169e9fbd6c8b8132981e455695039e79b"
+          },
+          {
+            "path": ".codex/skills/openspec-archive-change/SKILL.md",
+            "sha256": "7beba7ffe3321ad4cc76cc26fc49edd0668d06d15e6ca17b20765c2305e89023"
+          },
+          {
+            "path": ".codex/skills/openspec-archive-change/references/evals.md",
+            "sha256": "cc74906d18838b49c6f1c59e38a7062f95101f93af1fb3642eb086b19a0f3aed"
+          },
+          {
+            "path": ".codex/skills/openspec-stage-planner/SKILL.md",
+            "sha256": "039ba6ae6da4dcea59e0a1c68d4da89918b616bf4bbad0a81140481918c27c20"
+          },
+          {
+            "path": ".codex/skills/openspec-stage-planner/references/stage-template.md",
+            "sha256": "537c5c6ab5e858ff23970a1636c849232e960e6763214e33d7cded4da79e9cbf"
+          },
+          {
+            "path": ".codex/skills/repo-stage-handoff/SKILL.md",
+            "sha256": "14b765dfc03a9aee140f03d817427dac2eb598f5324e94a7900ad55a4180d4ce"
+          },
+          {
+            "path": ".codex/skills/repo-stage-handoff/references/evals.md",
+            "sha256": "4868d06af40f1b06a3af9dd4639a19a4bbf998e1a85c9c0ad3363f5e8e2b5afd"
+          },
+          {
+            "path": ".codex/skills/repo-stage-handoff/references/stale-state-checklist.md",
+            "sha256": "52b9973dc265b3eb3e6863c05fac7e11c84fbb15383a0840b3c09b141fb434af"
+          },
+          {
+            "path": ".codex/skills/repo-stage-review-loop/SKILL.md",
+            "sha256": "329878128da527ecaf6704b72112596cb2dd54cb5525c0536c1cab2251b06c5f"
+          },
+          {
+            "path": ".codex/skills/repo-stage-review-loop/references/evals.md",
+            "sha256": "6dfc0fe052b1ff8fd042e0f16d1a41f2299fd255cd83a81c724bba6eb69c4513"
+          },
+          {
+            "path": ".codex/skills/repo-stage-workflow/SKILL.md",
+            "sha256": "b92cbf3990b80e6a0881353df028bb67ac940c1eccb3c907468801ceae3cfb00"
+          },
+          {
+            "path": ".codex/skills/repo-stage-workflow/references/evals.md",
+            "sha256": "d9a83928f5f2a4584a5b8530ddbc5a150e77b82ab437ac2de3b88543417a16c2"
+          },
+          {
+            "path": ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+            "sha256": "863f472e9828ec45ba129a188a38b88c93799a604e49781e8fce8eec7306e5e3"
+          },
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "aa284c59221253178be0019b46f823a0cbf1cc0cf596e216d17399404b33cdbf"
+          },
+          {
+            "path": ".harness/authority/bind-stage-authority-and-invalidation/epoch-0001.json",
+            "sha256": "6f87a32790f302b8924919aa30f42ab5d97d41cf2824129054858f80411f38de"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "d06e4be5e27214a27e629d786dea054a0fd670067c2a87bf81dfc7eeee1f484c"
+          },
+          {
+            "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change-manifest.json",
+            "sha256": "6859611d5c4d32caf103f263f62099ea0e3b88a02a47edbaeac0af91e9e15d16"
+          },
+          {
+            "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change.diff",
+            "sha256": "a8f39e312f89fb117bcd003a23b57696898a6dc4b5fb7c20c627ae7a39d88cc4"
+          },
+          {
+            "path": ".harness/reviews/bind-stage-authority-and-invalidation/plan/review-set.json",
+            "sha256": "e5878138006d38d2f3b6a7c0dc7001d399f5edcdb0da9d9bf6608c6f09312a67"
+          },
+          {
+            "path": ".harness/rules.md",
+            "sha256": "bb78da95fe1c0446627aca21cdd0b7e75a3c3bd7c1cbdf0cfd0b9af72a95172e"
+          },
+          {
+            "path": ".harness/templates/stage-authority-record.template.json",
+            "sha256": "86195ead1096fe46fe024b2ceb1e1844aa1155ecf95ad223819503c16966a2b7"
+          },
+          {
+            "path": ".harness/templates/stage-delivery-binding.template.json",
+            "sha256": "e6b8fcdb62487db0c03db805081c61ca6b3a096d8148162bd2380813e01923d0"
+          },
+          {
+            "path": ".harness/templates/stage_closeout.md",
+            "sha256": "4dd077fcc7a50a118abbbc3e7d7c98a9cba0cb62b3c81303338141d1b553b388"
+          },
+          {
+            "path": ".harness/templates/stage_planning.md",
+            "sha256": "8bb2b1ff210c5d0a3d247188e047413d99a3672a5d1b48afa737886d2069a6e2"
+          },
+          {
+            "path": ".harness/test_commands.md",
+            "sha256": "783512c65b9e3e0a6ffe9f471f219505e83b8323dfe3380d648d81feaca8a611"
+          },
+          {
+            "path": ".opencode/commands/opsx-apply.md",
+            "sha256": "a89332c3cd4d73a2a0c64b7fd8beef75146fc63cdd678ff97db6289770124ca3"
+          },
+          {
+            "path": ".opencode/commands/opsx-archive.md",
+            "sha256": "abe3455fa0292694fc31cc8d9e93d6b8cc1f65f81611f5a3be974344d5105810"
+          },
+          {
+            "path": ".opencode/skills/openspec-apply-change/SKILL.md",
+            "sha256": "5038b8476781627e5d9d92b6d90abeaac1076116009f0d91dc084b1bcd0b6f58"
+          },
+          {
+            "path": ".opencode/skills/openspec-archive-change/SKILL.md",
+            "sha256": "abd531891204c59009be187ab1cd7de1cc982948ea7615228a1e9fe11b9d9b56"
+          },
+          {
+            "path": "docs/AGENT_RULES.md",
+            "sha256": "859d3fd749d85acaf5139f326b77e559e146644307d4083f509c4a186c4fd865"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/.openspec.yaml",
+            "sha256": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/activation-record.md",
+            "sha256": "f5880b28e776f3efff6dabb1e253651651cb386c896a5959a32ee36423203a9a"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/design.md",
+            "sha256": "29902fe1cebdc245ba0f280ccf7b0050734dd16ccdae8c2b8b31c738c416314f"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/plan-review.md",
+            "sha256": "6e67553009189e9bd29518eaed5f673f9a88a64afb77b491b3b5cbcc90149938"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/proposal.md",
+            "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md",
+            "sha256": "c15ee6aa829673272e2ccfbb6c48ac40e2afbeea558209156c25802f00632611"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md",
+            "sha256": "c0ff94e1b2e8bdadfa36c9f8f87672ab7d602fd1dfe4cf9c7a5b894e093572ac"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/stage_planning.md",
+            "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"
+          },
+          {
+            "path": "openspec/changes/bind-stage-authority-and-invalidation/tasks.md",
+            "sha256": "bfc8ca8dee757fe644f3a735b0b1dec1e9a05c4a95c632d45129fd73aa4871c0"
+          },
+          {
+            "path": "openspec/specs/harness-development-workflow/spec.md",
+            "sha256": "405d214a94581e02f012dc9d0fc0adce8543af40296d135af02d48bf12e4618e"
+          },
+          {
+            "path": "openspec/specs/stage-authority-binding/spec.md",
+            "sha256": "3335265efbb2f163a18dd9c2e3628413db4bc74056eb919fba8759f60dc04fa2"
+          },
+          {
+            "path": "scripts/validate_stage_authority.py",
+            "sha256": "96deb19de1f7217dc10d0ab7a88f9a85bab77753a29d97739a6a23c70a0f453d"
+          },
+          {
+            "path": "tests/test_stage_authority_validation.py",
+            "sha256": "073b5aca40e170e263a6269c8b28ea0cc429b2acd876b91908cfed1a04c83d22"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "P1-001",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "P1-002",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "P1-003",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Windows Job Object behavior was not executed on Windows; host dispatch provenance and live human authority remain external."
+        },
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "bind-stage-authority-and-invalidation",
+      "phase": "implementation",
+      "slot_id": "official-prearchive-review-a",
+      "implementer_instance_id": "/root",
+      "reviewer": {
+        "provider": "OpenAI",
+        "model": "gpt-5",
+        "instance_id": "/root/official_prearchive_review_a"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "44c43ddcf994dd13d2ec6a9a27c8faafd1e5b1675db0ba234711c9ce7973ebc3",
+      "reviewed_artifacts": [
+        {
+          "path": ".codex/skills/openspec-apply-change/SKILL.md",
+          "sha256": "5feb11469479a865f3b5191ccba0ea2169e9fbd6c8b8132981e455695039e79b"
+        },
+        {
+          "path": ".codex/skills/openspec-archive-change/SKILL.md",
+          "sha256": "7beba7ffe3321ad4cc76cc26fc49edd0668d06d15e6ca17b20765c2305e89023"
+        },
+        {
+          "path": ".codex/skills/openspec-archive-change/references/evals.md",
+          "sha256": "cc74906d18838b49c6f1c59e38a7062f95101f93af1fb3642eb086b19a0f3aed"
+        },
+        {
+          "path": ".codex/skills/openspec-stage-planner/SKILL.md",
+          "sha256": "039ba6ae6da4dcea59e0a1c68d4da89918b616bf4bbad0a81140481918c27c20"
+        },
+        {
+          "path": ".codex/skills/openspec-stage-planner/references/stage-template.md",
+          "sha256": "537c5c6ab5e858ff23970a1636c849232e960e6763214e33d7cded4da79e9cbf"
+        },
+        {
+          "path": ".codex/skills/repo-stage-handoff/SKILL.md",
+          "sha256": "14b765dfc03a9aee140f03d817427dac2eb598f5324e94a7900ad55a4180d4ce"
+        },
+        {
+          "path": ".codex/skills/repo-stage-handoff/references/evals.md",
+          "sha256": "4868d06af40f1b06a3af9dd4639a19a4bbf998e1a85c9c0ad3363f5e8e2b5afd"
+        },
+        {
+          "path": ".codex/skills/repo-stage-handoff/references/stale-state-checklist.md",
+          "sha256": "52b9973dc265b3eb3e6863c05fac7e11c84fbb15383a0840b3c09b141fb434af"
+        },
+        {
+          "path": ".codex/skills/repo-stage-review-loop/SKILL.md",
+          "sha256": "329878128da527ecaf6704b72112596cb2dd54cb5525c0536c1cab2251b06c5f"
+        },
+        {
+          "path": ".codex/skills/repo-stage-review-loop/references/evals.md",
+          "sha256": "6dfc0fe052b1ff8fd042e0f16d1a41f2299fd255cd83a81c724bba6eb69c4513"
+        },
+        {
+          "path": ".codex/skills/repo-stage-workflow/SKILL.md",
+          "sha256": "b92cbf3990b80e6a0881353df028bb67ac940c1eccb3c907468801ceae3cfb00"
+        },
+        {
+          "path": ".codex/skills/repo-stage-workflow/references/evals.md",
+          "sha256": "d9a83928f5f2a4584a5b8530ddbc5a150e77b82ab437ac2de3b88543417a16c2"
+        },
+        {
+          "path": ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+          "sha256": "863f472e9828ec45ba129a188a38b88c93799a604e49781e8fce8eec7306e5e3"
+        },
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "b989f1fe5ba075fb501288baffe5094c4697ba5eac3b9def58a0b56005c3331d"
+        },
+        {
+          "path": ".harness/authority/bind-stage-authority-and-invalidation/epoch-0001.json",
+          "sha256": "6f87a32790f302b8924919aa30f42ab5d97d41cf2824129054858f80411f38de"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "63771e315cea80e9c9e997f94753819467bf9214981a82a25e1d9b20a9f9a849"
+        },
+        {
+          "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change-manifest.json",
+          "sha256": "d857522a70da3abda8f6d805115ef4e87f2b3565df3e759dd033cdd2fa7822dc"
+        },
+        {
+          "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change.diff",
+          "sha256": "41c817ed4c0b39474e8c78119612a2930d31ef4d285f8cfc5bfbf4de10bd72dc"
+        },
+        {
+          "path": ".harness/reviews/bind-stage-authority-and-invalidation/plan/review-set.json",
+          "sha256": "e5878138006d38d2f3b6a7c0dc7001d399f5edcdb0da9d9bf6608c6f09312a67"
+        },
+        {
+          "path": ".harness/rules.md",
+          "sha256": "92933649fda93282de5f596946618cf489f82fbe8499bba6540a52efc516bcde"
+        },
+        {
+          "path": ".harness/templates/stage-authority-record.template.json",
+          "sha256": "86195ead1096fe46fe024b2ceb1e1844aa1155ecf95ad223819503c16966a2b7"
+        },
+        {
+          "path": ".harness/templates/stage-delivery-binding.template.json",
+          "sha256": "e6b8fcdb62487db0c03db805081c61ca6b3a096d8148162bd2380813e01923d0"
+        },
+        {
+          "path": ".harness/templates/stage_closeout.md",
+          "sha256": "4dd077fcc7a50a118abbbc3e7d7c98a9cba0cb62b3c81303338141d1b553b388"
+        },
+        {
+          "path": ".harness/templates/stage_planning.md",
+          "sha256": "8bb2b1ff210c5d0a3d247188e047413d99a3672a5d1b48afa737886d2069a6e2"
+        },
+        {
+          "path": ".harness/test_commands.md",
+          "sha256": "783512c65b9e3e0a6ffe9f471f219505e83b8323dfe3380d648d81feaca8a611"
+        },
+        {
+          "path": ".opencode/commands/opsx-apply.md",
+          "sha256": "a89332c3cd4d73a2a0c64b7fd8beef75146fc63cdd678ff97db6289770124ca3"
+        },
+        {
+          "path": ".opencode/commands/opsx-archive.md",
+          "sha256": "abe3455fa0292694fc31cc8d9e93d6b8cc1f65f81611f5a3be974344d5105810"
+        },
+        {
+          "path": ".opencode/skills/openspec-apply-change/SKILL.md",
+          "sha256": "5038b8476781627e5d9d92b6d90abeaac1076116009f0d91dc084b1bcd0b6f58"
+        },
+        {
+          "path": ".opencode/skills/openspec-archive-change/SKILL.md",
+          "sha256": "abd531891204c59009be187ab1cd7de1cc982948ea7615228a1e9fe11b9d9b56"
+        },
+        {
+          "path": "HANDOFF_TO_NEXT_CHAT.md",
+          "sha256": "3e19c8e75623ce2fb6efe04f488e7a61f01b8d4ccd536b1bf8b44dd40e969e97"
+        },
+        {
+          "path": "docs/AGENT_RULES.md",
+          "sha256": "564a10901aac114e5938c79e6d1d4c543c3a303b038dec23a4fc2d8c8532c7ea"
+        },
+        {
+          "path": "docs/PROGRESS.md",
+          "sha256": "aa1ef92cc12b2364da5d9f805b7ac6819496862d4a9e430b19f32555506e8e60"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/.openspec.yaml",
+          "sha256": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/activation-record.md",
+          "sha256": "f5880b28e776f3efff6dabb1e253651651cb386c896a5959a32ee36423203a9a"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/design.md",
+          "sha256": "21078f50adcb8ecd4a6930ab0ce2c28d17398003e3eec1b6c47fc513940dff3f"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/plan-review.md",
+          "sha256": "6e67553009189e9bd29518eaed5f673f9a88a64afb77b491b3b5cbcc90149938"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/proposal.md",
+          "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md",
+          "sha256": "08167d942a6026cc940c20372a54d570a33ae742719e44fd4b8bd8fbe1b85291"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md",
+          "sha256": "69b319caa3bc73479607c18dafb537c245c1722a52d102919b823da9b702bc7d"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/stage_planning.md",
+          "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/tasks.md",
+          "sha256": "fd146aedb7155295c74b76d20e715043e5c6c0959b581c02129348c25c7045db"
+        },
+        {
+          "path": "openspec/specs/harness-development-workflow/spec.md",
+          "sha256": "a16134ea7897cf6333ca27833f3b66e082a8a0f1fdf741b0a361b0b50dd156b3"
+        },
+        {
+          "path": "openspec/specs/stage-authority-binding/spec.md",
+          "sha256": "ffe66460404908a86b6ded9d0325b3e8be740fb9ed32363f0a1babccd2d3eb03"
+        },
+        {
+          "path": "scripts/validate_stage_authority.py",
+          "sha256": "bafb9fdd7e634175471574a010567e092d96ec9faa0f69a8b89b4232fd031b94"
+        },
+        {
+          "path": "tests/test_stage_authority_validation.py",
+          "sha256": "c5d4d2ca266b47df96cc476ed1eb6cf9193cb08130c506840e0a7d8d3d74425e"
+        }
+      ],
+      "conclusion": {
+        "status": "findings",
+        "findings": [
+          {
+            "id": "OFFICIAL-A-P1-001",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "OFFICIAL-A-P1-002",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "OFFICIAL-A-P1-003",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          }
+        ],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Windows Job Object behavior was not executed on Windows; host dispatch provenance and live human authority remain external."
+      },
+      "lineage": {
+        "original_slot_id": "official-prearchive-review-a",
+        "original_reviewer_instance_id": "/root/official_prearchive_review_a",
+        "original_review_ref": "host-review:/root/official_prearchive_review_a#first-round",
+        "original_receipt_sha256": "5c34d503436ed23f86d0b963ffd3ef8422f526b90b72c1d659178836b71e4793",
+        "closed_finding_ids": [
+          "OFFICIAL-A-P1-001",
+          "OFFICIAL-A-P1-002",
+          "OFFICIAL-A-P1-003"
+        ]
+      }
+    },
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "bind-stage-authority-and-invalidation",
+      "phase": "implementation",
+      "slot_id": "implementation-b",
+      "implementer_instance_id": "/root",
+      "reviewer": {
+        "provider": "openai",
+        "model": "gpt-5-codex",
+        "instance_id": "/root/official_prearchive_review_b"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "44c43ddcf994dd13d2ec6a9a27c8faafd1e5b1675db0ba234711c9ce7973ebc3",
+      "reviewed_artifacts": [
+        {
+          "path": ".codex/skills/openspec-apply-change/SKILL.md",
+          "sha256": "5feb11469479a865f3b5191ccba0ea2169e9fbd6c8b8132981e455695039e79b"
+        },
+        {
+          "path": ".codex/skills/openspec-archive-change/SKILL.md",
+          "sha256": "7beba7ffe3321ad4cc76cc26fc49edd0668d06d15e6ca17b20765c2305e89023"
+        },
+        {
+          "path": ".codex/skills/openspec-archive-change/references/evals.md",
+          "sha256": "cc74906d18838b49c6f1c59e38a7062f95101f93af1fb3642eb086b19a0f3aed"
+        },
+        {
+          "path": ".codex/skills/openspec-stage-planner/SKILL.md",
+          "sha256": "039ba6ae6da4dcea59e0a1c68d4da89918b616bf4bbad0a81140481918c27c20"
+        },
+        {
+          "path": ".codex/skills/openspec-stage-planner/references/stage-template.md",
+          "sha256": "537c5c6ab5e858ff23970a1636c849232e960e6763214e33d7cded4da79e9cbf"
+        },
+        {
+          "path": ".codex/skills/repo-stage-handoff/SKILL.md",
+          "sha256": "14b765dfc03a9aee140f03d817427dac2eb598f5324e94a7900ad55a4180d4ce"
+        },
+        {
+          "path": ".codex/skills/repo-stage-handoff/references/evals.md",
+          "sha256": "4868d06af40f1b06a3af9dd4639a19a4bbf998e1a85c9c0ad3363f5e8e2b5afd"
+        },
+        {
+          "path": ".codex/skills/repo-stage-handoff/references/stale-state-checklist.md",
+          "sha256": "52b9973dc265b3eb3e6863c05fac7e11c84fbb15383a0840b3c09b141fb434af"
+        },
+        {
+          "path": ".codex/skills/repo-stage-review-loop/SKILL.md",
+          "sha256": "329878128da527ecaf6704b72112596cb2dd54cb5525c0536c1cab2251b06c5f"
+        },
+        {
+          "path": ".codex/skills/repo-stage-review-loop/references/evals.md",
+          "sha256": "6dfc0fe052b1ff8fd042e0f16d1a41f2299fd255cd83a81c724bba6eb69c4513"
+        },
+        {
+          "path": ".codex/skills/repo-stage-workflow/SKILL.md",
+          "sha256": "b92cbf3990b80e6a0881353df028bb67ac940c1eccb3c907468801ceae3cfb00"
+        },
+        {
+          "path": ".codex/skills/repo-stage-workflow/references/evals.md",
+          "sha256": "d9a83928f5f2a4584a5b8530ddbc5a150e77b82ab437ac2de3b88543417a16c2"
+        },
+        {
+          "path": ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+          "sha256": "863f472e9828ec45ba129a188a38b88c93799a604e49781e8fce8eec7306e5e3"
+        },
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "b989f1fe5ba075fb501288baffe5094c4697ba5eac3b9def58a0b56005c3331d"
+        },
+        {
+          "path": ".harness/authority/bind-stage-authority-and-invalidation/epoch-0001.json",
+          "sha256": "6f87a32790f302b8924919aa30f42ab5d97d41cf2824129054858f80411f38de"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "63771e315cea80e9c9e997f94753819467bf9214981a82a25e1d9b20a9f9a849"
+        },
+        {
+          "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change-manifest.json",
+          "sha256": "d857522a70da3abda8f6d805115ef4e87f2b3565df3e759dd033cdd2fa7822dc"
+        },
+        {
+          "path": ".harness/reviews/bind-stage-authority-and-invalidation/implementation/reviewed-change.diff",
+          "sha256": "41c817ed4c0b39474e8c78119612a2930d31ef4d285f8cfc5bfbf4de10bd72dc"
+        },
+        {
+          "path": ".harness/reviews/bind-stage-authority-and-invalidation/plan/review-set.json",
+          "sha256": "e5878138006d38d2f3b6a7c0dc7001d399f5edcdb0da9d9bf6608c6f09312a67"
+        },
+        {
+          "path": ".harness/rules.md",
+          "sha256": "92933649fda93282de5f596946618cf489f82fbe8499bba6540a52efc516bcde"
+        },
+        {
+          "path": ".harness/templates/stage-authority-record.template.json",
+          "sha256": "86195ead1096fe46fe024b2ceb1e1844aa1155ecf95ad223819503c16966a2b7"
+        },
+        {
+          "path": ".harness/templates/stage-delivery-binding.template.json",
+          "sha256": "e6b8fcdb62487db0c03db805081c61ca6b3a096d8148162bd2380813e01923d0"
+        },
+        {
+          "path": ".harness/templates/stage_closeout.md",
+          "sha256": "4dd077fcc7a50a118abbbc3e7d7c98a9cba0cb62b3c81303338141d1b553b388"
+        },
+        {
+          "path": ".harness/templates/stage_planning.md",
+          "sha256": "8bb2b1ff210c5d0a3d247188e047413d99a3672a5d1b48afa737886d2069a6e2"
+        },
+        {
+          "path": ".harness/test_commands.md",
+          "sha256": "783512c65b9e3e0a6ffe9f471f219505e83b8323dfe3380d648d81feaca8a611"
+        },
+        {
+          "path": ".opencode/commands/opsx-apply.md",
+          "sha256": "a89332c3cd4d73a2a0c64b7fd8beef75146fc63cdd678ff97db6289770124ca3"
+        },
+        {
+          "path": ".opencode/commands/opsx-archive.md",
+          "sha256": "abe3455fa0292694fc31cc8d9e93d6b8cc1f65f81611f5a3be974344d5105810"
+        },
+        {
+          "path": ".opencode/skills/openspec-apply-change/SKILL.md",
+          "sha256": "5038b8476781627e5d9d92b6d90abeaac1076116009f0d91dc084b1bcd0b6f58"
+        },
+        {
+          "path": ".opencode/skills/openspec-archive-change/SKILL.md",
+          "sha256": "abd531891204c59009be187ab1cd7de1cc982948ea7615228a1e9fe11b9d9b56"
+        },
+        {
+          "path": "HANDOFF_TO_NEXT_CHAT.md",
+          "sha256": "3e19c8e75623ce2fb6efe04f488e7a61f01b8d4ccd536b1bf8b44dd40e969e97"
+        },
+        {
+          "path": "docs/AGENT_RULES.md",
+          "sha256": "564a10901aac114e5938c79e6d1d4c543c3a303b038dec23a4fc2d8c8532c7ea"
+        },
+        {
+          "path": "docs/PROGRESS.md",
+          "sha256": "aa1ef92cc12b2364da5d9f805b7ac6819496862d4a9e430b19f32555506e8e60"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/.openspec.yaml",
+          "sha256": "727fc3b35bb3eb09ccede6d08cbc829ea0044b031816d47842ec2573bff99290"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/activation-record.md",
+          "sha256": "f5880b28e776f3efff6dabb1e253651651cb386c896a5959a32ee36423203a9a"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/design.md",
+          "sha256": "21078f50adcb8ecd4a6930ab0ce2c28d17398003e3eec1b6c47fc513940dff3f"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/plan-review.md",
+          "sha256": "6e67553009189e9bd29518eaed5f673f9a88a64afb77b491b3b5cbcc90149938"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/proposal.md",
+          "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md",
+          "sha256": "08167d942a6026cc940c20372a54d570a33ae742719e44fd4b8bd8fbe1b85291"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md",
+          "sha256": "69b319caa3bc73479607c18dafb537c245c1722a52d102919b823da9b702bc7d"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/stage_planning.md",
+          "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-20-bind-stage-authority-and-invalidation/tasks.md",
+          "sha256": "fd146aedb7155295c74b76d20e715043e5c6c0959b581c02129348c25c7045db"
+        },
+        {
+          "path": "openspec/specs/harness-development-workflow/spec.md",
+          "sha256": "a16134ea7897cf6333ca27833f3b66e082a8a0f1fdf741b0a361b0b50dd156b3"
+        },
+        {
+          "path": "openspec/specs/stage-authority-binding/spec.md",
+          "sha256": "ffe66460404908a86b6ded9d0325b3e8be740fb9ed32363f0a1babccd2d3eb03"
+        },
+        {
+          "path": "scripts/validate_stage_authority.py",
+          "sha256": "bafb9fdd7e634175471574a010567e092d96ec9faa0f69a8b89b4232fd031b94"
+        },
+        {
+          "path": "tests/test_stage_authority_validation.py",
+          "sha256": "c5d4d2ca266b47df96cc476ed1eb6cf9193cb08130c506840e0a7d8d3d74425e"
+        }
+      ],
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Windows Job Object behavior was not executed on Windows; host dispatch provenance and live human authority remain external."
+      },
+      "lineage": {
+        "original_slot_id": "implementation-b",
+        "original_reviewer_instance_id": "/root/official_prearchive_review_b",
+        "original_review_ref": "host-review:/root/official_prearchive_review_b#first-round",
+        "original_receipt_sha256": "43794ad73a4c7fea47f64d772deda4300953faaedd12d61c5c08da957311b8c3",
+        "closed_finding_ids": [
+          "P1-001",
+          "P1-002",
+          "P1-003"
+        ]
+      }
+    }
+  ]
+}

@@ -56,7 +56,28 @@ Implement tasks from an OpenSpec change.
    - **spec-driven**: proposal, specs, design, tasks
    - Other schemas: follow the contextFiles from CLI output
 
-5. **Show current progress**
+5. **Run the stage-authority preflight**
+
+   After the stage-authority gate is activated, run
+   `scripts/validate_stage_authority.py --required-action implement` with the
+   exact flags documented in `.harness/test_commands.md`
+   before the first implementation-file mutation. The host controller must
+   supply the exact expected stage, epoch, record hash, risk, scope digest,
+   planning base, action ceiling, remote name, effective fetch/push endpoint fingerprints,
+   target branch, and authorized remote tip from the live confirmed envelope.
+   Never recover these expected inputs from the authority record itself.
+
+   Missing/stale authority, insufficient action ceiling, scope/path drift,
+   invalid lineage, or any expected-input mismatch is a hard stop; do not
+   warn-and-continue or edit implementation files. Validator success is
+   `mechanical_consistency_only`; separately require the host's live
+   direct-user authority and applicable activation/provenance evidence.
+
+   A change that introduces this gate remains governed by the pre-change
+   process until prospective activation; it must not claim the new validator
+   retroactively authorized its own planning or implementation.
+
+6. **Show current progress**
 
    Display:
    - Schema being used
@@ -64,7 +85,7 @@ Implement tasks from an OpenSpec change.
    - Remaining tasks overview
    - Dynamic instruction from CLI
 
-6. **Implement tasks (loop until done or blocked)**
+7. **Implement tasks (loop until done or blocked)**
 
    For each pending task:
    - Show which task is being worked on
@@ -79,7 +100,7 @@ Implement tasks from an OpenSpec change.
    - Error or blocker encountered → report and wait for guidance
    - User interrupts
 
-7. **On completion or pause, show status**
+8. **On completion or pause, show status**
 
    Display:
    - Tasks completed this session
@@ -147,6 +168,10 @@ What would you like to do?
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
+- After activation, never bypass the shared stage-authority `implement`
+  preflight because the invocation came directly through this skill
+- Keep merge and push out of this skill; they remain controller-only closeout
+  actions under `repo-stage-workflow`
 
 **Fluid Workflow Integration**
 

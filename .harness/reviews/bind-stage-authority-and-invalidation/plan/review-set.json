@@ -1,0 +1,182 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "bind-stage-authority-and-invalidation",
+  "phase": "plan",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "generalize-independent-review-provider",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md",
+    "activation_ref_sha256": "4b7155e4648dd2f12914213a866040ab6c68f537fcbdecccf072a90841085c8f",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "requires-live-host-verification",
+      "evidence_ref": "host-dispatch:/root/authority_plan_review_slot_a,/root/authority_plan_review_slot_b;fork_turns=none"
+    },
+    "activation_sequence": {
+      "status": "requires-pre-change-authority-verification",
+      "evidence_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md"
+    }
+  },
+  "implementer": {"instance_id": "/root"},
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:112f68ec5406e936fd1fb83c571f42842e7d0fa873f641e604668189b50ce695",
+    "artifacts": [
+      {"path": ".harness/allowed_files.md", "sha256": "aa284c59221253178be0019b46f823a0cbf1cc0cf596e216d17399404b33cdbf"},
+      {"path": ".harness/review_checklist.md", "sha256": "78766f07dfce145f1c6b068185c1a4723f87c792740393e2bd8a86326854a7cd"},
+      {"path": "openspec/changes/bind-stage-authority-and-invalidation/design.md", "sha256": "23a747b732eb24ecc7e6e3930dad700d212432a23ae0958cd45636f0adf261af"},
+      {"path": "openspec/changes/bind-stage-authority-and-invalidation/proposal.md", "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"},
+      {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md", "sha256": "c15ee6aa829673272e2ccfbb6c48ac40e2afbeea558209156c25802f00632611"},
+      {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md", "sha256": "ab88e9944ae910fb39e0afa45614945e4ffeaa424b2e6b9100525528202ae533"},
+      {"path": "openspec/changes/bind-stage-authority-and-invalidation/stage_planning.md", "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"},
+      {"path": "openspec/changes/bind-stage-authority-and-invalidation/tasks.md", "sha256": "97f57ef85b3d78e61d8c6b313b49172e5dea76b26ae2f4011f19945245001d46"}
+    ],
+    "packet_sha256": "112f68ec5406e936fd1fb83c571f42842e7d0fa873f641e604668189b50ce695"
+  },
+  "review_history": [
+    {
+      "review_ref": "plan-review.md#slot-a-first-round",
+      "receipt_sha256": "2f71d75838ec6faa25e73960d528048dbb60ea77c33ded2bf8423319d8b0ced5",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "bind-stage-authority-and-invalidation",
+        "phase": "plan",
+        "slot_id": "plan-review-slot-a",
+        "implementer_instance_id": "/root",
+        "reviewer": {"provider": "OpenAI Codex", "model": "GPT-5", "instance_id": "/root/authority_plan_review_slot_a"},
+        "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "241ba7857848a4ac6962a516a5c21eb9430af2f0c4e2dbd3546a47679866b45d",
+        "reviewed_artifacts": [
+          {"path": ".harness/allowed_files.md", "sha256": "348866e700a7fb0897fd0e4ea8f3650f05985bbd740b8eb71dee5091ae6904c2"},
+          {"path": ".harness/review_checklist.md", "sha256": "edebd0998c390959552c286e1232089d9d90dfe20722809469482d8b036bc5e5"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/design.md", "sha256": "3629852e470c9c5ed5120950219b8a11edc346b308f557cd7ca7c66647822808"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/proposal.md", "sha256": "a703b9c30c49b66da53178d68d1e9940ae07f76acfdf047dad7ca1b462fe2e25"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md", "sha256": "090ed9fdda2bfe4185ff8280f38b8eb0d5beeef81a32774f788257c540d3b90f"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md", "sha256": "e805ed574506e87f42942a78575c97f41e54c3be3105f146826a46d174e0d085"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/stage_planning.md", "sha256": "9bed55d978070baa9bbb725749aa9c3f0e2526c435d119e16b449bfdcbda0895"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/tasks.md", "sha256": "83726e905bb0cf70e14c1a227ce9e9d1aeb5619ca6f1eed45944f17aaccaf731"}
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {"id": "A-P1-1", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-P1-2", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-P1-3", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-P1-4", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-P1-5", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-P1-6", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-P1-7", "severity": "P1", "disposition": "fix", "closure_status": "open"}
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Host dispatch provenance and same-model correlation remain outside repository proof."
+        },
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "plan-review.md#slot-b-first-round",
+      "receipt_sha256": "236e12f47d5593cd71a1c72b56b5e8bd75ecf75f8bcd908f36e7dded5baba8cf",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "bind-stage-authority-and-invalidation",
+        "phase": "plan",
+        "slot_id": "plan-review-slot-b",
+        "implementer_instance_id": "/root",
+        "reviewer": {"provider": "OpenAI Codex", "model": "GPT-5", "instance_id": "/root/authority_plan_review_slot_b"},
+        "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "241ba7857848a4ac6962a516a5c21eb9430af2f0c4e2dbd3546a47679866b45d",
+        "reviewed_artifacts": [
+          {"path": ".harness/allowed_files.md", "sha256": "348866e700a7fb0897fd0e4ea8f3650f05985bbd740b8eb71dee5091ae6904c2"},
+          {"path": ".harness/review_checklist.md", "sha256": "edebd0998c390959552c286e1232089d9d90dfe20722809469482d8b036bc5e5"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/design.md", "sha256": "3629852e470c9c5ed5120950219b8a11edc346b308f557cd7ca7c66647822808"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/proposal.md", "sha256": "a703b9c30c49b66da53178d68d1e9940ae07f76acfdf047dad7ca1b462fe2e25"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md", "sha256": "090ed9fdda2bfe4185ff8280f38b8eb0d5beeef81a32774f788257c540d3b90f"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md", "sha256": "e805ed574506e87f42942a78575c97f41e54c3be3105f146826a46d174e0d085"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/stage_planning.md", "sha256": "9bed55d978070baa9bbb725749aa9c3f0e2526c435d119e16b449bfdcbda0895"},
+          {"path": "openspec/changes/bind-stage-authority-and-invalidation/tasks.md", "sha256": "83726e905bb0cf70e14c1a227ce9e9d1aeb5619ca6f1eed45944f17aaccaf731"}
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {"id": "B-P1-1", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "B-P1-2", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "B-P1-3", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "B-P1-4", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "B-P1-5", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "B-P1-6", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "B-P1-7", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "B-P2-8", "severity": "P2", "disposition": "fix", "closure_status": "open"}
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Host dispatch provenance and same-model correlation remain outside repository proof."
+        },
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "bind-stage-authority-and-invalidation",
+      "phase": "plan",
+      "slot_id": "plan-review-slot-a",
+      "implementer_instance_id": "/root",
+      "reviewer": {"provider": "OpenAI Codex", "model": "GPT-5", "instance_id": "/root/authority_plan_review_slot_a"},
+      "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "112f68ec5406e936fd1fb83c571f42842e7d0fa873f641e604668189b50ce695",
+      "reviewed_artifacts": [
+        {"path": ".harness/allowed_files.md", "sha256": "aa284c59221253178be0019b46f823a0cbf1cc0cf596e216d17399404b33cdbf"},
+        {"path": ".harness/review_checklist.md", "sha256": "78766f07dfce145f1c6b068185c1a4723f87c792740393e2bd8a86326854a7cd"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/design.md", "sha256": "23a747b732eb24ecc7e6e3930dad700d212432a23ae0958cd45636f0adf261af"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/proposal.md", "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md", "sha256": "c15ee6aa829673272e2ccfbb6c48ac40e2afbeea558209156c25802f00632611"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md", "sha256": "ab88e9944ae910fb39e0afa45614945e4ffeaa424b2e6b9100525528202ae533"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/stage_planning.md", "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/tasks.md", "sha256": "97f57ef85b3d78e61d8c6b313b49172e5dea76b26ae2f4011f19945245001d46"}
+      ],
+      "conclusion": {"status": "no_findings", "findings": [], "gate_verdict": "ready", "residual_uncertainty": "Same-model correlation remains; implementation behavior is not established by plan review."},
+      "lineage": {
+        "original_slot_id": "plan-review-slot-a",
+        "original_reviewer_instance_id": "/root/authority_plan_review_slot_a",
+        "original_review_ref": "plan-review.md#slot-a-first-round",
+        "original_receipt_sha256": "2f71d75838ec6faa25e73960d528048dbb60ea77c33ded2bf8423319d8b0ced5",
+        "closed_finding_ids": ["A-P1-1", "A-P1-2", "A-P1-3", "A-P1-4", "A-P1-5", "A-P1-6", "A-P1-7"]
+      }
+    },
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "bind-stage-authority-and-invalidation",
+      "phase": "plan",
+      "slot_id": "plan-review-slot-b",
+      "implementer_instance_id": "/root",
+      "reviewer": {"provider": "OpenAI Codex", "model": "GPT-5", "instance_id": "/root/authority_plan_review_slot_b"},
+      "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "112f68ec5406e936fd1fb83c571f42842e7d0fa873f641e604668189b50ce695",
+      "reviewed_artifacts": [
+        {"path": ".harness/allowed_files.md", "sha256": "aa284c59221253178be0019b46f823a0cbf1cc0cf596e216d17399404b33cdbf"},
+        {"path": ".harness/review_checklist.md", "sha256": "78766f07dfce145f1c6b068185c1a4723f87c792740393e2bd8a86326854a7cd"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/design.md", "sha256": "23a747b732eb24ecc7e6e3930dad700d212432a23ae0958cd45636f0adf261af"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/proposal.md", "sha256": "658ee1885f2544f09d36c661c97c07f773adc286f17113ffd200a7c9411ca3da"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/harness-development-workflow/spec.md", "sha256": "c15ee6aa829673272e2ccfbb6c48ac40e2afbeea558209156c25802f00632611"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/specs/stage-authority-binding/spec.md", "sha256": "ab88e9944ae910fb39e0afa45614945e4ffeaa424b2e6b9100525528202ae533"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/stage_planning.md", "sha256": "d0e702d41bc6b3b2845e987a5074365d78da4a76a591d4e4e33d340996c00da0"},
+        {"path": "openspec/changes/bind-stage-authority-and-invalidation/tasks.md", "sha256": "97f57ef85b3d78e61d8c6b313b49172e5dea76b26ae2f4011f19945245001d46"}
+      ],
+      "conclusion": {"status": "no_findings", "findings": [], "gate_verdict": "ready", "residual_uncertainty": "Same-model correlation remains; implementation behavior is not established by plan review."},
+      "lineage": {
+        "original_slot_id": "plan-review-slot-b",
+        "original_reviewer_instance_id": "/root/authority_plan_review_slot_b",
+        "original_review_ref": "plan-review.md#slot-b-first-round",
+        "original_receipt_sha256": "236e12f47d5593cd71a1c72b56b5e8bd75ecf75f8bcd908f36e7dded5baba8cf",
+        "closed_finding_ids": ["B-P1-1", "B-P1-2", "B-P1-3", "B-P1-4", "B-P1-5", "B-P1-6", "B-P1-7", "B-P2-8"]
+      }
+    }
+  ]
+}

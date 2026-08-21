@@ -96,3 +96,38 @@ current-state drift scan 只应针对当前事实文件和当前建议段。
 用户授权“一路做到 merge/push”时，可以减少中间确认，但不得跳过 TDD、验证、正式 review、
 Stage Debt Sweep、archive 检查或高风险 Git 操作的授权边界。发现 P0/P1 或 Git 状态异常时立即
 停止 closeout，修复并重新验证、review。
+
+Gate 激活后，连续授权只在 host-retained exact stage envelope 内有效。宿主必须独立保留并核对 stage、
+authority epoch/record hash、risk、scope digest、planning base、action ceiling、remote name、effective fetch/push endpoint
+fingerprints、target branch 和 authorized remote tip；仓库 record/hash/validator 只能证明 mechanical
+consistency，不能证明用户身份、消息真实性、授权时序或 `human_authorized=true`。
+
+- Repo-local Codex/OpenCode apply 与 archive 必须分别在 mutation 前消费 `implement`/`archive` authority
+  preflight；缺失、过期、scope 漂移或 ceiling 不足一律 fail closed。
+- Scope、non-goals、risk、base、action ceiling、endpoint、branch 或 tip 漂移必须开启 later epoch 并重新取得
+  direct-user decision；不得靠重写 record 内部 hash 继承旧授权。
+- `authority_dir` 必须 canonical resolve 后精确等于 `<project-root>/.harness/authority/<expected-stage>`；
+  caller-selected sibling/parent/alternate-stage 或 resolve 到其他位置的 alias/symlink directory 不能成为替代
+  trust root，即使其中 record 自洽也 fail closed。
+- Git `-z` path inventory 必须保留原始 bytes 并严格、可逆地转成 canonical repository-relative path；任何
+  lossy/replacement decode 或不可严格表示的路径都返回结构化、脱敏 `FAIL`，不得静默丢弃或规范化。
+- 畸形 `allowed_path_rules`（错误 container/type、非字符串元素或非法 exact/prefix）只能返回结构化、脱敏
+  `FAIL`，不得向用户或调用方泄漏 traceback。
+- Archive/merge/push 必须消费实际 final implementation review set 与穷尽 reviewed-change manifest。Final
+  packet 后只允许 schema-valid review-set 与 delivery-binding 两个 evidence-tail JSON；其他写入重新打开 review。
+- Merge/push 仅由 `repo-stage-workflow` controller 执行。Merge 使用 exact candidate OID 和 `--ff-only`；push
+  绑定单一 effective endpoint、authorized old tip、ancestry proof、explicit refspec 与 exact-old-OID lease。
+- 在本地证明 effective fetch/push endpoint 各自唯一、二者相等且分别匹配 host-retained 两项 fingerprint
+  之前，不得运行 `ls-remote`，不得触发 credential helper 或任何 remote/network contact。任一前提失败即
+  pre-contact fail closed。
+- Push 启动后的 timeout/transport/output/cleanup ambiguity 必须报告 `UNKNOWN_PUSH_OUTCOME`，只做同 endpoint
+  read-only reconciliation；caller target branch 必须与宿主另行保留的 expected target branch 精确相等。
+  不自动 retry、rebase、force push 或改写历史。POSIX process group 只支撑只读 command；mutation-capable
+  command 缺少 host/cgroup/container/VM whole-tree containment 时必须在 spawn 前 fail closed。Windows 必须
+  在子进程 resume 前绑定 kill-on-close Job Object，并使用 cross-platform pipe reader；隔离失败则执行前
+  fail closed。Mutation intent 必须显式传入，已识别的 `git push` 不得标为只读；成功 resume 前失败必须
+  返回确定性 isolation failure，不是 unknown push。
+- `technical_ready`、`human_authorized`、`vcs_pushed` 分开报告；`vcs_pushed` 至少区分
+  `not_attempted`、`unknown`、`verified`。
+- Stage authority 只属于 repository development workflow，不新增 `app/**` Git automation、runtime subagent、
+  background push、PR、credential handling 或公开 API。

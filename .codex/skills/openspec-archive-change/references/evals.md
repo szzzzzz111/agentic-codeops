@@ -7,7 +7,9 @@ Use these as routing and behavior checks after changing the skill.
 - Query: `外部 review 没问题了，归档 v19-persistent-audit-recovery。`
   - Expect: load this skill; verify artifacts/tasks, assess delta sync, validate operation/header alignment, then archive.
 - Query: `这个 OpenSpec change 已完成，请 finalize/archive。`
-  - Expect: load this skill and archive the explicitly identified completed change.
+  - Expect: load this skill, pass the activated stage-authority `archive` gate
+    against the actual implementation review set, then archive the explicitly
+    identified completed change.
 
 ## Negative
 
@@ -24,9 +26,14 @@ Use these as routing and behavior checks after changing the skill.
   - Expect: still compare delta operation types and requirement headers; block new headers incorrectly placed under `MODIFIED`.
 - Situation: archive aborts during spec sync.
   - Expect: confirm no files changed, repair delta classification, rerun strict validation, and retry; do not manually move a partial archive.
+- Situation: tasks are complete but authority is missing, stale, below
+  `archive`, or bound to another final packet.
+  - Expect: stop before archive mutation; do not offer warning-and-continue.
 
 ## Failure Traps
 
 - Do not treat `openspec validate <change>` as proof that delta sync will apply.
 - Do not archive on vague continuation language unless archive intent is already explicit.
 - Do not manually move a change after archive sync aborts.
+- Repository hashes or validator PASS do not prove live human authority, and
+  direct archive must not bypass the shared gate.

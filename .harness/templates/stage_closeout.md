@@ -26,13 +26,25 @@ final handoff；不要为每个动作复制近似状态。
 - Remediation and re-review: `<result>`
 - Stage Debt Sweep paths: `<actual paths inspected>`
 - Remaining debt: `<PROGRESS location or none>`
+- Reviewed change manifest/diff: `<paths and hashes>`
+- Final implementation review set: `<path, required slots, host-retained packet hash>`
+- Post-packet evidence tail: `<only review-set.json and delivery-binding.json / gate reopened>`
 
 ## Archive And Integration
 
 - Archive froze reviewed runtime: `<yes / not applicable>`
 - Runtime changed after archive: `<no / reopened gates>`
-- Merge/push authorization and result: `<result>`
+- Authority binding: `<stage, epoch, record hash, scope digest, action ceiling; mechanical-only>`
+- Live host authority: `<verified externally / absent / stale>`
+- Exact candidate and target binding: `<candidate HEAD, effective endpoint fingerprint, target branch, authorized old tip>`
+- Merge result: `<not attempted / exact ff-only verified / blocked>`
+- Push result: `<not_attempted / unknown / verified>`
+- Unknown-outcome reconciliation: `<same-endpoint read-only result / not applicable>`
 - Live Git/OpenSpec state checked by: `<commands, not copied hashes>`
+
+Report `technical_ready`, `human_authorized`, and `vcs_pushed` separately. After the final reviewed packet, only the
+schema-valid two-file evidence tail may be written; after the exact candidate commit, final handoff is report-only and
+must not create another repository write.
 
 ## Final Documentation
 

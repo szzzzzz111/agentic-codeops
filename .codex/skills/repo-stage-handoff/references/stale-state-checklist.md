@@ -42,3 +42,13 @@ Look for:
 - Blocking findings are closed or clearly stop the next action.
 - Relevant deterministic checks passed, or missing checks are explicit.
 - Harness files describe no active stage when none exists.
+- Durable PROGRESS/HANDOFF/Harness bytes were prepared before the final delivery
+  packet and are covered by the reviewed manifest.
+- After the final packet, only the schema-valid implementation review set and
+  delivery binding were written; after the exact candidate commit, no
+  repository file was changed.
+- The host-retained exact candidate, target branch, effective endpoint, and
+  authorized old tip still match the controller preflight.
+- `technical_ready`, `human_authorized`, and `vcs_pushed` are reported
+  separately; unknown push outcome remains `unknown` pending same-endpoint
+  read-only reconciliation.

@@ -51,4 +51,11 @@
 - Internal plan review: `<findings closed / blockers>`
 - Decision: `<goal, non-goals or sequence question>`
 - Recommendation: `<one option and reason>`
-- Implementation starts only after: `<confirmation>`
+- Authority activation state: `<not yet active / active with external activation evidence>`
+- Host-retained authority inputs: `<stage, epoch, record hash, risk, scope digest, planning base, action ceiling, remote name, effective fetch/push endpoint fingerprints, target branch, authorized remote tip>`
+- Invalidation triggers: `<scope/non-goal/risk/base/action/endpoint/branch/tip drift>`
+- Implementation starts only after: `<direct-user confirmation plus applicable mechanical/provenance/activation gates>`
+
+Repository records and hashes are mechanical bindings only. They do not prove user identity, host-message authenticity,
+activation chronology, or `human_authorized=true`; never populate host-retained expected inputs by reading them back from
+the record being validated.
