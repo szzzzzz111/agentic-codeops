@@ -1,27 +1,27 @@
 from dataclasses import dataclass, field
 
-from app.rag.evidence import EvidencePack, build_evidence_pack
-from app.rag.query_understanding import SearchPlan
-from app.rag.query_rewrite import (
-    DeterministicQueryRewriteProvider,
-    QueryRewriteProvider,
-    build_original_rewrite_result,
-)
-from app.rag.rerank import (
-    DeterministicRepoReranker,
-    RepoReranker,
-    rerank_with_fallback,
-)
-from app.rag.repo_rag import HybridRepoRetriever, RetrievalResult
 from app.patching.apply import (
     PatchApplyResult,
     apply_unified_diff,
     apply_unified_diff_atomically,
 )
+from app.rag.evidence import EvidencePack, build_evidence_pack
+from app.rag.query_rewrite import (
+    DeterministicQueryRewriteProvider,
+    QueryRewriteProvider,
+    build_original_rewrite_result,
+)
+from app.rag.query_understanding import SearchPlan
+from app.rag.repo_rag import HybridRepoRetriever, RetrievalResult
+from app.rag.rerank import (
+    DeterministicRepoReranker,
+    RepoReranker,
+    rerank_with_fallback,
+)
 from app.tools.file_tools import search_code
 from app.verification.runner import run_whitelisted_verification
-from app.worktrees.manager import WorktreeCreateResult, WorktreeManager
 from app.worktrees.disposal import WorktreeDisposalResult
+from app.worktrees.manager import WorktreeCreateResult, WorktreeManager
 
 
 @dataclass(frozen=True)

@@ -1,8 +1,13 @@
-from dataclasses import dataclass, field
-from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import sqlite3
+from dataclasses import dataclass, field
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
+from app.answering.grounded_answer import GroundedAnswerGenerator
+from app.assistant.control_surface import (
+    AssistantControlSurface,
+    is_assistant_status_request,
+)
 from app.audit.manager import (
     AuditManager,
     build_event_from_trace,
@@ -11,8 +16,6 @@ from app.audit.manager import (
     is_audit_recovery_request,
     recovery_query,
 )
-from app.answering.grounded_answer import GroundedAnswerGenerator
-from app.assistant.control_surface import AssistantControlSurface, is_assistant_status_request
 from app.harness.capabilities import (
     PATCH_APPLY_TOOL,
     REPO_RAG_TOOL,
@@ -23,11 +26,11 @@ from app.harness.capabilities import (
     format_capability_status_answer,
     format_control_surface_capability_summary,
 )
+from app.locks.repo_mutation import RepoMutationLock, RepoMutationLockStore
 from app.longtask.manager import LongTaskManager
 from app.longtask.planner import LongTaskPlanner
 from app.memory.manager import MemoryManager
 from app.memory.store import compute_repo_key
-from app.locks.repo_mutation import RepoMutationLock, RepoMutationLockStore
 from app.patching.manager import PatchManager
 from app.patching.parser import parse_patch_verify_confirmation
 from app.patching.types import ToolInvocationContext
@@ -43,12 +46,11 @@ from app.verification.runner import (
     redact_verification_output,
     unsupported_verification_answer,
 )
-from app.worktrees.manager import WorktreeManager
 from app.worktrees.disposal import parse_worktree_disposal_request
 from app.worktrees.inspection import format_public_changed_files, safe_public_value
+from app.worktrees.manager import WorktreeManager
 from app.worktrees.promotion import parse_verified_patch_promotion_request
 from app.worktrees.reverification import parse_worktree_reverification_request
-
 
 TOKEN_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*")
 WORKTREE_STATUS_PATTERN = re.compile(
@@ -1816,7 +1818,7 @@ class AgentLoop:
                 repo_path=request.repo_path,
                 command_label=command_label,
             )
-        except Exception:
+        except Exception:  # noqa: BLE001 - Tool boundary converts provider failures to a safe result.
             tool_result = ToolExecutionResult(
                 tool_name=VERIFICATION_RUN_TOOL,
                 parameters={"command_label": command_label},
@@ -2102,7 +2104,7 @@ class AgentLoop:
                     require_atomic=True,
                     expected_base_commit=preflight.record.base_commit,
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001 - Promotion boundary records an atomic apply failure.
                 self.worktree_manager.mark_promotion_apply_failed(preflight)
                 result = self._verified_patch_promotion_result(
                     worktree_id=safe_id,
@@ -2146,7 +2148,7 @@ class AgentLoop:
                         require_clean=False,
                         expected_base_commit=preflight.record.base_commit,
                     )
-                except Exception:
+                except Exception:  # noqa: BLE001 - Rollback boundary must classify every failure.
                     rollback_result = None
                 if (
                     rollback_result is None
@@ -2341,7 +2343,7 @@ class AgentLoop:
                     repo_path=preflight.execution_repo_path,
                     command_label=command_label,
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001 - Verification boundary converts runner failures safely.
                 tool_result = ToolExecutionResult(
                     tool_name=VERIFICATION_RUN_TOOL,
                     parameters={"command_label": command_label},
@@ -2490,7 +2492,7 @@ class AgentLoop:
                     worktree_id=worktree_id,
                     attempt_kind=attempt_kind,
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001 - Disposal boundary records every runner failure.
                 result = self._worktree_disposal_result(
                     worktree_id=safe_id,
                     attempt_kind=attempt_kind,
@@ -2622,7 +2624,7 @@ class AgentLoop:
                 trace_id=request.trace_id,
                 events=events,
             )
-        except Exception:
+        except Exception:  # noqa: BLE001 - Audit persistence is a final fail-closed boundary.
             return AgentLoopResult(
                 answer=result.answer,
                 related_files=result.related_files,

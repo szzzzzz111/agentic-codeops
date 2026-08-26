@@ -1,6 +1,6 @@
+import re
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
-import re
 
 from app.verification.runner import parse_verification_label
 from app.worktrees.git_metadata import git_metadata_text
@@ -10,7 +10,6 @@ from app.worktrees.store import (
     WORKTREE_STATUS_VERIFICATION_SUCCEEDED,
     WorktreeRecord,
 )
-
 
 _PREFIX_RE = re.compile(
     r"^(?:worktree\s+verify|重新验证\s+worktree)\b",

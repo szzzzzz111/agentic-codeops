@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 
-
 TASK_STATUS_PENDING = "pending"
 TASK_STATUS_RUNNING = "running"
 TASK_STATUS_PAUSED = "paused"

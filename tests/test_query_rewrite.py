@@ -1,11 +1,11 @@
-from app.rag.query_understanding import QueryUnderstanding
 from app.rag.query_rewrite import (
     DeterministicQueryRewriteProvider,
-    QueryVariant,
     QueryRewriteProvider,
+    QueryVariant,
     _variant_key,
     build_original_rewrite_result,
 )
+from app.rag.query_understanding import QueryUnderstanding
 
 
 def test_deterministic_rewrite_keeps_original_and_stable_code_evidence_variants() -> None:

@@ -2,13 +2,15 @@
 
 ## 当前状态
 
-- Active OpenSpec change：none。`restore-deterministic-verification-baseline` 已归档到
-  `openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/`。
+- Active OpenSpec change：none。`clear-repository-ruff-baseline` 已归档到
+  `openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/`；前序
+  `restore-deterministic-verification-baseline` 已归档并形成 commit
+  `1743eed4694acd585d2a5ef40d090acf56e2969e`。
 - 当前只在干净 worktree `/private/tmp/agentic-codeops-restore-verification.01a03bfc`、分支
-  `codex/restore-deterministic-verification-baseline` 开发；planning base 为
-  `2c0d0d4e749e16e43d867931c58c6a82be56cf13`。
-- 当前小阶段修复 deterministic JSON nesting、Verification Runner 的当前解释器/required-tool fail-closed
-  语义和 portable canonical verification entry。全仓 Ruff 机械清理由紧随其后的独立小阶段完成。
+  `codex/restore-deterministic-verification-baseline` 开发；当前阶段 planning base 为
+  `1743eed4694acd585d2a5ef40d090acf56e2969e`。
+- 当前小阶段已用 safe fixes 和窄范围等价修改清零全仓 Ruff 基线；未使用 unsafe fix、全局/per-file ignore
+  或规则降级。
 - 本文件不保存 controller closeout 的 volatile candidate HEAD、merge 或 push 状态；开始任何 Git mutation
   或新阶段前，必须重新查询 live branch、worktree、target branch、effective endpoint 和 remote tip。
 - 本阶段不修改公开 API、权限、持久化、依赖、网络默认值或 RepoPilot runtime Git/subagent 能力。
@@ -37,12 +39,11 @@ python -I scripts/verify.py
 - 前序 `add-stage-change-replay` 的最终 review packet 是
   `7eccf12cf3b8793c52a7e5146ffe6698746f69b19d212f0b0d272aebcf636500`，最终 candidate/pushed commit 是
   `2c0d0d4e749e16e43d867931c58c6a82be56cf13`；旧 `bce8…` 只是中间 packet，不再作为最终事实。
-- 当前实现的 full pytest 已通过（`971 passed`），changed-file Ruff 已通过；full Ruff residual 为
-  92 项 / 55 文件，canonical verification 在 pytest 全绿后于 Ruff 明确非零停止。Pre-archive
-  implementation review 的两个独立 slots 已关闭全部 findings，OpenSpec archive/spec sync 已完成；当前仍需
-  final post-archive packet refresh，尚未形成 candidate。
-- 当前阶段只允许形成 reviewed local candidate；全仓 Ruff 与 canonical verification 全绿后，才可执行已授权的
-  fast-forward merge 和 exact-old-OID lease push。
+- 前序阶段的真实 residual baseline 为 92 项 / 53 文件；旧文档中的 55 文件是事实偏差，现已纠正。
+- 当前 full pytest `971 passed`，full Ruff、canonical `python -I scripts/verify.py`、两个 scanners、
+  OpenSpec strict/all（`25 passed, 0 failed`）与 `git diff --check` 均通过。
+- 当前只剩最终 post-archive implementation review、第二个 candidate commit，以及已授权的
+  fast-forward delivery 和 exact-old-OID lease push；这些尚未完成，不能提前宣称已推送。
 
 ## Controller Closeout Protocol
 

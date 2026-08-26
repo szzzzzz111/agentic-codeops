@@ -1,12 +1,11 @@
+import json
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
-import json
 from pathlib import Path
-import sqlite3
 
 from app.memory.store import compute_repo_key
-
 
 PATCH_DIR = ".repopilot"
 PATCH_DB = "patches.sqlite3"
@@ -355,7 +354,7 @@ def hash_diff(diff_text: str) -> str:
 
 def _new_patch_id(user_id: str, repo_key: str, diff_hash: str, now: datetime) -> str:
     digest = sha256(
-        f"{user_id}:{repo_key}:{diff_hash}:{_dump_dt(now)}".encode("utf-8")
+        f"{user_id}:{repo_key}:{diff_hash}:{_dump_dt(now)}".encode()
     ).hexdigest()[:6]
     date = now.strftime("%Y%m%d")
     return f"patch_{date}_{digest}"

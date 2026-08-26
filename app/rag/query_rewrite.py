@@ -1,9 +1,8 @@
-from dataclasses import dataclass, field
 import re
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from app.rag.query_understanding import QueryUnderstanding, SearchPlan
-
 
 ORIGINAL_VARIANT_ID = "original"
 CODE_EVIDENCE_VARIANT_IDS = ("definition", "usage", "configuration", "tests")
@@ -134,7 +133,7 @@ def build_original_rewrite_result(
 ) -> QueryRewriteResult:
     try:
         return provider.rewrite(plan)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - Provider boundary intentionally falls back.
         return QueryRewriteResult(
             original_plan=plan,
             variants=[_variant_from_plan(ORIGINAL_VARIANT_ID, plan, plan.original_query)],

@@ -1,20 +1,22 @@
 from __future__ import annotations
 
+import json
+import subprocess
 from dataclasses import asdict
 from decimal import Decimal
-import json
 from pathlib import Path
-import subprocess
 
 import httpx
 import pytest
 
 from app.agents.code_agent import CodeAgent
 from app.harness.kernel import AgentLoop
+from app.providers.model_provider import (
+    ModelProviderResponse,
+    OpenAICompatibleModelProvider,
+    ProviderCallMetrics,
+)
 from app.services.chat_service import ChatService
-from app.providers.model_provider import OpenAICompatibleModelProvider
-from app.providers.model_provider import ProviderCallMetrics
-from app.providers.model_provider import ModelProviderResponse
 from evals.live_model_provider import core as live_eval_core
 from evals.live_model_provider import runner as live_eval_runner
 from evals.live_model_provider.api_smoke import extract_default_agent_loop
@@ -31,10 +33,6 @@ from evals.live_model_provider.components import (
     run_patch_case,
     run_planner_case,
 )
-from evals.live_model_provider.runner import (
-    GitState,
-    run_live_evaluation,
-)
 from evals.live_model_provider.core import (
     DEEPSEEK_V4_FLASH_PROFILE,
     CallBudget,
@@ -47,7 +45,10 @@ from evals.live_model_provider.core import (
     validate_provider_metrics,
     write_local_report,
 )
-
+from evals.live_model_provider.runner import (
+    GitState,
+    run_live_evaluation,
+)
 
 REQUIRED_ENV = {
     "REPOPILOT_MODEL_PROVIDER": "openai_compatible",

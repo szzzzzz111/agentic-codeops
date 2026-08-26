@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field
 import hashlib
+from dataclasses import dataclass, field
 from pathlib import PurePosixPath, PureWindowsPath
-
 
 DEFAULT_MAX_CONTEXT_CHARS = 4000
 

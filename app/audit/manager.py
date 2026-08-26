@@ -1,9 +1,8 @@
+import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath, PureWindowsPath
-import re
 
 from app.audit.store import DEFAULT_RECENT_LIMIT, AuditEvent, SQLiteAuditStore
-
 
 MAX_SUMMARY_CHARS = 500
 MAX_PAYLOAD_VALUE_CHARS = 1000

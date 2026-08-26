@@ -1,6 +1,6 @@
+import re
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath, PureWindowsPath
-import re
 
 from app.providers.model_provider import (
     ModelProvider,
@@ -8,7 +8,6 @@ from app.providers.model_provider import (
     ModelProviderResponse,
 )
 from app.rag.evidence import EvidencePack
-
 
 FALLBACK_NO_EVIDENCE = "无法基于仓库证据回答该问题。"
 FALLBACK_PROVIDER = "无法基于当前仓库证据生成可靠回答。"

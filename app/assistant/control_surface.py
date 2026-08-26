@@ -1,6 +1,6 @@
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
 
 from app.harness.capabilities import (
     default_runtime_capability_facts,
@@ -8,7 +8,6 @@ from app.harness.capabilities import (
 )
 from app.longtask.manager import LongTaskManager
 from app.memory.manager import MemoryManager
-
 
 _STATUS_REQUESTS = {
     "助手状态",

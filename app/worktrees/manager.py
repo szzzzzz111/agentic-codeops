@@ -1,24 +1,20 @@
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
 import os
-from pathlib import Path
 import shutil
 import sqlite3
 import subprocess
 import threading
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
-from app.worktrees.inspection import WorktreeInspectionResult, inspect_worktree
 from app.worktrees.disposal import (
     WorktreeDisposalPreflight,
     WorktreeDisposalResult,
     dispose_worktree,
     preflight_worktree_disposal,
 )
-from app.worktrees.reverification import (
-    WorktreeReverificationPreflight,
-    preflight_worktree_reverification,
-)
+from app.worktrees.inspection import WorktreeInspectionResult, inspect_worktree
 from app.worktrees.promotion import (
     VerifiedPatchPromotionCompletion,
     VerifiedPatchPromotionPreflight,
@@ -26,6 +22,10 @@ from app.worktrees.promotion import (
     complete_verified_patch_promotion,
     mark_verified_patch_promotion_apply_failed,
     preflight_verified_patch_promotion,
+)
+from app.worktrees.reverification import (
+    WorktreeReverificationPreflight,
+    preflight_worktree_reverification,
 )
 from app.worktrees.store import (
     WORKTREE_STATUS_CREATE_FAILED,
@@ -37,7 +37,6 @@ from app.worktrees.store import (
     SQLiteWorktreeStore,
     WorktreeRecord,
 )
-
 
 WORKTREE_GIT_TIMEOUT_SECONDS = 10.0
 WORKTREE_GIT_OUTPUT_MAX_BYTES = 256_000

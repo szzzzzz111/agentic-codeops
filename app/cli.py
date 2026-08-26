@@ -9,7 +9,6 @@ from typing import TextIO
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat_service import ChatService
 
-
 _PATCH_ID_RE = re.compile(r"^patch_[A-Za-z0-9_]{1,122}$")
 _SUPPORTED_VERIFY_LABELS = {"pytest", "ruff", "verify"}
 
@@ -37,7 +36,7 @@ def main(
     except CliUsageError as exc:
         print(f"usage error: {exc}", file=err)
         return 2
-    except Exception:
+    except Exception:  # noqa: BLE001 - CLI boundary must fail closed without exposing internals.
         print("CLI error: request failed", file=err)
         return 1
     return 0

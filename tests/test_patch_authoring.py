@@ -3,7 +3,10 @@ from pathlib import Path
 
 from app.patching.apply import apply_unified_diff
 from app.patching.manager import PatchManager
-from app.patching.parser import parse_patch_confirmation, parse_patch_verify_confirmation
+from app.patching.parser import (
+    parse_patch_confirmation,
+    parse_patch_verify_confirmation,
+)
 from app.patching.provider import (
     ModelPatchAuthoringProvider,
     PatchAuthoringProviderRequest,

@@ -1,5 +1,19 @@
 # 项目进度
 
+## Clear Repository Ruff Baseline（archived，2026-08-26）
+
+- 基于前序本地 candidate `1743eed4694acd585d2a5ef40d090acf56e2969e`，在同一干净 worktree 中清理
+  精确的 92 项 / 53 文件 Ruff 基线；未触碰原脏 worktree。
+- 仅使用 Ruff safe fixes、最小等价手工修改，以及计划中冻结的 3 处 TRY004 和 14 处既有 boundary BLE001
+  精确行级说明（其中一处同线 S110）；没有 unsafe fix、global/per-file ignore 或规则降级。
+- 当前证据：canonical `python -I scripts/verify.py` 全绿，full pytest `971 passed`，full Ruff PASS，
+  stage-doc/skill-eval scanners PASS；OpenSpec active strict PASS、all `25 passed, 0 failed`；
+  `git diff --check` PASS。
+- OpenSpec change 已归档到 `openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/`，长期
+  `verification-runner` spec 同步 1 项 modified。当前只剩最终两席 post-archive implementation review、
+  第二个 finite candidate，以及 controller 的
+  fast-forward/exact-lease push closeout；这些步骤尚未完成。
+
 ## Restore Deterministic Verification Baseline（archived，pre-candidate，2026-08-26）
 
 - OpenSpec change `restore-deterministic-verification-baseline` 已归档到
@@ -8,7 +22,7 @@
 - 当前小阶段修复三项可复现 pytest 问题：JSON object mode 对超过 128 层 structural container fail closed；
   Verification Runner 和相关测试固定使用当前 `sys.executable -I`；pytest/Ruff 缺失或 probe 异常明确失败。
 - 新的 `scripts/verify.py` 是 canonical cross-platform 入口；PowerShell scripts 只做薄委托，缺工具不得跳过。
-- 当前证据：full pytest `971 passed`，changed-file Ruff PASS；full Ruff 已重测为 92 项 / 55 文件。
+- 当前证据：full pytest `971 passed`，changed-file Ruff PASS；full Ruff 已重测为 92 项 / 53 文件。
   当前小阶段只清理 changed-file Ruff，随后 `clear-repository-ruff-baseline` 机械阶段清理 residual inventory，
   不加全局 ignore。
 - Canonical `python -I scripts/verify.py` 已证明先完成 967 项 pytest，再在 residual Ruff 处非零停止；

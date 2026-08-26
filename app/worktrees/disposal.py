@@ -1,19 +1,23 @@
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import re
 import shutil
 import sqlite3
 import subprocess
 import threading
 import time
+from dataclasses import dataclass
+from pathlib import Path
 
 from app.patching.store import (
     PATCH_STATUS_APPLIED_IN_WORKTREE,
     PATCH_STATUS_DISCARDED,
     SQLitePatchStore,
 )
-from app.worktrees.git_metadata import git_metadata_text, normalized_path, registry_entries
+from app.worktrees.git_metadata import (
+    git_metadata_text,
+    normalized_path,
+    registry_entries,
+)
 from app.worktrees.store import (
     WORKTREE_STATUS_DISCARDED,
     WORKTREE_STATUS_DISPOSAL_FAILED,
@@ -23,7 +27,6 @@ from app.worktrees.store import (
     SQLiteWorktreeStore,
     WorktreeRecord,
 )
-
 
 _COMMAND_RE = re.compile(
     r"^(?:(confirm)\s+(discard|reconcile)\s+worktree|"
@@ -217,7 +220,7 @@ def dispose_worktree(
                     repo_key=preflight.repo_key,
                     status=WORKTREE_STATUS_DISPOSAL_FAILED,
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - Best-effort failure-state persistence.
                 pass
         return _result(
             preflight,
@@ -237,7 +240,7 @@ def dispose_worktree(
             repo_key=preflight.repo_key,
             status=WORKTREE_STATUS_DISCARDED,
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 - Store boundary maps failures to a deterministic result.
         worktree_updated = False
     if not worktree_updated:
         return _result(
@@ -256,7 +259,7 @@ def dispose_worktree(
             repo_key=preflight.repo_key,
             status=PATCH_STATUS_DISCARDED,
         )
-    except Exception:
+    except Exception:  # noqa: BLE001 - Store boundary maps failures to a deterministic result.
         patch_updated = False
     if not patch_updated:
         return _result(
@@ -577,7 +580,7 @@ def _read_mutation_output(stdout_or_stderr, max_bytes: int, state: _MutationRead
                 state.oversized = True
                 return
             state.bytes_read += len(chunk)
-    except Exception:
+    except Exception:  # noqa: BLE001 - Stream-drain boundary marks the capture as failed.
         state.failed = True
     finally:
         try:

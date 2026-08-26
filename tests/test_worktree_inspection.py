@@ -1,13 +1,13 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
 from app.audit.store import SQLiteAuditStore
 from app.harness.kernel import AgentLoop, AgentLoopRequest
 from app.memory.store import compute_repo_key
-from app.worktrees.manager import WorktreeManager
 from app.worktrees import inspection as worktree_inspection
+from app.worktrees.manager import WorktreeManager
 from app.worktrees.store import SQLiteWorktreeStore
 
 

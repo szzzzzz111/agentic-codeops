@@ -3,11 +3,11 @@ from __future__ import annotations
 import gc
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from typing import Callable, Mapping
+from collections.abc import Callable, Mapping
+from pathlib import Path
 
 from app.longtask.planner import PLAN_SOURCE_PROVIDER, LongTaskPlanner
 from app.patching.manager import PatchManager
@@ -22,7 +22,6 @@ from evals.live_model_provider.core import (
     provider_failure_diagnostics,
     validate_provider_metrics,
 )
-
 
 ProcessRunner = Callable[..., subprocess.CompletedProcess[str]]
 

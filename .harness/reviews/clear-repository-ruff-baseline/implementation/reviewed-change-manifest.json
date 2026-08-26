@@ -1,0 +1,415 @@
+{
+  "schema_version": "repopilot.reviewed_change_manifest/v2",
+  "stage_id": "clear-repository-ruff-baseline",
+  "planning_base": "1743eed4694acd585d2a5ef40d090acf56e2969e",
+  "excluded_metadata_paths": [
+    ".harness/authority/clear-repository-ruff-baseline/delivery-binding.json",
+    ".harness/reviews/clear-repository-ruff-baseline/implementation/review-set.json",
+    ".harness/reviews/clear-repository-ruff-baseline/implementation/reviewed-change-manifest.json",
+    ".harness/reviews/clear-repository-ruff-baseline/implementation/reviewed-change.diff"
+  ],
+  "changes": [
+    {
+      "path": ".harness/allowed_files.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6dfd565dcece69747ae498d492d5a28d7f3e05ff05395286d4227222ef5b1c81"
+    },
+    {
+      "path": ".harness/authority/clear-repository-ruff-baseline/epoch-0001.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "1b7d870d33f9929a21add304576b5911bc820199aa17a8153039a3c846cbd32f"
+    },
+    {
+      "path": ".harness/authority/clear-repository-ruff-baseline/epoch-0002.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "2b7d9ed5b3de635818290cb8e70e3304c9aa868954d67cc89081987aa1b49a04"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6a5714e84531ababdf14d71c3c2f925c4944e974c0aad6a96eb1e27a629912da"
+    },
+    {
+      "path": ".harness/reviews/clear-repository-ruff-baseline/plan/review-set.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6c175f1a5bbb23c28b2b07cc20b062a8468e8e517bec2157bd439bcaf4f6293b"
+    },
+    {
+      "path": "HANDOFF_TO_NEXT_CHAT.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "03e18cb94f9a603d0ed9094994b963112ff1ab0a8aeb98286c9052faf9d37e96"
+    },
+    {
+      "path": "app/answering/grounded_answer.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "25ecf5997a881b84d9731a2cc437fab8bfbfd8b97d21307356366f13ff86894a"
+    },
+    {
+      "path": "app/assistant/control_surface.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "feb40d90993ceb4cee0b88955676328aab6499c354de70c5f0ce2dd52eb387b6"
+    },
+    {
+      "path": "app/audit/manager.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "2afc16307de84b0c290f7ab4b0aefa86ff70c0cdd5a534b6dc81e5d456402977"
+    },
+    {
+      "path": "app/audit/store.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "534bf27b6669f0b0768546233ff402eccc2edaaf3724efc1aa47735d318a94e1"
+    },
+    {
+      "path": "app/cli.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "d0c3d6b585d953cb096335ac85ec990d48fc7db022234b3c186e992e38066e4c"
+    },
+    {
+      "path": "app/harness/__init__.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "3c4f2d300e17fb4e4f3060ebd818c12047554eab9728db557610e14809bc2fdd"
+    },
+    {
+      "path": "app/harness/capabilities.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "df96a48f4ad5970993babdd19da7b17b918b5ec4da5e71fc887165235052f4c2"
+    },
+    {
+      "path": "app/harness/kernel.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "5c4e615588172e198a0b6ccfd245c4667d576ecbe4dca1783dcf86c50a67e29d"
+    },
+    {
+      "path": "app/locks/repo_mutation.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "a25f61d9e860bd42376b5cef36e2b9f8a04c914893c2a303d86671a48a1ca86a"
+    },
+    {
+      "path": "app/longtask/manager.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "d9ebf17d1ddfcb526540c9cb315383cef7e33e75c44844d06ba86b90d6d8f77c"
+    },
+    {
+      "path": "app/longtask/parser.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "49ed8b7a9fd9f1533c954687c3d8518e28a3e53d32921dd981cbef09f3110e6b"
+    },
+    {
+      "path": "app/longtask/planner.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "acb5c23cd4fc90a6c90fbd5ee1a5dc8b314e247e8c060a0d6133f3b04c7e5323"
+    },
+    {
+      "path": "app/longtask/store.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "22bf948febf3f973ab1ec42785ced60ef3c764ffd5815c0b66546360b66a3f5a"
+    },
+    {
+      "path": "app/longtask/types.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "0a24df67e70bc5a9e1d73c504219918f064e6d1c4a012aef90d5b72a2a521703"
+    },
+    {
+      "path": "app/memory/manager.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "97bb592aea847635aed0e0a4ef358f705e2168f5cae64cd9c57e084403b82dcc"
+    },
+    {
+      "path": "app/memory/store.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9e24c6cd569bd100fcd235fb396e8a1af77f269dbaada3fbd3fc4a68127d6cf7"
+    },
+    {
+      "path": "app/patching/apply.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "ff290e3074f68c1091f7ea07ee2b3ebdb8126392556cb1c1a2e4948a81974772"
+    },
+    {
+      "path": "app/patching/manager.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b417c77533d2b61e77b5276d589cb97b0da1f72382affd4650b63ca051f5905c"
+    },
+    {
+      "path": "app/patching/parser.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "ff4cfa9bb2029fd978ebe2d3ecfaf8562bfbef0de8b20ffa16788b8434e0db37"
+    },
+    {
+      "path": "app/patching/provider.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "276ad8d2ad0c9717f82d1539931e04e14ff7609f29ba5b2ffbbc010a33e3935d"
+    },
+    {
+      "path": "app/patching/store.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "1e1260f3933b7f12ef9fd38cda01c02c6ad43660621283c33864435f136c8e85"
+    },
+    {
+      "path": "app/rag/evidence.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b804e97886ce46416c3f502e3b6c747c65d9f7913256c5d88d7c73d87c03839d"
+    },
+    {
+      "path": "app/rag/query_rewrite.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "8568cd48157a54621270ce4410cb3d7f4332e4090a1f81cdd5dac4cf42d86aee"
+    },
+    {
+      "path": "app/rag/query_understanding.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "5fe92f7a9a38a00a69d97134cbcdf3e22bf59c371954b937ef4e92a81a80224e"
+    },
+    {
+      "path": "app/rag/repo_rag.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "cd4565931e3b8f9243f2995a8fa8ac8e2aaefcaddebead16459f1331fd8830f4"
+    },
+    {
+      "path": "app/rag/rerank.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "620e15a53e8b91e0c33eeacf65e40577340c1a74b58e6a107e494bcd6490516a"
+    },
+    {
+      "path": "app/tools/tool_executor.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e72dbf51de476e3cf9844fc54832dedbb3489ef42c0545f989ed054f758e52f3"
+    },
+    {
+      "path": "app/worktrees/disposal.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "ff7d94a2cc19d5db6717ded14dd9b016b020ab656c1cee22395d0252020b1acc"
+    },
+    {
+      "path": "app/worktrees/git_metadata.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "74c149867037d1674420acf7c07e1f020aae5d5bb2e1f7f7ddf68e1b58c86ceb"
+    },
+    {
+      "path": "app/worktrees/inspection.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "291707f7387233a2ac84ecc8cd95407c5a5d454771a3dfe487714f40a7fb3f9f"
+    },
+    {
+      "path": "app/worktrees/manager.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e69f11aee43a9a8282701cef599efbf63e2c36f548dd7c3d1948ba8ece7c4a53"
+    },
+    {
+      "path": "app/worktrees/promotion.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "dc47f9e345564b0558353a28a903dc907d5dfa44e76f073bc130a64cd540a605"
+    },
+    {
+      "path": "app/worktrees/reverification.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "48ece432ed7c6f824549a2d0c0559ad3057f2111b68f16a575c8994aa019ee5c"
+    },
+    {
+      "path": "app/worktrees/store.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "cfb7eec902d17c3425386b58d0dee18bb51a780e6d69f7508889f70dab1edf27"
+    },
+    {
+      "path": "docs/PROGRESS.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "d05f64ec04cd5b75c25173a6b153e0e074947fd5586b10806fc23c873f38b0e1"
+    },
+    {
+      "path": "evals/live_model_provider/api_smoke.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "1a86c01d34d345f82203fdf481b19e5d81233cbfcdc51cf129002847f017ef52"
+    },
+    {
+      "path": "evals/live_model_provider/cases.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "128a29e8affb6e5a667e29c21a1edda6ada57179ac3cb7105c450448bd9d7ea5"
+    },
+    {
+      "path": "evals/live_model_provider/components.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "27dbc55a2ef88543c829e94ecb0a2ece0349673a9106136b681a53a0e189f63a"
+    },
+    {
+      "path": "evals/live_model_provider/core.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e280bdaa3895abee60f79aa7e8424ea71789c1586527fe0505d8bf7b569323b2"
+    },
+    {
+      "path": "evals/live_model_provider/runner.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "ff0116c0ecefefc9731d315cbe7ea43183b85c795c9c6cf950b329a8d5195a37"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/.openspec.yaml",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "c8525e78dea6b5d41d3dd12501a7c45e563978de0d0858da184208407da25f92"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/design.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "c691f668a065e3aaef105d70ed9fab919b1856313f3ff29740bdc64282d08a2b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/plan-review.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "460069923f1bd86730c092e026a66382d95f22579fb121627f5d26f26e9c9fc2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/proposal.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "a20f9d36d080627b11042225572a986ea29ea103f4366aeb2e7bacbe739abdef"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/specs/verification-runner/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6303dbdb9445ef13061028de9a2ccad709ca597a379590b3ca0ede7703a6f135"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/tasks.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9d752b11f84ecbe6fde380c99b8471f391c27aa00fdea511f0b1f5e446d59ecb"
+    },
+    {
+      "path": "openspec/specs/verification-runner/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "03fbb4105844c8e2da4f2beed3f6bab729235ba0e48a785b0cb2aab512003ae9"
+    },
+    {
+      "path": "tests/test_agent_harness_kernel.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "025b51b184aa43a222639505011bcd9c310e2b50479b4ad1736800494efb9efe"
+    },
+    {
+      "path": "tests/test_assistant_control_surface.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "c7f0629c6bfefcd180c98702848f55108e52fe6c1e2eb122cb0ff1e2b1a232bd"
+    },
+    {
+      "path": "tests/test_chat_api.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "996ef0f7f35ba3825ef97de7e1fe9fbd172845c1656e7241b0ed42cb5cfd7cd2"
+    },
+    {
+      "path": "tests/test_live_model_provider_eval.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "8e35f8cd7e4fc8113a0ff2e395dd1620f679c986b932a929410eac96330cee80"
+    },
+    {
+      "path": "tests/test_patch_authoring.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "38172e7c816f6988936a73bea128f08be6156d72e706148859339554c5aa69ef"
+    },
+    {
+      "path": "tests/test_query_rewrite.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "0b7d194d8fef7b6525e1dced2517a7e4e5e5e7185c2239a96d0c1bc58d93d892"
+    },
+    {
+      "path": "tests/test_repo_mutation_locking.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "f811efe049c9911b66dea474443595de34bded986b9a93fee7513885de644937"
+    },
+    {
+      "path": "tests/test_repo_rag.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "c5e6bbe2ab46059709c7afe16838065ee558ee1978aa2b9a843078edf5d807cd"
+    },
+    {
+      "path": "tests/test_repo_rerank.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "d737a94d0f8e1298a3b24af0df92256a630e229c326c7cbd64ae5cb525a8e2b5"
+    },
+    {
+      "path": "tests/test_verified_patch_promotion.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "532b44e081f2c3726f28017dbf10fe5d77b7014f625059282639414bc0ed7715"
+    },
+    {
+      "path": "tests/test_worktree_disposal.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "06dd7ea2d48a4597598e84adf535c9385c7658aaad671b68b9f9133f235cff04"
+    },
+    {
+      "path": "tests/test_worktree_inspection.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "942b9719b025d88916278a9473a1a4893e448a01cdfc73d02bce04285744c24a"
+    },
+    {
+      "path": "tests/test_worktree_isolation.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "a54c742402995f8e6e5656351b505fd4ca8c88d0175b7133221fdd048368897e"
+    },
+    {
+      "path": "tests/test_worktree_reverification.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "75cbda3382957c28d36ca139be7f262b9d5ca0c6338bc73710cc7596514524d0"
+    }
+  ]
+}

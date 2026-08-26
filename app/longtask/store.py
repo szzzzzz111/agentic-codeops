@@ -1,19 +1,18 @@
+import sqlite3
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
-import sqlite3
 
 from app.longtask.types import (
     DEFAULT_LIST_LIMIT,
     MAX_OPEN_TASKS,
-    LongTask,
-    LongTaskStep,
     TASK_STATUS_FAILED,
     TASK_STATUS_PAUSED,
     TERMINAL_STATUSES,
+    LongTask,
+    LongTaskStep,
 )
 from app.memory.store import compute_repo_key
-
 
 LONGTASK_DIR = ".repopilot"
 LONGTASK_DB = "tasks.sqlite3"
@@ -404,7 +403,7 @@ def _coerce_step(step: LongTaskStep | dict[str, str]) -> LongTaskStep:
 
 
 def _new_task_id(user_id: str, repo_key: str, goal: str, now: str) -> str:
-    digest = sha256(f"{user_id}:{repo_key}:{goal}:{now}".encode("utf-8")).hexdigest()[:6]
+    digest = sha256(f"{user_id}:{repo_key}:{goal}:{now}".encode()).hexdigest()[:6]
     date = datetime.now(tz=UTC).strftime("%Y%m%d")
     return f"task_{date}_{digest}"
 

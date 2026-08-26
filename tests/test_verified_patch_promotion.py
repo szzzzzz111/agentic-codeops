@@ -1,10 +1,15 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
 from app.audit.store import SQLiteAuditStore
-from app.harness.kernel import AgentLoop, AgentLoopRequest, PermissionPolicy, ToolRegistry
+from app.harness.kernel import (
+    AgentLoop,
+    AgentLoopRequest,
+    PermissionPolicy,
+    ToolRegistry,
+)
 from app.memory.store import compute_repo_key
 from app.patching.apply import PatchApplyResult, apply_unified_diff
 from app.patching.store import (

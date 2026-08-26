@@ -1,6 +1,6 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Protocol
-
+from typing import Protocol
 
 REPO_RAG_TOOL = "repo_rag"
 PATCH_APPLY_TOOL = "patch_apply"

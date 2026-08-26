@@ -1,6 +1,6 @@
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-import re
 
 from app.patching.apply import PatchApplyResult, preflight_unified_diff
 from app.patching.parser import is_patch_proposal_request, parse_patch_confirmation
@@ -21,7 +21,6 @@ from app.patching.store import (
 )
 from app.patching.types import ToolInvocationContext
 from app.rag.evidence import EvidencePack
-
 
 _WINDOWS_ABSOLUTE_PATH_RE = re.compile(
     r"\b[A-Za-z]:[\\/][^\s，。；;]+(?:[\\/][^\s，。；;]+)*"

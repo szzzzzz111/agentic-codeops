@@ -1,6 +1,6 @@
-from pathlib import Path
 import sqlite3
 import subprocess
+from pathlib import Path
 
 import app.worktrees.manager as worktree_manager_module
 from app.harness.kernel import AgentLoop, AgentLoopRequest

@@ -1,11 +1,10 @@
-from dataclasses import dataclass
 import os
-from pathlib import Path, PureWindowsPath
+import re
 import subprocess
 import threading
 import time
-import re
-
+from dataclasses import dataclass
+from pathlib import Path, PureWindowsPath
 
 MAX_GIT_METADATA_BYTES = 256_000
 GIT_METADATA_TIMEOUT_SECONDS = 10.0

@@ -1,14 +1,13 @@
+import sqlite3
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
-import sqlite3
 
 from app.memory.store import (
     InMemorySessionMemoryStore,
     SQLiteMemoryStore,
     compute_repo_key,
 )
-
 
 PREF_KIND = "PREF"
 LTM_KIND = "LTM"

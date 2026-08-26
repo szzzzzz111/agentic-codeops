@@ -2,7 +2,6 @@ import re
 
 from app.longtask.types import LongTaskCommand
 
-
 TASK_ID_PATTERN = re.compile(r"\btask_\d{8}_[a-f0-9]{4,12}\b")
 
 

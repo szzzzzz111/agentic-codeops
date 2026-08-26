@@ -1,0 +1,227 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "clear-repository-ruff-baseline",
+  "phase": "plan",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "generalize-independent-review-provider",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md",
+    "activation_ref_sha256": "4b7155e4648dd2f12914213a866040ab6c68f537fcbdecccf072a90841085c8f",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "verified-by-host-controller",
+      "evidence_ref": "host-followup:/root/plan_review_f;original-context-inheritance=none"
+    },
+    "activation_sequence": {
+      "status": "verified-by-pre-change-process-authority",
+      "evidence_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md"
+    }
+  },
+  "implementer": {
+    "instance_id": "/root"
+  },
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:a7cab1021763f4d8f10e0f40b0dc1447577ca76fe31fcbefd0c9a5fd0afab22d",
+    "artifacts": [
+      {
+        "path": ".harness/allowed_files.md",
+        "sha256": "2f4ecdf522f1b3951c80f37d7c16569a089ce826f9f40998972f71561d2887a1"
+      },
+      {
+        "path": ".harness/authority/clear-repository-ruff-baseline/epoch-0001.json",
+        "sha256": "3ac5dbe87fa309b032d15a324437b9c23544dbf59a2171721274ba7010fa8057"
+      },
+      {
+        "path": ".harness/review_checklist.md",
+        "sha256": "7a02a94c099e81ce90b73e624a1f48d7ee62df4616558232a0edecc1d34c5b5f"
+      },
+      {
+        "path": "openspec/changes/clear-repository-ruff-baseline/.openspec.yaml",
+        "sha256": "c8525e78dea6b5d41d3dd12501a7c45e563978de0d0858da184208407da25f92"
+      },
+      {
+        "path": "openspec/changes/clear-repository-ruff-baseline/design.md",
+        "sha256": "c691f668a065e3aaef105d70ed9fab919b1856313f3ff29740bdc64282d08a2b"
+      },
+      {
+        "path": "openspec/changes/clear-repository-ruff-baseline/plan-review.md",
+        "sha256": "460069923f1bd86730c092e026a66382d95f22579fb121627f5d26f26e9c9fc2"
+      },
+      {
+        "path": "openspec/changes/clear-repository-ruff-baseline/proposal.md",
+        "sha256": "a20f9d36d080627b11042225572a986ea29ea103f4366aeb2e7bacbe739abdef"
+      },
+      {
+        "path": "openspec/changes/clear-repository-ruff-baseline/specs/verification-runner/spec.md",
+        "sha256": "6303dbdb9445ef13061028de9a2ccad709ca597a379590b3ca0ede7703a6f135"
+      },
+      {
+        "path": "openspec/changes/clear-repository-ruff-baseline/tasks.md",
+        "sha256": "676c2c9f94c920e4bd4c0cf67fc9a6f9b6bd9126320b96444de76fa4e9ff11b5"
+      }
+    ],
+    "packet_sha256": "a7cab1021763f4d8f10e0f40b0dc1447577ca76fe31fcbefd0c9a5fd0afab22d"
+  },
+  "review_history": [
+    {
+      "review_ref": "host-review:/root/plan_review_f#ruff-first-round",
+      "receipt_sha256": "feab4527f2d9c44cc0577b2f5e3bcbc3b0928d627047cdf762115b4a13a10350",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "clear-repository-ruff-baseline",
+        "phase": "plan",
+        "slot_id": "ruff-baseline-plan-f",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI Codex",
+          "model": "inherited parent model",
+          "instance_id": "/root/plan_review_f"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "39f87af8f1fa0bb20718170982b3761e8478ef6d722b46e86b06edf0bcd3472a",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "0846f2243000ea8f1cfa02b9a426ab1faccacbc7d372183d0fd4e4e88b46b93a"
+          },
+          {
+            "path": ".harness/authority/clear-repository-ruff-baseline/epoch-0001.json",
+            "sha256": "4c7100f8ce9f087d2813490aac6e8c0d960f884e3b96fb7e4bc45e4d9f861957"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "d0a482737b388e44bb3fe0375b71175e1c204353011e356f4b7b8397bcabd4fb"
+          },
+          {
+            "path": "openspec/changes/clear-repository-ruff-baseline/.openspec.yaml",
+            "sha256": "c8525e78dea6b5d41d3dd12501a7c45e563978de0d0858da184208407da25f92"
+          },
+          {
+            "path": "openspec/changes/clear-repository-ruff-baseline/design.md",
+            "sha256": "c818e4fee80847d15f406ef8ac6d7a153ac9274392f86312be6f5f656384d665"
+          },
+          {
+            "path": "openspec/changes/clear-repository-ruff-baseline/plan-review.md",
+            "sha256": "460069923f1bd86730c092e026a66382d95f22579fb121627f5d26f26e9c9fc2"
+          },
+          {
+            "path": "openspec/changes/clear-repository-ruff-baseline/proposal.md",
+            "sha256": "c31f5f144b49f47043553010607be5325102f569a481a8178647cc2a3e8d3a42"
+          },
+          {
+            "path": "openspec/changes/clear-repository-ruff-baseline/specs/verification-runner/spec.md",
+            "sha256": "6303dbdb9445ef13061028de9a2ccad709ca597a379590b3ca0ede7703a6f135"
+          },
+          {
+            "path": "openspec/changes/clear-repository-ruff-baseline/tasks.md",
+            "sha256": "48606b9944029082e8c844f02f30f60e56dff5b5003f8a6b103bef8ffd02fe8b"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "P1-1",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "P1-2",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Plan-only review; implementation, tests, archive, candidate, merge, push, and remote parity were not observed."
+        },
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "clear-repository-ruff-baseline",
+      "phase": "plan",
+      "slot_id": "ruff-baseline-plan-f",
+      "implementer_instance_id": "/root",
+      "reviewer": {
+        "provider": "OpenAI Codex",
+        "model": "inherited parent model",
+        "instance_id": "/root/plan_review_f"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "a7cab1021763f4d8f10e0f40b0dc1447577ca76fe31fcbefd0c9a5fd0afab22d",
+      "reviewed_artifacts": [
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "2f4ecdf522f1b3951c80f37d7c16569a089ce826f9f40998972f71561d2887a1"
+        },
+        {
+          "path": ".harness/authority/clear-repository-ruff-baseline/epoch-0001.json",
+          "sha256": "3ac5dbe87fa309b032d15a324437b9c23544dbf59a2171721274ba7010fa8057"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "7a02a94c099e81ce90b73e624a1f48d7ee62df4616558232a0edecc1d34c5b5f"
+        },
+        {
+          "path": "openspec/changes/clear-repository-ruff-baseline/.openspec.yaml",
+          "sha256": "c8525e78dea6b5d41d3dd12501a7c45e563978de0d0858da184208407da25f92"
+        },
+        {
+          "path": "openspec/changes/clear-repository-ruff-baseline/design.md",
+          "sha256": "c691f668a065e3aaef105d70ed9fab919b1856313f3ff29740bdc64282d08a2b"
+        },
+        {
+          "path": "openspec/changes/clear-repository-ruff-baseline/plan-review.md",
+          "sha256": "460069923f1bd86730c092e026a66382d95f22579fb121627f5d26f26e9c9fc2"
+        },
+        {
+          "path": "openspec/changes/clear-repository-ruff-baseline/proposal.md",
+          "sha256": "a20f9d36d080627b11042225572a986ea29ea103f4366aeb2e7bacbe739abdef"
+        },
+        {
+          "path": "openspec/changes/clear-repository-ruff-baseline/specs/verification-runner/spec.md",
+          "sha256": "6303dbdb9445ef13061028de9a2ccad709ca597a379590b3ca0ede7703a6f135"
+        },
+        {
+          "path": "openspec/changes/clear-repository-ruff-baseline/tasks.md",
+          "sha256": "676c2c9f94c920e4bd4c0cf67fc9a6f9b6bd9126320b96444de76fa4e9ff11b5"
+        }
+      ],
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "The exact line-level suppression policy is READY; implementation, tests, archive, candidate, merge, push, and remote parity remain unproved."
+      },
+      "lineage": {
+        "original_slot_id": "ruff-baseline-plan-f",
+        "original_reviewer_instance_id": "/root/plan_review_f",
+        "original_review_ref": "host-review:/root/plan_review_f#ruff-first-round",
+        "original_receipt_sha256": "feab4527f2d9c44cc0577b2f5e3bcbc3b0928d627047cdf762115b4a13a10350",
+        "closed_finding_ids": [
+          "P1-1",
+          "P1-2"
+        ]
+      }
+    }
+  ]
+}

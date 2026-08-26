@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 import difflib
-from pathlib import Path
 import re
 import sqlite3
+from dataclasses import dataclass
+from pathlib import Path
 
 from app.patching.apply import _apply_file_patch, _parse_unified_diff, _safe_target
 from app.patching.store import (
@@ -19,7 +19,6 @@ from app.worktrees.store import (
     SQLiteWorktreeStore,
     WorktreeRecord,
 )
-
 
 _COMMAND_RE = re.compile(
     r"^(?:confirm\s+promote\s+worktree|确认提升\s+worktree)\s+"

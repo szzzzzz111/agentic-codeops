@@ -1,6 +1,5 @@
-from dataclasses import dataclass, field
 import re
-
+from dataclasses import dataclass, field
 
 QUESTION_CODE_LOCATION = "code_location"
 QUESTION_IMPLEMENTATION_EXPLANATION = "implementation_explanation"

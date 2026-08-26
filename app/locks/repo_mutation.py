@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-import sqlite3
 from uuid import uuid4
 
 from app.memory.store import MEMORY_DIR
-
 
 LOCK_DB = "mutation_locks.sqlite3"
 
@@ -20,7 +19,7 @@ class RepoMutationLock:
     acquired: bool
     reason: str = ""
 
-    def with_owner_token(self, owner_token: str) -> "RepoMutationLock":
+    def with_owner_token(self, owner_token: str) -> RepoMutationLock:
         return RepoMutationLock(
             repo_key=self.repo_key,
             operation=self.operation,
@@ -36,7 +35,7 @@ class RepoMutationLockStore:
         self._ensure_schema()
 
     @classmethod
-    def for_repo(cls, repo_path: str | Path) -> "RepoMutationLockStore":
+    def for_repo(cls, repo_path: str | Path) -> RepoMutationLockStore:
         lock_dir = Path(repo_path) / MEMORY_DIR
         lock_dir.mkdir(parents=True, exist_ok=True)
         return cls(lock_dir / LOCK_DB)

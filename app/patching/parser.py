@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from app.verification.runner import parse_verification_label
 
-
 _PATCH_CONFIRM_RE = re.compile(
     r"^\s*(?:应用|确认|apply|confirm)\s+patch\s+"
     r"(patch_[A-Za-z0-9_]+)\s*$",

@@ -1,17 +1,17 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
-from app.memory.store import compute_repo_key
 from app.audit.store import SQLiteAuditStore
 from app.harness.kernel import AgentLoop, AgentLoopRequest
+from app.memory.store import compute_repo_key
 from app.patching.store import (
     PATCH_STATUS_APPLIED_IN_WORKTREE,
     PATCH_STATUS_DISCARDED,
     SQLitePatchStore,
 )
-import app.worktrees.disposal as disposal
+from app.worktrees import disposal
 from app.worktrees.disposal import parse_worktree_disposal_request
 from app.worktrees.git_metadata import (
     GIT_METADATA_REAP_TIMEOUT_SECONDS,
@@ -955,7 +955,7 @@ def test_postcheck_metadata_unavailability_after_mutation_is_failed_disposal(
 ) -> None:
     _init_repo(tmp_path)
     created, patch_store, patch, repo_key = _create_retained_worktree(tmp_path)
-    import app.worktrees.disposal as disposal
+    from app.worktrees import disposal
 
     real_registry_entries = disposal.registry_entries
     calls = 0

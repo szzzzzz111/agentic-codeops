@@ -1,6 +1,6 @@
-from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import sqlite3
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from app.longtask.parser import parse_long_task_command
 from app.longtask.planner import LongTaskPlanner
@@ -12,16 +12,15 @@ from app.longtask.store import (
 )
 from app.longtask.types import (
     ACTION_REPO_RAG,
-    LongTask,
-    LongTaskCommand,
-    LongTaskCommandResult,
     TASK_STATUS_BLOCKED,
     TASK_STATUS_COMPLETED,
     TASK_STATUS_FAILED,
     TASK_STATUS_PAUSED,
     TASK_STATUS_RUNNING,
+    LongTask,
+    LongTaskCommand,
+    LongTaskCommandResult,
 )
-
 
 LONG_TASK_UNAVAILABLE_ANSWER = "无法处理长任务：当前仓库任务存储不可用。"
 _ABSOLUTE_PATH_CANDIDATE_PATTERN = re.compile(

@@ -1,10 +1,9 @@
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 from typing import Protocol
 
 from app.rag.query_understanding import SearchPlan
 from app.rag.repo_rag import RetrievalResult
-
 
 CitationKey = tuple[str, int, int]
 
@@ -83,7 +82,7 @@ def rerank_with_fallback(
             original_result_keys=original_result_keys,
             max_results=max_results,
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - Provider boundary intentionally falls back.
         return RepoRerankResult(
             results=results[:max_results],
             provider_name=getattr(reranker, "provider_name", "unknown"),

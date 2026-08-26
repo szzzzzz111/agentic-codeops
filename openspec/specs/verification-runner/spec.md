@@ -237,3 +237,9 @@ pytest 或 Ruff module 缺失 MUST 返回明确的 tool-unavailable 错误和非
 - **WHEN** repository 或 inherited `PYTHONPATH` 提供退出 0 的 pytest/Ruff 同名 module 或 package
 - **THEN** canonical entry SHALL 使用 isolated interpreter 的 installed tools，而不是 cwd/PYTHONPATH shadow modules
 - **AND** 若 isolated installed tool 不存在，entry MUST 明确非零失败而不是返回零
+
+#### Scenario: Reviewed repository Ruff baseline is clean
+
+- **WHEN** canonical entry 对 reviewed repository candidate 运行 required Ruff check
+- **THEN** Ruff SHALL 在不增加 ignore、`noqa` blanket 或规则降级的前提下返回零
+- **AND** canonical entry SHALL 继续运行后续 required scanners，而不是把 Ruff 标为 skipped

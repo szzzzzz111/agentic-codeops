@@ -1,16 +1,15 @@
-from collections.abc import Callable
-from dataclasses import dataclass
 import os
-from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import subprocess
 import threading
 import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from app.tools import file_tools
 from app.worktrees.git_metadata import run_git_metadata
 from app.worktrees.store import WorktreeRecord
-
 
 MAX_METADATA_BYTES = 256_000
 MAX_PREVIEW_FILES = 20
@@ -277,7 +276,13 @@ def _format_preview(
         file_lines = 0
         file_truncated = False
 
-        def add_preview_line(raw_line: bytes, raw_truncated_bytes: int) -> None:
+        def add_preview_line(
+            raw_line: bytes,
+            raw_truncated_bytes: int,
+            *,
+            outer_used_chars: int = used_chars,
+            target_output: list[str] = file_output,
+        ) -> None:
             nonlocal file_used_chars
             nonlocal file_truncated
             nonlocal file_truncated_chars
@@ -296,17 +301,17 @@ def _format_preview(
                 file_truncated_lines += 1
                 file_truncated = True
                 return
-            if used_chars + file_used_chars + len(rendered) > MAX_PREVIEW_CHARS:
-                remaining = MAX_PREVIEW_CHARS - used_chars - file_used_chars
+            if outer_used_chars + file_used_chars + len(rendered) > MAX_PREVIEW_CHARS:
+                remaining = MAX_PREVIEW_CHARS - outer_used_chars - file_used_chars
                 if remaining > 0:
-                    file_output.append(rendered[:remaining])
+                    target_output.append(rendered[:remaining])
                     file_truncated_chars += len(rendered) - remaining
                     file_used_chars += remaining
                 else:
                     file_truncated_chars += len(rendered)
                 file_truncated = True
                 return
-            file_output.append(rendered)
+            target_output.append(rendered)
             file_used_chars += len(rendered)
             file_lines += 1
 

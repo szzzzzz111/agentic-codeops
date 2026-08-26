@@ -15,7 +15,6 @@ from app.rag.query_understanding import (
     QueryUnderstanding,
 )
 
-
 PLAN_SOURCE_TEMPLATE = "deterministic_template"
 PLAN_SOURCE_FALLBACK = "deterministic_fallback"
 PLAN_SOURCE_PROVIDER = "provider_assisted"
@@ -162,7 +161,7 @@ def _apply_provider_json(
     result: list[LongTaskStep] = []
     for template_step, raw_step in zip(template, raw_steps, strict=True):
         if not isinstance(raw_step, dict):
-            raise ValueError("provider step is not object")
+            raise ValueError("provider step is not object")  # noqa: TRY004 - Preserve the provider payload contract.
         result.append(
             LongTaskStep(
                 step_id=template_step.step_id,

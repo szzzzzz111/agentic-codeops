@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 import hashlib
 import math
-from pathlib import PurePosixPath
 import re
+from dataclasses import dataclass
+from pathlib import PurePosixPath
 
 from app.rag.query_understanding import SearchPlan
 from app.tools.file_tools import list_files, read_file
@@ -227,7 +227,7 @@ def hybrid_fuse(
         RetrievalResult(
             chunk=result.chunk,
             citation=result.citation,
-            score=int(round(score * 1000)),
+            score=round(score * 1000),
         )
         for result, score in (item for item in fused.values())
         if score >= effective_settings.min_fused_score
@@ -305,7 +305,7 @@ def _embedding_text(chunk: RepoChunk) -> str:
 
 def _embedding_score(left: list[float], right: list[float]) -> int:
     similarity = sum(left_value * right_value for left_value, right_value in zip(left, right))
-    return int(round(max(0.0, similarity) * 100))
+    return round(max(0.0, similarity) * 100)
 
 
 def _normalized(score: int, max_score: int) -> float:

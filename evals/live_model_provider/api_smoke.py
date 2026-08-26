@@ -25,10 +25,10 @@ def extract_default_agent_loop(chat_service: ChatService) -> AgentLoop:
     agent = getattr(chat_service, "_agent", None)
     loop = getattr(agent, "_agent_loop", None)
     if not isinstance(loop, AgentLoop):
-        raise RuntimeError("default AgentLoop unavailable")
+        raise RuntimeError("default AgentLoop unavailable")  # noqa: TRY004 - Preserve the smoke-test contract.
     provider = getattr(loop.grounded_answer, "provider", None)
     if not isinstance(provider, OpenAICompatibleModelProvider):
-        raise RuntimeError("default provider is not live")
+        raise RuntimeError("default provider is not live")  # noqa: TRY004 - Preserve the smoke-test contract.
     return loop
 
 

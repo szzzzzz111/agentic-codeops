@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
 import os
-from pathlib import Path
 import subprocess
 import tempfile
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from pathlib import Path
 from time import monotonic
-from typing import Callable, Mapping
 
 import httpx
 
@@ -38,12 +38,11 @@ from evals.live_model_provider.core import (
     EvaluationIntegrityError,
     LiveEvalReport,
     has_evaluable_provider_contact,
+    validate_live_environment,
     write_attestation,
     write_evaluated_failure_record,
     write_local_report,
-    validate_live_environment,
 )
-
 
 MAX_LIVE_CALLS = EXPECTED_LIVE_CALLS
 RUN_TIMEOUT_SECONDS = 300
@@ -299,7 +298,7 @@ def main() -> int:
             env=os.environ,
             repo_root=repo_root,
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - Evaluation boundary reports deterministic failure.
         print(f"ERROR live model provider eval: {type(exc).__name__}")
         return EXIT_ERROR
 

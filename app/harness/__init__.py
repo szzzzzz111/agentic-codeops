@@ -4,8 +4,8 @@ from app.harness.kernel import (
     AgentLoopResult,
     RequestRouter,
     RouteDecision,
-    ToolSpec,
     ToolRegistry,
+    ToolSpec,
     TraceEvent,
 )
 
@@ -15,7 +15,7 @@ __all__ = [
     "AgentLoopResult",
     "RequestRouter",
     "RouteDecision",
-    "ToolSpec",
     "ToolRegistry",
+    "ToolSpec",
     "TraceEvent",
 ]

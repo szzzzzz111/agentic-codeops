@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from app.audit.store import SQLiteAuditStore
 from app.harness.kernel import (
     AgentLoop,
     AgentLoopRequest,
@@ -10,7 +11,6 @@ from app.harness.kernel import (
     ToolInvocationContext,
     ToolSpec,
 )
-from app.audit.store import SQLiteAuditStore
 from app.locks.repo_mutation import RepoMutationLockStore
 from app.memory.store import compute_repo_key
 from app.patching.apply import PatchApplyResult

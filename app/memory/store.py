@@ -1,10 +1,9 @@
+import os
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
-import os
 from pathlib import Path
-import sqlite3
-
 
 MEMORY_DIR = ".repopilot"
 MEMORY_DB = "memory.sqlite3"

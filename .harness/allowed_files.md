@@ -1,82 +1,98 @@
 # 当前 Harness 写入边界
 
-Active OpenSpec change：none。`restore-deterministic-verification-baseline` 已归档，当前只进行受控 closeout。
+Active OpenSpec change：none。`clear-repository-ruff-baseline` 已归档到
+`openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/`。
 
-该已归档阶段只恢复可重复、fail-closed 的验证核心：修复三个已复现 pytest failure，固定
-Verification Runner 与仓库验证入口使用当前 Python 解释器，并修正上一阶段 final review packet
-的当前事实。首次基线的 96 项 Ruff 分布在 56 个文件，超出本阶段窄行为修复范围；它们必须在紧随其后的
-独立机械阶段清零。在两个阶段都完成前，不得声称 full repository verification baseline 已恢复，
-也不得进入 model patch authoring。
+Planning base：`1743eed4694acd585d2a5ef40d090acf56e2969e`；live `origin/main` 与 authorized old tip：`2c0d0d4e749e16e43d867931c58c6a82be56cf13`。
 
-Risk：`high / L3`。理由：本阶段改变 provider 结构化输出的 fail-closed 条件、Verification Runner
-白名单 argv 和统一验证入口的失败语义；错误实现可能接受不受控深度 JSON、误报验证成功或在工具缺失时
-静默跳过。
+Risk：`medium`。原 full Ruff 精确基线为 `92 errors / 53 files`，现已清零；semantic subject 已冻结。
+历史 authority record 只绑定本阶段被审查的完整 scope，不能被解释为新的写入授权。Closeout 预检确认
+epoch 1 的 endpoint hash 误包含命令输出末尾换行；append-only epoch 2 仅把同一实际 origin URL 规范化为
+无换行字节的 SHA-256，不改变 endpoint、branch、tip、scope 或 action ceiling，写入后立即冻结。
 
-## 已冻结的语义 subject 精确路径
-
-下列路径是本阶段相对 planning base 的穷尽 scope，不再代表 final post-archive review 后仍可继续编辑：
+## 已冻结的 historical exact subject（不得再修改）
 
 - `.harness/allowed_files.md`
 - `.harness/review_checklist.md`
-- `.harness/test_commands.md`
 - `HANDOFF_TO_NEXT_CHAT.md`
-- `README.md`
-- `app/providers/model_provider.py`
-- `app/verification/runner.py`
-- `docs/AGENT_RULES.md`
-- `docs/ARCHITECTURE.md`
-- `docs/FEATURE_LIST.json`
 - `docs/PROGRESS.md`
-- `openspec/specs/grounded-answer-model-provider/spec.md`
 - `openspec/specs/verification-runner/spec.md`
-- `scripts/check_skill_evals.py`
-- `scripts/check_skill_evals.ps1`
-- `scripts/check_stage_docs.py`
-- `scripts/check_stage_docs.ps1`
-- `scripts/verify.py`
-- `scripts/verify.ps1`
-- `tests/test_model_provider.py`
-- `tests/test_verification_runner.py`
-- `tests/test_verify_scripts.py`
+- `app/answering/grounded_answer.py`
+- `app/assistant/control_surface.py`
+- `app/audit/manager.py`
+- `app/audit/store.py`
+- `app/cli.py`
+- `app/harness/__init__.py`
+- `app/harness/capabilities.py`
+- `app/harness/kernel.py`
+- `app/locks/repo_mutation.py`
+- `app/longtask/manager.py`
+- `app/longtask/parser.py`
+- `app/longtask/planner.py`
+- `app/longtask/store.py`
+- `app/longtask/types.py`
+- `app/memory/manager.py`
+- `app/memory/store.py`
+- `app/patching/apply.py`
+- `app/patching/manager.py`
+- `app/patching/parser.py`
+- `app/patching/provider.py`
+- `app/patching/store.py`
+- `app/rag/evidence.py`
+- `app/rag/query_rewrite.py`
+- `app/rag/query_understanding.py`
+- `app/rag/repo_rag.py`
+- `app/rag/rerank.py`
+- `app/tools/tool_executor.py`
+- `app/worktrees/disposal.py`
+- `app/worktrees/git_metadata.py`
+- `app/worktrees/inspection.py`
+- `app/worktrees/manager.py`
+- `app/worktrees/promotion.py`
+- `app/worktrees/reverification.py`
+- `app/worktrees/store.py`
+- `evals/live_model_provider/api_smoke.py`
+- `evals/live_model_provider/cases.py`
+- `evals/live_model_provider/components.py`
+- `evals/live_model_provider/core.py`
+- `evals/live_model_provider/runner.py`
+- `tests/test_agent_harness_kernel.py`
+- `tests/test_assistant_control_surface.py`
+- `tests/test_chat_api.py`
+- `tests/test_live_model_provider_eval.py`
+- `tests/test_patch_authoring.py`
+- `tests/test_query_rewrite.py`
+- `tests/test_repo_mutation_locking.py`
+- `tests/test_repo_rag.py`
+- `tests/test_repo_rerank.py`
+- `tests/test_verified_patch_promotion.py`
+- `tests/test_worktree_disposal.py`
+- `tests/test_worktree_inspection.py`
+- `tests/test_worktree_isolation.py`
+- `tests/test_worktree_reverification.py`
 
-## 已冻结的语义 subject 目录前缀
+## 已冻结的 historical prefix subject（不得再修改）
 
-- `.harness/authority/restore-deterministic-verification-baseline/`
-- `.harness/reviews/restore-deterministic-verification-baseline/`
-- `openspec/changes/restore-deterministic-verification-baseline/`
-- `openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/`
+- `.harness/authority/clear-repository-ruff-baseline/`
+- `.harness/reviews/clear-repository-ruff-baseline/`
+- `openspec/changes/clear-repository-ruff-baseline/`
+- `openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/`
 
-除以上 exact/prefix 路径外一律不写。当前 same-slot remediation 完成并冻结 final post-archive packet 后，
-普通 runtime、tests、docs、specs、archived change 和 Harness semantic subjects 全部停止写入；只允许追加或更新
-schema-valid 的 `.harness/reviews/restore-deterministic-verification-baseline/implementation/review-set.json` 与
-`.harness/authority/restore-deterministic-verification-baseline/delivery-binding.json` 两个 evidence-tail 文件。
-任何其他写入都会使 final review 失效。若必须扩大路径，立即停止并重新冻结 scope/authority，不以“顺手修复”继续。
+上述 historical exact/prefix paths 全部冻结。完成本次 freeze-state 记录并重建 final packet 后，唯一可写
+evidence tail 是：
 
-## 明确 non-goals
+- `.harness/reviews/clear-repository-ruff-baseline/implementation/review-set.json`
+- `.harness/authority/clear-repository-ruff-baseline/delivery-binding.json`
 
-- 本阶段不清理跨 56 个文件的 Ruff 96 项，不加全局 ignore，也不降低 Ruff 规则；另建机械阶段处理。
-- 不实现或启用真实 model patch provider，不改变默认 fake/offline 行为。
-- 不自动 apply、verify、promote、commit、merge、push patch proposal。
-- 不激活 stage change replay v2；`provider_neutral.stage_state_cas/v1` 仍缺失。
-- 不实现持久化 Operator approval、真实人工 authority、background/durable/subagent/connectors。
-- 不处理 Verification Runner 进程树 containment；该项留给验证基线恢复后的独立窄阶段。
-- 不把启动 RepoPilot 的当前解释器 site/package installation 视为 hostile supply-chain boundary；不实现 `-S`
-  bootstrap、distribution 签名或 hostile `.pth` containment。
-- 不修改依赖、公开 API、持久化 schema、网络默认值或原脏 worktree。
+除此之外，包括已完成的 authority epoch、manifest、inventory、本文件、review checklist、源码、测试、文档、spec
+与 archive 在内一律不再写。若 final receipt/binding 无法与冻结 packet 一致，立即停止，不得扩大范围或改写
+semantic subject。
 
-## 冻结事实与停止条件
+## 实施约束
 
-- Planning base / authorized remote tip：`2c0d0d4e749e16e43d867931c58c6a82be56cf13`。
-- Target：`origin/main`；当前 feature branch：`codex/restore-deterministic-verification-baseline`。
-- Fetch/push endpoint 在首次网络接触前已本地证明唯一、相等；URL SHA-256 均为
-  `775bee2fb56e792fc9057a93c77c948cdd627c0cc4afa23497d41f7c6276d16c`。
-- 原生基线：Python 3.12.13、pytest 9.1.1、Ruff 0.16.0；`916 passed, 3 failed`；Ruff
-  `96 errors / 56 files`。
-- scope、risk、base、endpoint、branch、authorized tip 或 non-goal 漂移时立即停止并重新冻结。
-- 实施前必须完成 internal plan review、两个 `fork_turns="none"` 独立 plan review slot、mechanical
-  receipt validation 与 direct-user implementation confirmation/已冻结 host authority envelope。
-- 当前 stage 保持 pre-change v1 cohort，action ceiling 收窄为 `archive`：v1 ordinal 中它同时允许较早的
-  `implement`/`commit` 与 archive gate，但阻断 `merge`/`push`。本 stage 只形成 post-archive local reviewed
-  candidate，不 merge/push。后继 Ruff stage 必须重新规划/授权；只有 full pytest、full Ruff 与 canonical
-  verify 全绿后，才把两阶段 commit 一起 ff-only merge 并 lease push。
-- implementation review 的 P0/P1 未清零时不得 archive 或 commit；整体 baseline 未全绿时不得 merge/push。
+- 先运行 Ruff safe `--fix`；禁止 `--unsafe-fixes`、全局/per-file ignore、blanket `noqa` 和规则降级。为保持既有异常合同，只允许在 `app/longtask/planner.py` 与 `evals/live_model_provider/api_smoke.py` 的三处 frozen TRY004 raise 上使用精确行级 `# noqa: TRY004` 并保留理由。
+- 14 处 frozen `except Exception` 都是现有 CLI/orchestration/provider/store/reader 最外层 fail-closed 或 fallback 边界；只允许在这些既有 BLE001 行使用精确行级 `# noqa: BLE001`。其中 worktree disposal 的 best-effort failure-state update 可在同一行精确包含 `S110`；不得用于任何新位置。
+- 剩余规则逐项做最小等价修改；异常收窄、loop binding、类型错误和时间解析必须由现有或新增回归证明行为不变。
+- 不清理未被当前 92 项命中的邻近风格，不顺手重构，不改变公开输出、错误类型或持久化数据。
+- Full pytest、full Ruff、canonical `python -I scripts/verify.py`、两项 scanners、OpenSpec 与 `git diff --check` 全绿后，才进入 independent implementation review。
+- P0/P1 清零并冻结 final post-archive packet 后，只允许 review-set/delivery-binding evidence tail；随后才可 commit、ff-only merge 与 exact-old-OID lease push。

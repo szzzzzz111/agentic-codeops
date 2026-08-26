@@ -1,11 +1,10 @@
+import json
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-import json
-import sqlite3
 
 from app.memory.store import compute_repo_key
-
 
 WORKTREE_DIR = ".repopilot"
 WORKTREE_DB = "worktrees.sqlite3"

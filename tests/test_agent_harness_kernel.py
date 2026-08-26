@@ -1,17 +1,17 @@
 from pathlib import Path
 
 from app.harness.kernel import (
-    ApprovalGate,
     AgentLoop,
     AgentLoopRequest,
+    ApprovalGate,
     CapabilityStatusClassifier,
     PermissionDecision,
     PermissionPolicy,
     RequestRouter,
     RouteDecision,
     ToolInvocationContext,
-    ToolSpec,
     ToolRegistry,
+    ToolSpec,
 )
 from app.memory.store import compute_repo_key
 from app.patching.apply import PatchApplyResult

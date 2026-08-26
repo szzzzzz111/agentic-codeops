@@ -1,0 +1,101 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "clear-repository-ruff-baseline",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "codex-thread:01a03bfc-0199-7583-aefc-f54d655000e0;direct-user-confirmation:restore-verification-through-push;clear-ruff-successor"
+  },
+  "scope": {
+    "risk": "medium",
+    "summary": "Clear the frozen 92-item Ruff inventory across 53 files with safe mechanical fixes and behavior-preserving manual remediation, then prove the repository verification baseline fully green and deliver the two reviewed commits.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/review_checklist.md",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "app/answering/grounded_answer.py",
+        "app/assistant/control_surface.py",
+        "app/audit/manager.py",
+        "app/audit/store.py",
+        "app/cli.py",
+        "app/harness/__init__.py",
+        "app/harness/capabilities.py",
+        "app/harness/kernel.py",
+        "app/locks/repo_mutation.py",
+        "app/longtask/manager.py",
+        "app/longtask/parser.py",
+        "app/longtask/planner.py",
+        "app/longtask/store.py",
+        "app/longtask/types.py",
+        "app/memory/manager.py",
+        "app/memory/store.py",
+        "app/patching/apply.py",
+        "app/patching/manager.py",
+        "app/patching/parser.py",
+        "app/patching/provider.py",
+        "app/patching/store.py",
+        "app/rag/evidence.py",
+        "app/rag/query_rewrite.py",
+        "app/rag/query_understanding.py",
+        "app/rag/repo_rag.py",
+        "app/rag/rerank.py",
+        "app/tools/tool_executor.py",
+        "app/worktrees/disposal.py",
+        "app/worktrees/git_metadata.py",
+        "app/worktrees/inspection.py",
+        "app/worktrees/manager.py",
+        "app/worktrees/promotion.py",
+        "app/worktrees/reverification.py",
+        "app/worktrees/store.py",
+        "docs/PROGRESS.md",
+        "evals/live_model_provider/api_smoke.py",
+        "evals/live_model_provider/cases.py",
+        "evals/live_model_provider/components.py",
+        "evals/live_model_provider/core.py",
+        "evals/live_model_provider/runner.py",
+        "openspec/specs/verification-runner/spec.md",
+        "tests/test_agent_harness_kernel.py",
+        "tests/test_assistant_control_surface.py",
+        "tests/test_chat_api.py",
+        "tests/test_live_model_provider_eval.py",
+        "tests/test_patch_authoring.py",
+        "tests/test_query_rewrite.py",
+        "tests/test_repo_mutation_locking.py",
+        "tests/test_repo_rag.py",
+        "tests/test_repo_rerank.py",
+        "tests/test_verified_patch_promotion.py",
+        "tests/test_worktree_disposal.py",
+        "tests/test_worktree_inspection.py",
+        "tests/test_worktree_isolation.py",
+        "tests/test_worktree_reverification.py"
+      ],
+      "prefixes": [
+        ".harness/authority/clear-repository-ruff-baseline/",
+        ".harness/reviews/clear-repository-ruff-baseline/",
+        "openspec/changes/archive/2026-08-26-clear-repository-ruff-baseline/",
+        "openspec/changes/clear-repository-ruff-baseline/"
+      ]
+    },
+    "non_goals": [
+      "unsafe Ruff fixes, global ignore, per-file ignore, blanket noqa, or lint rule downgrade; only the frozen 3 TRY004 and 14 boundary BLE001 sites (one same-line S110) may use exact line suppressions",
+      "runtime behavior, public API, permission, dependency, persistence schema, or network-default changes",
+      "real model patch provider, replay v2 activation, background/durable/subagent/connectors, or product-level Git automation",
+      "refactors or style cleanup outside the frozen Ruff inventory"
+    ],
+    "active_allowed_files_sha256": "2298b672fabe8c7e340e941ea0e4c0d1640f246fb85a815e26b6872f2488c476"
+  },
+  "scope_sha256": "942609a9f9e827eb07538ec8e2bc3f3d3a803bfc963c64dd419b1d9dad52e18d",
+  "planning_baseline": {
+    "commit": "1743eed4694acd585d2a5ef40d090acf56e2969e"
+  },
+  "action_ceiling": "push",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "775bee2fb56e792fc9057a93c77c948cdd627c0cc4afa23497d41f7c6276d16c",
+    "effective_push_url_sha256": "775bee2fb56e792fc9057a93c77c948cdd627c0cc4afa23497d41f7c6276d16c",
+    "target_branch": "main",
+    "authorized_remote_tip": "2c0d0d4e749e16e43d867931c58c6a82be56cf13"
+  }
+}

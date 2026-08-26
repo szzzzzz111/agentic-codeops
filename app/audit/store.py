@@ -1,12 +1,11 @@
+import json
+import sqlite3
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-import json
-import sqlite3
 from uuid import uuid4
 
 from app.memory.store import compute_repo_key
-
 
 AUDIT_DIR = ".repopilot"
 AUDIT_DB = "audit.sqlite3"

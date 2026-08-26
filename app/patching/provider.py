@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
 import json
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from app.providers.model_provider import (
@@ -7,7 +7,6 @@ from app.providers.model_provider import (
     ModelProviderRequest,
     StructuredOutputInstruction,
 )
-
 
 _PATCH_OUTPUT_INSTRUCTION = StructuredOutputInstruction(
     name="patch_proposal",

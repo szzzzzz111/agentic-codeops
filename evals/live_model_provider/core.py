@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-import hashlib
-import json
 from pathlib import Path
-from typing import Mapping
 
 from app.providers.model_provider import ProviderCallMetrics
-
 
 EXIT_SKIP = 0
 EXIT_FAIL = 1
@@ -135,8 +134,8 @@ DEEPSEEK_V4_FLASH_PROFILE = ProviderProfile(
     pricing=Pricing(
         effective_date="2026-06-22",
         cache_hit_cny_per_million=Decimal("0.02"),
-        cache_miss_cny_per_million=Decimal("1"),
-        output_cny_per_million=Decimal("2"),
+        cache_miss_cny_per_million=Decimal(1),
+        output_cny_per_million=Decimal(2),
     ),
 )
 
@@ -623,7 +622,7 @@ def _aggregate_metrics(cases: list[CaseResult]) -> dict[str, object]:
         "completion_tokens": sum_optional("completion_tokens"),
         "reasoning_tokens": sum_optional("reasoning_tokens"),
         "total_tokens": sum_optional("total_tokens"),
-        "cost_cny": str(sum(costs, Decimal("0"))),
+        "cost_cny": str(sum(costs, Decimal(0))),
     }
 
 
@@ -682,6 +681,6 @@ def _validate_utc_timestamp(value: str) -> None:
     if not value.endswith("Z"):
         raise ValueError("UTC completion time required")
     try:
-        datetime.fromisoformat(value[:-1] + "+00:00")
+        datetime.fromisoformat(value)
     except ValueError as exc:
         raise ValueError("UTC completion time required") from exc

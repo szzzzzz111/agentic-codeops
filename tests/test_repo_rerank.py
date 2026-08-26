@@ -1,10 +1,10 @@
 from app.rag.query_understanding import QueryUnderstanding
+from app.rag.repo_rag import Citation, RepoChunk, RetrievalResult
 from app.rag.rerank import (
     DeterministicRepoReranker,
     RepoReranker,
     rerank_with_fallback,
 )
-from app.rag.repo_rag import Citation, RepoChunk, RetrievalResult
 
 
 def _result(

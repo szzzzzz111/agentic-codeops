@@ -1,12 +1,11 @@
-from dataclasses import dataclass, field
 import os
-from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import subprocess
 import tempfile
+from dataclasses import dataclass, field
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from app.tools import file_tools
-
 
 _HUNK_RE = re.compile(r"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
@@ -300,6 +299,6 @@ def _safe_target(repo_root: Path, file_path: str) -> Path:
 
 def _clean_diff_path(raw_path: str) -> str:
     path = raw_path.split("\t", 1)[0].strip()
-    if path.startswith("a/") or path.startswith("b/"):
+    if path.startswith(("a/", "b/")):
         return path[2:]
     return path
