@@ -54,9 +54,11 @@ http://127.0.0.1:8000
 
 默认验证入口：
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+```bash
+python -I scripts/verify.py
 ```
+
+PowerShell host 可使用 `scripts/verify.ps1` 薄包装；实际检查顺序仍由同一个 Python 入口定义。
 
 ## 文档入口
 

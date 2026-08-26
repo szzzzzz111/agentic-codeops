@@ -1,0 +1,907 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "restore-deterministic-verification-baseline",
+  "phase": "implementation",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "generalize-independent-review-provider",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md",
+    "activation_ref_sha256": "4b7155e4648dd2f12914213a866040ab6c68f537fcbdecccf072a90841085c8f",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "verified-by-host-controller",
+      "evidence_ref": "host-dispatch:/root/impl_review_a,/root/impl_review_b;fork_turns=none"
+    },
+    "activation_sequence": {
+      "status": "verified-by-pre-change-process-authority",
+      "evidence_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md"
+    }
+  },
+  "implementer": {
+    "instance_id": "/root"
+  },
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:79e9f54d8bb3030991ed68dc9e05a03dcc0a4bce7fdd33414b62018d39a8e545",
+    "artifacts": [
+      {
+        "path": ".harness/allowed_files.md",
+        "sha256": "0a12f79f4a6272eb4240c2debc6dbd684c6b1f252aaecdfbc6b959ecb4837d67"
+      },
+      {
+        "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0001.json",
+        "sha256": "8e42c8756ec07292da5d3f245d8745d60015dc4b982d4137f174e8ee4239ecb9"
+      },
+      {
+        "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0002.json",
+        "sha256": "6722a9733746f96db80e745761812a59e489ac615f2f486a1a87ec4cef951253"
+      },
+      {
+        "path": ".harness/review_checklist.md",
+        "sha256": "e6e70f72bb976a4c8ad7df8ffbd1139343e70147ed77345e0025fa6d08fcb2ec"
+      },
+      {
+        "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change-manifest.json",
+        "sha256": "d3983be50b723f2c74084195428830a25863960945f399f4b9f213435963a59d"
+      },
+      {
+        "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change.diff",
+        "sha256": "5bb424cb2a63339afcea151e6172249c68d3b6999ac1811ca278f344f98147ee"
+      },
+      {
+        "path": ".harness/reviews/restore-deterministic-verification-baseline/plan/review-set.json",
+        "sha256": "e41ba54528466c489cf45bf8322f3eee5dfbd01e44c12c870254087bccc48783"
+      },
+      {
+        "path": ".harness/test_commands.md",
+        "sha256": "0fca2efe3c509f069f23de49ed97b866052398666a52e295df210057be4ca4b5"
+      },
+      {
+        "path": "HANDOFF_TO_NEXT_CHAT.md",
+        "sha256": "758d85c6cba54cea22ea172f7a3867f276763f75d99c5e6f5410a2a471267d28"
+      },
+      {
+        "path": "README.md",
+        "sha256": "dbe659c5167b9f498f9eb297f34b6dc1d024e86b209325a90f4e4b8656e3f354"
+      },
+      {
+        "path": "app/providers/model_provider.py",
+        "sha256": "ecb1e9206bdb35bbb101bebebccc7ffbc527da629fb80be6d9898e055f32ba60"
+      },
+      {
+        "path": "app/verification/runner.py",
+        "sha256": "a26300512a20d630b05685c2d5a6c977148fbcceaed9d4cf09dcfdc68a2bdc95"
+      },
+      {
+        "path": "docs/AGENT_RULES.md",
+        "sha256": "9168bfc03fde88eb10aa41559e0b10ab4837a277f1b58494d86b4354eaeb0bd4"
+      },
+      {
+        "path": "docs/ARCHITECTURE.md",
+        "sha256": "15f4a245a107f6ab11d0c0d47936f2ae70fdccfab75eaf3dbea2fc04b9be9592"
+      },
+      {
+        "path": "docs/FEATURE_LIST.json",
+        "sha256": "81457a17ff99b535b362d93d721cf7875e9443c4d2188a49c06689fbcdf97880"
+      },
+      {
+        "path": "docs/PROGRESS.md",
+        "sha256": "2920a08d6de162d7821c3dd39a37847421ab829bc902af5a9108f1ea92c65f06"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/.openspec.yaml",
+        "sha256": "c8525e78dea6b5d41d3dd12501a7c45e563978de0d0858da184208407da25f92"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/design.md",
+        "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/plan-review.md",
+        "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/proposal.md",
+        "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md",
+        "sha256": "c7372ad0f34099c5d8cac0ec260aefb2f2f830003678a5f4cb938e0d720b97c5"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/specs/verification-runner/spec.md",
+        "sha256": "ff19cbe214273f7f2b21185ee8444b6b19fd301c8a66b6de83fe7b80c9f7534b"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/stage_planning.md",
+        "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"
+      },
+      {
+        "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/tasks.md",
+        "sha256": "4481dca470f11a618e3f22e0b74d6f532e97305c7b8f5246bbde5d44cc15ffc4"
+      },
+      {
+        "path": "openspec/specs/grounded-answer-model-provider/spec.md",
+        "sha256": "712ee0405f03109e48af7b7f7e2eed7fd89969444cc307713ead3c59fbc866d1"
+      },
+      {
+        "path": "openspec/specs/verification-runner/spec.md",
+        "sha256": "6f37cdeae123748a1f0750c49d2233e6f71654bcab96d0a5e64093ccfe88c4c2"
+      },
+      {
+        "path": "scripts/check_skill_evals.ps1",
+        "sha256": "4cb7e436e657853c36f39421d635ec2200387d96e2b1fb627340251a943f15d0"
+      },
+      {
+        "path": "scripts/check_skill_evals.py",
+        "sha256": "e7929c78865378c2ee7262d4e86a392fd4d47895bc9998018a8edda3c0d66cba"
+      },
+      {
+        "path": "scripts/check_stage_docs.ps1",
+        "sha256": "cfe591dea2bc63b15817b804c3f391bc13e4d0058f87fcc09c1d8bfab1b62e36"
+      },
+      {
+        "path": "scripts/check_stage_docs.py",
+        "sha256": "cf6e3cc65e01707b2feb1044a99f60f26f7d46bfc98f7b8cf1e2f0f078da6afe"
+      },
+      {
+        "path": "scripts/verify.ps1",
+        "sha256": "200f45529e6b71ea3170edd96707ffaf67419beee79e0398da9e2b89455905b4"
+      },
+      {
+        "path": "scripts/verify.py",
+        "sha256": "28d625218b1da4671985a8393da609561030255c6219ae3aa815b2ce63c4dd2d"
+      },
+      {
+        "path": "tests/test_model_provider.py",
+        "sha256": "9fc40e206361a9f14726c2873f8b1df0c511d4d29b41e483694de9730e239c94"
+      },
+      {
+        "path": "tests/test_verification_runner.py",
+        "sha256": "46c26dc4d6d226deb85ac4c2f9693521416150170c3a085dee1a1a898c3fbb4d"
+      },
+      {
+        "path": "tests/test_verify_scripts.py",
+        "sha256": "bc5de2ed1da073b9e9d24269875e5a19deb53afe5f96d8305cf63221e1e00815"
+      }
+    ],
+    "packet_sha256": "79e9f54d8bb3030991ed68dc9e05a03dcc0a4bce7fdd33414b62018d39a8e545"
+  },
+  "review_history": [
+    {
+      "review_ref": "host-review:/root/impl_review_a#first-round",
+      "receipt_sha256": "19a4b4f6f8b76652ae9aadc73fd997e8558bb752264015c2e89af2b1c00c7d2f",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "restore-deterministic-verification-baseline",
+        "phase": "implementation",
+        "slot_id": "restore-verification-implementation-a",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI Codex",
+          "model": "inherited parent model",
+          "instance_id": "/root/impl_review_a"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "c75ad0344a022f630e3aed0937a59edbbf54934fc99512758d8d75edcf4f4bac",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"
+          },
+          {
+            "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0001.json",
+            "sha256": "8e42c8756ec07292da5d3f245d8745d60015dc4b982d4137f174e8ee4239ecb9"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "646fd470050fc0976841420ab790572ade9043a9ca6a2e9360561612c3740ba8"
+          },
+          {
+            "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change-manifest.json",
+            "sha256": "122d9ffb95d1c36ca264a7ad2188e4c8bd5496e2079c9bb7c8ab60ca103d962c"
+          },
+          {
+            "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change.diff",
+            "sha256": "f10b8d57a335e2bdf833650147b50d236f0e3586190eb5d78d4a3d369e206680"
+          },
+          {
+            "path": ".harness/reviews/restore-deterministic-verification-baseline/plan/review-set.json",
+            "sha256": "e41ba54528466c489cf45bf8322f3eee5dfbd01e44c12c870254087bccc48783"
+          },
+          {
+            "path": ".harness/test_commands.md",
+            "sha256": "0fca2efe3c509f069f23de49ed97b866052398666a52e295df210057be4ca4b5"
+          },
+          {
+            "path": "HANDOFF_TO_NEXT_CHAT.md",
+            "sha256": "340ea670922a89e07375c228a8b4f763e17a236700dbd43b2539386d2e1a3eae"
+          },
+          {
+            "path": "README.md",
+            "sha256": "dbe659c5167b9f498f9eb297f34b6dc1d024e86b209325a90f4e4b8656e3f354"
+          },
+          {
+            "path": "app/providers/model_provider.py",
+            "sha256": "ecb1e9206bdb35bbb101bebebccc7ffbc527da629fb80be6d9898e055f32ba60"
+          },
+          {
+            "path": "app/verification/runner.py",
+            "sha256": "a26300512a20d630b05685c2d5a6c977148fbcceaed9d4cf09dcfdc68a2bdc95"
+          },
+          {
+            "path": "docs/AGENT_RULES.md",
+            "sha256": "9168bfc03fde88eb10aa41559e0b10ab4837a277f1b58494d86b4354eaeb0bd4"
+          },
+          {
+            "path": "docs/ARCHITECTURE.md",
+            "sha256": "15f4a245a107f6ab11d0c0d47936f2ae70fdccfab75eaf3dbea2fc04b9be9592"
+          },
+          {
+            "path": "docs/FEATURE_LIST.json",
+            "sha256": "81457a17ff99b535b362d93d721cf7875e9443c4d2188a49c06689fbcdf97880"
+          },
+          {
+            "path": "docs/PROGRESS.md",
+            "sha256": "71efd7ed84cd94d64b7d44ad4a96318b74d7a5859da309de01619f6038d78bf9"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/.openspec.yaml",
+            "sha256": "f6f1dbf8b6737a4734e2f67cae5e353c9015f8eece94657dcfafb7f2ccc2d605"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/design.md",
+            "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/plan-review.md",
+            "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/proposal.md",
+            "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md",
+            "sha256": "263d4d361d09acf0da3411d1928a517515eed31becb1f4de72d325fa3d5f451a"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/specs/verification-runner/spec.md",
+            "sha256": "1eb582d98ffc81ce34b1bf208cd4470dc91cb68a0d9a97f8005a75ea96438cf4"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/stage_planning.md",
+            "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/tasks.md",
+            "sha256": "127529fb6390cbe7cb1372c40c6def0640404f853ebb06f59edf4c2bf3337a6b"
+          },
+          {
+            "path": "openspec/specs/grounded-answer-model-provider/spec.md",
+            "sha256": "234c11a32b7494488a5058a131e47dc0f79d45eece61aee5ca223602b61256b0"
+          },
+          {
+            "path": "openspec/specs/verification-runner/spec.md",
+            "sha256": "336beaa249f6e8ddc50fb86debe35ae37999dd3e1f802091de5c303dfd845edc"
+          },
+          {
+            "path": "scripts/check_skill_evals.ps1",
+            "sha256": "e92b846d5afdb7483d9dd0f52927e0136e26fa43caab301f5491dbf569499ffb"
+          },
+          {
+            "path": "scripts/check_skill_evals.py",
+            "sha256": "35f061b5568b53c343086d585dbac0857e1a03ff7710261e19078a20140193fe"
+          },
+          {
+            "path": "scripts/check_stage_docs.ps1",
+            "sha256": "d32fac3bb1b996478508a0217e9186faea663ca2b6942199e438da7872caf6b3"
+          },
+          {
+            "path": "scripts/check_stage_docs.py",
+            "sha256": "cebb032192114222f3871d893cee78515c7050f0c793f266f44bac1b94d46693"
+          },
+          {
+            "path": "scripts/verify.ps1",
+            "sha256": "e38a4cacc832da229036d2332b5f143befaf0c58ffaab1cc6a29dd47f570c669"
+          },
+          {
+            "path": "scripts/verify.py",
+            "sha256": "28d625218b1da4671985a8393da609561030255c6219ae3aa815b2ce63c4dd2d"
+          },
+          {
+            "path": "tests/test_model_provider.py",
+            "sha256": "9fc40e206361a9f14726c2873f8b1df0c511d4d29b41e483694de9730e239c94"
+          },
+          {
+            "path": "tests/test_verification_runner.py",
+            "sha256": "46c26dc4d6d226deb85ac4c2f9693521416150170c3a085dee1a1a898c3fbb4d"
+          },
+          {
+            "path": "tests/test_verify_scripts.py",
+            "sha256": "17aeb5d7e025982e6844fbce844656443e87353f21cb888096aed8c25fc939f8"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "RVB-IMPL-A-P1-001",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "RVB-IMPL-A-P2-002",
+              "severity": "P2",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "RVB-IMPL-A-P2-003",
+              "severity": "P2",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "First-round read-only review; full Ruff remained 92 findings in 55 files and PowerShell runtime, archive, candidate, merge, push, and remote parity were not observed."
+        },
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "host-review:/root/impl_review_b#first-round",
+      "receipt_sha256": "76a3b9c4d5f87a5603ed4bb3e2c083d8f1436b92a3da61fb438989a68fecf33f",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "restore-deterministic-verification-baseline",
+        "phase": "implementation",
+        "slot_id": "restore-verification-implementation-b",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI Codex",
+          "model": "inherited parent model",
+          "instance_id": "/root/impl_review_b"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "c75ad0344a022f630e3aed0937a59edbbf54934fc99512758d8d75edcf4f4bac",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"
+          },
+          {
+            "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0001.json",
+            "sha256": "8e42c8756ec07292da5d3f245d8745d60015dc4b982d4137f174e8ee4239ecb9"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "646fd470050fc0976841420ab790572ade9043a9ca6a2e9360561612c3740ba8"
+          },
+          {
+            "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change-manifest.json",
+            "sha256": "122d9ffb95d1c36ca264a7ad2188e4c8bd5496e2079c9bb7c8ab60ca103d962c"
+          },
+          {
+            "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change.diff",
+            "sha256": "f10b8d57a335e2bdf833650147b50d236f0e3586190eb5d78d4a3d369e206680"
+          },
+          {
+            "path": ".harness/reviews/restore-deterministic-verification-baseline/plan/review-set.json",
+            "sha256": "e41ba54528466c489cf45bf8322f3eee5dfbd01e44c12c870254087bccc48783"
+          },
+          {
+            "path": ".harness/test_commands.md",
+            "sha256": "0fca2efe3c509f069f23de49ed97b866052398666a52e295df210057be4ca4b5"
+          },
+          {
+            "path": "HANDOFF_TO_NEXT_CHAT.md",
+            "sha256": "340ea670922a89e07375c228a8b4f763e17a236700dbd43b2539386d2e1a3eae"
+          },
+          {
+            "path": "README.md",
+            "sha256": "dbe659c5167b9f498f9eb297f34b6dc1d024e86b209325a90f4e4b8656e3f354"
+          },
+          {
+            "path": "app/providers/model_provider.py",
+            "sha256": "ecb1e9206bdb35bbb101bebebccc7ffbc527da629fb80be6d9898e055f32ba60"
+          },
+          {
+            "path": "app/verification/runner.py",
+            "sha256": "a26300512a20d630b05685c2d5a6c977148fbcceaed9d4cf09dcfdc68a2bdc95"
+          },
+          {
+            "path": "docs/AGENT_RULES.md",
+            "sha256": "9168bfc03fde88eb10aa41559e0b10ab4837a277f1b58494d86b4354eaeb0bd4"
+          },
+          {
+            "path": "docs/ARCHITECTURE.md",
+            "sha256": "15f4a245a107f6ab11d0c0d47936f2ae70fdccfab75eaf3dbea2fc04b9be9592"
+          },
+          {
+            "path": "docs/FEATURE_LIST.json",
+            "sha256": "81457a17ff99b535b362d93d721cf7875e9443c4d2188a49c06689fbcdf97880"
+          },
+          {
+            "path": "docs/PROGRESS.md",
+            "sha256": "71efd7ed84cd94d64b7d44ad4a96318b74d7a5859da309de01619f6038d78bf9"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/.openspec.yaml",
+            "sha256": "f6f1dbf8b6737a4734e2f67cae5e353c9015f8eece94657dcfafb7f2ccc2d605"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/design.md",
+            "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/plan-review.md",
+            "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/proposal.md",
+            "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md",
+            "sha256": "263d4d361d09acf0da3411d1928a517515eed31becb1f4de72d325fa3d5f451a"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/specs/verification-runner/spec.md",
+            "sha256": "1eb582d98ffc81ce34b1bf208cd4470dc91cb68a0d9a97f8005a75ea96438cf4"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/stage_planning.md",
+            "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"
+          },
+          {
+            "path": "openspec/changes/restore-deterministic-verification-baseline/tasks.md",
+            "sha256": "127529fb6390cbe7cb1372c40c6def0640404f853ebb06f59edf4c2bf3337a6b"
+          },
+          {
+            "path": "openspec/specs/grounded-answer-model-provider/spec.md",
+            "sha256": "234c11a32b7494488a5058a131e47dc0f79d45eece61aee5ca223602b61256b0"
+          },
+          {
+            "path": "openspec/specs/verification-runner/spec.md",
+            "sha256": "336beaa249f6e8ddc50fb86debe35ae37999dd3e1f802091de5c303dfd845edc"
+          },
+          {
+            "path": "scripts/check_skill_evals.ps1",
+            "sha256": "e92b846d5afdb7483d9dd0f52927e0136e26fa43caab301f5491dbf569499ffb"
+          },
+          {
+            "path": "scripts/check_skill_evals.py",
+            "sha256": "35f061b5568b53c343086d585dbac0857e1a03ff7710261e19078a20140193fe"
+          },
+          {
+            "path": "scripts/check_stage_docs.ps1",
+            "sha256": "d32fac3bb1b996478508a0217e9186faea663ca2b6942199e438da7872caf6b3"
+          },
+          {
+            "path": "scripts/check_stage_docs.py",
+            "sha256": "cebb032192114222f3871d893cee78515c7050f0c793f266f44bac1b94d46693"
+          },
+          {
+            "path": "scripts/verify.ps1",
+            "sha256": "e38a4cacc832da229036d2332b5f143befaf0c58ffaab1cc6a29dd47f570c669"
+          },
+          {
+            "path": "scripts/verify.py",
+            "sha256": "28d625218b1da4671985a8393da609561030255c6219ae3aa815b2ce63c4dd2d"
+          },
+          {
+            "path": "tests/test_model_provider.py",
+            "sha256": "9fc40e206361a9f14726c2873f8b1df0c511d4d29b41e483694de9730e239c94"
+          },
+          {
+            "path": "tests/test_verification_runner.py",
+            "sha256": "46c26dc4d6d226deb85ac4c2f9693521416150170c3a085dee1a1a898c3fbb4d"
+          },
+          {
+            "path": "tests/test_verify_scripts.py",
+            "sha256": "17aeb5d7e025982e6844fbce844656443e87353f21cb888096aed8c25fc939f8"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "IMPL-B-001",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "IMPL-B-002",
+              "severity": "P2",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "IMPL-B-003",
+              "severity": "P3",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "First-round read-only review; PowerShell runtime, archive/spec sync, post-archive packet, candidate, merge, push, and remote parity were not observed."
+        },
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "restore-deterministic-verification-baseline",
+      "phase": "implementation",
+      "slot_id": "restore-verification-implementation-a",
+      "implementer_instance_id": "/root",
+      "reviewer": {
+        "provider": "OpenAI Codex",
+        "model": "inherited parent model",
+        "instance_id": "/root/impl_review_a"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "79e9f54d8bb3030991ed68dc9e05a03dcc0a4bce7fdd33414b62018d39a8e545",
+      "reviewed_artifacts": [
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "0a12f79f4a6272eb4240c2debc6dbd684c6b1f252aaecdfbc6b959ecb4837d67"
+        },
+        {
+          "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0001.json",
+          "sha256": "8e42c8756ec07292da5d3f245d8745d60015dc4b982d4137f174e8ee4239ecb9"
+        },
+        {
+          "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0002.json",
+          "sha256": "6722a9733746f96db80e745761812a59e489ac615f2f486a1a87ec4cef951253"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "e6e70f72bb976a4c8ad7df8ffbd1139343e70147ed77345e0025fa6d08fcb2ec"
+        },
+        {
+          "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change-manifest.json",
+          "sha256": "d3983be50b723f2c74084195428830a25863960945f399f4b9f213435963a59d"
+        },
+        {
+          "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change.diff",
+          "sha256": "5bb424cb2a63339afcea151e6172249c68d3b6999ac1811ca278f344f98147ee"
+        },
+        {
+          "path": ".harness/reviews/restore-deterministic-verification-baseline/plan/review-set.json",
+          "sha256": "e41ba54528466c489cf45bf8322f3eee5dfbd01e44c12c870254087bccc48783"
+        },
+        {
+          "path": ".harness/test_commands.md",
+          "sha256": "0fca2efe3c509f069f23de49ed97b866052398666a52e295df210057be4ca4b5"
+        },
+        {
+          "path": "HANDOFF_TO_NEXT_CHAT.md",
+          "sha256": "758d85c6cba54cea22ea172f7a3867f276763f75d99c5e6f5410a2a471267d28"
+        },
+        {
+          "path": "README.md",
+          "sha256": "dbe659c5167b9f498f9eb297f34b6dc1d024e86b209325a90f4e4b8656e3f354"
+        },
+        {
+          "path": "app/providers/model_provider.py",
+          "sha256": "ecb1e9206bdb35bbb101bebebccc7ffbc527da629fb80be6d9898e055f32ba60"
+        },
+        {
+          "path": "app/verification/runner.py",
+          "sha256": "a26300512a20d630b05685c2d5a6c977148fbcceaed9d4cf09dcfdc68a2bdc95"
+        },
+        {
+          "path": "docs/AGENT_RULES.md",
+          "sha256": "9168bfc03fde88eb10aa41559e0b10ab4837a277f1b58494d86b4354eaeb0bd4"
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "sha256": "15f4a245a107f6ab11d0c0d47936f2ae70fdccfab75eaf3dbea2fc04b9be9592"
+        },
+        {
+          "path": "docs/FEATURE_LIST.json",
+          "sha256": "81457a17ff99b535b362d93d721cf7875e9443c4d2188a49c06689fbcdf97880"
+        },
+        {
+          "path": "docs/PROGRESS.md",
+          "sha256": "2920a08d6de162d7821c3dd39a37847421ab829bc902af5a9108f1ea92c65f06"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/.openspec.yaml",
+          "sha256": "c8525e78dea6b5d41d3dd12501a7c45e563978de0d0858da184208407da25f92"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/design.md",
+          "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/plan-review.md",
+          "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/proposal.md",
+          "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md",
+          "sha256": "c7372ad0f34099c5d8cac0ec260aefb2f2f830003678a5f4cb938e0d720b97c5"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/specs/verification-runner/spec.md",
+          "sha256": "ff19cbe214273f7f2b21185ee8444b6b19fd301c8a66b6de83fe7b80c9f7534b"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/stage_planning.md",
+          "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/tasks.md",
+          "sha256": "4481dca470f11a618e3f22e0b74d6f532e97305c7b8f5246bbde5d44cc15ffc4"
+        },
+        {
+          "path": "openspec/specs/grounded-answer-model-provider/spec.md",
+          "sha256": "712ee0405f03109e48af7b7f7e2eed7fd89969444cc307713ead3c59fbc866d1"
+        },
+        {
+          "path": "openspec/specs/verification-runner/spec.md",
+          "sha256": "6f37cdeae123748a1f0750c49d2233e6f71654bcab96d0a5e64093ccfe88c4c2"
+        },
+        {
+          "path": "scripts/check_skill_evals.ps1",
+          "sha256": "4cb7e436e657853c36f39421d635ec2200387d96e2b1fb627340251a943f15d0"
+        },
+        {
+          "path": "scripts/check_skill_evals.py",
+          "sha256": "e7929c78865378c2ee7262d4e86a392fd4d47895bc9998018a8edda3c0d66cba"
+        },
+        {
+          "path": "scripts/check_stage_docs.ps1",
+          "sha256": "cfe591dea2bc63b15817b804c3f391bc13e4d0058f87fcc09c1d8bfab1b62e36"
+        },
+        {
+          "path": "scripts/check_stage_docs.py",
+          "sha256": "cf6e3cc65e01707b2feb1044a99f60f26f7d46bfc98f7b8cf1e2f0f078da6afe"
+        },
+        {
+          "path": "scripts/verify.ps1",
+          "sha256": "200f45529e6b71ea3170edd96707ffaf67419beee79e0398da9e2b89455905b4"
+        },
+        {
+          "path": "scripts/verify.py",
+          "sha256": "28d625218b1da4671985a8393da609561030255c6219ae3aa815b2ce63c4dd2d"
+        },
+        {
+          "path": "tests/test_model_provider.py",
+          "sha256": "9fc40e206361a9f14726c2873f8b1df0c511d4d29b41e483694de9730e239c94"
+        },
+        {
+          "path": "tests/test_verification_runner.py",
+          "sha256": "46c26dc4d6d226deb85ac4c2f9693521416150170c3a085dee1a1a898c3fbb4d"
+        },
+        {
+          "path": "tests/test_verify_scripts.py",
+          "sha256": "bc5de2ed1da073b9e9d24269875e5a19deb53afe5f96d8305cf63221e1e00815"
+        }
+      ],
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Final post-archive whitespace refresh found no remaining issue. Windows/PowerShell runtime is NOT_OBSERVED; full Ruff has 92 findings in 55 files and candidate/merge/push/remote parity remain unproved."
+      },
+      "lineage": {
+        "original_slot_id": "restore-verification-implementation-a",
+        "original_reviewer_instance_id": "/root/impl_review_a",
+        "original_review_ref": "host-review:/root/impl_review_a#first-round",
+        "original_receipt_sha256": "19a4b4f6f8b76652ae9aadc73fd997e8558bb752264015c2e89af2b1c00c7d2f",
+        "closed_finding_ids": [
+          "RVB-IMPL-A-P1-001",
+          "RVB-IMPL-A-P2-002",
+          "RVB-IMPL-A-P2-003"
+        ]
+      }
+    },
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "restore-deterministic-verification-baseline",
+      "phase": "implementation",
+      "slot_id": "restore-verification-implementation-b",
+      "implementer_instance_id": "/root",
+      "reviewer": {
+        "provider": "OpenAI Codex",
+        "model": "inherited parent model",
+        "instance_id": "/root/impl_review_b"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "79e9f54d8bb3030991ed68dc9e05a03dcc0a4bce7fdd33414b62018d39a8e545",
+      "reviewed_artifacts": [
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "0a12f79f4a6272eb4240c2debc6dbd684c6b1f252aaecdfbc6b959ecb4837d67"
+        },
+        {
+          "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0001.json",
+          "sha256": "8e42c8756ec07292da5d3f245d8745d60015dc4b982d4137f174e8ee4239ecb9"
+        },
+        {
+          "path": ".harness/authority/restore-deterministic-verification-baseline/epoch-0002.json",
+          "sha256": "6722a9733746f96db80e745761812a59e489ac615f2f486a1a87ec4cef951253"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "e6e70f72bb976a4c8ad7df8ffbd1139343e70147ed77345e0025fa6d08fcb2ec"
+        },
+        {
+          "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change-manifest.json",
+          "sha256": "d3983be50b723f2c74084195428830a25863960945f399f4b9f213435963a59d"
+        },
+        {
+          "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change.diff",
+          "sha256": "5bb424cb2a63339afcea151e6172249c68d3b6999ac1811ca278f344f98147ee"
+        },
+        {
+          "path": ".harness/reviews/restore-deterministic-verification-baseline/plan/review-set.json",
+          "sha256": "e41ba54528466c489cf45bf8322f3eee5dfbd01e44c12c870254087bccc48783"
+        },
+        {
+          "path": ".harness/test_commands.md",
+          "sha256": "0fca2efe3c509f069f23de49ed97b866052398666a52e295df210057be4ca4b5"
+        },
+        {
+          "path": "HANDOFF_TO_NEXT_CHAT.md",
+          "sha256": "758d85c6cba54cea22ea172f7a3867f276763f75d99c5e6f5410a2a471267d28"
+        },
+        {
+          "path": "README.md",
+          "sha256": "dbe659c5167b9f498f9eb297f34b6dc1d024e86b209325a90f4e4b8656e3f354"
+        },
+        {
+          "path": "app/providers/model_provider.py",
+          "sha256": "ecb1e9206bdb35bbb101bebebccc7ffbc527da629fb80be6d9898e055f32ba60"
+        },
+        {
+          "path": "app/verification/runner.py",
+          "sha256": "a26300512a20d630b05685c2d5a6c977148fbcceaed9d4cf09dcfdc68a2bdc95"
+        },
+        {
+          "path": "docs/AGENT_RULES.md",
+          "sha256": "9168bfc03fde88eb10aa41559e0b10ab4837a277f1b58494d86b4354eaeb0bd4"
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "sha256": "15f4a245a107f6ab11d0c0d47936f2ae70fdccfab75eaf3dbea2fc04b9be9592"
+        },
+        {
+          "path": "docs/FEATURE_LIST.json",
+          "sha256": "81457a17ff99b535b362d93d721cf7875e9443c4d2188a49c06689fbcdf97880"
+        },
+        {
+          "path": "docs/PROGRESS.md",
+          "sha256": "2920a08d6de162d7821c3dd39a37847421ab829bc902af5a9108f1ea92c65f06"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/.openspec.yaml",
+          "sha256": "c8525e78dea6b5d41d3dd12501a7c45e563978de0d0858da184208407da25f92"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/design.md",
+          "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/plan-review.md",
+          "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/proposal.md",
+          "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md",
+          "sha256": "c7372ad0f34099c5d8cac0ec260aefb2f2f830003678a5f4cb938e0d720b97c5"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/specs/verification-runner/spec.md",
+          "sha256": "ff19cbe214273f7f2b21185ee8444b6b19fd301c8a66b6de83fe7b80c9f7534b"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/stage_planning.md",
+          "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"
+        },
+        {
+          "path": "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/tasks.md",
+          "sha256": "4481dca470f11a618e3f22e0b74d6f532e97305c7b8f5246bbde5d44cc15ffc4"
+        },
+        {
+          "path": "openspec/specs/grounded-answer-model-provider/spec.md",
+          "sha256": "712ee0405f03109e48af7b7f7e2eed7fd89969444cc307713ead3c59fbc866d1"
+        },
+        {
+          "path": "openspec/specs/verification-runner/spec.md",
+          "sha256": "6f37cdeae123748a1f0750c49d2233e6f71654bcab96d0a5e64093ccfe88c4c2"
+        },
+        {
+          "path": "scripts/check_skill_evals.ps1",
+          "sha256": "4cb7e436e657853c36f39421d635ec2200387d96e2b1fb627340251a943f15d0"
+        },
+        {
+          "path": "scripts/check_skill_evals.py",
+          "sha256": "e7929c78865378c2ee7262d4e86a392fd4d47895bc9998018a8edda3c0d66cba"
+        },
+        {
+          "path": "scripts/check_stage_docs.ps1",
+          "sha256": "cfe591dea2bc63b15817b804c3f391bc13e4d0058f87fcc09c1d8bfab1b62e36"
+        },
+        {
+          "path": "scripts/check_stage_docs.py",
+          "sha256": "cf6e3cc65e01707b2feb1044a99f60f26f7d46bfc98f7b8cf1e2f0f078da6afe"
+        },
+        {
+          "path": "scripts/verify.ps1",
+          "sha256": "200f45529e6b71ea3170edd96707ffaf67419beee79e0398da9e2b89455905b4"
+        },
+        {
+          "path": "scripts/verify.py",
+          "sha256": "28d625218b1da4671985a8393da609561030255c6219ae3aa815b2ce63c4dd2d"
+        },
+        {
+          "path": "tests/test_model_provider.py",
+          "sha256": "9fc40e206361a9f14726c2873f8b1df0c511d4d29b41e483694de9730e239c94"
+        },
+        {
+          "path": "tests/test_verification_runner.py",
+          "sha256": "46c26dc4d6d226deb85ac4c2f9693521416150170c3a085dee1a1a898c3fbb4d"
+        },
+        {
+          "path": "tests/test_verify_scripts.py",
+          "sha256": "bc5de2ed1da073b9e9d24269875e5a19deb53afe5f96d8305cf63221e1e00815"
+        }
+      ],
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Final post-archive whitespace refresh found no remaining issue. Windows/PowerShell runtime, candidate, merge, push, and remote parity are NOT_OBSERVED; repo evidence does not prove human authority or host chronology."
+      },
+      "lineage": {
+        "original_slot_id": "restore-verification-implementation-b",
+        "original_reviewer_instance_id": "/root/impl_review_b",
+        "original_review_ref": "host-review:/root/impl_review_b#first-round",
+        "original_receipt_sha256": "76a3b9c4d5f87a5603ed4bb3e2c083d8f1436b92a3da61fb438989a68fecf33f",
+        "closed_finding_ids": [
+          "IMPL-B-001",
+          "IMPL-B-002",
+          "IMPL-B-003"
+        ]
+      }
+    }
+  ]
+}

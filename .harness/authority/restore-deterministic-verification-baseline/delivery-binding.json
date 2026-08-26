@@ -1,0 +1,29 @@
+{
+  "schema_version": "repopilot.stage_delivery_binding/v1",
+  "stage_id": "restore-deterministic-verification-baseline",
+  "authority_epoch": 2,
+  "authority_record_sha256": "6722a9733746f96db80e745761812a59e489ac615f2f486a1a87ec4cef951253",
+  "reviewed_manifest": {
+    "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change-manifest.json",
+    "sha256": "d3983be50b723f2c74084195428830a25863960945f399f4b9f213435963a59d"
+  },
+  "reviewed_diff": {
+    "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/reviewed-change.diff",
+    "sha256": "5bb424cb2a63339afcea151e6172249c68d3b6999ac1811ca278f344f98147ee"
+  },
+  "implementation_review_set": {
+    "path": ".harness/reviews/restore-deterministic-verification-baseline/implementation/review-set.json",
+    "sha256": "eb9d284eb718e9b4d1cbdb62cc42411695e4ded7309608281be4d7b44cffa7f9",
+    "packet_sha256": "79e9f54d8bb3030991ed68dc9e05a03dcc0a4bce7fdd33414b62018d39a8e545"
+  },
+  "final_harness_files": [
+    {
+      "path": ".harness/allowed_files.md",
+      "sha256": "0a12f79f4a6272eb4240c2debc6dbd684c6b1f252aaecdfbc6b959ecb4837d67"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "sha256": "e6e70f72bb976a4c8ad7df8ffbd1139343e70147ed77345e0025fa6d08fcb2ec"
+    }
+  ]
+}

@@ -510,11 +510,16 @@ AgentLoop
 边界约束：
 
 - Verification intent 在 Patch command / Patch intent 之后、capability-status / repo_search 之前处理。
-- V17 只支持固定白名单标签：`pytest`、`ruff` 和 `verify`；`verify` 映射到 `powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`。
+- V17 只支持固定白名单标签：`pytest`、`ruff` 和 `verify`。三者都使用当前 `sys.executable`
+  与 isolated mode：pytest 为 `-I -m pytest`，Ruff 为 `-I -m ruff check .`，`verify` 为
+  `-I scripts/verify.py`；PowerShell 脚本只是同一 Python 入口的薄包装。
 - V17 不支持用户附加参数、targeted pytest、`ruff --fix`、管道、重定向、环境变量赋值或任意 shell 文本。
 - `verification_run` 注册为 `read_only=False`、`risk="write"`、`requires_approval=True`；只有有效 verification context 才能走 `ask -> ApprovalGate pass`。
 - API handler、AgentLoop 和 parser 不直接调用 subprocess；实际执行只通过 `ToolExecutor.verification_run(...)`。
-- runner 使用 argv list 和 `shell=False`，cwd 固定为 resolved `repo_path`。
+- runner 使用 argv list 和 `shell=False`，cwd 固定为 resolved `repo_path`。pytest/Ruff 在真正执行前
+  通过 isolated child probe 检查模块可用性；缺失或 probe 异常明确 fail closed，不会静默跳过。
+- pytest probe/执行删除继承的 `PYTEST_ADDOPTS` 与 `PYTEST_PLUGINS`，并固定
+  `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`；解释器路径与 repo/local/secret 一起脱敏。
 - stdout/stderr 各最多 4000 字符；`/chat.answer` 验证输出摘要总计最多 6000 字符，并标记 `truncated=true/false`。
 - 公开响应脱敏 resolved repo path、本机绝对路径、`.repopilot/...` 和常见 secret，不公开完整 stdout/stderr、环境变量、完整 trace、Evidence Pack 或 provider prompt/output。
 - V17 不自动串联 patch apply，不根据失败生成 patch，不持久化 verification result，不创建 worktree，不 commit/push。

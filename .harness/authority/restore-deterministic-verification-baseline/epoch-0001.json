@@ -1,0 +1,67 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "restore-deterministic-verification-baseline",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "codex-thread:01a03bfc-0199-7583-aefc-f54d655000e0;direct-user-confirmation:restore-verification-through-push"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Restore deterministic fail-closed JSON and verification behavior, add a current-interpreter Python verification entry with thin PowerShell wrappers, correct predecessor current facts, and stop at a reviewed post-archive local candidate pending the separate Ruff cleanup stage.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/review_checklist.md",
+        ".harness/test_commands.md",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "README.md",
+        "app/providers/model_provider.py",
+        "app/verification/runner.py",
+        "docs/AGENT_RULES.md",
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURE_LIST.json",
+        "docs/PROGRESS.md",
+        "openspec/specs/grounded-answer-model-provider/spec.md",
+        "openspec/specs/verification-runner/spec.md",
+        "scripts/check_skill_evals.ps1",
+        "scripts/check_skill_evals.py",
+        "scripts/check_stage_docs.ps1",
+        "scripts/check_stage_docs.py",
+        "scripts/verify.ps1",
+        "scripts/verify.py",
+        "tests/test_model_provider.py",
+        "tests/test_verification_runner.py",
+        "tests/test_verify_scripts.py"
+      ],
+      "prefixes": [
+        ".harness/authority/restore-deterministic-verification-baseline/",
+        ".harness/reviews/restore-deterministic-verification-baseline/",
+        "openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/",
+        "openspec/changes/restore-deterministic-verification-baseline/"
+      ]
+    },
+    "non_goals": [
+      "repository-wide Ruff cleanup or global lint ignores",
+      "real model patch provider, patch apply, promotion, or product-level Git automation",
+      "stage change replay v2 activation or provider-neutral host CAS",
+      "persistent operator approval or hosted human authority",
+      "background, durable, subagent, or connector runtime expansion",
+      "Verification Runner process-tree containment",
+      "interpreter-site supply-chain hardening",
+      "dependency, public API, persistence schema, or network-default changes"
+    ],
+    "active_allowed_files_sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"
+  },
+  "scope_sha256": "8b53f6946e027e7b9e8ac102cab86f2812654767644957f4ce67edd965081e49",
+  "planning_baseline": {"commit": "2c0d0d4e749e16e43d867931c58c6a82be56cf13"},
+  "action_ceiling": "archive",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "775bee2fb56e792fc9057a93c77c948cdd627c0cc4afa23497d41f7c6276d16c",
+    "effective_push_url_sha256": "775bee2fb56e792fc9057a93c77c948cdd627c0cc4afa23497d41f7c6276d16c",
+    "target_branch": "main",
+    "authorized_remote_tip": "2c0d0d4e749e16e43d867931c58c6a82be56cf13"
+  }
+}

@@ -8,6 +8,7 @@ from app.providers.model_provider import (
     ModelProviderRequest,
     OpenAICompatibleModelProvider,
     StructuredOutputInstruction,
+    _json_nesting_exceeds_limit,
     load_model_provider_from_env,
 )
 
@@ -723,6 +724,64 @@ def test_json_object_mode_rejects_recursion_depth_response() -> None:
 
     assert response.answer == ""
     assert response.audit_summary["error_class"] == "ProviderResponseValidationError"
+
+
+@pytest.mark.parametrize(
+    ("content", "accepted"),
+    [
+        ((('{"a":' * 128) + "null" + ("}" * 128)), True),
+        ((('{"a":' * 129) + "null" + ("}" * 129)), False),
+        ((('{"a":[' * 64) + "null" + ("]}" * 64)), True),
+        ((('{"a":[' * 65) + "null" + ("]}" * 65)), False),
+        ('{"text":"{[}]\\\"","items":[]}', True),
+    ],
+)
+def test_json_object_mode_enforces_deterministic_nesting_limit(
+    content: str,
+    accepted: bool,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": content}}]},
+        )
+
+    provider = OpenAICompatibleModelProvider(
+        base_url="https://example.test/v1",
+        api_key="secret-key",
+        model="mimo-test",
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+
+    response = provider.generate(
+        structured_request(
+            StructuredOutputInstruction(
+                name="long_task_plan",
+                json_example='{"steps":[]}',
+                max_output_tokens=2000,
+            )
+        )
+    )
+
+    if accepted:
+        assert response.answer == content
+        assert response.audit_summary["status"] == "success"
+    else:
+        assert response.answer == ""
+        assert response.audit_summary["error_class"] == "ProviderResponseValidationError"
+
+
+@pytest.mark.parametrize(
+    ("backslash_count", "exceeds_limit"),
+    [(1, False), (2, True), (3, False), (4, True)],
+)
+def test_json_nesting_scanner_respects_quote_escape_parity(
+    backslash_count: int,
+    exceeds_limit: bool,
+) -> None:
+    prefix = '{"text":"' + ("\\" * backslash_count) + '"'
+
+    assert _json_nesting_exceeds_limit(prefix + ("[" * 129)) is exceeds_limit
 
 
 def test_thinking_disabled_is_sent_only_when_explicitly_configured() -> None:

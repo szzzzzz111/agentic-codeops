@@ -1,8 +1,5 @@
-﻿# verification-runner Specification
+## MODIFIED Requirements
 
-## Purpose
-定义 RepoPilot 在明确验证请求下运行固定白名单验证命令的边界。该能力要求验证执行通过 `ToolExecutor.verification_run`、权限审批上下文、固定 cwd、timeout 和输出脱敏完成，不开放任意 shell 或用户自定义命令参数。
-## Requirements
 ### Requirement: Verification Runner 只执行明确验证请求
 
 系统 SHALL 只在用户发送明确验证请求时触发 Verification Runner。验证请求 MUST 解析为白名单命令标签，
@@ -39,25 +36,6 @@ verification。
 - **THEN** 系统 MUST 拒绝整个组合请求
 - **AND** 系统 MUST NOT 执行 `patch_apply`
 - **AND** 系统 MUST NOT 运行验证
-
-### Requirement: verification_run 必须经过权限审批边界
-
-系统 SHALL 将 `verification_run` 注册到 `ToolRegistry`。`verification_run` MUST 标记为 `read_only=False`、`risk="write"`、`requires_approval=True`，因为验证命令可能创建缓存文件或执行项目脚本。
-
-系统 MUST 继续使用 `PermissionPolicy` 和 `ApprovalGate` 的三态模型。`PermissionPolicy` MUST 只产出 `allow`、`deny` 或 `ask`。有效 verification context MAY 让 `verification_run` 进入 `ask -> ApprovalGate pass`；缺少有效 context、非白名单标签或 repo scope 无效时 MUST 拒绝执行。
-
-#### Scenario: 有效验证上下文通过审批
-
-- **WHEN** `verification_run` 已注册且 context 包含有效白名单标签和 repo scope
-- **THEN** `PermissionPolicy` 返回 `ask`
-- **AND** `ApprovalGate` 判定通过
-- **AND** AgentLoop MAY 调用 `ToolExecutor.verification_run`
-
-#### Scenario: 无效验证上下文被拒绝
-
-- **WHEN** `verification_run` 缺少有效 context 或命令标签不在白名单内
-- **THEN** `PermissionPolicy` 返回 `deny`
-- **AND** AgentLoop MUST NOT 调用 runner
 
 ### Requirement: 验证执行必须限制 cwd、timeout 和输出
 
@@ -116,63 +94,7 @@ repo/local/secret redaction 外，还 MUST 精确遮蔽当前 `sys.executable` r
 - **THEN** isolated probe SHALL 接受该 installed tool
 - **AND** repository 相对位置本身 MUST NOT 导致 unavailable
 
-### Requirement: 验证公开响应必须脱敏
-
-系统 SHALL 通过现有 `/chat.answer` 返回验证结果摘要，并通过 `tool_calls` 返回安全工具调用摘要。系统 MUST NOT 为 V17 新增 `/chat` 顶层字段。
-
-公开响应 MUST NOT 包含完整 stdout、完整 stderr、本机绝对路径、DB 路径、环境变量、API key、完整 internal trace、完整 Evidence Pack 或 provider prompt/output。系统 MUST 将 resolved `repo_path` 替换为 `<repo>`，将 Windows / POSIX 本机绝对路径替换为 `<local-path>`，将 `.repopilot/...` 替换为 `.repopilot/<redacted>`，并将 `API_KEY=...`、`TOKEN=...`、`SECRET=...`、`PASSWORD=...` 整段替换为 `<redacted-secret>`。
-
-#### Scenario: 验证响应保持 chat contract
-
-- **WHEN** `/chat` 返回验证结果
-- **THEN** 响应 MUST 继续只包含 `trace_id`、`answer`、`related_files` 和 `tool_calls`
-- **AND** `answer` MUST NOT 包含完整 stdout 或完整 stderr
-
-### Requirement: V17 不实现 Patch + Verify Loop
-
-V17 SHALL 提供独立 Verification Runner。系统 MUST NOT 在 patch proposal 或 patch apply 后自动运行验证，MUST NOT 根据验证失败自动生成 patch，MUST NOT 持久化 verification result，MUST NOT 创建 worktree，MUST NOT commit 或 push。
-
-#### Scenario: Patch apply 后不自动验证
-
-- **WHEN** 用户确认应用 patch
-- **THEN** 系统 MAY 执行 V16 patch apply
-- **AND** 系统 MUST NOT 自动触发 `verification_run`
-
-### Requirement: Verification Results Produce Persistent Audit Summaries
-
-系统 SHALL record redacted persistent audit summaries for standalone verification runs and patch verify loop verification runs when an audit store is available.
-
-Verification audit summaries MAY include command label, status, exit code, duration, timeout flag, truncation flag, and short redacted excerpts. Verification audit summaries MUST NOT persist or expose full stdout, full stderr, environment variables, DB paths, local absolute paths, API keys, or secrets.
-
-#### Scenario: Verification audit summary is safe
-
-- **WHEN** `verification_run` completes, fails, or times out
-- **THEN** the persistent audit event records command label, status, exit code, duration, and truncation/timeout flags
-- **AND** it MUST NOT contain full stdout or full stderr
-
-### Requirement: Combined Verification Can Run Inside A Worktree
-
-V20 SHALL allow the combined Patch + Verify flow to run white-listed verification inside the isolated worktree execution repo path created for that request.
-
-Standalone verification MUST keep the existing request repo path behavior. Verification running inside a worktree MUST NOT depend on pre-existing `.repopilot` state within that worktree checkout.
-
-#### Scenario: Worktree verification does not require worktree-local state DBs
-
-- **WHEN** combined verification runs in a newly created worktree
-- **THEN** verification completes or fails based on repository code and command output
-- **AND** it MUST NOT require pre-existing `.repopilot` state files inside the worktree
-
-### Requirement: Verification Runner Supports Trusted Retained Worktree Execution
-
-系统 SHALL allow retained worktree re-verification to reuse `ToolExecutor.verification_run` only after scoped fail-closed preflight has produced a trusted internal execution path.
-
-The existing whitelist, argv, permission/approval context, timeout, output limits, and redaction MUST remain unchanged. The trusted execution path MUST NOT be exposed or persisted.
-
-#### Scenario: Existing whitelist remains authoritative
-
-- **WHEN** retained worktree re-verification requests an unsupported label or additional arguments
-- **THEN** the system rejects the request
-- **AND** it MUST NOT call the Verification Runner
+## ADDED Requirements
 
 ### Requirement: Current Interpreter Site Is An Explicit Trust Boundary
 

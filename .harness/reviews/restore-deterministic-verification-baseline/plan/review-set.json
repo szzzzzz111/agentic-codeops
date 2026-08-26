@@ -1,0 +1,147 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "restore-deterministic-verification-baseline",
+  "phase": "plan",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "generalize-independent-review-provider",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md",
+    "activation_ref_sha256": "4b7155e4648dd2f12914213a866040ab6c68f537fcbdecccf072a90841085c8f",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {"status": "verified-by-host-controller", "evidence_ref": "host-dispatch:/root/plan_review_e,/root/plan_review_f;fork_turns=none"},
+    "activation_sequence": {"status": "verified-by-pre-change-process-authority", "evidence_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md"}
+  },
+  "implementer": {"instance_id": "/root"},
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:eeb8ccf103f84387150d3450ea8f2c15048a807a5aefa4f2ce1b813d8c8fff90",
+    "artifacts": [
+      {"path": ".harness/allowed_files.md", "sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"},
+      {"path": ".harness/review_checklist.md", "sha256": "19576c7ae7ebb7444bae7cfbe3855916cea628d1a460589033593610f3732ae9"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/.openspec.yaml", "sha256": "f6f1dbf8b6737a4734e2f67cae5e353c9015f8eece94657dcfafb7f2ccc2d605"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/design.md", "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/plan-review.md", "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/proposal.md", "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md", "sha256": "263d4d361d09acf0da3411d1928a517515eed31becb1f4de72d325fa3d5f451a"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/verification-runner/spec.md", "sha256": "1eb582d98ffc81ce34b1bf208cd4470dc91cb68a0d9a97f8005a75ea96438cf4"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/stage_planning.md", "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"},
+      {"path": "openspec/changes/restore-deterministic-verification-baseline/tasks.md", "sha256": "273f24ce45dac5540d2ddb2fa24a52965814d4335e3798cd153103e78e17c905"}
+    ],
+    "packet_sha256": "eeb8ccf103f84387150d3450ea8f2c15048a807a5aefa4f2ce1b813d8c8fff90"
+  },
+  "review_history": [
+    {
+      "review_ref": "host-review:restore-verification-plan-e:first-round",
+      "receipt_sha256": "e94353b06d3f4c532104c8e9207d6e0e5aabd47e79241b2074aa4054f6dc58ba",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "restore-deterministic-verification-baseline",
+        "phase": "plan",
+        "slot_id": "restore-verification-plan-e",
+        "implementer_instance_id": "/root",
+        "reviewer": {"provider": "OpenAI Codex", "model": "inherited parent model", "instance_id": "/root/plan_review_e"},
+        "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "6b58ec6f3e44057f3dd9d6a1b399cbf9b792bf2256082f9c7b39b4b6bda2790f",
+        "reviewed_artifacts": [
+          {"path": ".harness/allowed_files.md", "sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"},
+          {"path": ".harness/review_checklist.md", "sha256": "84fee420d4194f4241ed0187d5636b70d50686fa93dbc3d91d75bdec33f88d91"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/.openspec.yaml", "sha256": "f6f1dbf8b6737a4734e2f67cae5e353c9015f8eece94657dcfafb7f2ccc2d605"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/design.md", "sha256": "8367d7e44ce7848fadc7ff395d00824c6355dab08ffc9b597beb65c5e100e641"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/plan-review.md", "sha256": "cf304a27c0d8a7bf999b0af67d97ecf662a762d8153c0f76bba0078f90713b88"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/proposal.md", "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md", "sha256": "263d4d361d09acf0da3411d1928a517515eed31becb1f4de72d325fa3d5f451a"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/verification-runner/spec.md", "sha256": "1eb582d98ffc81ce34b1bf208cd4470dc91cb68a0d9a97f8005a75ea96438cf4"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/stage_planning.md", "sha256": "e8f189b66d017c5275a4eb6eaa4247aa4fbf543e89c1f1d27b7e19101707349d"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/tasks.md", "sha256": "86557e31ad045f2bd28add5e0fa2977c2fa5f1e667f49e15cb40d5400283abf7"}
+        ],
+        "conclusion": {"status": "no_findings", "findings": [], "gate_verdict": "ready", "residual_uncertainty": "Plan-only first-round review; implementation, tests, live authority, archive, candidate, merge, and push were not established. No other slot conclusion was visible."},
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "host-review:restore-verification-plan-f:first-round",
+      "receipt_sha256": "dd19a876269e07e487243644e37aca31d943028d0ef8cec3085f48beb675e8b6",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "restore-deterministic-verification-baseline",
+        "phase": "plan",
+        "slot_id": "restore-verification-plan-f",
+        "implementer_instance_id": "/root",
+        "reviewer": {"provider": "OpenAI Codex", "model": "inherited parent model", "instance_id": "/root/plan_review_f"},
+        "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "6b58ec6f3e44057f3dd9d6a1b399cbf9b792bf2256082f9c7b39b4b6bda2790f",
+        "reviewed_artifacts": [
+          {"path": ".harness/allowed_files.md", "sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"},
+          {"path": ".harness/review_checklist.md", "sha256": "84fee420d4194f4241ed0187d5636b70d50686fa93dbc3d91d75bdec33f88d91"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/.openspec.yaml", "sha256": "f6f1dbf8b6737a4734e2f67cae5e353c9015f8eece94657dcfafb7f2ccc2d605"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/design.md", "sha256": "8367d7e44ce7848fadc7ff395d00824c6355dab08ffc9b597beb65c5e100e641"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/plan-review.md", "sha256": "cf304a27c0d8a7bf999b0af67d97ecf662a762d8153c0f76bba0078f90713b88"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/proposal.md", "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md", "sha256": "263d4d361d09acf0da3411d1928a517515eed31becb1f4de72d325fa3d5f451a"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/verification-runner/spec.md", "sha256": "1eb582d98ffc81ce34b1bf208cd4470dc91cb68a0d9a97f8005a75ea96438cf4"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/stage_planning.md", "sha256": "e8f189b66d017c5275a4eb6eaa4247aa4fbf543e89c1f1d27b7e19101707349d"},
+          {"path": "openspec/changes/restore-deterministic-verification-baseline/tasks.md", "sha256": "86557e31ad045f2bd28add5e0fa2977c2fa5f1e667f49e15cb40d5400283abf7"}
+        ],
+        "conclusion": {"status": "findings", "findings": [{"id": "P1-1", "severity": "P1", "disposition": "fix", "closure_status": "open"}, {"id": "P1-2", "severity": "P1", "disposition": "fix", "closure_status": "open"}], "gate_verdict": "blocked", "residual_uncertainty": "Plan-only first-round review; implementation, tests, live authority, archive, candidate, merge, and push were not established. No other slot conclusion was visible."},
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "restore-deterministic-verification-baseline",
+      "phase": "plan",
+      "slot_id": "restore-verification-plan-e",
+      "implementer_instance_id": "/root",
+      "reviewer": {"provider": "OpenAI Codex", "model": "inherited parent model", "instance_id": "/root/plan_review_e"},
+      "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "eeb8ccf103f84387150d3450ea8f2c15048a807a5aefa4f2ce1b813d8c8fff90",
+      "reviewed_artifacts": [
+        {"path": ".harness/allowed_files.md", "sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"},
+        {"path": ".harness/review_checklist.md", "sha256": "19576c7ae7ebb7444bae7cfbe3855916cea628d1a460589033593610f3732ae9"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/.openspec.yaml", "sha256": "f6f1dbf8b6737a4734e2f67cae5e353c9015f8eece94657dcfafb7f2ccc2d605"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/design.md", "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/plan-review.md", "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/proposal.md", "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md", "sha256": "263d4d361d09acf0da3411d1928a517515eed31becb1f4de72d325fa3d5f451a"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/verification-runner/spec.md", "sha256": "1eb582d98ffc81ce34b1bf208cd4470dc91cb68a0d9a97f8005a75ea96438cf4"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/stage_planning.md", "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/tasks.md", "sha256": "273f24ce45dac5540d2ddb2fa24a52965814d4335e3798cd153103e78e17c905"}
+      ],
+      "conclusion": {"status": "no_findings", "findings": [], "gate_verdict": "ready", "residual_uncertainty": "Plan-only final refresh. Implementation, tests, live authority, archive, candidate, merge, and push remain unproved."},
+      "lineage": {"original_slot_id": "restore-verification-plan-e", "original_reviewer_instance_id": "/root/plan_review_e", "original_review_ref": "host-review:restore-verification-plan-e:first-round", "original_receipt_sha256": "e94353b06d3f4c532104c8e9207d6e0e5aabd47e79241b2074aa4054f6dc58ba", "closed_finding_ids": []}
+    },
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "restore-deterministic-verification-baseline",
+      "phase": "plan",
+      "slot_id": "restore-verification-plan-f",
+      "implementer_instance_id": "/root",
+      "reviewer": {"provider": "OpenAI Codex", "model": "inherited parent model", "instance_id": "/root/plan_review_f"},
+      "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "eeb8ccf103f84387150d3450ea8f2c15048a807a5aefa4f2ce1b813d8c8fff90",
+      "reviewed_artifacts": [
+        {"path": ".harness/allowed_files.md", "sha256": "628119fcf92fe2e1465681ae74cd8f008a41148d21d4aad23b3b9359afdbd1b1"},
+        {"path": ".harness/review_checklist.md", "sha256": "19576c7ae7ebb7444bae7cfbe3855916cea628d1a460589033593610f3732ae9"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/.openspec.yaml", "sha256": "f6f1dbf8b6737a4734e2f67cae5e353c9015f8eece94657dcfafb7f2ccc2d605"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/design.md", "sha256": "a1e93f9691a27d3130a1b085357c4b0c0a5c4c0d00f3f64bf77f40887af19c06"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/plan-review.md", "sha256": "0e67f9fe21900d246e2bffb70d84d82971c18e71b861337949bd2386d2685dc6"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/proposal.md", "sha256": "7e9fe543623ed88473785dc6f50e9be112ae1aba09626cfe28891403d03b95ca"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/grounded-answer-model-provider/spec.md", "sha256": "263d4d361d09acf0da3411d1928a517515eed31becb1f4de72d325fa3d5f451a"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/specs/verification-runner/spec.md", "sha256": "1eb582d98ffc81ce34b1bf208cd4470dc91cb68a0d9a97f8005a75ea96438cf4"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/stage_planning.md", "sha256": "ff40cd8c383174a11c917944a49789ecf59ec4dec29d0ed8524442166247cfef"},
+        {"path": "openspec/changes/restore-deterministic-verification-baseline/tasks.md", "sha256": "273f24ce45dac5540d2ddb2fa24a52965814d4335e3798cd153103e78e17c905"}
+      ],
+      "conclusion": {"status": "no_findings", "findings": [], "gate_verdict": "ready", "residual_uncertainty": "Plan-only final refresh. Implementation, tests, live authority, archive, candidate, merge, and push remain unproved."},
+      "lineage": {"original_slot_id": "restore-verification-plan-f", "original_reviewer_instance_id": "/root/plan_review_f", "original_review_ref": "host-review:restore-verification-plan-f:first-round", "original_receipt_sha256": "dd19a876269e07e487243644e37aca31d943028d0ef8cec3085f48beb675e8b6", "closed_finding_ids": ["P1-1", "P1-2"]}
+    }
+  ]
+}

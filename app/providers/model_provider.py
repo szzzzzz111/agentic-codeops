@@ -1,17 +1,17 @@
-from dataclasses import dataclass, field
 import json
 import os
 import re
+from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Protocol
 
 import httpx
 
-
 OUTPUT_MODE_GROUNDED_TEXT = "grounded_text"
 OUTPUT_MODE_JSON_OBJECT = "json_object"
 MAX_STRUCTURED_OUTPUT_TOKENS = 16384
 MAX_STRUCTURED_OUTPUT_EXAMPLE_CHARS = 4096
+MAX_JSON_NESTING_DEPTH = 128
 STRUCTURED_OUTPUT_NAME_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,63}")
 
 
@@ -194,6 +194,13 @@ class OpenAICompatibleModelProvider:
                 metrics=metrics,
             )
         if request.output_mode == OUTPUT_MODE_JSON_OBJECT:
+            if _json_nesting_exceeds_limit(answer):
+                return _error_response(
+                    provider=self.provider_name,
+                    model=self.model,
+                    error_class="ProviderResponseValidationError",
+                    metrics=metrics,
+                )
             try:
                 parsed = json.loads(answer)
             except (TypeError, ValueError, json.JSONDecodeError, RecursionError):
@@ -220,6 +227,30 @@ class OpenAICompatibleModelProvider:
             },
             metrics=metrics,
         )
+
+
+def _json_nesting_exceeds_limit(value: str) -> bool:
+    depth = 0
+    in_string = False
+    escaped = False
+    for char in value:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char in "[{":
+            depth += 1
+            if depth > MAX_JSON_NESTING_DEPTH:
+                return True
+        elif char in "]}":
+            depth = max(0, depth - 1)
+    return False
 
 
 class _ConfigErrorProvider:

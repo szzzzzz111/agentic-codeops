@@ -1,5 +1,28 @@
 # 项目进度
 
+## Restore Deterministic Verification Baseline（archived，pre-candidate，2026-08-26）
+
+- OpenSpec change `restore-deterministic-verification-baseline` 已归档到
+  `openspec/changes/archive/2026-08-26-restore-deterministic-verification-baseline/`；仅在干净 worktree
+  `/private/tmp/agentic-codeops-restore-verification.01a03bfc` 开发，不触碰原脏 worktree。
+- 当前小阶段修复三项可复现 pytest 问题：JSON object mode 对超过 128 层 structural container fail closed；
+  Verification Runner 和相关测试固定使用当前 `sys.executable -I`；pytest/Ruff 缺失或 probe 异常明确失败。
+- 新的 `scripts/verify.py` 是 canonical cross-platform 入口；PowerShell scripts 只做薄委托，缺工具不得跳过。
+- 当前证据：full pytest `971 passed`，changed-file Ruff PASS；full Ruff 已重测为 92 项 / 55 文件。
+  当前小阶段只清理 changed-file Ruff，随后 `clear-repository-ruff-baseline` 机械阶段清理 residual inventory，
+  不加全局 ignore。
+- Canonical `python -I scripts/verify.py` 已证明先完成 967 项 pytest，再在 residual Ruff 处非零停止；
+  remediation 后 full pytest 已独立重跑为 `971 passed`；
+  required Ruff 没有被跳过。两个 Python scanners、OpenSpec change strict、archive 后 all non-strict 与
+  `git diff --check` 均通过。
+- Pre-archive implementation review 的 A/B 两席在首轮发现的 spec sync、PowerShell fail-closed、scanner parity
+  与 canonical success-path tests 问题均经原 same-slot remediation re-review 关闭；共同 packet
+  `0b5d2a0616605f54bc20af15ffb40e13365c5f87675ed622d39bfe939a53995a` 为 READY / NO_FINDINGS。
+  Archive gate 随后 PASS，并完成 2 个 requirement added、3 个 modified 的 durable spec sync；post-archive
+  final packet/reviewer refresh 与 local candidate 尚未完成。
+- 两阶段的 full pytest、full Ruff、canonical verification 与 scanners 全绿后，才能按授权执行 reviewed
+  commits、fast-forward merge 和 exact-old-OID lease push。
+
 ## Stage Change Replay（archived，2026-08-21）
 
 - OpenSpec change `add-stage-change-replay` 已归档到
@@ -20,15 +43,15 @@
   自证用户身份、消息真实性或授权时序。
 - Final implementation review 的 A/B 两席在 packet `8e1452cd…49d6a9` 上发现的 P1/P2，以及 remediation 中
   新发现的 adapter/unknown-push bypass，均经原 same-slot re-review 关闭；最终共同 packet
-  `bce8efe0…eea7` 为 READY / NO_FINDINGS。该结论只覆盖冻结 repository bytes，不证明 Git delivery。
+  `7eccf12cf3b8793c52a7e5146ffe6698746f69b19d212f0b0d272aebcf636500` 为 READY / NO_FINDINGS，最终
+  candidate/pushed commit 为 `2c0d0d4e749e16e43d867931c58c6a82be56cf13`。
 - 验证 evidence：focused replay/authority `363 passed`；changed Python Ruff、`py_compile` 与
   `git diff --check` PASS；OpenSpec active strict PASS，archive 后 `openspec list` 为 No active changes found，
   `openspec validate --all` 为 `24 passed, 0 failed`。Full pytest 为 `916 passed, 3 failed`；3 项是既有
   baseline（model-provider recursion-depth 1 项、当前 shell 无 `python` 命令导致 verification-runner 2 项）。
   Full Ruff 96 项同样为既有 baseline，因此不宣称 full repository verification PASS。
-- Claim ceiling：archive、durable docs 与 Harness reset 已完成；finite candidate、ff-only merge、
-  exact-old-OID lease push、same-endpoint reconciliation、remote parity 与 `vcs_pushed=verified` 尚未由本记录证明，
-  由 controller 按 final packet 和两文件 evidence tail 继续收口且不在 candidate 后回写仓库。
+- Claim ceiling：该 archived stage 已完成 archive、durable docs、finite candidate、ff-only merge 和
+  exact-old-OID lease push；commit `2c0d0d4e749e16e43d867931c58c6a82be56cf13` 是本阶段 planning base。
 
 ## Stage Authority Binding And Invalidation（archived，2026-08-20）
 
@@ -1479,10 +1502,11 @@ LLMGateway 设计备忘：
 
 - 长期规格入口已切换为 `openspec/specs/`。
 - 后续新阶段继续使用 OpenSpec change；不要恢复旧 `specs/00x-*` 作为规格入口。
-- 当前建议：先完成 archive-after verification，再由用户决定是否 commit/merge/push 或启动新的 runtime stage。
+- 当前建议：完成 `restore-deterministic-verification-baseline`，随后只做
+  `clear-repository-ruff-baseline` 的机械清理；所有门禁全绿后按已授权路径交付到 `origin/main`。
 - 近期路线：V21 inspection、V22 re-verification、V23 disposal/reconciliation、V24 CLI
   Capability Surface / Demo-ready Product Surface 与 V25 Verified Patch Promotion 均已完成；
-  当前不启动新的 runtime stage。
+  当前不启动额外 runtime feature stage。
 - 后续再重新评估 Operator Control、Durable Execution、Background Worker、
   subagents、connectors、notifications、heartbeat/cron 和 always-on assistant；
   不要写成当前 runtime 已实现能力，也不要提前锁定公开 API。

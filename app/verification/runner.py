@@ -1,23 +1,18 @@
-from dataclasses import dataclass
-from pathlib import Path
+import os
 import re
 import subprocess
+import sys
 import time
-
+from dataclasses import dataclass
+from pathlib import Path
 
 MAX_STREAM_EXCERPT_CHARS = 4000
 MAX_ANSWER_OUTPUT_CHARS = 6000
 DEFAULT_TIMEOUT_SECONDS = 120
 ALLOWED_COMMANDS: dict[str, list[str]] = {
-    "pytest": ["pytest"],
-    "ruff": ["ruff", "check", "."],
-    "verify": [
-        "powershell",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "scripts/verify.ps1",
-    ],
+    "pytest": [sys.executable, "-I", "-m", "pytest"],
+    "ruff": [sys.executable, "-I", "-m", "ruff", "check", "."],
+    "verify": [sys.executable, "-I", "scripts/verify.py"],
 }
 _VERIFY_ALIASES = {
     "运行验证": "verify",
@@ -128,6 +123,7 @@ def run_whitelisted_verification(
     command_label: str,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
 ) -> VerificationRunResult:
+    started = time.monotonic()
     argv = command_argv(command_label)
     if argv is None:
         return VerificationRunResult(
@@ -137,11 +133,59 @@ def run_whitelisted_verification(
             duration_ms=0,
             stderr_excerpt="unsupported_command",
         )
+    try:
+        cwd = Path(repo_path).resolve(strict=True)
+        if not cwd.is_dir():
+            raise NotADirectoryError
+    except (OSError, RuntimeError):
+        return VerificationRunResult(
+            command_label=command_label,
+            status="unavailable",
+            exit_code=None,
+            duration_ms=_elapsed_ms(started),
+            stderr_excerpt="repo_unavailable",
+        )
+    env = _controlled_environment(command_label)
+    if command_label in {"pytest", "ruff"}:
+        try:
+            probe = subprocess.run(
+                [
+                    sys.executable,
+                    "-I",
+                    "-c",
+                    (
+                        "import importlib.util,sys; "
+                        "raise SystemExit(0 if importlib.util.find_spec(sys.argv[1]) "
+                        "is not None else 1)"
+                    ),
+                    command_label,
+                ],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout_seconds,
+                shell=False,
+                check=False,
+                env=env,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            probe = None
+        if probe is None or probe.returncode != 0:
+            return VerificationRunResult(
+                command_label=command_label,
+                status="unavailable",
+                exit_code=None,
+                duration_ms=0,
+                stderr_excerpt=f"verification_tool_unavailable:{command_label}",
+            )
     return run_verification_command(
-        repo_path=repo_path,
+        repo_path=cwd,
         command_label=command_label,
         argv=argv,
         timeout_seconds=timeout_seconds,
+        env=env,
     )
 
 
@@ -151,6 +195,7 @@ def run_verification_command(
     command_label: str,
     argv: list[str],
     timeout_seconds: int,
+    env: dict[str, str] | None = None,
 ) -> VerificationRunResult:
     started = time.monotonic()
     try:
@@ -177,6 +222,7 @@ def run_verification_command(
             timeout=timeout_seconds,
             shell=False,
             check=False,
+            env=env,
         )
     except FileNotFoundError:
         return VerificationRunResult(
@@ -225,6 +271,8 @@ def run_verification_command(
 
 def redact_verification_output(value: str, *, repo_path: str | Path) -> str:
     text = str(value)
+    for executable in {sys.executable, str(Path(sys.executable).resolve())}:
+        text = text.replace(executable, "<python>")
     try:
         resolved_repo = Path(repo_path).resolve()
         text = text.replace(str(resolved_repo), "<repo>")
@@ -235,6 +283,15 @@ def redact_verification_output(value: str, *, repo_path: str | Path) -> str:
     text = _REPOPILOT_PATH_RE.sub(".repopilot/<redacted>", text)
     text = _WINDOWS_ABSOLUTE_PATH_RE.sub("<local-path>", text)
     return _POSIX_LOCAL_ABSOLUTE_PATH_RE.sub("<local-path>", text)
+
+
+def _controlled_environment(command_label: str) -> dict[str, str]:
+    env = os.environ.copy()
+    if command_label in {"pytest", "verify"}:
+        env.pop("PYTEST_ADDOPTS", None)
+        env.pop("PYTEST_PLUGINS", None)
+        env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+    return env
 
 
 def format_verification_answer(result: VerificationRunResult) -> str:
@@ -286,9 +343,7 @@ def _looks_like_verification_request(message: str, lower: str) -> bool:
     return has_verification_term and (
         has_command_phrase
         or lower.startswith("run ")
-        or message.startswith("运行")
-        or message.startswith("执行")
-        or message.startswith("跑")
+        or message.startswith(("运行", "执行", "跑"))
     )
 
 

@@ -3,26 +3,32 @@
 ## 单元测试和 API 测试
 
 ```bash
-pytest
+python -I -m pytest
 ```
 
 ## 一键验证
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+```bash
+python -I scripts/verify.py
 ```
+
+PowerShell host 等价入口：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`。
 
 ## 阶段文档漂移扫描
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1
+```bash
+python -I scripts/check_stage_docs.py
 ```
+
+PowerShell host 等价入口：`powershell -ExecutionPolicy Bypass -File scripts/check_stage_docs.ps1`。
 
 ## Skill eval 结构扫描
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/check_skill_evals.ps1
+```bash
+python -I scripts/check_skill_evals.py
 ```
+
+PowerShell host 等价入口：`powershell -ExecutionPolicy Bypass -File scripts/check_skill_evals.ps1`。
 
 ## 阶段归档收口检查
 

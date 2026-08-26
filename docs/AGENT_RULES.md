@@ -59,11 +59,14 @@
 ## 验证与 Review
 
 - 行为变更先写失败测试，再做最小实现。
-- 默认完整验证：
+- 默认完整验证使用当前 Python 解释器和固定的 canonical Python 入口：
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+```bash
+python -I scripts/verify.py
 ```
+
+`scripts/verify.ps1` 只是在 PowerShell host 上委托该入口的薄包装；找不到 Python、pytest 或 Ruff
+必须明确非零失败，不能跳过检查。
 
 - 正式 final implementation review 必须针对最终 runtime/test 状态，并在 archive/merge 前完成；
   它不能替代实现前 plan review，plan review 也不能替代最终实现 review。

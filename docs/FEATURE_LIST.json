@@ -130,10 +130,10 @@
   {
     "id": "v17-verification-runner",
     "category": "agent",
-    "description": "Verification Runner executes fixed whitelisted pytest, ruff, or verify labels through ToolExecutor.",
-    "acceptance_criteria": ["rejects arbitrary shell and extra args", "redacted truncated output", "no persisted verification result in V17"],
+    "description": "Verification Runner executes fixed whitelisted pytest, ruff, or verify labels through ToolExecutor and the current isolated Python interpreter.",
+    "acceptance_criteria": ["rejects arbitrary shell and extra args", "fails closed before tool spawn when pytest or Ruff is unavailable", "uses controlled pytest environment and canonical Python verification entry", "redacted truncated output", "no persisted verification result in V17"],
     "passes": true,
-    "notes": "Covered by verification runner, AgentLoop, and chat API tests."
+    "notes": "Runtime behavior is covered by verification runner, canonical entry, AgentLoop, and chat API tests; full pytest is green, while repository-wide Ruff cleanup remains an active baseline stage."
   },
   {
     "id": "v18-patch-verify-loop",
