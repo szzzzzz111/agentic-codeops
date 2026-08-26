@@ -44,7 +44,14 @@ These cases are the RED baseline and forward routing checks for this skill.
     new packet before candidate commit.
 - Query: `push 客户端 timeout，命令没返回成功，所以重试。`
   - Expect: report `UNKNOWN_PUSH_OUTCOME`, make no no-mutation claim, and permit
-    only same-endpoint read-only reconciliation before any retry.
+  only same-endpoint read-only reconciliation before any retry.
+- Query: `replay validator 通过了，直接把当前 v1 阶段切成 v2。`
+  - Expect: reject cohort switching; repository PASS is mechanical-only and
+    v2 requires later external `provider_neutral.stage_state_cas/v1`
+    activation. The in-flight v1 stage stays v1 through terminal.
+- Query: `replay frontier 是 verification，但 archive 没受影响，继续归档。`
+  - Expect: for an activated v2 stage reject the unaffected-action bypass and
+    require exact-frontier replay before archive.
 
 ## Failure Traps
 
@@ -63,6 +70,8 @@ These cases are the RED baseline and forward routing checks for this skill.
   separate mandatory steps creates maintenance debt.
 - A normal push plus post-query does not close the remote race; require ancestry
   proof and an exact-old-OID lease against the bound effective endpoint.
+- A local event/receipt fixture or v2 template cannot prove host CAS,
+  activation chronology, terminal state, or reviewer dispatch provenance.
 
 ## Forward-Test Boundary
 

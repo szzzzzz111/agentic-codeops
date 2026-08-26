@@ -53,7 +53,17 @@ Harness owns the writable and review boundary.
    authorized remote tip. State every invalidation trigger. These expected
    values come from the live host confirmation, not from reading them back from
    the repository record.
-13. Validate the change, summarize stage-level decisions in plain language, and
+13. Record the stage-authority cohort as a host chronology fact. Until an
+   independently reviewed activation proves
+   `provider_neutral.stage_state_cas/v1`, all stages use pre-change v1 and the
+   replay validator is dormant/mechanical-only. The introducing stage and any
+   in-flight v1 stage remain v1 through terminal; owner-bound drift uses a later
+   v1 authority record. For a newly created, explicitly activated v2 stage,
+   plan the immutable workspace binding, host gate snapshot, event/receipt CAS
+   heads, exact-frontier action mapping, terminal tombstone, and
+   archive-before-candidate ordering. No repository file, template choice, CLI
+   boolean, or validator PASS may select the cohort.
+14. Validate the change, summarize stage-level decisions in plain language, and
    stop at the implementation confirmation gate.
 
 ## Scope Guards
@@ -78,6 +88,9 @@ Harness owns the writable and review boundary.
 - Any later scope, non-goal, risk, planning-base, action-ceiling, endpoint,
   target-branch, or authorized-tip drift invalidates the earlier envelope and
   requires a later epoch plus a new direct-user decision.
+- V1 drift keeps the existing later-v1 replacement route. Only a future
+  host-activated v2 cohort may add a host-CAS event and replay from the exact
+  computed frontier; there is no "unaffected action" bypass.
 - Ask the human partner about intent, non-goals, and sequencing, not line-level
   code review.
 

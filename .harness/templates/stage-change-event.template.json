@@ -1,0 +1,18 @@
+{
+  "schema_version": "repopilot.stage_change_event/v1",
+  "stage_id": "<stage-id>",
+  "sequence": 1,
+  "previous_event_sha256": null,
+  "host_event_id": "<host-issued-id>",
+  "event_kind": "<direct_user_envelope_change|agent_technical_correction|review_remediation|repository_or_git_drift>",
+  "source_reference": "<bounded-redacted-host-reference>",
+  "authority_before": {"epoch": 1, "record_sha256": "<64-lowercase-hex-sha256>"},
+  "authority_requirement": {"later_epoch_required": false, "required_epoch": null},
+  "changed_fact_ids": ["<exact-code-owned-fact-id>"],
+  "before_input_snapshot_sha256": "<64-lowercase-hex-sha256>",
+  "observed_input_snapshot_sha256": "<64-lowercase-hex-sha256>",
+  "review_phase": null,
+  "review_lineage": null,
+  "classification_ceiling": "mechanical_consistency_only",
+  "payload_sha256": "<canonical-payload-sha256>"
+}

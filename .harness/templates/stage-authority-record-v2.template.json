@@ -1,0 +1,35 @@
+{
+  "schema_version": "repopilot.stage_authority/v2",
+  "activation_status": "blocked_on_external_host_capability",
+  "stage_id": "<stage-id>",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "<bounded-host-reference-without-message-content>"
+  },
+  "trigger_change": {
+    "event_count": 0,
+    "event_head": null,
+    "previous_authority_record_sha256": null,
+    "required_later_epoch": null
+  },
+  "scope": {
+    "risk": "<low|medium|high>",
+    "summary": "<bounded-stage-summary>",
+    "allowed_path_rules": {"exact": ["<canonical-path>"], "prefixes": ["<canonical-prefix/>"]},
+    "non_goals": ["<canonical-non-goal>"],
+    "active_allowed_files_sha256": "<64-lowercase-hex-sha256>"
+  },
+  "scope_sha256": "<sha256-of-canonical-scope-object>",
+  "planning_baseline": {"commit": "<40-lowercase-hex-git-oid>"},
+  "action_ceiling": "<plan|implement|archive|commit|merge|push>",
+  "vcs_target": {
+    "remote_name": "<remote-name>",
+    "effective_fetch_url_sha256": "<64-lowercase-hex-sha256>",
+    "effective_push_url_sha256": "<64-lowercase-hex-sha256>",
+    "target_branch": "<branch-name>",
+    "authorized_remote_tip": "<40-lowercase-hex-git-oid>"
+  },
+  "claim_level": "mechanical_consistency_only"
+}

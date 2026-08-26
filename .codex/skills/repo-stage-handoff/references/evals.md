@@ -29,6 +29,13 @@
 - Query: `push timeout 了，但应该没成功，先写已完成交接。`
   - Expect: report `UNKNOWN_PUSH_OUTCOME`, keep `vcs_pushed=unknown`, and permit
     only same-endpoint read-only reconciliation.
+- Query: `push 后把 terminal tombstone 和最终 replay receipt 写回仓库。`
+  - Expect: reject the post-candidate write; terminal state remains external
+    and replay projections belong before final packet freeze.
+- Query: `仓库有 replay validator，所以交接写 v2 已激活。`
+  - Expect: report replay/v2 dormant unless later external
+    `provider_neutral.stage_state_cas/v1` activation is verified; do not infer
+    activation from repository bytes.
 
 ## Failure Traps
 
@@ -40,3 +47,5 @@
 - Do not start the next stage during closeout.
 - Do not let final handoff create a commit after the host-retained exact
   candidate or infer human authorization/push success from repository receipts.
+- Do not add a third replay evidence-tail file or reinterpret an in-flight v1
+  stage as v2 during handoff.

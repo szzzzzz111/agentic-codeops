@@ -63,6 +63,17 @@ Archive a completed change in the experimental workflow.
    mutation. PASS is mechanical-only and does not establish live human
    authority.
 
+   Replay is dormant until a separately reviewed host activation proves
+   `provider_neutral.stage_state_cas/v1`. The introducing and all in-flight
+   stages remain pre-change v1 through terminal and retain later-v1 authority
+   replacement. Repository hashes, v2 templates, CLI flags, fixtures, or a
+   shadow PASS cannot select v2 or authorize/block archive.
+
+   For a future host-activated v2 cohort only, authority core precedes replay;
+   host-retained workspace/terminal/gate snapshots and event/receipt heads are
+   mandatory. Archive may mutate only at the exact `archive` frontier (or a
+   code-owned no-change transition), never through an unaffected bypass.
+
 5. **Assess delta spec sync state**
 
    Check for delta specs at `openspec/changes/<name>/specs/`. If none exist, proceed without sync prompt.
@@ -127,4 +138,6 @@ All artifacts complete. All tasks complete.
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
 - After activation, never downgrade a failed/missing shared archive gate to a
   warning or interactive override
+- Keep replay dormant for v1; an activated v2 stage requires exact-frontier
+  equality and host-retained CAS state before sync/archive
 - Archive does not authorize merge or push; those remain controller-only

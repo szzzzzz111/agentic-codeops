@@ -33,6 +33,10 @@ Look for:
 - old feature branches described as current
 - blockers already resolved
 - V-next described as active without an OpenSpec change
+- replay/v2 described as active without separate external host capability and
+  activation chronology
+- an introducing or in-flight v1 stage described as retroactively converted to
+  v2, instead of remaining v1 through terminal
 - HANDOFF sections that merely repeat PROGRESS history
 
 ## Final Gate
@@ -47,6 +51,10 @@ Look for:
 - After the final packet, only the schema-valid implementation review set and
   delivery binding were written; after the exact candidate commit, no
   repository file was changed.
+- Replay event/receipt projections, if any, were included in the reviewed
+  subject before packet freeze and were not added as a third evidence-tail file.
+- Any activated-v2 terminal tombstone and retained lineage were queried from
+  external host state rather than written after candidate/push.
 - The host-retained exact candidate, target branch, effective endpoint, and
   authorized old tip still match the controller preflight.
 - `technical_ready`, `human_authorized`, and `vcs_pushed` are reported

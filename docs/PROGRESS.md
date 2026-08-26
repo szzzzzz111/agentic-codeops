@@ -1,5 +1,35 @@
 # 项目进度
 
+## Stage Change Replay（archived，2026-08-21）
+
+- OpenSpec change `add-stage-change-replay` 已归档到
+  `openspec/changes/archive/2026-08-21-add-stage-change-replay/`；风险为 high / L3，属于 process-only
+  repository development workflow change。未修改 `app/**`、公开 API、provider/persistence runtime、依赖、
+  网络默认值、runtime subagent 或产品级 Git automation。
+- 新增长期 `stage-change-replay` capability，并同步 `stage-authority-binding` 与
+  `harness-development-workflow`：V1 使用 code-owned 线性 graph、exact fact-to-suffix/prefix/frontier、
+  canonical event/receipt lineage、append CAS、workspace/Git identity 与逐级 symlink 边界；历史 receipt、
+  authority/event delta 和 gate evidence 均按当前 graph 重算。
+- Repo-local replay/v2 固定为 `mechanical_consistency_only` 和
+  `blocked_on_external_host_capability`。Caller-supplied 11-gate adapter、terminal state 或 repository fixture
+  不能证明 native producer、host dispatch、activation、push reconciliation 或 action readiness；当前任何 action
+  均 `requested_action_ready=false`。后续若要激活，必须另起阶段接入并审查
+  `provider_neutral.stage_state_cas/v1`、restart/CAS、native attestation 与 activation chronology。
+- Authority 仍由 pre-change v1 流程管理到 terminal；later-v1 epoch 2 线性绑定 direct-user 批准的 exact scope、
+  push ceiling、origin/main、endpoint fingerprint 与 authorized old tip。Repo authority record/hash/validator 不能
+  自证用户身份、消息真实性或授权时序。
+- Final implementation review 的 A/B 两席在 packet `8e1452cd…49d6a9` 上发现的 P1/P2，以及 remediation 中
+  新发现的 adapter/unknown-push bypass，均经原 same-slot re-review 关闭；最终共同 packet
+  `bce8efe0…eea7` 为 READY / NO_FINDINGS。该结论只覆盖冻结 repository bytes，不证明 Git delivery。
+- 验证 evidence：focused replay/authority `363 passed`；changed Python Ruff、`py_compile` 与
+  `git diff --check` PASS；OpenSpec active strict PASS，archive 后 `openspec list` 为 No active changes found，
+  `openspec validate --all` 为 `24 passed, 0 failed`。Full pytest 为 `916 passed, 3 failed`；3 项是既有
+  baseline（model-provider recursion-depth 1 项、当前 shell 无 `python` 命令导致 verification-runner 2 项）。
+  Full Ruff 96 项同样为既有 baseline，因此不宣称 full repository verification PASS。
+- Claim ceiling：archive、durable docs 与 Harness reset 已完成；finite candidate、ff-only merge、
+  exact-old-OID lease push、same-endpoint reconciliation、remote parity 与 `vcs_pushed=verified` 尚未由本记录证明，
+  由 controller 按 final packet 和两文件 evidence tail 继续收口且不在 candidate 后回写仓库。
+
 ## Stage Authority Binding And Invalidation（archived，2026-08-20）
 
 - OpenSpec change `bind-stage-authority-and-invalidation` 已归档到

@@ -1,0 +1,18 @@
+{
+  "schema_version": "repopilot.stage_replay_receipt/v1",
+  "stage_id": "<stage-id>",
+  "sequence": 1,
+  "previous_receipt_sha256": null,
+  "event_count": 1,
+  "event_head": "<64-lowercase-hex-sha256>",
+  "graph_version": "repopilot.stage_gate_graph/v1",
+  "host_snapshot_generation": 1,
+  "authority": {"epoch": 1, "record_sha256": "<64-lowercase-hex-sha256>"},
+  "completed_gate_ids": ["<ordered-code-owned-gate-id>"],
+  "gate_evidence": [{"gate_id": "<gate-id>", "adapter_id": "<code-owned-adapter-id>", "report_sha256": "<64-lowercase-hex-sha256>"}],
+  "invalidated_gate_ids": ["<derived-gate-id>"],
+  "preserved_gate_ids": ["<derived-gate-id>"],
+  "required_replay_gate_ids": ["<derived-gate-id>"],
+  "replay_frontier_gate_ids": ["<derived-gate-id>"],
+  "claim_level": "mechanical_consistency_only"
+}

@@ -29,6 +29,8 @@ final handoff；不要为每个动作复制近似状态。
 - Reviewed change manifest/diff: `<paths and hashes>`
 - Final implementation review set: `<path, required slots, host-retained packet hash>`
 - Post-packet evidence tail: `<only review-set.json and delivery-binding.json / gate reopened>`
+- Replay reviewed subject: `<all event/receipt projections included before packet freeze / none>`
+- Replay activation/cohort: `<dormant; v1 through terminal / externally activated v2 with host evidence>`
 
 ## Archive And Integration
 
@@ -40,11 +42,17 @@ final handoff；不要为每个动作复制近似状态。
 - Merge result: `<not attempted / exact ff-only verified / blocked>`
 - Push result: `<not_attempted / unknown / verified>`
 - Unknown-outcome reconciliation: `<same-endpoint read-only result / not applicable>`
+- External terminal/replay state (v2 only): `<host query result; never written after candidate/push>`
 - Live Git/OpenSpec state checked by: `<commands, not copied hashes>`
 
 Report `technical_ready`, `human_authorized`, and `vcs_pushed` separately. After the final reviewed packet, only the
 schema-valid two-file evidence tail may be written; after the exact candidate commit, final handoff is report-only and
 must not create another repository write.
+
+Do not report v2 active from repository validators, templates, hashes, or
+fixtures. Until later `provider_neutral.stage_state_cas/v1` activation exists,
+replay is dormant/mechanical-only and the introducing/in-flight v1 stages use
+the pre-change process through terminal.
 
 ## Final Documentation
 

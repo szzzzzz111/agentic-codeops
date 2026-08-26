@@ -56,7 +56,7 @@ An authorization record SHALL bind a stage id, monotonically increasing authorit
 
 ### Requirement: Actual repository changes remain inside the authorized scope
 
-The validator SHALL derive committed, staged, unstaged, untracked, renamed, and deleted paths from the exact planning base through current repository state. Ignored untracked paths SHALL also be inspected except for a finite built-in set of exact cache metadata and compiled-bytecode filename patterns that cannot enter the candidate commit; an arbitrary source file under a cache directory MUST NOT be excluded. Git `-z` path fields MUST remain raw bytes until each can be converted strictly and reversibly into a canonical repository-relative representation; replacement decoding, ignored undecodable bytes, or normalization after lossy decoding is forbidden. Every changed path MUST match a canonical exact-path or directory-prefix rule bound by the authority record, MUST NOT contain ASCII control characters, and any changed gitlink MUST fail closed. `allowed_path_rules` MUST be schema-checked as untrusted input so a wrong container type, non-string member, or invalid exact/prefix value returns a structured redacted failure rather than an uncaught exception. Before archive, the current `.harness/allowed_files.md` hash MUST match the active-stage hash bound by the scope. After archive, a planned Harness reset MAY replace that file only when its final bytes are part of the exhaustively reviewed delivery manifest and bound delivery record. Mechanical scope validation MUST NOT claim to detect semantic non-goal or risk drift inside an allowed path.
+The validator SHALL derive committed, staged, unstaged, untracked, renamed, and deleted paths from the exact planning base through current repository state. Ignored untracked paths SHALL also be inspected except for a finite built-in set of exact cache metadata and compiled-bytecode filename patterns that cannot enter the candidate commit; an arbitrary source file under a cache directory MUST NOT be excluded. Git `-z` path fields MUST remain raw bytes until each can be converted strictly and reversibly into a canonical repository-relative representation; replacement decoding, ignored undecodable bytes, or normalization after lossy decoding is forbidden. Every changed path MUST match a canonical exact-path or directory-prefix rule bound by the authority record, MUST NOT contain ASCII control characters, and any changed gitlink MUST fail closed. `allowed_path_rules` MUST be schema-checked as untrusted input so a wrong container type, non-string member, or invalid exact/prefix value returns a structured redacted failure rather than an uncaught exception. The byte-stable reviewed manifest/inventory v2 SHALL bind each regular file's path, kind, SHA256, and exact `100644` or `100755` mode; a deleted entry SHALL remain only path plus kind. Missing, malformed, or post-review-changed mode MUST fail with no caller value disclosure. The exact four excluded metadata/tail paths SHALL use code-owned canonical current/index candidate mode `100644`; matching post-review chmod in both mutable locations MUST fail. Before archive, the current `.harness/allowed_files.md` hash MUST match the active-stage hash bound by the scope. After archive, a planned Harness reset MAY replace that file only when its final bytes are part of the exhaustively reviewed delivery manifest and bound delivery record. Before candidate commit, the staged index projection MUST equal the reviewed manifest subjects plus the exact four metadata/tail paths in path set, stage-0 regular mode, file/deletion state, and blob bytes/hash; omissions, extras, gitlinks/symlinks, ignored reviewed files left unstaged, or index/worktree divergence MUST fail before mutation. Mechanical scope validation MUST NOT claim to detect semantic non-goal or risk drift inside an allowed path.
 
 #### Scenario: A scope-external path changes
 
@@ -85,6 +85,24 @@ The validator SHALL derive committed, staged, unstaged, untracked, renamed, and 
 - **WHEN** `.harness/allowed_files.md` differs from the active-stage hash before archive, or differs from the final reviewed reset after archive
 - **THEN** the affected action MUST fail and the old authorization MUST NOT cover the drift
 
+#### Scenario: Candidate index differs from reviewed worktree
+
+- **WHEN** the staged path set, regular mode, file/deletion state, or blob bytes differ from the reviewed manifest subjects plus exact four metadata/tail paths
+- **THEN** commit preflight MUST return a structured redacted failure before candidate creation
+- **AND** staging after successful preflight MUST be forbidden because it invalidates the proven candidate projection
+
+#### Scenario: File mode changes without content changes
+
+- **WHEN** a reviewed regular file keeps identical bytes but its worktree or index mode changes between `100644` and `100755`
+- **THEN** manifest validation or commit preflight MUST fail because manifest/inventory v2 binds the reviewed mode
+- **AND** matching post-review worktree and index modes MUST NOT self-prove review coverage
+
+#### Scenario: Evidence-tail mode changes after construction
+
+- **WHEN** any of the exact four metadata/tail paths has a current or index mode other than canonical `100644`
+- **THEN** commit preflight MUST fail even when its bytes and both mutable modes agree
+- **AND** the repository MUST NOT add a self-referential mode field to the delivery binding
+
 #### Scenario: Semantic drift stays a human review responsibility
 
 - **WHEN** all paths are mechanically allowed but implementation behavior violates a non-goal or raises risk
@@ -92,20 +110,60 @@ The validator SHALL derive committed, staged, unstaged, untracked, renamed, and 
 - **AND** host/review judgment MUST stop the action and require a later authority epoch
 
 ### Requirement: Material drift invalidates inherited authorization
-
-The workflow MUST invalidate an existing authorization when stage scope, non-goals, risk, action ceiling, planning baseline identity, target remote fingerprint, target branch, or authorized remote tip changes. A replacement record MUST use a later epoch, content-hash the superseded record, and reference a new live direct-user decision covering the changed envelope.
+The workflow MUST invalidate an existing authorization when stage scope, non-goals, risk, action ceiling, planning baseline identity, target remote fingerprint, target branch, or authorized remote tip changes. A replacement record MUST use a later epoch, content-hash the superseded record, and reference a new live direct-user decision covering the changed envelope. Cohort selection is an external host chronology fact, not a caller/schema choice. For this introducing stage and every in-flight v1 cohort, replacement authority before terminal MUST continue to use the existing pre-change `stage_authority/v1` producer, template, validator, epoch and supersession semantics; it MUST NOT require a replay event or reinterpret the record as v2. For a future explicitly host-activated v2 cohort only, the host-CAS accepted direct-user event SHALL first bind the superseded authority plus the required later epoch; a `stage_authority/v2` replacement record SHALL bind that trigger event count/head and supersede the old record; the later replay receipt SHALL bind event head plus new authority hash. V2 validator comparison of the old/new authority scope MUST exactly match the declared event facts. Its host controller SHALL retain the gate snapshot and exact event/receipt prior/current count/head values. A later v2 authority epoch or recomputed scope digest alone MUST NOT establish replay progress. Under an activated v2 changed lineage a governed mutation remains blocked unless its mapped gate exactly equals the current frontier.
 
 #### Scenario: Scope or risk expands after approval
-
 - **WHEN** the implementation adds a file family, behavior, permission boundary, non-goal exception, or risk trigger outside the authorized scope envelope
 - **THEN** the old authorization MUST NOT permit implementation or later closeout actions
 - **AND** the workflow MUST return to planning and direct-user confirmation
+- **AND** a v1 cohort MUST use the later-v1 pre-change replacement path, while an activated v2 cohort MUST append the host-CAS event and replay every dependent gate before execution resumes
 
 #### Scenario: Remote target drifts
-
 - **WHEN** the remote URL fingerprint, target branch, or refreshed remote target tip differs from the authorized values
 - **THEN** merge/push authorization MUST fail closed
 - **AND** the workflow MUST NOT silently fetch-and-rebase, force push, rewrite history, or choose another target
+- **AND** any later authorized target change MUST use its cohort's replacement path: later-v1 pre-change authority for v1, or a new event head/replay progress bound to the later authority epoch for activated v2
+
+#### Scenario: New authority record lacks predecessor replay
+- **WHEN** an activated-v2 later authority epoch mechanically covers the changed envelope but the requested action has open, missing, partial, or stale invalidated predecessors
+- **THEN** that requested action MUST remain blocked at the current replay frontier
+- **AND** authority consistency MUST NOT be represented as replay completion
+
+#### Scenario: In-flight v1 stage needs replacement authority
+- **WHEN** the introducing stage or any in-flight v1 stage has owner-authorized envelope or target drift before terminal
+- **THEN** the existing v1 template/producer MUST remain available to create a later v1 epoch under the pre-change process
+- **AND** the workflow MUST NOT require dormant v2 host CAS/replay or permit the caller to change cohorts
+
+### Requirement: Authority and delivery v2 align archive-before-candidate ordering
+Once a separate host-capability stage activates the v2 cohort, `stage_authority/v2` records SHALL use action order `plan -> implement -> archive -> commit -> merge -> push`, where `commit` means only the finite post-archive candidate. This introducing change leaves v2 dormant and completes under v1; existing and in-flight v1 records SHALL remain valid only under their pre-change schema/order until terminal and MUST NOT be reinterpreted. The existing `.harness/templates/stage-authority-record.template.json` and `.harness/templates/stage-delivery-binding.template.json` remain active v1 producers. Dormant v2 schemas use distinct `.harness/templates/stage-authority-record-v2.template.json` and `.harness/templates/stage-delivery-binding-v2.template.json` paths; callers cannot select them to change cohort. The v2 authority template MUST include the trigger-change binding. The v2 delivery binding MUST bind the exact current event/receipt counts/heads, authority, final review packet, and an exact pre-candidate object containing `expected_parent_oid`, `review_packet_sha256`, `reviewed_manifest_sha256`, `reviewed_inventory_sha256`, the fixed review-metadata/two-file-tail path set, and construction policy `single_parent_exact_subject_plus_metadata/v1`. It MUST NOT contain the future candidate OID or tree OID. After commit, the host retains the actual candidate OID externally and the candidate adapter validates its single parent and exhaustive subject-plus-metadata projection without rewriting the delivery binding.
+
+#### Scenario: New v2 record is produced from its distinct repository template
+- **WHEN** the dormant v2 authority template creates an initial or replacement authority record for an externally activated v2 cohort
+- **THEN** template, strict schema, hash calculation, action order, trigger-change fields, validator, and tests MUST agree exactly
+
+#### Scenario: Dormant v2 template is selected for a v1 stage
+- **WHEN** a caller selects either v2 template for the introducing or an in-flight v1 stage
+- **THEN** validation MUST fail before authority or delivery state changes
+- **AND** the active v1 template/producer MUST remain unchanged and available through every v1 cohort's terminal state
+
+#### Scenario: Delivery tail uses another replay state
+- **WHEN** a delivery binding's event or receipt count/head differs from host-retained current replay state
+- **THEN** candidate, merge, and push preflight MUST fail before mutation
+
+#### Scenario: Delivery binding is complete before candidate creation
+- **WHEN** the exact parent, final reviewed packet/manifest/inventory, fixed metadata/tail paths, authority and replay heads are known but no candidate commit exists yet
+- **THEN** the v2 delivery binding MUST be fully constructible and mechanically valid
+- **AND** neither a future candidate OID nor a future tree OID may be required
+
+#### Scenario: Candidate is created from different inputs
+- **WHEN** the live candidate has another parent, more than one parent, a subject or metadata path outside the bound exhaustive projection, or different authority/replay heads
+- **THEN** candidate readiness MUST fail
+- **AND** the delivery binding MUST NOT be rewritten after candidate creation to adopt that commit
+
+#### Scenario: Introducing stage attempts to activate v2
+- **WHEN** this replay implementation stage or another in-flight v1 stage reaches archive, candidate, merge, or push
+- **THEN** the pre-change v1 process remains authoritative through terminal
+- **AND** repository bytes MUST record v2 as `blocked_on_external_host_capability`, not as active
 
 ### Requirement: Archive merge and push consume the actual final review binding
 

@@ -28,6 +28,10 @@ or cleanup action into another mandatory documentation cycle.
    schema-valid final implementation `review-set.json` and
    `delivery-binding.json`; after the finite exact candidate commit, do not
    write PROGRESS, HANDOFF, Harness state, or any other repository file.
+   Stage replay events/receipts are ordinary pre-tail review subjects, not a
+   third evidence-tail channel. Any replay projection after packet freeze
+   reopens the packet. Keep the tail exactly the final implementation
+   `review-set.json` plus `delivery-binding.json`.
 6. After controller-owned merge/push, query live Git state, exact effective
    endpoint, target ref, and OpenSpec state. Emit one report-only final handoff
    and identify anything not verified. Separately report `technical_ready`,
@@ -45,6 +49,11 @@ or cleanup action into another mandatory documentation cycle.
 - Do not start or imply V-next during closeout.
 - Repository authority records and hashes are mechanical-only and cannot assert
   live human authority or push success.
+- Repository replay reports/templates are also mechanical-only. Report v2 as
+  dormant unless a separate host-capability activation is verified; the
+  introducing/in-flight v1 cohort remains v1 through terminal.
+- For an activated v2 cohort, query the external terminal tombstone and current
+  retained lineage rather than writing them into the repository after push.
 - If push outcome is unknown, do not write a reassuring handoff or retry. Report
   `UNKNOWN_PUSH_OUTCOME` and allow only controller-owned, read-only
   reconciliation against the same effective endpoint.

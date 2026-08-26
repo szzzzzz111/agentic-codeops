@@ -18,6 +18,15 @@
 - `medium`：局部 runtime 行为，公开 contract 基本稳定；增加聚焦外部 review。
 - `high`：Git/subprocess、持久化、权限、patch 生命周期、公开 API；要求完整独立对抗式 review。
 - 风险分级只调整 review 深度，不取消 TDD、验证和安全边界。
+- Stage-change replay 当前是 dormant `mechanical_consistency_only` 开发流程接口，不是已激活 gate 或 runtime
+  capability。本 introducing stage 与 later activation 时已经 in-flight 的 v1 stage 都保持 pre-change v1 到
+  terminal；owner-bound drift 继续使用 later-v1 authority replacement。
+- Future v2 只能由后续独立 reviewed/authorized stage 在真实外部
+  `provider_neutral.stage_state_cas/v1` capability、restart/CAS/dispatch evidence 和 host chronology 齐全后激活。
+  Repository hash、schema/template、CLI boolean、fixture 或 shadow PASS 不能切换 cohort，也不能授权/阻断 v1。
+- Activated v2 的 governed action 必须精确命中 current replay frontier；不得以 "unaffected" 绕过。
+  Replay projections 必须在 final packet 前进入 reviewed subject，不能增加第三个 evidence-tail 文件；terminal
+  tombstone 保持 external。
 - 普通窄阶段默认由 Agent 阅读完整 OpenSpec artifacts，并向用户输出高信号中文摘要和一个
   implementation confirmation gate；用户不需要逐字审 proposal/design/tasks/spec，除非风险、scope
   或用户要求使其必要。
@@ -113,8 +122,16 @@ consistency，不能证明用户身份、消息真实性、授权时序或 `huma
   lossy/replacement decode 或不可严格表示的路径都返回结构化、脱敏 `FAIL`，不得静默丢弃或规范化。
 - 畸形 `allowed_path_rules`（错误 container/type、非字符串元素或非法 exact/prefix）只能返回结构化、脱敏
   `FAIL`，不得向用户或调用方泄漏 traceback。
-- Archive/merge/push 必须消费实际 final implementation review set 与穷尽 reviewed-change manifest。Final
-  packet 后只允许 schema-valid review-set 与 delivery-binding 两个 evidence-tail JSON；其他写入重新打开 review。
+- Archive 必须消费实际 implementation review set 与穷尽 reviewed-change manifest；post-archive finite candidate
+  commit、merge、push 必须消费 final implementation review set、manifest 与 delivery-binding。Final packet 后只允许
+  schema-valid review-set 与 delivery-binding 两个 evidence-tail JSON；其他写入重新打开 review。
+- Candidate commit preflight 前必须先将 reviewed subjects 与精确四个 metadata/tail paths 全量暂存；index 的
+  path set、stage-0 regular mode、file/deletion state 与 blob bytes/hash 必须精确匹配 reviewed worktree。
+  Preflight 后不得再 `git add` 或改写 index；任一 `CANDIDATE_INDEX_*` 失败都阻断 commit。
+- Reviewed manifest/inventory v2 对每个普通文件同时绑定内容 SHA256 与 `100644/100755` mode；同内容的审后
+  chmod 也属于 packet drift，不得用 current worktree 与 index 互相自证。
+- 四个 metadata/tail paths 不进入 manifest subjects，但 candidate policy 将其 current/index mode 固定为
+  `100644`；同步 chmod 不能继承 review。
 - Merge/push 仅由 `repo-stage-workflow` controller 执行。Merge 使用 exact candidate OID 和 `--ff-only`；push
   绑定单一 effective endpoint、authorized old tip、ancestry proof、explicit refspec 与 exact-old-OID lease。
 - 在本地证明 effective fetch/push endpoint 各自唯一、二者相等且分别匹配 host-retained 两项 fingerprint

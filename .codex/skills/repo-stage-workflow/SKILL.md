@@ -66,6 +66,14 @@ discipline skills own how the approved baseline is implemented and verified.
    mechanical consistency only; live direct-user authority remains a separate
    host check. A change introducing this gate stays under the pre-change process
    until prospective activation and cannot self-authorize retroactively.
+   Stage-change replay remains dormant and non-authorizing until a later
+   independently reviewed activation proves the external
+   `provider_neutral.stage_state_cas/v1` host capability, restart/CAS behavior,
+   reviewer dispatch metadata, and activation chronology. The introducing
+   stage and every stage already in flight remain pre-change v1 cohorts through
+   terminal; v1 owner-bound drift continues through a later v1 authority epoch.
+   Do not infer v2 from schema/template selection, repository hashes, CLI flags,
+   dates, fixtures, or a mechanical replay PASS.
 6. Use `openspec-apply-change` plus the relevant Superpowers execution skills
    for implementation discipline: read the approved baseline, isolate work when
    needed, write RED tests first for behavior changes, keep changes minimal, and
@@ -105,7 +113,22 @@ discipline skills own how the approved baseline is implemented and verified.
    prepared, refresh every required reviewer slot to one final packet. Only the
    schema-valid final `review-set.json` and `delivery-binding.json` may be added
    afterward; any other write reopens review.
-14. Create the finite candidate commit and retain its exact HEAD externally.
+   For a future host-activated v2 cohort, authority core runs before replay and
+   every governed `implement/archive/commit/merge/push` request must equal the
+   current replay frontier. Host-retained workspace/terminal/gate snapshot and
+   event/receipt count/head inputs are mandatory. Earlier preserved actions
+   fail `ACTION_BEHIND_REPLAY_FRONTIER`; later actions fail
+   `STAGE_REPLAY_REQUIRED`. There is no "unaffected action" bypass. The
+   code-owned no-change transition still proves normal sequence; an empty
+   invalidated set is not readiness.
+14. Before creating the finite candidate, stage exactly the reviewed manifest
+   subjects plus the four metadata/tail paths and require
+   `git diff --cached --check` to pass. Then run the shared validator with
+   `--required-action commit`, the exact final implementation review set, slot
+   count, host-retained packet hash, and delivery binding. It must prove the
+   staged path set, stage-0 regular modes, file/deletion states, and blob bytes
+   match the reviewed worktree. Do not run `git add` after this preflight;
+   create the finite candidate commit and retain its exact HEAD externally.
    Merge and push remain controller-only actions: validate exact feature HEAD
    and merge source, clean exact target branch/pre-merge OID, final manifest,
    delivery binding, shared Git common-directory identity, live endpoint
@@ -135,6 +158,26 @@ discipline skills own how the approved baseline is implemented and verified.
    handoff without another repository write. Report `technical_ready`,
    `human_authorized`, and `vcs_pushed` separately, with push state at least
    `not_attempted`, `unknown`, or `verified`.
+
+## Stage Change Replay Cohorts
+
+- Active behavior is the pre-change `stage_authority/v1` process through each
+  v1 stage's terminal state, including later-v1 replacement after authorized
+  envelope or Git-target drift.
+- Repository replay/event/receipt validators and distinct v2 templates are
+  dormant `mechanical_consistency_only` assets. They neither authorize nor
+  block current v1 mutations.
+- Future v2 activation requires a separate reviewed stage plus external
+  `provider_neutral.stage_state_cas/v1` capability evidence. Only stages newly
+  created after that host activation may enter v2.
+- V2 order is `plan -> implement -> archive -> commit(candidate) -> merge ->
+  push`. Replay uses a code-owned gate graph, exact host-CAS lineage, and exact
+  current-frontier equality. Event/receipt projection is a controller-only CAS
+  evidence transition, not an implementation mutation or authority source.
+- Replay evidence enters the ordinary reviewed subject before final packet
+  freeze. It does not add a third evidence-tail file; the final tail remains
+  only `review-set.json` and `delivery-binding.json`. Post-push terminal state
+  remains an external host tombstone.
 
 ## Human Review Depth
 
@@ -201,6 +244,11 @@ Also stop on a missing/stale authority epoch, host-expected envelope mismatch,
 unreviewed subject drift, candidate HEAD drift, effective endpoint ambiguity,
 authorized-tip mismatch, non-fast-forward ancestry, or unknown push outcome.
 An unknown push outcome permits same-endpoint read-only reconciliation only.
+
+For an activated v2 cohort, also stop on unavailable host state, workspace or
+terminal mismatch, missing material-change event, unretained/re-written CAS
+lineage, stale gate snapshot, or any governed action not equal to the exact
+current frontier. These replay checks stay dormant for v1 cohorts.
 
 Do not create V-next planning artifacts during closeout. Do not copy volatile
 HEAD hashes into several documents; query Git when exact state is needed.

@@ -53,6 +53,11 @@ other first-round conclusion; Codex may use an empty-context task or
    exactly every existing manifest subject plus the manifest and deterministic
    inventory tail; any omission, arbitrary inventory, fifth metadata path, or
    non-tail change after the packet reopens review.
+   For replay-capable assets, include all pre-tail event/receipt projections,
+   adapter contracts, dormant activation wording, v1 cohort compatibility, and
+   v2 template/validator bytes in the normal reviewed subject. A new material
+   event or replay write after packet freeze is a non-tail change and reopens
+   verification/review/archive; it cannot become a third evidence-tail file.
 9. Perform a focused Stage Debt Sweep over changed paths and directly dependent
    older paths. Record inspected paths, concrete findings, dispositions, and
    residual debt.
@@ -83,6 +88,13 @@ Review receipts and packet hashes never establish live human authority. Archive
 must additionally pass the shared stage-authority `archive` preflight; merge and
 push must bind the same final manifest/review set and host-retained exact
 candidate under the controller workflow.
+
+Replay reports likewise prove only `mechanical_consistency_only`. Review must
+reject any claim that repository bytes activate v2, that an in-flight v1 stage
+may change cohort, that replay PASS authorizes/blocks a v1 mutation, or that an
+activated-v2 governed action may bypass exact-frontier equality because it is
+called unaffected. Real host CAS, restart, dispatch and activation facts remain
+external prerequisites.
 
 ## Evidence Boundary
 

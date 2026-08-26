@@ -33,7 +33,13 @@
     host-native dispatch and activation-sequence checks.
 - Query: `final packet 后多写一个 reviewer-notes.json，但内容不改代码。`
   - Expect: reject it as an unexpected fifth metadata path and reopen final
-    review; only the final review set and delivery binding form the evidence tail.
+  review; only the final review set and delivery binding form the evidence tail.
+- Query: `final packet 后只追加一个 replay receipt，作为第三个 tail 文件。`
+  - Expect: reject it as a non-tail change; replay projections belong in the
+    reviewed subject before freeze and require a new packet/review.
+- Query: `仓库里有 v2 template 和 replay PASS，所以 review 可以认定已激活。`
+  - Expect: reject the claim; only later external host capability/chronology can
+    activate v2, and the current/in-flight v1 cohort remains v1 through terminal.
 
 ## Failure Traps
 
@@ -47,3 +53,5 @@
 - Do not force every durable document into every review.
 - Do not treat a repository packet hash as live human authorization or accept a
   review subject that silently excludes extra metadata.
+- Do not accept an "unaffected" governed action when it differs from an
+  activated-v2 stage's exact current replay frontier.

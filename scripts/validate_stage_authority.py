@@ -27,6 +27,7 @@ except ModuleNotFoundError:  # Direct `python scripts/...` execution.
 SCHEMA_VERSION = "repopilot.stage_authority/v1"
 REPORT_SCHEMA = "repopilot.stage_authority_validation/v1"
 ACTIONS = ("plan", "implement", "commit", "archive", "merge", "push")
+V2_ACTIONS = ("plan", "implement", "archive", "commit", "merge", "push")
 EPOCH_NAME = re.compile(r"^epoch-([0-9]{4})\.json$")
 SAFE_STAGE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SAFE_REMOTE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -78,6 +79,62 @@ REVIEW_METADATA_NAMES = {
     "reviewed-change-manifest.json",
     "reviewed-change.diff",
     "review-set.json",
+}
+V2_AUTHORITY_FIELDS = TOP_FIELDS | {
+    "activation_status",
+    "trigger_change",
+    "claim_level",
+}
+V2_DELIVERY_FIELDS = {
+    "schema_version",
+    "activation_status",
+    "stage_id",
+    "authority_epoch",
+    "authority_record_sha256",
+    "replay_state",
+    "final_review_packet",
+    "pre_candidate",
+    "claim_level",
+}
+V2_EVENT_FIELDS = {
+    "schema_version", "stage_id", "sequence", "previous_event_sha256",
+    "host_event_id", "event_kind", "source_reference", "authority_before",
+    "authority_requirement", "changed_fact_ids",
+    "before_input_snapshot_sha256", "observed_input_snapshot_sha256",
+    "review_phase", "review_lineage", "classification_ceiling", "payload_sha256",
+}
+V2_RECEIPT_FIELDS = {
+    "schema_version", "stage_id", "sequence", "previous_receipt_sha256",
+    "event_count", "event_head", "graph_version", "host_snapshot_generation",
+    "authority", "completed_gate_ids", "gate_evidence", "invalidated_gate_ids",
+    "preserved_gate_ids", "required_replay_gate_ids", "replay_frontier_gate_ids",
+    "claim_level",
+}
+V2_GATE_GRAPH = (
+    "plan_contract", "plan_review", "authority", "implementation",
+    "verification", "implementation_review", "archive",
+    "post_archive_delivery_review", "candidate", "merge", "push",
+)
+V2_FACT_SEEDS = {
+    **{name: "plan_contract" for name in (
+        "requirements", "scope", "non_goals", "risk", "allowed_path_rules",
+        "planning_baseline", "plan_subject",
+    )},
+    **{name: "authority" for name in (
+        "authority_record", "action_ceiling", "vcs_endpoint", "target_branch",
+        "authorized_remote_tip",
+    )},
+    **{name: "implementation" for name in (
+        "implementation_subject", "workflow_subject", "template_subject",
+        "verification_contract",
+    )},
+    "verification_evidence": "verification",
+    "implementation_review_binding": "implementation_review",
+    "archive_output": "archive",
+    "final_delivery_packet": "post_archive_delivery_review",
+    "candidate_head": "post_archive_delivery_review",
+    "merge_target_state": "merge",
+    "push_outcome_evidence": "push",
 }
 
 
@@ -168,6 +225,495 @@ def _canonical_branch(value: object) -> bool:
         component and not component.startswith(".") and not component.endswith(".lock")
         for component in value.split("/")
     )
+
+
+def _dormant_lineage_state(value: object) -> bool:
+    if not isinstance(value, dict) or set(value) != {
+        "prior_count", "prior_head", "current_count", "current_head",
+    }:
+        return False
+    for prefix in ("prior", "current"):
+        count = value.get(f"{prefix}_count")
+        head = value.get(f"{prefix}_head")
+        if (
+            not isinstance(count, int)
+            or isinstance(count, bool)
+            or count < 0
+            or (count == 0 and head is not None)
+            or (
+                count > 0
+                and (
+                    not isinstance(head, str)
+                    or SHA256.fullmatch(head) is None
+                )
+            )
+        ):
+            return False
+    return value["prior_count"] <= value["current_count"]
+
+
+def _authority_envelope(record: Mapping[str, Any]) -> dict[str, object]:
+    return {
+        key: record.get(key)
+        for key in (
+            "stage_id", "scope", "planning_baseline", "action_ceiling", "vcs_target",
+        )
+    }
+
+
+def _v2_envelope_delta(
+    old: Mapping[str, Any], new: Mapping[str, Any]
+) -> list[str]:
+    facts: set[str] = set()
+    old_scope = old.get("scope") if isinstance(old.get("scope"), Mapping) else {}
+    new_scope = new.get("scope") if isinstance(new.get("scope"), Mapping) else {}
+    if old_scope.get("risk") != new_scope.get("risk"):
+        facts.add("risk")
+    if old_scope.get("summary") != new_scope.get("summary"):
+        facts.add("scope")
+    if old_scope.get("allowed_path_rules") != new_scope.get("allowed_path_rules"):
+        facts.add("allowed_path_rules")
+    if old_scope.get("non_goals") != new_scope.get("non_goals"):
+        facts.add("non_goals")
+    if old_scope.get("active_allowed_files_sha256") != new_scope.get("active_allowed_files_sha256"):
+        facts.add("allowed_path_rules")
+    if old.get("planning_baseline") != new.get("planning_baseline"):
+        facts.add("planning_baseline")
+    if old.get("action_ceiling") != new.get("action_ceiling"):
+        facts.add("action_ceiling")
+    old_target = old.get("vcs_target") if isinstance(old.get("vcs_target"), Mapping) else {}
+    new_target = new.get("vcs_target") if isinstance(new.get("vcs_target"), Mapping) else {}
+    if any(
+        old_target.get(field) != new_target.get(field)
+        for field in (
+            "remote_name", "effective_fetch_url_sha256", "effective_push_url_sha256",
+        )
+    ):
+        facts.add("vcs_endpoint")
+    if old_target.get("target_branch") != new_target.get("target_branch"):
+        facts.add("target_branch")
+    if old_target.get("authorized_remote_tip") != new_target.get("authorized_remote_tip"):
+        facts.add("authorized_remote_tip")
+    return sorted(facts)
+
+
+def validate_dormant_v2_interface(
+    *,
+    stage_cohort: str,
+    activation_requested: bool,
+    authority_record: object,
+    delivery_binding: object,
+    superseded_v1_authority: object = None,
+    trigger_event: object = None,
+    current_event_state: object = None,
+    current_receipt_state: object = None,
+    current_replay_receipt: object = None,
+) -> dict[str, Any]:
+    """Inspect prospective v2 shapes without selecting a cohort or authorizing work."""
+
+    errors: list[dict[str, str]] = []
+    if activation_requested:
+        _error(errors, "HOST_STATE_UNAVAILABLE", "external host activation state is unavailable")
+    if stage_cohort != "v2":
+        _error(errors, "COHORT_SELECTION_FORBIDDEN", "caller cannot select or reinterpret a stage cohort")
+    v1_shape_errors: list[dict[str, str]] = []
+    if isinstance(superseded_v1_authority, dict):
+        _validate_record_shape(superseded_v1_authority, v1_shape_errors)
+    else:
+        v1_shape_errors.append({"code": "SCHEMA_INVALID", "message": "v1 authority is absent"})
+    if v1_shape_errors:
+        _error(errors, "V2_SUPERSEDED_AUTHORITY_INVALID", "superseded v1 authority is not a strict v1 record")
+    if not isinstance(authority_record, dict):
+        _error(errors, "V2_AUTHORITY_SCHEMA_INVALID", "dormant v2 authority is invalid")
+        authority_record = {}
+    trigger = authority_record.get("trigger_change")
+    if (
+        set(authority_record) != V2_AUTHORITY_FIELDS
+        or
+        authority_record.get("schema_version") != "repopilot.stage_authority/v2"
+        or authority_record.get("activation_status")
+        != "blocked_on_external_host_capability"
+        or not isinstance(trigger, dict)
+        or set(trigger)
+        != {
+            "event_count",
+            "event_head",
+            "previous_authority_record_sha256",
+            "required_later_epoch",
+        }
+    ):
+        _error(errors, "V2_AUTHORITY_SCHEMA_INVALID", "dormant v2 authority trigger is invalid")
+    elif (
+        not isinstance(trigger.get("event_count"), int)
+        or isinstance(trigger.get("event_count"), bool)
+        or trigger.get("event_count", -1) < 0
+        or (
+            trigger.get("event_count") == 0
+            and any(
+                trigger.get(field) is not None
+                for field in (
+                    "event_head",
+                    "previous_authority_record_sha256",
+                    "required_later_epoch",
+                )
+            )
+        )
+        or (
+            trigger.get("event_count", 0) > 0
+            and (
+                not isinstance(trigger.get("event_head"), str)
+                or SHA256.fullmatch(trigger.get("event_head", "")) is None
+                or not isinstance(trigger.get("previous_authority_record_sha256"), str)
+                or SHA256.fullmatch(
+                    trigger.get("previous_authority_record_sha256", "")
+                )
+                is None
+                or not isinstance(trigger.get("required_later_epoch"), int)
+                or isinstance(trigger.get("required_later_epoch"), bool)
+            )
+        )
+    ):
+        _error(errors, "V2_TRIGGER_CHANGE_INVALID", "dormant v2 trigger binding is invalid")
+    stage_id = authority_record.get("stage_id")
+    epoch = authority_record.get("authority_epoch")
+    source = authority_record.get("authority_source")
+    scope = authority_record.get("scope")
+    baseline = authority_record.get("planning_baseline")
+    target = authority_record.get("vcs_target")
+    if (
+        not isinstance(stage_id, str)
+        or SAFE_STAGE.fullmatch(stage_id) is None
+        or not isinstance(epoch, int)
+        or isinstance(epoch, bool)
+        or epoch < 1
+        or not isinstance(source, dict)
+        or set(source) != SOURCE_FIELDS
+        or source.get("kind") != "host_direct_user_instruction"
+        or not isinstance(source.get("host_reference"), str)
+        or not source.get("host_reference", "").strip()
+        or not isinstance(scope, dict)
+        or set(scope) != SCOPE_FIELDS
+        or authority_record.get("scope_sha256") != _canonical_sha256(scope)
+        or not isinstance(baseline, dict)
+        or set(baseline) != BASE_FIELDS
+        or not isinstance(baseline.get("commit"), str)
+        or OID.fullmatch(baseline.get("commit", "")) is None
+        or authority_record.get("action_ceiling") not in V2_ACTIONS
+        or not isinstance(target, dict)
+        or set(target) != TARGET_FIELDS
+        or authority_record.get("claim_level") != "mechanical_consistency_only"
+    ):
+        _error(errors, "V2_AUTHORITY_BINDING_INVALID", "dormant v2 authority binding is invalid")
+    if isinstance(epoch, int) and not isinstance(epoch, bool) and isinstance(trigger, dict):
+        supersedes = authority_record.get("supersedes_record_sha256")
+        if (
+            (epoch == 1 and (supersedes is not None or trigger.get("event_count") != 0))
+            or (
+                epoch > 1
+                and (
+                    not isinstance(supersedes, str)
+                    or SHA256.fullmatch(supersedes) is None
+                    or trigger.get("event_count", 0) < 1
+                    or trigger.get("previous_authority_record_sha256") != supersedes
+                    or trigger.get("required_later_epoch") != epoch
+                )
+            )
+        ):
+            _error(errors, "V2_AUTHORITY_LINEAGE_INVALID", "dormant v2 epoch and trigger lineage differ")
+    v1_hash = (
+        _canonical_sha256(superseded_v1_authority)
+        if isinstance(superseded_v1_authority, dict)
+        else None
+    )
+    v1_epoch = (
+        superseded_v1_authority.get("authority_epoch")
+        if isinstance(superseded_v1_authority, dict)
+        else None
+    )
+    if (
+        not isinstance(v1_epoch, int)
+        or isinstance(v1_epoch, bool)
+        or not isinstance(epoch, int)
+        or isinstance(epoch, bool)
+        or epoch != v1_epoch + 1
+        or authority_record.get("supersedes_record_sha256") != v1_hash
+        or not isinstance(trigger, dict)
+        or trigger.get("previous_authority_record_sha256") != v1_hash
+    ):
+        _error(errors, "V2_SUPERSEDED_AUTHORITY_INVALID", "v2 authority does not exactly supersede the supplied v1 authority")
+    if isinstance(scope, dict):
+        rules = scope.get("allowed_path_rules")
+        if (
+            not isinstance(scope.get("risk"), str)
+            or scope.get("risk") not in {"low", "medium", "high"}
+            or not isinstance(scope.get("summary"), str)
+            or not scope.get("summary", "").strip()
+            or not isinstance(rules, dict)
+            or set(rules) != PATH_RULE_FIELDS
+            or not isinstance(rules.get("exact"), list)
+            or any(not _canonical_path(item) for item in rules.get("exact", []))
+            or rules.get("exact") != sorted(set(rules.get("exact", [])))
+            or not isinstance(rules.get("prefixes"), list)
+            or any(not _canonical_path(item, prefix=True) for item in rules.get("prefixes", []))
+            or rules.get("prefixes") != sorted(set(rules.get("prefixes", [])))
+            or not isinstance(scope.get("non_goals"), list)
+            or any(not isinstance(item, str) or not item.strip() for item in scope.get("non_goals", []))
+            or not isinstance(scope.get("active_allowed_files_sha256"), str)
+            or SHA256.fullmatch(scope.get("active_allowed_files_sha256", "")) is None
+        ):
+            _error(errors, "V2_SCOPE_INVALID", "dormant v2 scope is invalid")
+    if isinstance(target, dict) and (
+        not isinstance(target.get("remote_name"), str)
+        or SAFE_REMOTE.fullmatch(target.get("remote_name", "")) is None
+        or any(
+            not isinstance(target.get(field), str)
+            or SHA256.fullmatch(target.get(field, "")) is None
+            for field in ("effective_fetch_url_sha256", "effective_push_url_sha256")
+        )
+        or not _canonical_branch(target.get("target_branch"))
+        or not isinstance(target.get("authorized_remote_tip"), str)
+        or OID.fullmatch(target.get("authorized_remote_tip", "")) is None
+    ):
+        _error(errors, "V2_TARGET_INVALID", "dormant v2 target is invalid")
+
+    event_valid = isinstance(trigger_event, dict) and set(trigger_event) == V2_EVENT_FIELDS
+    if event_valid:
+        event_payload = {
+            key: value for key, value in trigger_event.items() if key != "payload_sha256"
+        }
+        authority_before = trigger_event.get("authority_before")
+        requirement = trigger_event.get("authority_requirement")
+        expected_delta = _v2_envelope_delta(
+            superseded_v1_authority
+            if isinstance(superseded_v1_authority, Mapping)
+            else {},
+            authority_record,
+        )
+        event_valid = (
+            trigger_event.get("schema_version") == "repopilot.stage_change_event/v1"
+            and trigger_event.get("stage_id") == stage_id
+            and isinstance(trigger_event.get("sequence"), int)
+            and not isinstance(trigger_event.get("sequence"), bool)
+            and trigger_event.get("sequence", 0) > 0
+            and trigger_event.get("event_kind") == "direct_user_envelope_change"
+            and isinstance(trigger_event.get("host_event_id"), str)
+            and bool(trigger_event.get("host_event_id"))
+            and isinstance(trigger_event.get("source_reference"), str)
+            and bool(trigger_event.get("source_reference"))
+            and isinstance(authority_before, dict)
+            and authority_before == {"epoch": v1_epoch, "record_sha256": v1_hash}
+            and isinstance(requirement, dict)
+            and requirement == {"later_epoch_required": True, "required_epoch": epoch}
+            and trigger_event.get("changed_fact_ids") == expected_delta
+            and trigger_event.get("before_input_snapshot_sha256")
+            == _canonical_sha256(_authority_envelope(superseded_v1_authority))
+            and trigger_event.get("observed_input_snapshot_sha256")
+            == _canonical_sha256(_authority_envelope(authority_record))
+            and trigger_event.get("review_phase") is None
+            and trigger_event.get("review_lineage") is None
+            and trigger_event.get("classification_ceiling") == "mechanical_consistency_only"
+            and trigger_event.get("payload_sha256") == _canonical_sha256(event_payload)
+        )
+    if not event_valid:
+        _error(errors, "V2_TRIGGER_EVENT_INVALID", "v2 trigger event does not bind the exact old/new authority envelope")
+    event_head = _canonical_sha256(trigger_event) if isinstance(trigger_event, dict) else None
+    if (
+        not isinstance(trigger, dict)
+        or trigger.get("event_count") != (
+            trigger_event.get("sequence") if isinstance(trigger_event, dict) else None
+        )
+        or trigger.get("event_head") != event_head
+    ):
+        _error(errors, "V2_TRIGGER_EVENT_INVALID", "v2 trigger projection differs from the supplied event")
+    if isinstance(trigger_event, dict) and trigger_event.get("changed_fact_ids") != _v2_envelope_delta(
+        superseded_v1_authority if isinstance(superseded_v1_authority, Mapping) else {},
+        authority_record,
+    ):
+        _error(errors, "V2_ENVELOPE_DELTA_INVALID", "v2 event does not declare the exact old/new envelope delta")
+
+    if not _dormant_lineage_state(current_event_state):
+        _error(errors, "V2_EVENT_STATE_INVALID", "current v2 event state is invalid")
+    elif (
+        current_event_state.get("current_count")
+        != (trigger_event.get("sequence") if isinstance(trigger_event, dict) else None)
+        or current_event_state.get("current_head") != event_head
+    ):
+        _error(errors, "V2_EVENT_STATE_INVALID", "current v2 event state differs from the trigger event")
+    if not _dormant_lineage_state(current_receipt_state):
+        _error(errors, "V2_RECEIPT_STATE_INVALID", "current v2 receipt state is invalid")
+
+    receipt_valid = (
+        isinstance(current_replay_receipt, dict)
+        and set(current_replay_receipt) == V2_RECEIPT_FIELDS
+    )
+    if receipt_valid:
+        completed = current_replay_receipt.get("completed_gate_ids")
+        changed_facts = trigger_event.get("changed_fact_ids") if isinstance(trigger_event, dict) else None
+        receipt_valid = (
+            current_replay_receipt.get("schema_version") == "repopilot.stage_replay_receipt/v1"
+            and current_replay_receipt.get("stage_id") == stage_id
+            and isinstance(current_replay_receipt.get("sequence"), int)
+            and not isinstance(current_replay_receipt.get("sequence"), bool)
+            and current_replay_receipt.get("sequence", 0) > 0
+            and current_replay_receipt.get("event_count")
+            == (trigger_event.get("sequence") if isinstance(trigger_event, dict) else None)
+            and current_replay_receipt.get("event_head") == event_head
+            and current_replay_receipt.get("graph_version") == "repopilot.stage_gate_graph/v1"
+            and isinstance(current_replay_receipt.get("host_snapshot_generation"), int)
+            and not isinstance(current_replay_receipt.get("host_snapshot_generation"), bool)
+            and current_replay_receipt.get("host_snapshot_generation", 0) > 0
+            and current_replay_receipt.get("authority")
+            == {"epoch": epoch, "record_sha256": _canonical_sha256(authority_record)}
+            and isinstance(completed, list)
+            and all(isinstance(item, str) and item in V2_GATE_GRAPH for item in completed)
+            and len(completed) == len(set(completed))
+            and isinstance(current_replay_receipt.get("gate_evidence"), list)
+            and len(current_replay_receipt.get("gate_evidence", [])) == len(completed)
+            and isinstance(changed_facts, list)
+            and bool(changed_facts)
+            and all(isinstance(item, str) and item in V2_FACT_SEEDS for item in changed_facts)
+            and current_replay_receipt.get("claim_level") == "mechanical_consistency_only"
+        )
+        if receipt_valid:
+            seed_index = min(
+                V2_GATE_GRAPH.index(V2_FACT_SEEDS[item]) for item in changed_facts
+            )
+            required = list(V2_GATE_GRAPH[seed_index:])
+            preserved = list(V2_GATE_GRAPH[:seed_index])
+            replayed = [gate for gate in required if gate in completed]
+            remaining = required[len(replayed):]
+            receipt_valid = (
+                replayed == required[:len(replayed)]
+                and current_replay_receipt.get("invalidated_gate_ids") == required
+                and current_replay_receipt.get("preserved_gate_ids") == preserved
+                and current_replay_receipt.get("required_replay_gate_ids") == required
+                and current_replay_receipt.get("replay_frontier_gate_ids") == remaining[:1]
+            )
+    if not receipt_valid:
+        _error(errors, "V2_RECEIPT_LINEAGE_INVALID", "current v2 receipt does not bind exact replay lineage")
+    receipt_head = (
+        _canonical_sha256(current_replay_receipt)
+        if isinstance(current_replay_receipt, dict)
+        else None
+    )
+    if _dormant_lineage_state(current_receipt_state) and (
+        current_receipt_state.get("current_count")
+        != (
+            current_replay_receipt.get("sequence")
+            if isinstance(current_replay_receipt, dict)
+            else None
+        )
+        or current_receipt_state.get("current_head") != receipt_head
+    ):
+        _error(errors, "V2_RECEIPT_STATE_INVALID", "current v2 receipt state differs from the supplied receipt")
+
+    if not isinstance(delivery_binding, dict):
+        _error(errors, "V2_DELIVERY_SCHEMA_INVALID", "dormant v2 delivery is invalid")
+        delivery_binding = {}
+    replay = delivery_binding.get("replay_state")
+    pre_candidate = delivery_binding.get("pre_candidate")
+    if (
+        set(delivery_binding) != V2_DELIVERY_FIELDS
+        or
+        delivery_binding.get("schema_version")
+        != "repopilot.stage_delivery_binding/v2"
+        or delivery_binding.get("activation_status")
+        != "blocked_on_external_host_capability"
+        or not isinstance(replay, dict)
+        or set(replay)
+        != {"event_count", "event_head", "receipt_count", "receipt_head"}
+        or not isinstance(pre_candidate, dict)
+        or set(pre_candidate)
+        != {
+            "expected_parent_oid",
+            "review_packet_sha256",
+            "reviewed_manifest_sha256",
+            "reviewed_inventory_sha256",
+            "review_metadata_and_tail_paths",
+            "construction_policy",
+        }
+    ):
+        _error(errors, "V2_DELIVERY_SCHEMA_INVALID", "dormant v2 delivery fields are invalid")
+    else:
+        for count_field, head_field in (
+            ("event_count", "event_head"),
+            ("receipt_count", "receipt_head"),
+        ):
+            count = replay.get(count_field)
+            head = replay.get(head_field)
+            if (
+                not isinstance(count, int)
+                or isinstance(count, bool)
+                or count < 0
+                or (count == 0 and head is not None)
+                or (
+                    count > 0
+                    and (
+                        not isinstance(head, str)
+                        or SHA256.fullmatch(head) is None
+                    )
+                )
+            ):
+                _error(errors, "V2_REPLAY_HEAD_INVALID", "dormant v2 replay head is invalid")
+        paths = pre_candidate.get("review_metadata_and_tail_paths")
+        if (
+            not isinstance(pre_candidate.get("expected_parent_oid"), str)
+            or OID.fullmatch(pre_candidate.get("expected_parent_oid", "")) is None
+            or any(
+                not isinstance(pre_candidate.get(field), str)
+                or SHA256.fullmatch(pre_candidate.get(field, "")) is None
+                for field in (
+                    "review_packet_sha256",
+                    "reviewed_manifest_sha256",
+                    "reviewed_inventory_sha256",
+                )
+            )
+            or not isinstance(paths, list)
+            or not paths
+            or any(not _canonical_path(item) for item in paths)
+            or paths != sorted(set(paths))
+            or pre_candidate.get("construction_policy")
+            != "single_parent_exact_subject_plus_metadata/v1"
+            or (
+                isinstance(stage_id, str)
+                and paths != _review_metadata_paths(stage_id)
+            )
+            or "candidate_oid" in json.dumps(delivery_binding, sort_keys=True)
+            or "tree_oid" in json.dumps(delivery_binding, sort_keys=True)
+        ):
+            _error(errors, "V2_PRE_CANDIDATE_INVALID", "dormant v2 pre-candidate binding is invalid")
+        final_packet = delivery_binding.get("final_review_packet")
+        if (
+            delivery_binding.get("stage_id") != stage_id
+            or delivery_binding.get("authority_epoch") != epoch
+            or delivery_binding.get("authority_record_sha256")
+            != _canonical_sha256(authority_record)
+            or delivery_binding.get("claim_level") != "mechanical_consistency_only"
+            or not isinstance(final_packet, dict)
+            or set(final_packet) != ARTIFACT_BINDING_FIELDS
+            or not _canonical_path(final_packet.get("path"))
+            or not isinstance(final_packet.get("sha256"), str)
+            or SHA256.fullmatch(final_packet.get("sha256", "")) is None
+            or not isinstance(trigger, dict)
+            or replay.get("event_count") != trigger.get("event_count")
+            or replay.get("event_head") != trigger.get("event_head")
+            or not _dormant_lineage_state(current_event_state)
+            or not _dormant_lineage_state(current_receipt_state)
+            or replay.get("event_count") != current_event_state.get("current_count")
+            or replay.get("event_head") != current_event_state.get("current_head")
+            or replay.get("receipt_count") != current_receipt_state.get("current_count")
+            or replay.get("receipt_head") != current_receipt_state.get("current_head")
+        ):
+            _error(errors, "V2_CROSS_BINDING_INVALID", "dormant v2 authority and delivery bindings differ")
+    return {
+        "schema_version": "repopilot.stage_authority_v2_dormant_validation/v1",
+        "status": "PASS" if not errors else "FAIL",
+        "claim_level": "mechanical_consistency_only",
+        "activation_status": "blocked_on_external_host_capability",
+        "action_order": list(V2_ACTIONS),
+        "mutation_authorized": False,
+        "errors": errors,
+    }
 
 
 def _read_json(path: Path, errors: list[dict[str, str]]) -> dict[str, Any]:
@@ -985,6 +1531,129 @@ def _review_metadata_paths(stage_id: str) -> list[str]:
     )
 
 
+def _regular_file_mode(path: Path) -> str:
+    return "100755" if path.stat().st_mode & 0o111 else "100644"
+
+
+def _validate_commit_index_projection(
+    *,
+    root: Path,
+    planning_base: str,
+    stage: str,
+    manifest: Mapping[str, Any],
+    errors: list[dict[str, str]],
+) -> None:
+    """Bind the read-only Git index to the reviewed worktree packet exactly."""
+
+    changes = manifest.get("changes")
+    if not isinstance(changes, list):
+        _error(errors, "CANDIDATE_INDEX_MANIFEST_INVALID", "review manifest changes are invalid")
+        return
+    subjects: dict[str, Mapping[str, Any]] = {}
+    for item in changes:
+        if (
+            not isinstance(item, Mapping)
+            or not isinstance(item.get("path"), str)
+            or not isinstance(item.get("kind"), str)
+            or item.get("kind") not in {"file", "deleted"}
+        ):
+            _error(errors, "CANDIDATE_INDEX_MANIFEST_INVALID", "review manifest subject is invalid")
+            return
+        subjects[item["path"]] = item
+    metadata_paths = _review_metadata_paths(stage)
+    expected_paths = set(subjects) | set(metadata_paths)
+
+    ok, output = _git(root, "diff", "--cached", "--name-status", "-z", planning_base)
+    if not ok:
+        _error(errors, "CANDIDATE_INDEX_UNAVAILABLE", "staged candidate path set is unavailable")
+        return
+    staged_paths = _name_status_paths(output)
+    if staged_paths != expected_paths:
+        _error(errors, "CANDIDATE_INDEX_PATH_SET_MISMATCH", "staged candidate path set differs from the reviewed projection")
+
+    ok, output = _git(root, "ls-files", "--stage", "-z")
+    if not ok:
+        _error(errors, "CANDIDATE_INDEX_UNAVAILABLE", "staged candidate entries are unavailable")
+        return
+    entries: dict[str, list[tuple[str, str, str]]] = {}
+    malformed = False
+    for raw in output.split("\0"):
+        if not raw:
+            continue
+        if "\t" not in raw:
+            malformed = True
+            continue
+        metadata, path = raw.split("\t", 1)
+        parts = metadata.split()
+        if len(parts) != 3:
+            malformed = True
+            continue
+        mode, oid, index_stage = parts
+        entries.setdefault(path, []).append((mode, oid, index_stage))
+    if malformed:
+        _error(errors, "CANDIDATE_INDEX_ENTRY_INVALID", "staged candidate entry metadata is invalid")
+
+    expected_files = {
+        **{
+            path: item
+            for path, item in subjects.items()
+            if item.get("kind") == "file"
+        },
+        **{path: {"path": path, "kind": "file"} for path in metadata_paths},
+    }
+    expected_deletions = {
+        path for path, item in subjects.items() if item.get("kind") == "deleted"
+    }
+    for path in expected_deletions:
+        if path in entries:
+            _error(errors, "CANDIDATE_INDEX_STATE_MISMATCH", "reviewed deletion remains present in the index")
+    for path, item in expected_files.items():
+        indexed = entries.get(path, [])
+        if len(indexed) != 1 or indexed[0][2] != "0":
+            _error(errors, "CANDIDATE_INDEX_STATE_MISMATCH", "reviewed file lacks one stage-zero index entry")
+            continue
+        mode, oid, _ = indexed[0]
+        if mode not in {"100644", "100755"} or OID.fullmatch(oid) is None:
+            _error(errors, "CANDIDATE_INDEX_MODE_INVALID", "reviewed file is not a regular staged blob")
+            continue
+        worktree_path = root / path
+        if (
+            _path_traverses_symlink(root, path)
+            or not worktree_path.is_file()
+            or worktree_path.is_symlink()
+        ):
+            _error(errors, "CANDIDATE_INDEX_WORKTREE_INVALID", "reviewed worktree file is unavailable or unsafe")
+            continue
+        current_mode = _regular_file_mode(worktree_path)
+        expected_mode = "100644" if path in metadata_paths else current_mode
+        if mode != expected_mode or current_mode != expected_mode:
+            _error(errors, "CANDIDATE_INDEX_MODE_MISMATCH", "candidate file mode differs from the required mode")
+        if path in subjects:
+            reviewed_mode = item.get("mode")
+            if (
+                not isinstance(reviewed_mode, str)
+                or reviewed_mode not in {"100644", "100755"}
+            ):
+                _error(errors, "CANDIDATE_INDEX_REVIEW_MODE_INVALID", "reviewed file mode is invalid")
+            elif mode != reviewed_mode or current_mode != reviewed_mode:
+                _error(errors, "CANDIDATE_INDEX_REVIEW_MODE_MISMATCH", "staged or current mode differs from the reviewed mode")
+        ok, worktree_oid = _git(root, "hash-object", "--no-filters", "--", path)
+        if not ok or OID.fullmatch(worktree_oid.strip()) is None:
+            _error(errors, "CANDIDATE_INDEX_BLOB_UNAVAILABLE", "reviewed worktree blob identity is unavailable")
+        elif oid != worktree_oid.strip():
+            _error(errors, "CANDIDATE_INDEX_BLOB_MISMATCH", "staged blob bytes differ from the reviewed worktree")
+        declared_sha256 = item.get("sha256")
+        if (
+            path in subjects
+            and (
+                not isinstance(declared_sha256, str)
+                or SHA256.fullmatch(declared_sha256) is None
+                or _sha256(worktree_path.read_bytes()) != declared_sha256
+            )
+        ):
+            _error(errors, "CANDIDATE_INDEX_REVIEW_HASH_MISMATCH", "reviewed subject hash differs from current bytes")
+
+
 def build_review_subject_manifest(
     *,
     project_root: str | Path,
@@ -1019,7 +1688,12 @@ def build_review_subject_manifest(
             changes.append({"path": relative, "kind": "deleted"})
         elif path.is_file():
             changes.append(
-                {"path": relative, "kind": "file", "sha256": _sha256(path.read_bytes())}
+                {
+                    "path": relative,
+                    "kind": "file",
+                    "mode": _regular_file_mode(path),
+                    "sha256": _sha256(path.read_bytes()),
+                }
             )
         else:
             _error(
@@ -1028,7 +1702,7 @@ def build_review_subject_manifest(
                 "manifest path is not a regular file",
             )
     manifest = {
-        "schema_version": "repopilot.reviewed_change_manifest/v1",
+        "schema_version": "repopilot.reviewed_change_manifest/v2",
         "stage_id": stage_id,
         "planning_base": planning_base,
         "excluded_metadata_paths": excluded,
@@ -1045,25 +1719,82 @@ def build_review_subject_manifest(
 def build_reviewed_inventory_bytes(manifest: Mapping[str, Any]) -> bytes:
     """Render the only accepted byte-stable reviewed-change inventory."""
 
+    if not _review_manifest_shape_valid(manifest):
+        raise TypeError("invalid review manifest")
     planning_base = manifest.get("planning_base")
     changes = manifest.get("changes")
     if not isinstance(planning_base, str) or not isinstance(changes, list):
         raise TypeError("invalid review manifest")
     lines = [
-        "# RepoPilot reviewed-change inventory v1",
+        "# RepoPilot reviewed-change inventory v2",
         f"# planning-base {planning_base}",
         "# Every line binds the current file bytes; deletions use DELETE without a hash.",
     ]
     for item in changes:
         if not isinstance(item, dict) or not isinstance(item.get("path"), str):
             raise TypeError("invalid review manifest change")
-        if item.get("kind") == "file" and isinstance(item.get("sha256"), str):
-            lines.append(f"FILE\t{item['sha256']}\t{item['path']}")
+        if (
+            item.get("kind") == "file"
+            and set(item) == {"path", "kind", "mode", "sha256"}
+            and isinstance(item.get("sha256"), str)
+            and isinstance(item.get("mode"), str)
+            and item.get("mode") in {"100644", "100755"}
+        ):
+            lines.append(
+                f"FILE\t{item['mode']}\t{item['sha256']}\t{item['path']}"
+            )
         elif item.get("kind") == "deleted" and set(item) == {"path", "kind"}:
             lines.append(f"DELETE\t{item['path']}")
         else:
             raise TypeError("invalid review manifest change")
     return ("\n".join(lines) + "\n").encode("utf-8")
+
+
+def _review_manifest_shape_valid(manifest: object) -> bool:
+    if (
+        not isinstance(manifest, Mapping)
+        or not all(isinstance(key, str) for key in manifest)
+        or set(manifest)
+        != {
+            "schema_version", "stage_id", "planning_base",
+            "excluded_metadata_paths", "changes",
+        }
+        or manifest.get("schema_version") != "repopilot.reviewed_change_manifest/v2"
+        or not isinstance(manifest.get("stage_id"), str)
+        or SAFE_STAGE.fullmatch(manifest.get("stage_id", "")) is None
+        or not isinstance(manifest.get("planning_base"), str)
+        or OID.fullmatch(manifest.get("planning_base", "")) is None
+        or not isinstance(manifest.get("changes"), list)
+    ):
+        return False
+    excluded = manifest.get("excluded_metadata_paths")
+    if excluded != _review_metadata_paths(manifest["stage_id"]):
+        return False
+    paths: list[str] = []
+    for item in manifest["changes"]:
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get("path"), str)
+            or not _canonical_path(item["path"])
+            or item["path"] in excluded
+        ):
+            return False
+        paths.append(item["path"])
+        if item.get("kind") == "file":
+            if (
+                set(item) != {"path", "kind", "mode", "sha256"}
+                or not isinstance(item.get("mode"), str)
+                or item.get("mode") not in {"100644", "100755"}
+                or not isinstance(item.get("sha256"), str)
+                or SHA256.fullmatch(item.get("sha256", "")) is None
+            ):
+                return False
+        elif item.get("kind") == "deleted":
+            if set(item) != {"path", "kind"}:
+                return False
+        else:
+            return False
+    return paths == sorted(set(paths))
 
 
 def _validate_bound_artifact(
@@ -1184,9 +1915,16 @@ def validate_delivery_binding(
             )
             for index, item in enumerate(harness_files)
         ]
-        paths = {item.get("path") for item in validated}
-        if paths != {".harness/allowed_files.md", ".harness/review_checklist.md"}:
+        path_values = [item.get("path") for item in validated]
+        if any(not isinstance(path, str) for path in path_values):
+            _error(errors, "FINAL_HARNESS_SET_INVALID", "Harness file paths must be strings")
+        elif set(path_values) != {
+            ".harness/allowed_files.md",
+            ".harness/review_checklist.md",
+        }:
             _error(errors, "FINAL_HARNESS_SET_INVALID", "Harness file set is not exact")
+        elif any(not isinstance(item, dict) for item in harness_files):
+            _error(errors, "FINAL_HARNESS_SET_INVALID", "Harness file bindings must be objects")
         elif harness_files != sorted(harness_files, key=lambda item: item["path"]):
             _error(
                 errors, "FINAL_HARNESS_SET_INVALID", "Harness file set is not sorted"
@@ -1240,7 +1978,11 @@ def _validate_record_shape(
     ):
         _error(errors, "HOST_REFERENCE_INVALID", "host_reference is required")
 
-    if scope.get("risk") not in {"low", "medium", "high"}:
+    if not isinstance(scope.get("risk"), str) or scope.get("risk") not in {
+        "low",
+        "medium",
+        "high",
+    }:
         _error(errors, "RISK_INVALID", "scope risk is invalid")
     if (
         not isinstance(scope.get("summary"), str)
@@ -1488,6 +2230,9 @@ def _validate_current_manifest(
     if not isinstance(declared, dict):
         _error(errors, "REVIEW_MANIFEST_INVALID", "review manifest must be an object")
         return None
+    if not _review_manifest_shape_valid(declared):
+        _error(errors, "REVIEW_MANIFEST_SCHEMA_INVALID", "review manifest schema or file modes are invalid")
+        return None
     if not diff_path.is_file():
         _error(errors, "REVIEW_DIFF_MISSING", "reviewed change diff is unavailable")
     else:
@@ -1517,7 +2262,6 @@ def _validate_current_manifest(
             "REVIEW_MANIFEST_DRIFT",
             "review manifest differs from current files",
         )
-        return None
     return declared if actual["status"] == "PASS" else None
 
 
@@ -1546,10 +2290,28 @@ def validate_authority(
     explicit_source_oid: str | None = None,
     merge_target_worktree: str | Path | None = None,
     expected_target_premerge_head: str | None = None,
+    replay_activation_requested: bool = False,
+    replay_report: Mapping[str, Any] | None = None,
+    stage_cohort: str = "v1",
 ) -> dict[str, Any]:
     """Validate one action against host-retained expected authority values."""
 
     errors: list[dict[str, str]] = []
+    # Replay/v2 is intentionally dormant. A repository/CLI value cannot prove the
+    # external provider-neutral host capability or change an active v1 decision.
+    if replay_activation_requested:
+        _error(
+            errors,
+            "HOST_STATE_UNAVAILABLE",
+            "external provider-neutral stage state is unavailable",
+        )
+    if stage_cohort != "v1":
+        _error(
+            errors,
+            "COHORT_SELECTION_FORBIDDEN",
+            "active v1 authority cannot be reinterpreted by caller-selected schema",
+        )
+    del replay_report
     root = Path(project_root).resolve()
     directory = Path(authority_dir)
     if not directory.is_absolute():
@@ -1600,7 +2362,8 @@ def validate_authority(
     record = records[-1] if records else {}
     record_path = paths[-1] if paths else None
 
-    if required_action not in ACTIONS:
+    action_valid = isinstance(required_action, str) and required_action in ACTIONS
+    if not action_valid:
         _error(errors, "REQUIRED_ACTION_INVALID", "required action is invalid")
     if record.get("stage_id") != expected_stage:
         _error(errors, "EXPECTED_STAGE_MISMATCH", "stage differs from host value")
@@ -1671,7 +2434,7 @@ def validate_authority(
 
     ceiling = record.get("action_ceiling")
     if (
-        required_action in ACTIONS
+        action_valid
         and ceiling in ACTIONS
         and ACTIONS.index(required_action) > ACTIONS.index(ceiling)
     ):
@@ -1719,7 +2482,7 @@ def validate_authority(
         if path in gitlink_paths:
             _error(errors, "GITLINK_FORBIDDEN", "a changed path is a gitlink")
 
-    if required_action in {"plan", "implement", "commit", "archive"}:
+    if action_valid and required_action in {"plan", "implement", "archive"}:
         allowed_path = root / ".harness" / "allowed_files.md"
         if allowed_path.is_symlink() or not allowed_path.is_file():
             _error(errors, "ALLOWED_FILES_INVALID", "allowed-files control is invalid")
@@ -1731,7 +2494,8 @@ def validate_authority(
             )
 
     _validate_review_metadata(root, expected_stage, errors)
-    if required_action in {"archive", "merge", "push"}:
+    current_manifest: Mapping[str, Any] | None = None
+    if action_valid and required_action in {"commit", "archive", "merge", "push"}:
         current_manifest = _validate_current_manifest(
             root=root,
             stage=expected_stage,
@@ -1747,7 +2511,7 @@ def validate_authority(
             current_manifest=current_manifest,
             errors=errors,
         )
-    if required_action in {"merge", "push"}:
+    if action_valid and required_action in {"commit", "merge", "push"}:
         if delivery_binding is None:
             _error(errors, "DELIVERY_BINDING_REQUIRED", "delivery binding is required")
         else:
@@ -1790,6 +2554,15 @@ def validate_authority(
                         "DELIVERY_BINDING_INVALID",
                         "delivery binding did not validate",
                     )
+    if required_action == "commit" and current_manifest is not None:
+        _validate_commit_index_projection(
+            root=root,
+            planning_base=expected_planning_base,
+            stage=expected_stage,
+            manifest=current_manifest,
+            errors=errors,
+        )
+    if action_valid and required_action in {"merge", "push"}:
         if not isinstance(expected_candidate_head, str) or not OID.fullmatch(
             expected_candidate_head or ""
         ):
@@ -1912,7 +2685,7 @@ def validate_authority(
         "human_authorized": "external" if passed else False,
         "vcs_pushed": "not_attempted",
         "stage_id": expected_stage,
-        "required_action": required_action,
+        "required_action": required_action if isinstance(required_action, str) else None,
         "current_epoch": record.get("authority_epoch"),
         "changed_paths": sorted(changed_paths),
         "errors": errors,
@@ -1946,6 +2719,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--explicit-source-oid")
     parser.add_argument("--merge-target-worktree")
     parser.add_argument("--expected-target-premerge-head")
+    parser.add_argument("--replay-activation-requested", action="store_true")
     return parser
 
 

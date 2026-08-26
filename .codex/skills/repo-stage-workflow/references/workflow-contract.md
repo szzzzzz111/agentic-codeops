@@ -124,7 +124,20 @@ dependency or finding justifies it.
   `.harness/reviews/<stage-id>/implementation/reviewed-change.diff`,
   `.harness/reviews/<stage-id>/implementation/review-set.json`, and
   `.harness/authority/<stage-id>/delivery-binding.json`. The only post-packet
-  evidence tail is the latter two schema-valid JSON files.
+  evidence tail is the latter two schema-valid JSON files. Manifest/inventory
+  v2 binds every regular-file subject's content digest and exact
+  `100644`/`100755` mode; same-content mode changes after review are drift.
+  The four excluded metadata/tail paths use a code-owned canonical candidate
+  mode of `100644`; matching worktree/index chmod does not establish review.
+- Before creating the finite post-archive candidate, run the shared authority
+  validator with `--required-action commit` and the exact final implementation
+  review set, slot count, host-retained packet hash, and delivery binding. First
+  stage exactly the reviewed subjects plus the four metadata/tail paths and
+  require the cached diff check to pass. The validator must bind the staged path
+  set, stage-0 regular modes, file/deletion states, and blob bytes to the
+  reviewed worktree; the index must not change after preflight. The delivery
+  binding, not the pre-archive active-control hash, binds the planned final
+  `allowed_files.md` and `review_checklist.md` reset.
 - Merge/push are controller-only. They bind the host-retained exact candidate,
   exact merge source/target state, one effective endpoint, authorized old tip,
   ancestry proof, explicit refspec, and exact-old-OID lease.
@@ -141,3 +154,24 @@ dependency or finding justifies it.
   isolation failure is deterministic rather than an unknown push outcome.
 - `technical_ready`, `human_authorized`, and `vcs_pushed` are independent
   verdicts. A technical or repository receipt cannot imply another verdict.
+
+## Dormant Stage Change Replay
+
+- The active cohort remains pre-change `stage_authority/v1`. The introducing
+  stage and all stages already in flight at later activation remain v1 through
+  terminal, including later-v1 authority replacement for authorized drift.
+- Repository replay validation proves only `mechanical_consistency_only` and
+  neither authorizes nor blocks a v1 mutation. Schema/template selection,
+  repository hashes, CLI booleans, fixtures, and dates cannot select v2.
+- Blocking v2 requires a separate reviewed activation and external
+  `provider_neutral.stage_state_cas/v1` evidence for load, atomic CAS,
+  restart-safe recovery, terminal close, immutable workspace binding, and
+  host-native reviewer dispatch metadata.
+- For a newly created activated-v2 stage, authority core runs before replay.
+  Host-retained gate snapshots and event/receipt counts/heads must equal local
+  lineage. A governed action must equal the exact current frontier; an earlier
+  or later action fails, with no unaffected-action bypass.
+- V2 uses `plan -> implement -> archive -> commit(candidate) -> merge -> push`.
+  Replay artifacts join the reviewed subject before packet freeze. The final
+  evidence tail remains exactly the implementation review set and delivery
+  binding; terminal push state is external.

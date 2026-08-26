@@ -77,6 +77,22 @@ Implement tasks from an OpenSpec change.
    process until prospective activation; it must not claim the new validator
    retroactively authorized its own planning or implementation.
 
+   Stage-change replay is a dormant, non-authorizing interface until a later,
+   independently reviewed activation proves the external
+   `provider_neutral.stage_state_cas/v1` host capability and its chronology.
+   This introducing stage and every stage already in flight at activation stay
+   in the pre-change v1 cohort through terminal, including the existing
+   later-v1 replacement path for owner-bound drift. Do not pass a repository
+   hash, CLI boolean, fixture, or shadow replay PASS as activation evidence.
+
+   For a future host-activated v2 cohort only, the controller must supply the
+   immutable workspace binding, terminal state, gate-lifecycle snapshot, and
+   exact host-retained event/receipt counts and heads. Run authority core first,
+   then replay preflight. A changed lineage may implement only when
+   `implementation` is the exact current frontier; an earlier or later action,
+   a missing event, or an unretained local head blocks before mutation. Replay
+   PASS remains `mechanical_consistency_only` and never replaces live authority.
+
 6. **Show current progress**
 
    Display:
@@ -170,6 +186,9 @@ What would you like to do?
 - Use contextFiles from CLI output, don't assume specific file names
 - After activation, never bypass the shared stage-authority `implement`
   preflight because the invocation came directly through this skill
+- Until external host activation exists, never let dormant replay authorize or
+  block a v1 mutation; after activation, never use an "unaffected action"
+  bypass around exact-frontier equality
 - Keep merge and push out of this skill; they remain controller-only closeout
   actions under `repo-stage-workflow`
 

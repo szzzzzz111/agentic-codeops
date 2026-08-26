@@ -69,6 +69,17 @@ Implement tasks from an OpenSpec change.
    mismatch, and scope/path drift are hard stops. PASS is mechanical-only and
    does not establish live human authority.
 
+   Replay is dormant until a separate host-capability stage proves and
+   activates `provider_neutral.stage_state_cas/v1`. The introducing and
+   already in-flight stages remain pre-change v1 through terminal, with the
+   existing later-v1 replacement path. Repository hashes, fixtures, template
+   choice, or a shadow PASS cannot select v2 or authorize/block mutation.
+
+   For a future host-activated v2 cohort only, authority core precedes replay;
+   immutable workspace/terminal/gate state and exact host-retained
+   event/receipt heads are mandatory. Implement may mutate only when
+   `implementation` is the exact frontier, with no unaffected-action bypass.
+
 6. **Show current progress**
 
    Display:
@@ -162,6 +173,8 @@ What would you like to do?
 - Use contextFiles from CLI output, don't assume specific file names
 - After activation, do not warning-and-continue around the shared `implement`
   authority gate
+- Keep replay dormant for v1 cohorts; after genuine v2 host activation require
+  exact-frontier equality and retained CAS lineage before mutation
 - Merge and push remain controller-only actions under `repo-stage-workflow`
 
 **Fluid Workflow Integration**

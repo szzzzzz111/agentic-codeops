@@ -1,0 +1,86 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "add-stage-change-replay",
+  "authority_epoch": 2,
+  "supersedes_record_sha256": "51f298bebac3ee04c2af642e5122172efbd916b4d17ff33851278be7b6fb55fd",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "codex-thread:01a01908-92e2-7c50-b1f4-08ffbe65935b;direct-user-confirmation:implementation-receipts-through-push-later-v1"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Add dormant mechanical stage-change replay, host-bound lineage contracts, conservative exact-frontier validation, and v2 archive-before-candidate schemas while retaining the active v1 workflow through this stage's verified push.",
+    "allowed_path_rules": {
+      "exact": [
+        ".codex/skills/openspec-apply-change/SKILL.md",
+        ".codex/skills/openspec-archive-change/SKILL.md",
+        ".codex/skills/openspec-archive-change/references/evals.md",
+        ".codex/skills/openspec-stage-planner/SKILL.md",
+        ".codex/skills/openspec-stage-planner/references/stage-template.md",
+        ".codex/skills/repo-stage-handoff/SKILL.md",
+        ".codex/skills/repo-stage-handoff/references/evals.md",
+        ".codex/skills/repo-stage-handoff/references/stale-state-checklist.md",
+        ".codex/skills/repo-stage-review-loop/SKILL.md",
+        ".codex/skills/repo-stage-review-loop/references/evals.md",
+        ".codex/skills/repo-stage-workflow/SKILL.md",
+        ".codex/skills/repo-stage-workflow/references/evals.md",
+        ".codex/skills/repo-stage-workflow/references/workflow-contract.md",
+        ".harness/allowed_files.md",
+        ".harness/review_checklist.md",
+        ".harness/rules.md",
+        ".harness/templates/stage-authority-record-v2.template.json",
+        ".harness/templates/stage-authority-record.template.json",
+        ".harness/templates/stage-change-event.template.json",
+        ".harness/templates/stage-delivery-binding-v2.template.json",
+        ".harness/templates/stage-delivery-binding.template.json",
+        ".harness/templates/stage-replay-receipt.template.json",
+        ".harness/templates/stage_closeout.md",
+        ".harness/templates/stage_planning.md",
+        ".harness/test_commands.md",
+        ".opencode/commands/opsx-apply.md",
+        ".opencode/commands/opsx-archive.md",
+        ".opencode/skills/openspec-apply-change/SKILL.md",
+        ".opencode/skills/openspec-archive-change/SKILL.md",
+        ".opencode/skills/openspec-plan-review/SKILL.md",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "docs/AGENT_RULES.md",
+        "docs/PROGRESS.md",
+        "openspec/specs/harness-development-workflow/spec.md",
+        "openspec/specs/stage-authority-binding/spec.md",
+        "openspec/specs/stage-change-replay/spec.md",
+        "scripts/validate_stage_authority.py",
+        "scripts/validate_stage_change_replay.py",
+        "tests/test_stage_authority_validation.py",
+        "tests/test_stage_change_replay_validation.py"
+      ],
+      "prefixes": [
+        ".harness/authority/add-stage-change-replay/",
+        ".harness/change-replay/add-stage-change-replay/",
+        ".harness/reviews/add-stage-change-replay/",
+        "openspec/changes/add-stage-change-replay/",
+        "openspec/changes/archive/2026-08-21-add-stage-change-replay/"
+      ]
+    },
+    "non_goals": [
+      "automatic patch, commit, merge, push, rebase, history rewrite, or PR automation",
+      "credential handling or hosted identity and approval",
+      "implementation or activation of provider_neutral.stage_state_cas/v1",
+      "importing the Greenfield control plane",
+      "public API, runtime capability, provider, persistence, dependency, or network-default changes",
+      "RepoPilot runtime event ingestion, durable or background execution, or runtime subagents"
+    ],
+    "active_allowed_files_sha256": "27b542caf5a3f57686fdfec0b482c5b04ae3ad2b80323f0d026d7e8a789ec5dd"
+  },
+  "scope_sha256": "d32eb106714837f7d750ce7b869fcb7429a5c68aa66feb060a66ec8d49d08c90",
+  "planning_baseline": {
+    "commit": "bd66dba26f245de6a49999dfde14006d0474ab25"
+  },
+  "action_ceiling": "push",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "bd66dba26f245de6a49999dfde14006d0474ab25"
+  }
+}

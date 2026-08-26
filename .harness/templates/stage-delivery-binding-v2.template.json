@@ -1,0 +1,18 @@
+{
+  "schema_version": "repopilot.stage_delivery_binding/v2",
+  "activation_status": "blocked_on_external_host_capability",
+  "stage_id": "<stage-id>",
+  "authority_epoch": 1,
+  "authority_record_sha256": "<64-lowercase-hex-sha256>",
+  "replay_state": {"event_count": 0, "event_head": null, "receipt_count": 0, "receipt_head": null},
+  "final_review_packet": {"path": "<canonical-path>", "sha256": "<64-lowercase-hex-sha256>"},
+  "pre_candidate": {
+    "expected_parent_oid": "<40-lowercase-hex-git-oid>",
+    "review_packet_sha256": "<64-lowercase-hex-sha256>",
+    "reviewed_manifest_sha256": "<64-lowercase-hex-sha256>",
+    "reviewed_inventory_sha256": "<64-lowercase-hex-sha256>",
+    "review_metadata_and_tail_paths": ["<sorted-canonical-path>"],
+    "construction_policy": "single_parent_exact_subject_plus_metadata/v1"
+  },
+  "claim_level": "mechanical_consistency_only"
+}

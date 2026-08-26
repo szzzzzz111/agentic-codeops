@@ -69,6 +69,21 @@ Archive a completed change in the experimental workflow.
    Validator success remains mechanical-only and does not prove live human
    authority.
 
+   The replay interface is dormant until a separate host-capability stage has
+   proven and activated `provider_neutral.stage_state_cas/v1`. This introducing
+   stage and all stages already in flight remain pre-change v1 cohorts through
+   terminal; their owner-bound drift continues to use a later v1 authority
+   record. A repository activation record, fixture, CLI flag, or shadow replay
+   PASS cannot select v2 or authorize/block archive.
+
+   For a future host-activated v2 cohort only, archive preflight must consume
+   the immutable workspace binding, terminal state, gate snapshot, retained
+   event/receipt counts and heads, current authority v2 binding, and exact final
+   review evidence. Authority core runs before replay. `archive` may mutate only
+   when `archive` is the exact current frontier (or the code-owned no-change
+   transition proves normal sequence); earlier or later actions and every
+   claimed "unaffected" bypass fail before spec sync or archive mutation.
+
 5. **Assess delta spec sync state**
 
    Check for delta specs at `openspec/changes/<name>/specs/`. If none exist, proceed without sync prompt.
@@ -140,6 +155,9 @@ All artifacts complete. All tasks complete.
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
 - After activation, never downgrade a failed/missing stage-authority archive
   preflight to a warning or interactive override
+- Keep dormant replay non-authorizing for v1 cohorts; for an activated v2
+  cohort require exact-frontier equality and host-retained state rather than a
+  caller-selected schema, template, or local head
 - Archive does not authorize merge or push; return those actions to the
   controller-owned `repo-stage-workflow`
 

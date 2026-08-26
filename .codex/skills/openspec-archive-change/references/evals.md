@@ -29,6 +29,14 @@ Use these as routing and behavior checks after changing the skill.
 - Situation: tasks are complete but authority is missing, stale, below
   `archive`, or bound to another final packet.
   - Expect: stop before archive mutation; do not offer warning-and-continue.
+- Situation: the repository replay validator passes, but the host has no
+  `provider_neutral.stage_state_cas/v1` capability/activation evidence.
+  - Expect: keep replay dormant and use the pre-change v1 archive gate; do not
+    infer v2 or let the shadow result authorize/block mutation.
+- Situation: an activated-v2 stage has replay frontier `verification`, but the
+  caller labels archive "unaffected".
+  - Expect: fail before sync/archive with `STAGE_REPLAY_REQUIRED`; governed
+    actions must equal the exact current frontier.
 
 ## Failure Traps
 
@@ -37,3 +45,5 @@ Use these as routing and behavior checks after changing the skill.
 - Do not manually move a change after archive sync aborts.
 - Repository hashes or validator PASS do not prove live human authority, and
   direct archive must not bypass the shared gate.
+- Existing/in-flight v1 stages retain the later-v1 recovery path through
+  terminal; a dormant v2 template or CLI boolean cannot change cohort.

@@ -85,11 +85,23 @@ For a stage governed by the activated authority gate, record and present:
 - remote name, effective fetch and push endpoint fingerprints, target branch, and authorized remote tip
 - exact/prefix allowed-path rules plus canonical non-goals
 - invalidation on any scope, non-goal, risk, base, action, endpoint, branch, or tip drift
+- host chronology-selected cohort: pre-change v1 or externally activated v2
+- replay activation status and external `provider_neutral.stage_state_cas/v1`
+  attestation; repository bytes cannot select the cohort
+- for v2 only: immutable workspace binding, terminal state, gate snapshot
+  generation/digest, and host-retained event/receipt counts and heads
+- replay rule: v1 later-authority recovery, or v2 host-CAS event plus exact
+  frontier with no unaffected-action bypass
 
 The host retains these values from the live direct-user confirmation and passes
 them back as validator inputs. Do not reconstruct expected inputs from the
 repository record; the record proves mechanical consistency only and cannot
 assert live human authority.
+
+Replay templates and validator output are also
+`mechanical_consistency_only`. The introducing and already in-flight v1 stages
+remain v1 through terminal. V2 requires a later independently reviewed host
+activation and uses archive-before-candidate ordering.
 
 ## Scope Smell Tests
 

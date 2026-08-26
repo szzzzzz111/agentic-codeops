@@ -98,9 +98,18 @@ python scripts/validate_independent_review.py \
   bytes 或先 lossy decode 再规范化；不能表示时返回结构化、脱敏 `FAIL`。
 - `allowed_path_rules` 作为不可信 schema 输入处理。非 object、错误类型、非字符串元素或非法 exact/prefix
   值只能产生结构化 validator `FAIL`，不得以 traceback、`TypeError` 或其他未捕获异常退出。
-- Archive 必须消费当前 implementation review set。Final delivery packet 的 review subject 只排除规范定义的
- 四个 metadata paths；packet 完成后只允许 schema-valid `review-set.json` 与 `delivery-binding.json` 两个
-  evidence-tail 文件。其他变化都使 final review 失效。
+- Archive 必须消费当前 implementation review set。Post-archive finite candidate commit 必须再次消费 final
+  implementation review set、穷尽 manifest 与 valid delivery binding；planned Harness reset 只能由该 binding 的
+  final-harness hashes 覆盖。Final delivery packet 的 review subject 只排除规范定义的四个 metadata paths；
+  packet 完成后只允许 schema-valid `review-set.json` 与 `delivery-binding.json` 两个 evidence-tail 文件。其他变化
+  都使 final review 失效。
+- Candidate commit preflight 前先精确暂存 reviewed manifest subjects 加四个 metadata/tail paths，并让
+  `git diff --cached --check` PASS。Validator 必须只读比较 index path set、stage-0 regular mode、
+  file/deletion state 与 current blob bytes/hash；preflight 后禁止再修改 index。
+- Reviewed manifest/inventory v2 必须为每个普通 file subject/FILE row 绑定 `100644/100755` mode；deleted
+  entry 仍仅为 path+kind。Review 后同步修改 worktree/index mode 也必须使 manifest 或 commit gate 失效。
+- 四个 metadata/tail paths 的 current/index candidate mode 由 code-owned policy 固定为 `100644`，不得
+  依赖 worktree 与 index 的可共同修改状态互相证明。
 - Merge/push 不是 apply/archive skill 的能力，只能由 end-to-end controller 执行。Controller 必须绑定
   host-retained exact candidate HEAD、exact merge source/target state、单一 effective endpoint 和 authorized
   old tip；push 仅可在 ancestry 已证明 fast-forward 后使用 explicit refspec 与 exact-old-OID lease。
@@ -118,6 +127,30 @@ python scripts/validate_independent_review.py \
   在成功 resume 前的隔离失败必须确定性返回 `PROCESS_ISOLATION_FAILED`，不得误报 unknown push。
 - Closeout 必须分别报告 `technical_ready`、`human_authorized` 与 `vcs_pushed`；后者至少区分
   `not_attempted`、`unknown`、`verified`。任何一个 verdict 都不能由另一个 verdict 推导。
+
+## Dormant Stage Change Replay
+
+- 当前 active mutation gate 仍是 pre-change `stage_authority/v1`。本 replay introducing stage 与未来
+  activation 时已经 in-flight 的 v1 stage 都必须按 v1 流程一路到 terminal；owner-bound drift 继续走
+  later-v1 authority epoch/record，不能调用 v2 event 来改 cohort。
+- `scripts/validate_stage_change_replay.py`、event/receipt 与独立 v2 templates 默认只产生
+  `mechanical_consistency_only`。它们不能授权或阻断 v1 mutation，也不能证明 user identity、host
+  chronology、dispatch provenance、terminal state 或 CAS durability。
+- Blocking v2 的外部前置固定为 `provider_neutral.stage_state_cas/v1`：host-owned `load`、atomic
+  `compare_and_swap`、restart-safe `recover`、atomic `close`、immutable workspace binding 与不可由 repo/CLI
+  伪造的 reviewer dispatch metadata。必须由后续独立 reviewed/authorized activation stage 提供真实 evidence；
+  repository hash、date、schema/template、CLI boolean、fixture 或 shadow PASS 不能激活。
+- 只有 host activation 之后新建的 stage 可进入 v2。Authority core 必须先于 replay；host 必须显式传入
+  workspace/terminal/gate snapshot 与 prior/current event/receipt counts/heads，local lineage 必须与 retained
+  state exact equal 或在 append 模式下证明 unchanged prefix + single contiguous append。
+- Activated v2 action order 固定为 `plan -> implement -> archive -> commit(candidate) -> merge -> push`。
+  `implement/archive/commit/merge/push` 必须精确等于 current replay frontier；earlier action 返回
+  `ACTION_BEHIND_REPLAY_FRONTIER`，later action 返回 `STAGE_REPLAY_REQUIRED`，不存在 `unaffected action`
+  bypass。No-change 也必须由 code-owned transition adapter 证明 normal sequence；empty invalidated set 不授权。
+- Replay event/receipt projection 是 controller-only CAS evidence transition，只能写 canonical stage-local replay
+  path，且必须在 final packet freeze 前进入普通 reviewed subject。Final evidence tail 仍严格只有
+  implementation `review-set.json` 与 `delivery-binding.json` 两个文件；successful push 后的 terminal tombstone
+  只保留在 external host state，不回写仓库。
 
 ## Stage Debt Sweep
 

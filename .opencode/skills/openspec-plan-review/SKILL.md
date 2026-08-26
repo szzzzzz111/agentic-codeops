@@ -34,6 +34,13 @@ Review the stage plan only. Do not edit files or implement code.
 - Missing TDD, validation, internal review, or risk-contract required independent review slots and validated receipts.
 - Runtime boundary violations such as `/chat` contract changes, provider wiring,
   default CI changes, promotion, commit/push automation, subagents, or connectors.
+- False activation claims: repository replay bytes, fixtures, CLI booleans, or
+  v2 templates cannot replace external `provider_neutral.stage_state_cas/v1`
+  capability/chronology; the introducing and in-flight v1 cohorts stay v1
+  through terminal.
+- Replay action correctness: future activated-v2 governed actions require
+  exact-frontier equality, no unaffected bypass, and replay projections must
+  enter the reviewed subject rather than a third final evidence-tail file.
 
 ## Gate Rule
 

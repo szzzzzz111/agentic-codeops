@@ -1,0 +1,198 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "add-stage-change-replay",
+  "phase": "plan",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "generalize-independent-review-provider",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md",
+    "activation_ref_sha256": "4b7155e4648dd2f12914213a866040ab6c68f537fcbdecccf072a90841085c8f",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "verified-by-host-controller",
+      "evidence_ref": "host-dispatch:/root/change_replay_plan_review_a,/root/change_replay_plan_review_b;fork_turns=none"
+    },
+    "activation_sequence": {
+      "status": "verified-by-pre-change-process-authority",
+      "evidence_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md"
+    }
+  },
+  "implementer": {
+    "instance_id": "/root"
+  },
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:b8f6172b43d16ebcaf0fb9cc649b7cc4f5575bf1824c51c6062bc78648dd5ec6",
+    "artifacts": [
+      {"path": ".harness/allowed_files.md", "sha256": "54326bc6f86c3342685a528a75e9527626c2d643c8dfe9ec238a679540ba1803"},
+      {"path": ".harness/review_checklist.md", "sha256": "1e05fb13d4e1c851259375da1de5aca62f089bcaf1c76d6af84ed3b54bf95601"},
+      {"path": "openspec/changes/add-stage-change-replay/design.md", "sha256": "e99b84038ee30cb27743fae8c392d399d1a14c3543950c2ffa7b8c4333b357ab"},
+      {"path": "openspec/changes/add-stage-change-replay/proposal.md", "sha256": "653b8498d737af0acca639a7e1f2dd4627791165638868a376d7e09436a827f9"},
+      {"path": "openspec/changes/add-stage-change-replay/specs/harness-development-workflow/spec.md", "sha256": "f38b75326c9a5a710733b60d6085a8b4e995392219f6ebcae43a6e112d707ea3"},
+      {"path": "openspec/changes/add-stage-change-replay/specs/stage-authority-binding/spec.md", "sha256": "0164871bca8b5125cad2ac58ca466940064f9a4ffdb9cd5bcb4672f2d4aba76d"},
+      {"path": "openspec/changes/add-stage-change-replay/specs/stage-change-replay/spec.md", "sha256": "a879fab2b2dc495a72e50a7afd70b4a7ebbb0069556326b9f65004267e37edcf"},
+      {"path": "openspec/changes/add-stage-change-replay/stage_planning.md", "sha256": "34e92a6fdbb5fcbf73034ccd8c87775ac6b37def80d54df40354db61eba23e2c"},
+      {"path": "openspec/changes/add-stage-change-replay/tasks.md", "sha256": "75df386b8cf4a0bae45eced9d36f53b92e58ffd6b3cfaef4c1434218f75b8d6a"}
+    ],
+    "packet_sha256": "b8f6172b43d16ebcaf0fb9cc649b7cc4f5575bf1824c51c6062bc78648dd5ec6"
+  },
+  "review_history": [
+    {
+      "review_ref": "openspec/changes/add-stage-change-replay/plan-review.md#slot-a-first-round",
+      "receipt_sha256": "d9e23f32f8cb942d4cad92d713671a76042024d2ab56b5f0bb366b5cc8e38134",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "add-stage-change-replay",
+        "phase": "plan",
+        "slot_id": "change-replay-plan-a",
+        "implementer_instance_id": "/root",
+        "reviewer": {"provider": "OpenAI Codex", "model": "GPT-5", "instance_id": "/root/change_replay_plan_review_a"},
+        "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "d066a47ce82d870da9efa85849f3472cfebd00015ff0ce6fa5f1159c5bdd5152",
+        "reviewed_artifacts": [
+          {"path": ".harness/allowed_files.md", "sha256": "71621b44d07682401f9faabc264e850792fe10cf5944618ba1ce511ba407da5c"},
+          {"path": ".harness/review_checklist.md", "sha256": "5f02368aee7dc2be7869e7dd445bbd7ed49e73b7f21706732fb9d221b58bc1dc"},
+          {"path": "openspec/changes/add-stage-change-replay/design.md", "sha256": "93bffe34a2bb8ee22445dd3595c7fa71c60be66c471bfeba2c3938ea7116ac8d"},
+          {"path": "openspec/changes/add-stage-change-replay/proposal.md", "sha256": "fd9f580236714596c87abd2d9b7d556a5f8cf5837e8a0d82cf07d29dbb96d34e"},
+          {"path": "openspec/changes/add-stage-change-replay/specs/harness-development-workflow/spec.md", "sha256": "0618c4318aa2af060a3027b9e20ab33c1e063cbc6142bf08ac2cf476f12bd876"},
+          {"path": "openspec/changes/add-stage-change-replay/specs/stage-authority-binding/spec.md", "sha256": "c2f21a2e9d4fb0c33a76f9051da74b460218952c4680a84bb60e143712870f06"},
+          {"path": "openspec/changes/add-stage-change-replay/specs/stage-change-replay/spec.md", "sha256": "4fb671473d37e91f3f8265475bcc41dbcf4bacce6e173e4b50fe7ee7ca0621a9"},
+          {"path": "openspec/changes/add-stage-change-replay/stage_planning.md", "sha256": "47acc326cc4801481b84a2109dad6fbef7de086bd5d4aa0d9386da5da2578b5f"},
+          {"path": "openspec/changes/add-stage-change-replay/tasks.md", "sha256": "d931c9c7779431653cc73493bb3b89bf08091961ad62eba9e1a5dbd1ac24c15f"}
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {"id": "A-CR-P1-001", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-CR-P1-002", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-CR-P1-003", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-CR-P1-004", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-CR-P1-005", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "A-CR-P2-006", "severity": "P2", "disposition": "clarify", "closure_status": "open"},
+            {"id": "A-CR-P2-007", "severity": "P2", "disposition": "fix", "closure_status": "open"}
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Plan-only semantic review; implementation, tests, live authority, dispatch provenance, activation chronology, host state, and Git delivery were not established. A historical review set from another completed stage was accidentally observed but not used as current-stage evidence; no other current-stage slot conclusion was viewed."
+        },
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "openspec/changes/add-stage-change-replay/plan-review.md#slot-b-first-round",
+      "receipt_sha256": "f2f5e545dc2f7bb93748679dc535c0c68e042e9f572c1301e1ed4de49497d212",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "add-stage-change-replay",
+        "phase": "plan",
+        "slot_id": "change-replay-plan-b",
+        "implementer_instance_id": "/root",
+        "reviewer": {"provider": "OpenAI", "model": "gpt-5", "instance_id": "/root/change_replay_plan_review_b"},
+        "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "d066a47ce82d870da9efa85849f3472cfebd00015ff0ce6fa5f1159c5bdd5152",
+        "reviewed_artifacts": [
+          {"path": ".harness/allowed_files.md", "sha256": "71621b44d07682401f9faabc264e850792fe10cf5944618ba1ce511ba407da5c"},
+          {"path": ".harness/review_checklist.md", "sha256": "5f02368aee7dc2be7869e7dd445bbd7ed49e73b7f21706732fb9d221b58bc1dc"},
+          {"path": "openspec/changes/add-stage-change-replay/design.md", "sha256": "93bffe34a2bb8ee22445dd3595c7fa71c60be66c471bfeba2c3938ea7116ac8d"},
+          {"path": "openspec/changes/add-stage-change-replay/proposal.md", "sha256": "fd9f580236714596c87abd2d9b7d556a5f8cf5837e8a0d82cf07d29dbb96d34e"},
+          {"path": "openspec/changes/add-stage-change-replay/specs/harness-development-workflow/spec.md", "sha256": "0618c4318aa2af060a3027b9e20ab33c1e063cbc6142bf08ac2cf476f12bd876"},
+          {"path": "openspec/changes/add-stage-change-replay/specs/stage-authority-binding/spec.md", "sha256": "c2f21a2e9d4fb0c33a76f9051da74b460218952c4680a84bb60e143712870f06"},
+          {"path": "openspec/changes/add-stage-change-replay/specs/stage-change-replay/spec.md", "sha256": "4fb671473d37e91f3f8265475bcc41dbcf4bacce6e173e4b50fe7ee7ca0621a9"},
+          {"path": "openspec/changes/add-stage-change-replay/stage_planning.md", "sha256": "47acc326cc4801481b84a2109dad6fbef7de086bd5d4aa0d9386da5da2578b5f"},
+          {"path": "openspec/changes/add-stage-change-replay/tasks.md", "sha256": "d931c9c7779431653cc73493bb3b89bf08091961ad62eba9e1a5dbd1ac24c15f"}
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {"id": "CRPB-P1-001", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "CRPB-P1-002", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "CRPB-P1-003", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "CRPB-P1-004", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "CRPB-P1-005", "severity": "P1", "disposition": "fix", "closure_status": "open"},
+            {"id": "CRPB-P2-006", "severity": "P2", "disposition": "clarify", "closure_status": "open"},
+            {"id": "CRPB-P2-007", "severity": "P2", "disposition": "fix", "closure_status": "open"}
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Plan-only semantic review; live authority, host state, dispatch provenance, activation chronology, implementation, tests, and Git delivery were not established. No other current-stage slot conclusion was viewed."
+        },
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "add-stage-change-replay",
+      "phase": "plan",
+      "slot_id": "change-replay-plan-a",
+      "implementer_instance_id": "/root",
+      "reviewer": {"provider": "OpenAI Codex", "model": "GPT-5", "instance_id": "/root/change_replay_plan_review_a"},
+      "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "b8f6172b43d16ebcaf0fb9cc649b7cc4f5575bf1824c51c6062bc78648dd5ec6",
+      "reviewed_artifacts": [
+        {"path": ".harness/allowed_files.md", "sha256": "54326bc6f86c3342685a528a75e9527626c2d643c8dfe9ec238a679540ba1803"},
+        {"path": ".harness/review_checklist.md", "sha256": "1e05fb13d4e1c851259375da1de5aca62f089bcaf1c76d6af84ed3b54bf95601"},
+        {"path": "openspec/changes/add-stage-change-replay/design.md", "sha256": "e99b84038ee30cb27743fae8c392d399d1a14c3543950c2ffa7b8c4333b357ab"},
+        {"path": "openspec/changes/add-stage-change-replay/proposal.md", "sha256": "653b8498d737af0acca639a7e1f2dd4627791165638868a376d7e09436a827f9"},
+        {"path": "openspec/changes/add-stage-change-replay/specs/harness-development-workflow/spec.md", "sha256": "f38b75326c9a5a710733b60d6085a8b4e995392219f6ebcae43a6e112d707ea3"},
+        {"path": "openspec/changes/add-stage-change-replay/specs/stage-authority-binding/spec.md", "sha256": "0164871bca8b5125cad2ac58ca466940064f9a4ffdb9cd5bcb4672f2d4aba76d"},
+        {"path": "openspec/changes/add-stage-change-replay/specs/stage-change-replay/spec.md", "sha256": "a879fab2b2dc495a72e50a7afd70b4a7ebbb0069556326b9f65004267e37edcf"},
+        {"path": "openspec/changes/add-stage-change-replay/stage_planning.md", "sha256": "34e92a6fdbb5fcbf73034ccd8c87775ac6b37def80d54df40354db61eba23e2c"},
+        {"path": "openspec/changes/add-stage-change-replay/tasks.md", "sha256": "75df386b8cf4a0bae45eced9d36f53b92e58ffd6b3cfaef4c1434218f75b8d6a"}
+      ],
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Plan-only mechanical receipt normalized from the reviewer's returned conclusion. Intermediate A findings A-CR-RR-P1-008 and A-CR-RR-P1-009 are closed in plan-review.md. Implementation, tests, live authority, host CAS, activation, archive, candidate, merge, and push remain unproved."
+      },
+      "lineage": {
+        "original_slot_id": "change-replay-plan-a",
+        "original_reviewer_instance_id": "/root/change_replay_plan_review_a",
+        "original_review_ref": "openspec/changes/add-stage-change-replay/plan-review.md#slot-a-first-round",
+        "original_receipt_sha256": "d9e23f32f8cb942d4cad92d713671a76042024d2ab56b5f0bb366b5cc8e38134",
+        "closed_finding_ids": ["A-CR-P1-001", "A-CR-P1-002", "A-CR-P1-003", "A-CR-P1-004", "A-CR-P1-005", "A-CR-P2-006", "A-CR-P2-007"]
+      }
+    },
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "add-stage-change-replay",
+      "phase": "plan",
+      "slot_id": "change-replay-plan-b",
+      "implementer_instance_id": "/root",
+      "reviewer": {"provider": "OpenAI", "model": "gpt-5", "instance_id": "/root/change_replay_plan_review_b"},
+      "context_evidence": {"evidence_source": "host_tool_metadata", "parent_context_inheritance": "none", "other_first_round_conclusions_visible": false},
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "b8f6172b43d16ebcaf0fb9cc649b7cc4f5575bf1824c51c6062bc78648dd5ec6",
+      "reviewed_artifacts": [
+        {"path": ".harness/allowed_files.md", "sha256": "54326bc6f86c3342685a528a75e9527626c2d643c8dfe9ec238a679540ba1803"},
+        {"path": ".harness/review_checklist.md", "sha256": "1e05fb13d4e1c851259375da1de5aca62f089bcaf1c76d6af84ed3b54bf95601"},
+        {"path": "openspec/changes/add-stage-change-replay/design.md", "sha256": "e99b84038ee30cb27743fae8c392d399d1a14c3543950c2ffa7b8c4333b357ab"},
+        {"path": "openspec/changes/add-stage-change-replay/proposal.md", "sha256": "653b8498d737af0acca639a7e1f2dd4627791165638868a376d7e09436a827f9"},
+        {"path": "openspec/changes/add-stage-change-replay/specs/harness-development-workflow/spec.md", "sha256": "f38b75326c9a5a710733b60d6085a8b4e995392219f6ebcae43a6e112d707ea3"},
+        {"path": "openspec/changes/add-stage-change-replay/specs/stage-authority-binding/spec.md", "sha256": "0164871bca8b5125cad2ac58ca466940064f9a4ffdb9cd5bcb4672f2d4aba76d"},
+        {"path": "openspec/changes/add-stage-change-replay/specs/stage-change-replay/spec.md", "sha256": "a879fab2b2dc495a72e50a7afd70b4a7ebbb0069556326b9f65004267e37edcf"},
+        {"path": "openspec/changes/add-stage-change-replay/stage_planning.md", "sha256": "34e92a6fdbb5fcbf73034ccd8c87775ac6b37def80d54df40354db61eba23e2c"},
+        {"path": "openspec/changes/add-stage-change-replay/tasks.md", "sha256": "75df386b8cf4a0bae45eced9d36f53b92e58ffd6b3cfaef4c1434218f75b8d6a"}
+      ],
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Plan-only mechanical receipt normalized from the reviewer's returned conclusion. Intermediate B findings CRPB-P1-008 through CRPB-P1-012 and CRPB-P2-011 are closed in plan-review.md. Implementation, tests, live authority, host CAS, activation, archive, candidate, merge, and push remain unproved."
+      },
+      "lineage": {
+        "original_slot_id": "change-replay-plan-b",
+        "original_reviewer_instance_id": "/root/change_replay_plan_review_b",
+        "original_review_ref": "openspec/changes/add-stage-change-replay/plan-review.md#slot-b-first-round",
+        "original_receipt_sha256": "f2f5e545dc2f7bb93748679dc535c0c68e042e9f572c1301e1ed4de49497d212",
+        "closed_finding_ids": ["CRPB-P1-001", "CRPB-P1-002", "CRPB-P1-003", "CRPB-P1-004", "CRPB-P1-005", "CRPB-P2-006", "CRPB-P2-007"]
+      }
+    }
+  ]
+}

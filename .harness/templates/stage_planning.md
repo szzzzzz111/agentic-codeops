@@ -52,10 +52,20 @@
 - Decision: `<goal, non-goals or sequence question>`
 - Recommendation: `<one option and reason>`
 - Authority activation state: `<not yet active / active with external activation evidence>`
+- Authority cohort: `<pre-change v1 / externally activated v2; selected only by host chronology>`
 - Host-retained authority inputs: `<stage, epoch, record hash, risk, scope digest, planning base, action ceiling, remote name, effective fetch/push endpoint fingerprints, target branch, authorized remote tip>`
+- Replay activation status: `<dormant blocked_on_external_host_capability / activated by later reviewed host stage>`
+- Replay host capability: `<provider_neutral.stage_state_cas/v1 evidence or explicitly unavailable>`
+- Host-retained replay state (v2 only): `<immutable workspace binding, terminal state, gate snapshot generation/digest, event count/head, receipt count/head>`
+- Replay current frontier/action mapping (v2 only): `<exact set and implement/archive/commit/merge/push mapping; no unaffected bypass>`
 - Invalidation triggers: `<scope/non-goal/risk/base/action/endpoint/branch/tip drift>`
 - Implementation starts only after: `<direct-user confirmation plus applicable mechanical/provenance/activation gates>`
 
 Repository records and hashes are mechanical bindings only. They do not prove user identity, host-message authenticity,
 activation chronology, or `human_authorized=true`; never populate host-retained expected inputs by reading them back from
 the record being validated.
+
+Replay reports/templates are also mechanical-only. The introducing and
+already-in-flight v1 cohorts stay v1 through terminal and use later-v1 authority
+replacement after authorized drift. Only a later independently reviewed
+activation with real external host capability may create new v2 cohorts.
