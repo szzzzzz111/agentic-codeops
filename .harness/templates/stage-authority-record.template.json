@@ -15,7 +15,11 @@
       "prefixes": ["<canonical-project-relative-directory-prefix/>" ]
     },
     "non_goals": ["<canonical-non-goal>"],
-    "active_allowed_files_sha256": "<64-lowercase-hex-sha256>"
+    "active_allowed_files_sha256": "<64-lowercase-hex-sha256>",
+    "review_slot_requirements": {
+      "plan": "<non-negative-integer>",
+      "implementation": "<non-negative-integer>"
+    }
   },
   "scope_sha256": "<sha256-of-canonical-scope-object>",
   "planning_baseline": {"commit": "<40-lowercase-hex-git-oid>"},

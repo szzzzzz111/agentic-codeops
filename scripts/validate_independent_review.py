@@ -16,6 +16,10 @@ from pathlib import Path
 from typing import Any
 
 VALIDATION_SCHEMA = "repopilot.independent_review_validation/v1"
+ACTIVATION_REF = (
+    "openspec/changes/archive/2026-08-20-"
+    "generalize-independent-review-provider/activation-record.md"
+)
 REVIEW_SET_SCHEMA = "repopilot.independent_review_set/v1"
 RECEIPT_SCHEMA = "repopilot.independent_review_receipt/v1"
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -307,13 +311,18 @@ def _validation_report(
     validated_slots: int = 0,
     packet_sha256: str | None = None,
 ) -> dict[str, object]:
+    dispatch_status = (
+        "NOT_APPLICABLE"
+        if type(required_slots) is int and required_slots == 0
+        else "REQUIRED"
+    )
     return {
         "schema_version": VALIDATION_SCHEMA,
         "status": "PASS" if not errors else "FAIL",
         "claim_level": "mechanical_consistency_only",
         "gate_ready": False,
         "required_external_checks": [
-            {"code": "HOST_DISPATCH_PROVENANCE", "status": "REQUIRED"},
+            {"code": "HOST_DISPATCH_PROVENANCE", "status": dispatch_status},
             {"code": "ACTIVATION_SEQUENCE", "status": "REQUIRED"},
         ],
         "stage_id": stage_id,
@@ -346,33 +355,45 @@ def validate_review_set(
         _add_error(errors, "STAGE_MISMATCH", "stage_id does not match --expected-stage", "$.stage_id")
     if expected_phase not in {"plan", "implementation"} or review_set.get("phase") != expected_phase:
         _add_error(errors, "PHASE_MISMATCH", "phase must match --expected-phase (plan or implementation)", "$.phase")
-    if required_slots < 1:
-        _add_error(errors, "REQUIRED_SLOTS_INVALID", "--required-slots must be at least 1")
+    slot_count_valid = (
+        type(required_slots) is int and required_slots >= 0
+    )
+    if not slot_count_valid:
+        _add_error(
+            errors,
+            "REQUIRED_SLOTS_INVALID",
+            "--required-slots must be a non-negative integer",
+        )
 
     activation = review_set.get("activation")
     if not isinstance(activation, dict) or activation.get("status") != "active":
         _add_error(errors, "REVIEW_VALIDATOR_NOT_ACTIVE", "the receipt set must declare the review gate active", "$.activation.status")
     else:
-        if not isinstance(activation.get("activated_after_change"), str) or not activation.get("activated_after_change"):
+        if activation.get("activated_after_change") != "generalize-independent-review-provider":
             _add_error(errors, "ACTIVATION_PROVENANCE_MISSING", "activated_after_change must identify the enabling change", "$.activation.activated_after_change")
         if activation.get("authority") != "pre_change_process_contract":
             _add_error(errors, "ACTIVATION_AUTHORITY_INVALID", "activation timing remains owned by the pre-change process authority", "$.activation.authority")
         activation_ref = activation.get("activation_ref")
         activation_hash = activation.get("activation_ref_sha256")
-        if not isinstance(activation_ref, str) or not activation_ref:
-            _add_error(errors, "ACTIVATION_REF_MISSING", "activation_ref must identify the frozen pre-change authority record", "$.activation.activation_ref")
-        elif Path(activation_ref).is_absolute() or any(
-            part in {"", ".", ".."} for part in Path(activation_ref).parts
-        ):
-            _add_error(errors, "ACTIVATION_REF_INVALID", "activation_ref must be a canonical project-relative path", "$.activation.activation_ref")
+        if activation_ref != ACTIVATION_REF:
+            _add_error(errors, "ACTIVATION_REF_INVALID", "activation_ref must identify the canonical validator activation record", "$.activation.activation_ref")
         else:
             activation_path = (project_root.resolve() / activation_ref).resolve()
+            cursor = project_root.resolve()
+            traverses_symlink = False
+            for part in Path(activation_ref).parts:
+                cursor /= part
+                if cursor.is_symlink():
+                    traverses_symlink = True
+                    break
             try:
                 activation_path.relative_to(project_root.resolve())
             except ValueError:
                 _add_error(errors, "ACTIVATION_REF_INVALID", "activation_ref escapes project root", "$.activation.activation_ref")
             else:
-                if not activation_path.is_file():
+                if traverses_symlink:
+                    _add_error(errors, "ACTIVATION_REF_INVALID", "activation_ref must not traverse a symlink", "$.activation.activation_ref")
+                elif not activation_path.is_file():
                     _add_error(errors, "ACTIVATION_REF_MISSING", "activation authority record does not exist", "$.activation.activation_ref")
                 elif not isinstance(activation_hash, str) or activation_hash != _sha256(activation_path.read_bytes()):
                     _add_error(errors, "ACTIVATION_REF_HASH_MISMATCH", "activation authority record hash does not match", "$.activation.activation_ref_sha256")
@@ -405,6 +426,13 @@ def validate_review_set(
     if not isinstance(raw_history, list):
         _add_error(errors, "REVIEW_HISTORY_INVALID", "review_history must be a list", "$.review_history")
         raw_history = []
+    if slot_count_valid and required_slots == 0 and raw_history:
+        _add_error(
+            errors,
+            "ZERO_SLOT_REVIEW_HISTORY_FORBIDDEN",
+            "zero-slot review sets must have empty review_history",
+            "$.review_history",
+        )
     history_by_ref: dict[str, dict[str, Any]] = {}
     for index, history_entry in enumerate(raw_history):
         history_location = f"$.review_history[{index}]"
@@ -441,7 +469,7 @@ def validate_review_set(
     if not isinstance(receipts, list):
         _add_error(errors, "RECEIPTS_INVALID", "receipts must be a list", "$.receipts")
         receipts = []
-    if len(receipts) != required_slots:
+    if slot_count_valid and len(receipts) != required_slots:
         _add_error(errors, "REQUIRED_SLOT_COUNT_MISMATCH", f"expected {required_slots} receipts, found {len(receipts)}", "$.receipts")
 
     seen_slots: set[str] = set()

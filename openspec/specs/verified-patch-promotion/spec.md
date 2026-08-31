@@ -2,7 +2,8 @@
 
 ## Purpose
 
-定义将已验证 retained patch worktree 受控提升到主工作区的 V25 边界。
+定义将已验证 retained patch worktree 受控提升到主工作区的 V25 边界，并明确 promotion 的资格校验、
+受控写入、事务回滚、终态限制与脱敏审计责任。
 ## Requirements
 ### Requirement: Promotion Is Explicit, Scoped, And Fail-Closed
 

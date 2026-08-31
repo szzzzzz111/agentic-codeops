@@ -66,6 +66,10 @@ Implement tasks from an OpenSpec change.
    planning base, action ceiling, remote name, effective fetch/push endpoint fingerprints,
    target branch, and authorized remote tip from the live confirmed envelope.
    Never recover these expected inputs from the authority record itself.
+   When the authority scope contains `review_slot_requirements`, the host must
+   also pass the canonical plan packet inputs `--plan-review-set`,
+   `--required-plan-review-slots`, and
+   `--expected-plan-review-packet-sha256` exactly as documented there.
 
    Missing/stale authority, insufficient action ceiling, scope/path drift,
    invalid lineage, or any expected-input mismatch is a hard stop; do not

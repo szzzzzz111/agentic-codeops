@@ -38,14 +38,16 @@ Harness owns the writable and review boundary.
 11. For each required independent plan-review gate, store the actual receipt set
    at `.harness/reviews/<stage-id>/plan/review-set.json` and run the validator
    with the risk-contract count. Medium/high plan review uses `--required-slots 2`;
-   a low-risk stage uses its explicit checklist-required slot count, and a
-   low-risk stage with no independent-review requirement does not manufacture a
-   receipt set. The command is
+   a low-risk stage uses its explicit authority-bound slot count. A zero-slot
+   low-risk stage still records the complete packet with empty receipts and
+   empty review history; it does not manufacture reviewer identities. The command is
    `python scripts/validate_independent_review.py --project-root . --receipt-set .harness/reviews/<stage-id>/plan/review-set.json --expected-stage <stage-id> --expected-phase plan --required-slots <count>`.
    Missing receipts, skipped validation, or nonzero exit keeps a
    required gate open. A zero exit proves mechanical consistency only and keeps
    `gate_ready=false`; separately consume host-native dispatch provenance and
-   pre-change-authority activation-sequence checks before counting slots.
+   pre-change-authority activation-sequence checks before counting positive slots.
+   Reviewer dispatch provenance is not applicable to an authority-bound zero-slot
+   packet, but activation chronology and authority remain required.
 12. For stages governed by the activated stage-authority gate, define one
    canonical exact/prefix scope envelope and the full host-retained expected
    inputs: stage, epoch, record hash, risk, scope digest, planning base, action
@@ -53,6 +55,11 @@ Harness owns the writable and review boundary.
    authorized remote tip. State every invalidation trigger. These expected
    values come from the live host confirmation, not from reading them back from
    the repository record.
+   New authority records also freeze exact `plan` and `implementation` counts in
+   `scope.review_slot_requirements`. Before implementation, call
+   `validate_stage_authority.py --required-action implement` with the canonical
+   plan review-set path, caller plan count, and host-retained plan packet hash.
+   A bound record must fail closed when any of those inputs is absent or differs.
 13. Record the stage-authority cohort as a host chronology fact. Until an
    independently reviewed activation proves
    `provider_neutral.stage_state_cas/v1`, all stages use pre-change v1 and the

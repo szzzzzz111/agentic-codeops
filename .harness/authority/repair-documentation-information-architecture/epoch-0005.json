@@ -1,0 +1,83 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "repair-documentation-information-architecture",
+  "authority_epoch": 5,
+  "supersedes_record_sha256": "fce3c152c8d7eedba93cde1c27d72c41cb82ad221707e55e42feded0b8a880fd",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01ec2-user-recommended-authority-bound-zero-slot-repair-2026-08-31"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Repair documentation information architecture and add authority-bound zero-slot review validation for explicitly low-risk delivery.",
+    "allowed_path_rules": {
+      "exact": [
+        ".codex/skills/openspec-stage-planner/SKILL.md",
+        ".harness/allowed_files.md",
+        ".harness/authority/repair-documentation-information-architecture/delivery-binding.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0001.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0002.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0003.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0004.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0005.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0006.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/repair-documentation-information-architecture/implementation/review-set.json",
+        ".harness/reviews/repair-documentation-information-architecture/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/repair-documentation-information-architecture/implementation/reviewed-change.diff",
+        ".harness/reviews/repair-documentation-information-architecture/plan/review-set.json",
+        ".harness/rules.md",
+        ".harness/templates/stage-authority-record.template.json",
+        ".harness/templates/stage_planning.md",
+        "AGENTS.md",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "README.md",
+        "docs/AGENT_RULES.md",
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURE_LIST.json",
+        "docs/PROGRESS.md",
+        "openspec/changes/README.md",
+        "openspec/changes/archive/README.md",
+        "openspec/changes/repair-documentation-information-architecture/.openspec.yaml",
+        "openspec/changes/repair-documentation-information-architecture/design.md",
+        "openspec/changes/repair-documentation-information-architecture/proposal.md",
+        "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+        "openspec/changes/repair-documentation-information-architecture/tasks.md",
+        "openspec/specs/README.md",
+        "openspec/specs/harness-development-workflow/spec.md",
+        "openspec/specs/verified-patch-promotion/spec.md",
+        "scripts/check_stage_docs.py",
+        "scripts/validate_independent_review.py",
+        "scripts/validate_stage_authority.py",
+        "tests/test_chat_api.py",
+        "tests/test_cli.py",
+        "tests/test_independent_review_validation.py",
+        "tests/test_stage_authority_validation.py",
+        "tests/test_verify_scripts.py"
+      ],
+      "prefixes": [
+        "openspec/changes/archive/2026-08-31-repair-documentation-information-architecture/"
+      ]
+    },
+    "non_goals": [
+      "No app runtime or public contract changes.",
+      "No weakening of positive-slot reviewer identity, isolation, finding, or exact-count checks.",
+      "No bypass of review packet, manifest, activation, authority, or exact-count binding.",
+      "No Git subprocess, persistence, permission, dependency, or network behavior changes.",
+      "No modification of the original dirty worktree."
+    ],
+    "active_allowed_files_sha256": "d54a3df3a68bccd5f3104517b70bd977c8d9b3416eaf4f6d070f7d0bf5314987"
+  },
+  "scope_sha256": "34a4e39f4232d40b382dc51f7d006037a07c603b7717da616b2ef94ae9ceb2e7",
+  "planning_baseline": {
+    "commit": "1d6f45f734124d009fa72cc54cbb080c5caa6c44"
+  },
+  "action_ceiling": "push",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "1d6f45f734124d009fa72cc54cbb080c5caa6c44"
+  }
+}

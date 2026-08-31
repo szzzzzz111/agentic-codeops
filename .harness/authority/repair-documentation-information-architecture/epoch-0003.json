@@ -1,0 +1,63 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "repair-documentation-information-architecture",
+  "authority_epoch": 3,
+  "supersedes_record_sha256": "b7ca5c80fccd1fb6154cd0ebd176294b268319a1b038cb4f83ada5a8bf9dbc27",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01ec2-user-authorized-purpose-only-scope-expansion-2026-08-31"
+  },
+  "scope": {
+    "risk": "low",
+    "summary": "Repair documentation information architecture and deterministic drift checks.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0001.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0002.json",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0003.json",
+        ".harness/review_checklist.md",
+        ".harness/rules.md",
+        ".harness/templates/stage_planning.md",
+        "AGENTS.md",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "README.md",
+        "docs/AGENT_RULES.md",
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURE_LIST.json",
+        "docs/PROGRESS.md",
+        "openspec/changes/README.md",
+        "openspec/changes/archive/README.md",
+        "openspec/changes/repair-documentation-information-architecture/.openspec.yaml",
+        "openspec/changes/repair-documentation-information-architecture/design.md",
+        "openspec/changes/repair-documentation-information-architecture/proposal.md",
+        "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+        "openspec/changes/repair-documentation-information-architecture/tasks.md",
+        "openspec/specs/README.md",
+        "openspec/specs/verified-patch-promotion/spec.md",
+        "scripts/check_stage_docs.py",
+        "tests/test_chat_api.py",
+        "tests/test_verify_scripts.py"
+      ],
+      "prefixes": []
+    },
+    "non_goals": [
+      "No app runtime or public contract changes.",
+      "No rewrite of archived OpenSpec history.",
+      "No new docs system, dependency, commit, merge, push, or archive."
+    ],
+    "active_allowed_files_sha256": "9fa3aee416b0e620a1085b625d173a563864fe41fc39de7e341b72089534afb9"
+  },
+  "scope_sha256": "ca7a696133170f2ced35da0c11e1666fa8a66c3424655c0cd665b8b133136881",
+  "planning_baseline": {
+    "commit": "1d6f45f734124d009fa72cc54cbb080c5caa6c44"
+  },
+  "action_ceiling": "implement",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "1d6f45f734124d009fa72cc54cbb080c5caa6c44"
+  }
+}

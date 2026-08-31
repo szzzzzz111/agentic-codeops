@@ -1,5 +1,150 @@
 # 架构说明
 
+本文只把当前实现描述为 current architecture。阶段为何引入、当时如何验证以及旧路线的完整叙事，
+以 archived OpenSpec changes 和 Git history 为准；不能从历史设计反推当前 runtime capability。
+
+## 系统上下文
+
+RepoPilot 是一个本地 Coding Agent Harness：用户通过 HTTP `/chat` 或薄 CLI 提交仓库理解、受控 patch、
+验证和 worktree lifecycle 请求；RepoPilot 在 repository scope 内完成 deterministic routing、权限/审批判断、
+工具执行、脱敏 audit 和 fail-closed 状态管理。默认测试和 CI 不依赖网络或真实模型。
+
+```text
+User / local CLI
+  -> FastAPI /chat
+  -> ChatService(trace_id)
+  -> CodeAgent
+  -> AgentLoop
+       -> command/control routes
+       -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor
+       -> repo-local managers and stores
+  -> ChatResponse(trace_id, answer, related_files, tool_calls)
+```
+
+边界外部包括被分析的 Git repository、可选 OpenAI-compatible model endpoint，以及 development-time
+OpenSpec/Harness/reviewer/controller。后者不属于 RepoPilot runtime，也不能仅因仓库中存在配置、skills 或
+validator 就被写成产品能力。
+
+## 当前请求路由
+
+`AgentLoop._run_inner()` 使用确定性优先级处理请求。高优先级明确命令不会落入普通 repo search：
+
+1. Memory command；
+2. Long Task command，只有显式推进的 repo evidence step 可调用 `repo_rag`；
+3. Assistant status；
+4. worktree inventory、inspection、disposal/reconciliation、verified promotion、re-verification；
+5. Patch + Verify 组合确认、单独 patch apply 确认、patch proposal；
+6. standalone verification；
+7. persistent audit recovery；
+8. `RequestRouter` 的 capability status、repo search 或 chat-only fallback。
+
+普通仓库问答主链路为：
+
+```text
+RequestRouter(repo_search)
+  -> QueryUnderstanding / SearchPlan
+  -> ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor(repo_rag)
+  -> QueryRewriteProvider
+  -> LexicalRepoRetriever + EmbeddingRepoRetriever
+  -> HybridRepoRetriever -> Reranker
+  -> EvidencePack / ContextBudget
+  -> GroundedAnswerGenerator -> ModelProvider
+  -> citation validation / conservative fallback
+```
+
+Lexical/path/symbol evidence 是可审计主基线；deterministic embedding、rewrite 和 rerank 只辅助召回与排序。
+Public response 继续只返回 `trace_id`、`answer`、`related_files`、`tool_calls`，内部 Evidence Pack、prompt、
+完整 provider output、absolute path 和 secret 不进入公开 schema。
+
+## 模块与代码映射
+
+| 责任 | 当前入口 | 边界 |
+|---|---|---|
+| 应用装配 | `app/main.py` | 创建 FastAPI 并注册 router，不写业务逻辑 |
+| HTTP contract | `app/api/chat.py`、`app/schemas/chat.py` | 只处理 `/chat` request/response |
+| 请求级编排 | `app/services/chat_service.py` | 创建 trace 并调用 CodeAgent |
+| Agent adapter | `app/agents/code_agent.py` | 适配 AgentLoop result 到 public response |
+| 核心路由与 gate | `app/harness/kernel.py` | command priority、ToolRegistry、PermissionPolicy、ApprovalGate |
+| Runtime capability facts | `app/harness/capabilities.py` | 从已注册 tools 推导可声明能力，不读路线文档 |
+| 安全文件访问 | `app/tools/file_tools.py` | repo scope、path traversal、敏感/二进制过滤 |
+| 统一工具执行 | `app/tools/tool_executor.py` | repo RAG、worktree create/dispose、patch apply、verification |
+| 检索与证据 | `app/rag/` | query understanding、rewrite、hybrid retrieval、rerank、Evidence Pack |
+| Grounded answer/provider | `app/answering/`、`app/providers/` | evidence-only generation、citation validation、默认 fake provider |
+| Patch lifecycle | `app/patching/` | proposal、pending store、confirmation、controlled diff validation/apply |
+| Verification | `app/verification/runner.py` | 固定 `pytest`、`ruff`、`verify` labels，禁止任意 shell |
+| Worktree lifecycle | `app/worktrees/manager.py` 与 `app/worktrees/` | create、inspect、reverify、dispose、promotion preflight |
+| Mutation serialization | `app/locks/repo_mutation.py` | 同 repo 的 RepoPilot-owned 写风险路径串行化 |
+| Memory/Long Task | `app/memory/`、`app/longtask/` | repo-local scoped state；不替代 repository evidence |
+| Audit/trace | `app/audit/`、`app/observability/` | redacted persistent summary 与 request-local trace |
+| Local CLI | `app/cli.py` | 映射到既有 ChatService，不创建第二套 runtime |
+
+## 状态与信任边界
+
+Repo-local 状态位于被分析仓库的 `.repopilot/`，并按 `user_id + normalized repo_key` 或相应 lifecycle scope
+隔离。Public response 和 audit 都不得泄漏数据库路径、原始 diff、完整 stdout/stderr、Evidence Pack、prompt、
+provider output、API key 或本机绝对路径。
+
+| 状态 | Owner | 关键限制 |
+|---|---|---|
+| PREF/LTM memory | `SQLiteMemoryStore` | STM 仅进程内；memory 不能替代 citation evidence |
+| Long Task | `SQLiteLongTaskStore` | 创建不自动执行；显式 resume 每次最多推进一步 |
+| Pending patch | patch store | scope、expiry、hash、citation、path 和 diff 校验后才可确认 |
+| Persistent audit | audit store | 只保存脱敏摘要；audit failure 不破坏主要回答 |
+| Worktree lifecycle | worktree store | user/repo scope、Git registry/path/base 一致性、明确状态迁移 |
+| Mutation lock | repo mutation lock store | 同 repo 写风险互斥；conflict/unavailable fail closed |
+
+写风险工具统一经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`。当前 `ApprovalGate`
+只消费 request context 内的确定性决策，不证明持久化 Operator authority；request-supplied `user_id` 也不能
+单独证明真实人工身份。
+
+## 写入与验证闭环
+
+```text
+explicit patch request
+  -> repository evidence
+  -> validated pending patch proposal
+  -> explicit confirmation
+  -> repo mutation lock
+  -> detached locked worktree create
+  -> controlled patch_apply(stored diff)
+  -> optional whitelisted verification
+  -> inspect / reverify / dispose-or-reconcile
+  -> explicit verified promotion to clean matching main workspace
+  -> redacted lifecycle and audit summary
+```
+
+- Worktree 内容是隔离执行和完整性证据；verified promotion 的写入源仍是 stored controlled patch。
+- Promotion 要求 scoped lifecycle、clean main workspace、matching base HEAD、Git/worktree metadata 与 patch hash
+  一致，并通过 existing permission/approval/tool boundary。
+- Verification 只接受 `pytest`、`ruff`、`verify` 三个 label，使用当前 `sys.executable -I`、固定 cwd、
+  controlled environment、bounded output 和 secret/path redaction；required tool 缺失时明确失败。
+- Runtime 不自动 commit、merge、push、建 branch/PR、删除任意 worktree、prune、修复失败或重试。
+
+## 运行时约束与非目标
+
+- API layer 不直接读 repository files、运行 subprocess 或实现 Agent decisions。
+- Managers 负责各自 scope/lifecycle；ToolExecutor 负责统一执行，不承载开放式业务推理。
+- Repo search 保持 grep-first、RAG-assisted；不默认接外部 vector DB、embedding service 或模型下载。
+- 默认 provider 为 local deterministic fake。真实 OpenAI-compatible provider 只有显式配置才进入 grounded
+  answer/部分 planner boundary；默认 AgentLoop 不因环境变量自动启用真实 patch diff generation。
+- 当前不实现真实审批 UI/持久 authority、SandboxRunner、后台任务、durable execution、runtime subagents、
+  connectors、notifications、heartbeat/cron、自动 repair 或产品内 Git delivery。
+- Development workflow 的 OpenSpec、Harness、skills、review receipts、authority validator 和 dormant replay
+  只约束 repository development，不进入 `/chat` runtime contract。
+
+## 历史与规格入口
+
+- 长期 normative requirements：`openspec/specs/`。
+- 阶段 proposal/design/tasks、当时验证与决策：`openspec/changes/archive/`。
+- Acceptance-oriented inventory：`docs/FEATURE_LIST.json`。
+- Durable status、remaining debt、候选顺序和阶段索引：`docs/PROGRESS.md`。
+- 实时 branch、HEAD、worktree、active change 和 remote state：Git/OpenSpec commands，不以本文为证据。
+
+下面保留旧版逐阶段补充作为迁移期可折叠参考；它不是 current truth，后续可在不丢失唯一证据的前提下移除。
+
+<details id="architecture-history">
+<summary>旧版逐阶段架构补充（历史参考）</summary>
+
 ## Repo Mutation Locking
 
 当前写风险路径在进入 mutable preflight / execution 前会尝试获取 repo-key scoped
@@ -14,14 +159,14 @@ memory/task status 和 repo search 不获取 mutation lock。该能力不实现 
 后台 retry、automatic repair、commit/merge/push、branch/PR automation、connector、
 notification 或 `git worktree prune`。
 
-## V25 Verified Patch Promotion
+### Historical reference: Verified Patch Promotion (V25)
 
 V25 当前链路为 `AgentLoop -> repo mutation lock -> scoped promotion preflight -> ToolRegistry -> PermissionPolicy ->
 ApprovalGate -> ToolExecutor.patch_apply(main workspace, stored patch) -> lifecycle/audit summary`；路由在 V23 disposal/reconciliation 后、V22 re-verification 前，只接受精确确认命令。
 
 Preflight 要求当前 `user_id + repo_key`、`verification_succeeded` + `applied_in_worktree`、主工作区干净、主 `HEAD == base_commit`、Git/worktree ownership/registry/lock 一致，以及 stored patch hash 与 retained worktree 内容和受控 patch 预期一致。worktree 内容只作完整性证据，不是写入源。promotion 专用 `patch_apply` 使用固定 argv 的 Git atomic apply；patch/worktree/journal 的 `promoted` 终态通过 SQLite cross-database transaction 一起提交。状态同步失败时以受控逆向 patch 回滚主工作区。V25 不 commit、merge、push、建分支/PR、删除 worktree、prune、后台重试或自动修复。
 
-## V23 Worktree Disposal / Reconciliation
+### Historical reference: Worktree Disposal / Reconciliation (V23)
 
 V23 当前实现链路为
 `AgentLoop -> scoped disposal/reconciliation preflight -> ToolRegistry -> PermissionPolicy ->
@@ -32,7 +177,7 @@ runner 的独立 timeout 与读取前硬上限属于 destructive disposal 开放
 只允许明确 confirmed disposal 与安全残缺集 reconciliation，不执行 promotion、隐式修复、自动重试
 或 `git worktree prune`。
 
-## V22 Worktree Re-verification 架构补充
+### Historical reference: Worktree Re-verification (V22)
 
 V22 当前链路为
 `AgentLoop -> scoped fail-closed worktree preflight -> ToolRegistry -> PermissionPolicy ->
@@ -49,7 +194,7 @@ V22 preflight 只允许 `patch_applied`、`verification_failed`、`verification_
 lifecycle。内部 `execution_repo_path` 不存入 DB，而是从 resolved repo root、固定
 `.repopilot/worktrees` managed root 与 scoped worktree id 动态重建。
 
-## V21 Worktree Inventory / Inspection 架构补充
+### Historical reference: Worktree Inventory / Inspection (V21)
 
 V21 已实现、完成 internal/external review、提交、归档、合并并推送。当前链路为
 `AgentLoop -> WorktreeManager(read-only inventory / inspection) -> fixed Git argv /
@@ -66,7 +211,7 @@ tracked path 最多展示 20 条并报告 omitted count。Git inspection 设置
 `GIT_OPTIONAL_LOCKS=0`，worktree SQLite 读取使用 `mode=ro&immutable=1`；损坏 store
 和 Git 错误安全降级为 empty/not-found/partial，不执行修复或写入。
 
-## V20 Worktree Isolation 架构补充
+### Historical reference: Worktree Isolation (V20)
 
 V20 将 RepoPilot 产生的 patch 写入从主仓库当前 `HEAD` 创建的 detached、locked
 Git worktree：
@@ -156,7 +301,7 @@ RepoPilot adopts a grep-first, RAG-assisted retrieval stance: deterministic lexi
 - V17 Verification Runner 不改变检索链路；验证请求不调用 `repo_rag`，不生成 Evidence Pack，也不影响 grep-first RAG baseline。
 - 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant 或重型 embedding cache；只有后续 repo 规模和任务类型明确需要时再通过单独阶段评估。
 
-## V2 工具层：安全只读仓库能力
+### Historical reference: 安全只读仓库工具层（V2）
 
 V2 新增安全只读文件工具：
 
@@ -172,7 +317,7 @@ app/tools/file_tools.py
 
 这些工具限制访问在 `repo_path` 内，拒绝路径逃逸，跳过敏感文件、隐藏目录、忽略目录和二进制文件。V3 当前已经通过 `ToolExecutor` 把 `search_code` 接入 `/chat`。
 
-## V3 执行层：ToolExecutor
+### Historical reference: ToolExecutor 执行层（V3）
 
 V3 新增：
 
@@ -235,7 +380,7 @@ ChatService
 - 真实审批 UI 或审批持久化。
 - 完整 raw trace 持久化、trace replay 或自动恢复执行；V19 只提供脱敏审计摘要和只读 recovery/status。
 
-## V8 历史架构补充：Query Understanding + Lexical Repo RAG
+### Historical reference: Query Understanding + Lexical Repo RAG (V8)
 
 V8 在 V7 权限/审批边界之后接入非向量化 repo-local RAG。该阶段已归档；以下链路描述 V8 历史实现，不是当前主链路：
 
@@ -267,7 +412,7 @@ V20 只实现受控 worktree 创建、隔离 patch/组合验证、生命周期�
 
 Worktree lifecycle 的稳定边界是：只读检查、白名单验证、不可逆清理和主工作区写入分别由独立阶段引入；每个写入阶段继续经过 repo mutation lock、`PermissionPolicy -> ApprovalGate -> ToolExecutor`，并保持明确命令、scope 校验、脱敏 persistent audit 和 fail-closed 失败语义。后续 Operator Control、Durable Execution、Background Worker、runtime subagents、connectors 和 notifications 仍只是候选方向；不得在没有独立 OpenSpec change 和 Harness review 前写成 runtime 能力。
 
-## V9 架构补充：Embedding Retrieval + Hybrid Search
+### Historical reference: Embedding Retrieval + Hybrid Search (V9)
 
 V9 在 V8 lexical RAG 之上加入轻量 embedding retrieval，并保持只读、安全、repo-local 和 `/chat` contract 边界。当前执行链路为：
 
@@ -288,7 +433,7 @@ API -> ChatService(trace_id) -> CodeAgent -> AgentLoop
 - V9 不默认引入 Milvus、Elasticsearch、PgVector、Qdrant、真实外部 embedding 服务或持久化向量索引。
 - V9 不实现 LLM query rewrite、LLM rerank、grounded answer、model provider、memory 或 context compression。
 
-## V10 架构补充：Evidence Pack + Context Budget
+### Historical reference: Evidence Pack + Context Budget (V10)
 
 V10 在 V9 hybrid retrieval 之后增加内部 Evidence Pack 输入层，用来给后续 grounded answer / model provider boundary 准备可审计证据结构。当前执行链路为：
 
@@ -309,7 +454,7 @@ ToolExecutor(repo_rag)
 - `ToolExecutionResult.evidence_pack` 只在内部持有，不进入 `call_summary()`、`/chat.tool_calls` 或 `/chat` 顶层响应。
 - V10 不实现 grounded answer、model provider、prompt assembly、query rewrite、rerank、memory 或 context compression。
 
-## V11 架构补充：Grounded Answer + Model Provider Boundary
+### Historical reference: Grounded Answer + Model Provider Boundary (V11)
 
 V11 在 V10 Evidence Pack / Context Budget 之后增加回答生成边界。当前执行链路为：
 
@@ -372,7 +517,7 @@ AgentLoop
 
 暂不追求完整工业 LLMGateway 能力：全局限流服务、熔断集群、复杂供应商竞价、多租户配额、持久化成本账单、分布式日志追踪或控制台。只有当 RepoPilot 真的开始依赖多个真实 provider、长任务 worker、connectors 或 always-on assistant 时，再作为独立阶段评估。
 
-## V12 架构补充：Query Rewrite + Rerank
+### Historical reference: Query Rewrite + Rerank (V12)
 
 V12 在 V11 检索与回答链路中加入 deterministic rewrite/rerank 边界。当前执行链路为：
 
@@ -395,7 +540,7 @@ ToolExecutor(repo_rag)
 - rewrite/rerank audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
 - V12 不默认启用真实 LLM rewrite/rerank、memory、context compression、SandboxRunner、skill execution 或多 agent orchestration。
 
-## V13 架构补充：Memory
+### Historical reference: Memory (V13)
 
 V13 在 AgentLoop 中加入轻量 Memory 边界：
 
@@ -416,7 +561,7 @@ AgentLoop
 - Memory audit 只保留在内部 trace，不进入 `/chat` 顶层字段或 `tool_calls`。
 - Memory 不实现向量召回、自动模型总结、跨 repo 智能召回、context compression、SandboxRunner、skill execution 或多 agent orchestration。
 
-## V14 架构补充：Long Task Control Plane + ReAct Skeleton
+### Historical reference: Long Task Control Plane + ReAct Skeleton (V14)
 
 V14 在 AgentLoop 前段加入 Long Task 控制面：
 
@@ -441,7 +586,7 @@ AgentLoop
 - Long Task audit 不进入 `/chat` 顶层字段；`tool_calls` 只保留实际 `repo_rag` 摘要。
 - V14 不新增 `/tasks` API，不执行后台任务、不自动循环执行、不创建 worktree、不调度真实 subagents、不执行 shell、不自动修改代码、不做 evaluator/reflection。
 
-## V15 架构补充：Assistant Control Surface
+### Historical reference: Assistant Control Surface (V15)
 
 V15 在 AgentLoop 前段加入只读助手控制面：
 
@@ -462,7 +607,7 @@ AgentLoop
 - 公开回答不得泄露完整 memory value、scratch、ReAct trace、完整 Evidence Pack、完整 provider output、本机绝对路径或 DB 路径。
 - V15 不实现 patch proposal、diff apply、Verification Runner、Shell executor、SandboxRunner、后台任务、真实 subagent orchestration 或 worktree automation。
 
-## V16 架构补充：Safe Patch Authoring
+### Historical reference: Safe Patch Authoring (V16)
 
 V16 在 AgentLoop 前段加入 Safe Patch Authoring：
 
@@ -490,7 +635,7 @@ AgentLoop
 - `patch_apply` 是唯一写入路径，只修改 unified diff 中的 repo 内相对路径，并拒绝路径穿越、敏感文件、隐藏状态目录、二进制文件和 context mismatch。
 - V16 不运行测试、不自动 commit、不创建 worktree、不执行 shell、不实现 Patch + Verify Loop。
 
-## V17 架构补充：Verification Runner
+### Historical reference: Verification Runner (V17)
 
 V17 在 AgentLoop 前段加入受控 Verification Runner：
 
@@ -524,7 +669,7 @@ AgentLoop
 - 公开响应脱敏 resolved repo path、本机绝对路径、`.repopilot/...` 和常见 secret，不公开完整 stdout/stderr、环境变量、完整 trace、Evidence Pack 或 provider prompt/output。
 - V17 不自动串联 patch apply，不根据失败生成 patch，不持久化 verification result，不创建 worktree，不 commit/push。
 
-## V18 架构补充：Patch + Verify Loop
+### Historical reference: Patch + Verify Loop (V18)
 
 V18 在 AgentLoop 前段加入明确组合确认闭环：
 
@@ -550,3 +695,5 @@ AgentLoop
 - apply 成功后才创建独立 verification context；不得复用 patch context。
 - apply 失败、过期、hash mismatch、跨用户/跨 repo 或 scope invalid 时不运行验证。
 - V18 不持久化 verification result、不生成后续 patch、不创建 worktree、不 commit/push、不调度 subagents。
+
+</details>

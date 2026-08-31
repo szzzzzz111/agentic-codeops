@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -630,7 +631,7 @@ def test_chat_endpoint_long_task_resume_returns_repo_rag_tool_call(
     assert "provider" not in response.text
 
 
-def test_docs_keep_stage_route_map_consistent() -> None:
+def test_docs_keep_current_information_architecture_consistent() -> None:
     docs = [
         Path("README.md"),
         Path("docs/PROGRESS.md"),
@@ -638,11 +639,10 @@ def test_docs_keep_stage_route_map_consistent() -> None:
         Path("HANDOFF_TO_NEXT_CHAT.md"),
     ]
     readme = docs[0].read_text(encoding="utf-8")
-    combined = "\n".join(path.read_text(encoding="utf-8") for path in docs)
+    architecture = docs[2].read_text(encoding="utf-8")
+    progress = docs[1].read_text(encoding="utf-8")
+    handoff = docs[3].read_text(encoding="utf-8")
 
-    assert "V10：Evidence Pack + Context Budget" in combined
-    assert "V11：Grounded Answer / Model Provider Boundary" in combined
-    assert "V12：Query Rewrite + Rerank" in combined
     assert "## 当前快照" in readme
     assert "## 文档职责" in readme
     assert "### Verification Runner" not in readme
@@ -650,25 +650,24 @@ def test_docs_keep_stage_route_map_consistent() -> None:
     assert "### V19：Persistent Audit / Recovery" not in readme
     assert "## 阶段历史" not in readme
     assert "## 路线图" not in readme
-    assert "## V20 Worktree Isolation 架构补充" in combined
-    assert "consolidate-stage-documentation-sources" in combined
-    assert "Active OpenSpec change：" in combined
-    assert "2026-06-07-v20-worktree-isolation" in combined
-    assert "V15：Assistant Control Surface" in combined
-    assert "V16：Safe Patch Authoring" in combined
-    assert "V17：Verification Runner" in combined
-    assert "V18：Patch + Verify Loop" in combined
-    assert "V19：Persistent Audit / Recovery" in combined
-    assert "Assistant Control Surface" in combined
-    assert "WorktreeManager(scoped create / inventory / inspection / disposal / re-verification / promotion preflight)" in combined
-    assert "ToolExecutor(repo_rag / worktree_create / patch_apply / verification_run)" in combined
-    assert "V10-V23 changes 已归档" in combined
-    assert "README 只保留项目门面" in combined
-    assert "当前工作分支为 `main`，active OpenSpec change 为无" not in readme
-    assert "已归档至 V18：Patch + Verify Loop" not in combined
-    assert "V10：Query Rewrite / Rerank / Context Budget" not in combined
-    assert "V10 = Query Rewrite / Rerank / Context Budget" not in combined
-    assert "V12 不默认启用真实 LLM rewrite/rerank" in combined
+    assert "## 系统上下文" in architecture
+    assert "## 当前请求路由" in architecture
+    assert "## 模块与代码映射" in architecture
+    assert "## 状态与信任边界" in architecture
+    assert "## 历史与规格入口" in architecture
+    assert "app/harness/kernel.py" in architecture
+    assert "app/worktrees/manager.py" in architecture
+    assert "ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor" in architecture
+    assert not re.search(r"(?m)^## V\d+", architecture)
+    assert "## 当前状态" in progress
+    assert "## 剩余债务" in progress
+    assert "## 候选顺序" in progress
+    assert "## 阶段索引" in progress
+    assert "git status --short --branch" in handoff
+    assert "openspec list" in handoff
+    assert "Active OpenSpec change" not in handoff
+    assert "当前只剩" not in handoff
+    assert "尚未完成" not in handoff
 
 
 def test_long_term_specs_allow_repo_local_hybrid_rag() -> None:

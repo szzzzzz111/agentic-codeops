@@ -1,0 +1,408 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "repair-documentation-information-architecture",
+  "phase": "plan",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "generalize-independent-review-provider",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md",
+    "activation_ref_sha256": "4b7155e4648dd2f12914213a866040ab6c68f537fcbdecccf072a90841085c8f",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "observed-by-host-controller",
+      "evidence_ref": "collaboration.spawn_agent:/root/zero_slot_plan_d,/root/plan_final_e2;fork_turns=none"
+    },
+    "activation_sequence": {
+      "status": "observed-from-frozen-activation-record",
+      "evidence_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md"
+    }
+  },
+  "implementer": {
+    "instance_id": "/root"
+  },
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:58bde2c97228e1e1f46fb7a2b781a4f176881d58736d50fa178bbaceecc2948c",
+    "artifacts": [
+      {
+        "path": ".harness/allowed_files.md",
+        "sha256": "90d36fd918603b86cfd540c591fa93518752a940a1fadedece6ad8f35e117e16"
+      },
+      {
+        "path": ".harness/authority/repair-documentation-information-architecture/epoch-0007.json",
+        "sha256": "d4d28abe60e6d224029645ee2b5be11eba449836dda9d542cb9104a274a4835b"
+      },
+      {
+        "path": ".harness/review_checklist.md",
+        "sha256": "fc52792904b8094814eb28c8db8e0d583d17ab304af120cdd43321a360b793ff"
+      },
+      {
+        "path": "openspec/changes/repair-documentation-information-architecture/design.md",
+        "sha256": "faef4d2538880edbce76a654678a5879c7a7ba844cf90e8c3ff60ab761301663"
+      },
+      {
+        "path": "openspec/changes/repair-documentation-information-architecture/proposal.md",
+        "sha256": "2aac3d1acffaeeccff750d720e205fdbad08924eb122b8fe8cea68d074f02480"
+      },
+      {
+        "path": "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+        "sha256": "1d5eb35b0a51660aaa1b5f01ca9411cc9ba2270c7d4099f8370a3f0d02baaedb"
+      },
+      {
+        "path": "openspec/changes/repair-documentation-information-architecture/tasks.md",
+        "sha256": "cced0bae1883676f1b7ec761cdd3bec3914cbb035be30c52a3e595e34e73cbd6"
+      }
+    ],
+    "packet_sha256": "58bde2c97228e1e1f46fb7a2b781a4f176881d58736d50fa178bbaceecc2948c"
+  },
+  "review_history": [
+    {
+      "review_ref": "host-review:repair-docs-plan-d:first-round",
+      "receipt_sha256": "e582c8c1d021104f8aa43d80decab738b0e87993aa2b52e863a2cd6a1c9b212d",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "repair-documentation-information-architecture",
+        "phase": "plan",
+        "slot_id": "plan-d",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI Codex",
+          "model": "gpt-5.6-sol",
+          "instance_id": "/root/zero_slot_plan_d"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "0ff34d41f725beba1a671b453dcd071d964d818f05811386f43478afe3844b49",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "d54a3df3a68bccd5f3104517b70bd977c8d9b3416eaf4f6d070f7d0bf5314987"
+          },
+          {
+            "path": ".harness/authority/repair-documentation-information-architecture/epoch-0005.json",
+            "sha256": "913ab6a19c0b80f4ab3420d3281c70830289c83dab7e917562aa7d504eee7d6e"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "9f3df5ac13f8d41cf0113b072514aaebee920f5e9a0820a241b47b9e45dcea0a"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/design.md",
+            "sha256": "6bc675cb6dfa24ee183d4bd6a004b407bfa218c640bc96aee848ab28b14193fc"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/proposal.md",
+            "sha256": "c1605d1fc22107cf3f397c2ecaa19e921fc5cbf03139db16dc87f1c0d50603a1"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+            "sha256": "c9d6ba0574b6bc4055c566d094b2835e04dbf4590b822a173434fde42a263cbc"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/tasks.md",
+            "sha256": "e0ebba2db2b2afa348d1a06699b942354ae106a00210c61a2dbfcf28092e989e"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "D-01",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "D-02",
+              "severity": "P1",
+              "disposition": "clarify",
+              "closure_status": "open"
+            },
+            {
+              "id": "D-03",
+              "severity": "P2",
+              "disposition": "clarify",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Plan-only first-round review; implementation, tests, archive, candidate, merge, and push were not established. No other first-round conclusion was visible."
+        },
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "host-review:repair-docs-plan-e:first-round",
+      "receipt_sha256": "b886910c0afa208d6aeffbe2a2ae3ecaa677937f26bc389f2b158fd0a4706891",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "repair-documentation-information-architecture",
+        "phase": "plan",
+        "slot_id": "plan-e",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI Codex",
+          "model": "gpt-5.6-sol",
+          "instance_id": "/root/zero_slot_plan_e"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "0ff34d41f725beba1a671b453dcd071d964d818f05811386f43478afe3844b49",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "d54a3df3a68bccd5f3104517b70bd977c8d9b3416eaf4f6d070f7d0bf5314987"
+          },
+          {
+            "path": ".harness/authority/repair-documentation-information-architecture/epoch-0005.json",
+            "sha256": "913ab6a19c0b80f4ab3420d3281c70830289c83dab7e917562aa7d504eee7d6e"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "9f3df5ac13f8d41cf0113b072514aaebee920f5e9a0820a241b47b9e45dcea0a"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/design.md",
+            "sha256": "6bc675cb6dfa24ee183d4bd6a004b407bfa218c640bc96aee848ab28b14193fc"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/proposal.md",
+            "sha256": "c1605d1fc22107cf3f397c2ecaa19e921fc5cbf03139db16dc87f1c0d50603a1"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+            "sha256": "c9d6ba0574b6bc4055c566d094b2835e04dbf4590b822a173434fde42a263cbc"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/tasks.md",
+            "sha256": "e0ebba2db2b2afa348d1a06699b942354ae106a00210c61a2dbfcf28092e989e"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "E-01",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Plan-only first-round review; implementation, tests, archive, candidate, merge, and push were not established. No other first-round conclusion was visible."
+        },
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "host-review:repair-docs-plan-e2:first-round",
+      "receipt_sha256": "bf6cf1cc5e37db259e5ecf06e1b28072ba6605549de42da36b68be7f893aae17",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "repair-documentation-information-architecture",
+        "phase": "plan",
+        "slot_id": "plan-e2",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "openai-codex",
+          "model": "gpt-5",
+          "instance_id": "/root/plan_final_e2"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "84b5698fe92b278c1e91b5364a0d2316d64b10eefe2f2943115791beb7d39023",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "90d36fd918603b86cfd540c591fa93518752a940a1fadedece6ad8f35e117e16"
+          },
+          {
+            "path": ".harness/authority/repair-documentation-information-architecture/epoch-0007.json",
+            "sha256": "d4d28abe60e6d224029645ee2b5be11eba449836dda9d542cb9104a274a4835b"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "c9dd8e5d60763303d333eb2793c348d45113c03270411a144342b11018fb9e6e"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/design.md",
+            "sha256": "faef4d2538880edbce76a654678a5879c7a7ba844cf90e8c3ff60ab761301663"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/proposal.md",
+            "sha256": "2aac3d1acffaeeccff750d720e205fdbad08924eb122b8fe8cea68d074f02480"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+            "sha256": "400acf9baa44b1a5b5a0ef18425f62ddc7fbfd79b4d684e8df7d5fcf6f967dc3"
+          },
+          {
+            "path": "openspec/changes/repair-documentation-information-architecture/tasks.md",
+            "sha256": "cbeaeee5bdda4b35658b85cb648d3ee4520e93826e9460d8a54efe21cb4d3b5e"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "E2-01",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "Plan-only first-round review; implementation behavior and reported verification results were not independently inspected or executed."
+        },
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "repair-documentation-information-architecture",
+      "phase": "plan",
+      "implementer_instance_id": "/root",
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "58bde2c97228e1e1f46fb7a2b781a4f176881d58736d50fa178bbaceecc2948c",
+      "reviewed_artifacts": [
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "90d36fd918603b86cfd540c591fa93518752a940a1fadedece6ad8f35e117e16"
+        },
+        {
+          "path": ".harness/authority/repair-documentation-information-architecture/epoch-0007.json",
+          "sha256": "d4d28abe60e6d224029645ee2b5be11eba449836dda9d542cb9104a274a4835b"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "fc52792904b8094814eb28c8db8e0d583d17ab304af120cdd43321a360b793ff"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/design.md",
+          "sha256": "faef4d2538880edbce76a654678a5879c7a7ba844cf90e8c3ff60ab761301663"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/proposal.md",
+          "sha256": "2aac3d1acffaeeccff750d720e205fdbad08924eb122b8fe8cea68d074f02480"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+          "sha256": "1d5eb35b0a51660aaa1b5f01ca9411cc9ba2270c7d4099f8370a3f0d02baaedb"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/tasks.md",
+          "sha256": "cced0bae1883676f1b7ec761cdd3bec3914cbb035be30c52a3e595e34e73cbd6"
+        }
+      ],
+      "slot_id": "plan-d",
+      "reviewer": {
+        "provider": "openai-codex",
+        "model": "gpt-5",
+        "instance_id": "/root/zero_slot_plan_d"
+      },
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "This receipt covers the frozen seven-artifact plan packet and its normative HANDOFF scenarios. Final implementation review, archive, post-archive packet refresh, candidate, merge, and push remain separate required gates."
+      },
+      "lineage": {
+        "original_slot_id": "plan-d",
+        "original_reviewer_instance_id": "/root/zero_slot_plan_d",
+        "original_review_ref": "host-review:repair-docs-plan-d:first-round",
+        "original_receipt_sha256": "e582c8c1d021104f8aa43d80decab738b0e87993aa2b52e863a2cd6a1c9b212d",
+        "closed_finding_ids": [
+          "D-01",
+          "D-02",
+          "D-03"
+        ]
+      }
+    },
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "repair-documentation-information-architecture",
+      "phase": "plan",
+      "implementer_instance_id": "/root",
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "58bde2c97228e1e1f46fb7a2b781a4f176881d58736d50fa178bbaceecc2948c",
+      "reviewed_artifacts": [
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "90d36fd918603b86cfd540c591fa93518752a940a1fadedece6ad8f35e117e16"
+        },
+        {
+          "path": ".harness/authority/repair-documentation-information-architecture/epoch-0007.json",
+          "sha256": "d4d28abe60e6d224029645ee2b5be11eba449836dda9d542cb9104a274a4835b"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "fc52792904b8094814eb28c8db8e0d583d17ab304af120cdd43321a360b793ff"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/design.md",
+          "sha256": "faef4d2538880edbce76a654678a5879c7a7ba844cf90e8c3ff60ab761301663"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/proposal.md",
+          "sha256": "2aac3d1acffaeeccff750d720e205fdbad08924eb122b8fe8cea68d074f02480"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+          "sha256": "1d5eb35b0a51660aaa1b5f01ca9411cc9ba2270c7d4099f8370a3f0d02baaedb"
+        },
+        {
+          "path": "openspec/changes/repair-documentation-information-architecture/tasks.md",
+          "sha256": "cced0bae1883676f1b7ec761cdd3bec3914cbb035be30c52a3e595e34e73cbd6"
+        }
+      ],
+      "slot_id": "plan-e2",
+      "reviewer": {
+        "provider": "openai-codex",
+        "model": "gpt-5",
+        "instance_id": "/root/plan_final_e2"
+      },
+      "conclusion": {
+        "status": "no_findings",
+        "findings": [],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Plan-only remediation review; implementation behavior and reported verification results were not independently inspected or executed."
+      },
+      "lineage": {
+        "original_slot_id": "plan-e2",
+        "original_reviewer_instance_id": "/root/plan_final_e2",
+        "original_review_ref": "host-review:repair-docs-plan-e2:first-round",
+        "original_receipt_sha256": "bf6cf1cc5e37db259e5ecf06e1b28072ba6605549de42da36b68be7f893aae17",
+        "closed_finding_ids": [
+          "E2-01"
+        ]
+      }
+    }
+  ]
+}

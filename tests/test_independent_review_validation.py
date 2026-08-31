@@ -5,7 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from scripts.validate_independent_review import main, validate_review_set
+from scripts.validate_independent_review import (
+    ACTIVATION_REF,
+    main,
+    validate_review_set,
+)
 
 
 def _sha256(data: bytes) -> str:
@@ -40,7 +44,8 @@ def _valid_review_set(
 ) -> dict[str, object]:
     artifact_path = project_root / "review-packet.md"
     artifact_path.write_text("frozen review packet\n", encoding="utf-8")
-    activation_path = project_root / "activation-record.md"
+    activation_path = project_root / ACTIVATION_REF
+    activation_path.parent.mkdir(parents=True, exist_ok=True)
     activation_path.write_text("pre-change authority activated the final-review gate\n", encoding="utf-8")
     artifacts = [{"path": "review-packet.md", "sha256": _sha256(artifact_path.read_bytes())}]
     packet_sha256 = _packet_sha256(artifacts)
@@ -140,7 +145,7 @@ def _valid_review_set(
             "status": "active",
             "activated_after_change": "generalize-independent-review-provider",
             "authority": "pre_change_process_contract",
-            "activation_ref": "activation-record.md",
+            "activation_ref": ACTIVATION_REF,
             "activation_ref_sha256": _sha256(activation_path.read_bytes()),
             "retroactive_plan_validation": False,
         },
@@ -182,6 +187,101 @@ def test_valid_first_round_and_remediation_review_sets_pass(
     assert {check["code"] for check in report["required_external_checks"]} == {
         "HOST_DISPATCH_PROVENANCE",
         "ACTIVATION_SEQUENCE",
+    }
+
+
+def test_zero_slot_packet_passes_with_empty_receipts_and_history(tmp_path: Path) -> None:
+    review_set = _valid_review_set(tmp_path, required_slots=0)
+
+    report = validate_review_set(
+        review_set,
+        project_root=tmp_path,
+        expected_stage="stage-a",
+        expected_phase="implementation",
+        required_slots=0,
+    )
+
+    assert report["status"] == "PASS"
+    assert report["validated_slots"] == 0
+    external = {
+        check["code"]: check["status"]
+        for check in report["required_external_checks"]
+    }
+    assert external == {
+        "HOST_DISPATCH_PROVENANCE": "NOT_APPLICABLE",
+        "ACTIVATION_SEQUENCE": "REQUIRED",
+    }
+
+
+def test_zero_slot_packet_rejects_nonempty_review_history(tmp_path: Path) -> None:
+    review_set = _valid_review_set(tmp_path, required_slots=0)
+    review_set["review_history"] = [{"unexpected": "history"}]
+
+    report = validate_review_set(
+        review_set,
+        project_root=tmp_path,
+        expected_stage="stage-a",
+        expected_phase="implementation",
+        required_slots=0,
+    )
+
+    assert report["status"] == "FAIL"
+    assert "ZERO_SLOT_REVIEW_HISTORY_FORBIDDEN" in _error_codes(report)
+
+
+def test_zero_slot_packet_rejects_manufactured_receipt(tmp_path: Path) -> None:
+    review_set = _valid_review_set(tmp_path, required_slots=1)
+
+    report = validate_review_set(
+        review_set,
+        project_root=tmp_path,
+        expected_stage="stage-a",
+        expected_phase="implementation",
+        required_slots=0,
+    )
+
+    assert report["status"] == "FAIL"
+    assert "REQUIRED_SLOT_COUNT_MISMATCH" in _error_codes(report)
+
+
+@pytest.mark.parametrize("required_slots", [-1, True, 1.0, "0"])
+def test_slot_count_must_be_a_non_negative_true_integer(
+    tmp_path: Path,
+    required_slots: object,
+) -> None:
+    review_set = _valid_review_set(tmp_path, required_slots=0)
+
+    report = validate_review_set(
+        review_set,
+        project_root=tmp_path,
+        expected_stage="stage-a",
+        expected_phase="implementation",
+        required_slots=required_slots,  # type: ignore[arg-type]
+    )
+
+    assert report["status"] == "FAIL"
+    assert "REQUIRED_SLOTS_INVALID" in _error_codes(report)
+
+
+@pytest.mark.parametrize("required_slots", [False, 0.0])
+def test_invalid_zero_like_count_keeps_dispatch_provenance_required(
+    tmp_path: Path,
+    required_slots: object,
+) -> None:
+    review_set = _valid_review_set(tmp_path, required_slots=0)
+
+    report = validate_review_set(
+        review_set,
+        project_root=tmp_path,
+        expected_stage="stage-a",
+        expected_phase="implementation",
+        required_slots=required_slots,  # type: ignore[arg-type]
+    )
+
+    assert report["status"] == "FAIL"
+    assert report["required_external_checks"][0] == {  # type: ignore[index]
+        "code": "HOST_DISPATCH_PROVENANCE",
+        "status": "REQUIRED",
     }
 
 
@@ -246,6 +346,30 @@ def test_invalid_independence_or_baseline_evidence_fails_closed(
 
     assert report["status"] == "FAIL"
     assert expected_code in _error_codes(report)
+
+
+def test_activation_ref_must_be_the_canonical_validator_activation_record(
+    tmp_path: Path,
+) -> None:
+    review_set = _valid_review_set(tmp_path)
+    arbitrary = tmp_path / "docs" / "outside.md"
+    arbitrary.parent.mkdir(parents=True)
+    arbitrary.write_text("not the activation record\n", encoding="utf-8")
+    review_set["activation"]["activation_ref"] = "docs/outside.md"  # type: ignore[index]
+    review_set["activation"]["activation_ref_sha256"] = _sha256(  # type: ignore[index]
+        arbitrary.read_bytes()
+    )
+
+    report = validate_review_set(
+        review_set,
+        project_root=tmp_path,
+        expected_stage="stage-a",
+        expected_phase="implementation",
+        required_slots=1,
+    )
+
+    assert report["status"] == "FAIL"
+    assert "ACTIVATION_REF_INVALID" in _error_codes(report)
 
 
 def test_stale_remediation_receipt_fails_final_baseline_check(tmp_path: Path) -> None:

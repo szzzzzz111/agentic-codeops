@@ -1,0 +1,29 @@
+{
+  "schema_version": "repopilot.stage_delivery_binding/v1",
+  "stage_id": "repair-documentation-information-architecture",
+  "authority_epoch": 7,
+  "authority_record_sha256": "d4d28abe60e6d224029645ee2b5be11eba449836dda9d542cb9104a274a4835b",
+  "reviewed_manifest": {
+    "path": ".harness/reviews/repair-documentation-information-architecture/implementation/reviewed-change-manifest.json",
+    "sha256": "b186bdea23327a437257defbf8e21ecbbcb005cc768e235990b0431817bf26fb"
+  },
+  "reviewed_diff": {
+    "path": ".harness/reviews/repair-documentation-information-architecture/implementation/reviewed-change.diff",
+    "sha256": "dae118c422fea7b1c7d3349157b2d6d2f7a408d90e03e5c753b0e2fa8eb75fb2"
+  },
+  "implementation_review_set": {
+    "path": ".harness/reviews/repair-documentation-information-architecture/implementation/review-set.json",
+    "sha256": "872cada4b766cf89f2a615c8557836262d66816cf747a594f2f6bdf3fe8870f9",
+    "packet_sha256": "37acf11126b3314d58621390d569ef25d3ee0d97d71eeed65356d614302e927d"
+  },
+  "final_harness_files": [
+    {
+      "path": ".harness/allowed_files.md",
+      "sha256": "c255768c553c3272e513f700e467ab6dcc6b34fb496ec582f6ce5d24b55056fe"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "sha256": "08da23c2e8087f2ed3f87063d9ea411105b5df1bb66033d3ffd45682dfcf2b19"
+    }
+  ]
+}

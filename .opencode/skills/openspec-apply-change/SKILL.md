@@ -65,7 +65,10 @@ Implement tasks from an OpenSpec change.
    digest, planning base, action ceiling, remote name, effective fetch/push endpoint
    fingerprints, target branch, and authorized remote tip retained from the
    live direct-user confirmation; never copy them from the record being
-   validated. Missing/stale/insufficient authority, lineage or expected-input
+   validated. When the authority scope contains `review_slot_requirements`,
+   also pass `--plan-review-set`, `--required-plan-review-slots`, and
+   `--expected-plan-review-packet-sha256` from the host-retained envelope.
+   Missing/stale/insufficient authority, lineage or expected-input
    mismatch, and scope/path drift are hard stops. PASS is mechanical-only and
    does not establish live human authority.
 

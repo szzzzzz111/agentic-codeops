@@ -9,10 +9,12 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 import pytest
+
+from scripts.validate_independent_review import ACTIVATION_REF
 
 STAGE_ID = "bind-stage-authority-and-invalidation"
 CONFIRMED_RECORD_SHA256 = (
@@ -146,6 +148,12 @@ def authority_repo(tmp_path: Path) -> dict[str, Any]:
     (tmp_path / "src" / "app.py").write_text("VALUE = 1\n", encoding="utf-8")
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs" / "outside.md").write_text("baseline\n", encoding="utf-8")
+    activation_path = tmp_path / ACTIVATION_REF
+    activation_path.parent.mkdir(parents=True, exist_ok=True)
+    activation_path.write_text(
+        "pre-change authority activated the review validator\n",
+        encoding="utf-8",
+    )
     _git(
         tmp_path,
         "add",
@@ -153,6 +161,7 @@ def authority_repo(tmp_path: Path) -> dict[str, Any]:
         ".harness/review_checklist.md",
         "src/app.py",
         "docs/outside.md",
+        ACTIVATION_REF,
     )
     _git(tmp_path, "commit", "-m", "planning baseline")
     baseline = _git(tmp_path, "rev-parse", "HEAD")
@@ -222,6 +231,7 @@ def _write_implementation_review(
     *,
     inventory_bytes: bytes | None = None,
     omit_subject_files: bool = False,
+    required_slots: int = 1,
 ) -> dict[str, Any]:
     module = _load_validator_module()
     root = repo["root"]
@@ -261,44 +271,53 @@ def _write_implementation_review(
     )
     artifacts = sorted(artifacts, key=lambda item: item["path"])
     packet_sha256 = _canonical_sha256(artifacts)
-    receipt = {
-        "schema_version": "repopilot.independent_review_receipt/v1",
-        "stage_id": STAGE_ID,
-        "phase": "implementation",
-        "slot_id": "implementation-review-slot-a",
-        "implementer_instance_id": "/root",
-        "reviewer": {
-            "provider": "test-provider",
-            "model": "test-model",
-            "instance_id": "/root/reviewer-a",
-        },
-        "context_evidence": {
-            "evidence_source": "host_tool_metadata",
-            "parent_context_inheritance": "none",
-            "other_first_round_conclusions_visible": False,
-        },
-        "review_round": "first_round",
-        "reviewed_packet_sha256": packet_sha256,
-        "reviewed_artifacts": artifacts,
-        "conclusion": {
-            "status": "no_findings",
-            "findings": [],
-            "gate_verdict": "ready",
-            "residual_uncertainty": "Host provenance remains external.",
-        },
-        "lineage": None,
-    }
-    activation_ref = "docs/outside.md"
+    receipts = [
+        {
+            "schema_version": "repopilot.independent_review_receipt/v1",
+            "stage_id": STAGE_ID,
+            "phase": "implementation",
+            "slot_id": f"implementation-review-slot-{index + 1}",
+            "implementer_instance_id": "/root",
+            "reviewer": {
+                "provider": "test-provider",
+                "model": "test-model",
+                "instance_id": f"/root/reviewer-{index + 1}",
+            },
+            "context_evidence": {
+                "evidence_source": "host_tool_metadata",
+                "parent_context_inheritance": "none",
+                "other_first_round_conclusions_visible": False,
+            },
+            "review_round": "first_round",
+            "reviewed_packet_sha256": packet_sha256,
+            "reviewed_artifacts": artifacts,
+            "conclusion": {
+                "status": "no_findings",
+                "findings": [],
+                "gate_verdict": "ready",
+                "residual_uncertainty": "Host provenance remains external.",
+            },
+            "lineage": None,
+        }
+        for index in range(required_slots)
+    ]
+    activation_ref = ACTIVATION_REF
+    activation_path = root / activation_ref
+    activation_path.parent.mkdir(parents=True, exist_ok=True)
+    activation_path.write_text(
+        "pre-change authority activated the review validator\n",
+        encoding="utf-8",
+    )
     review_set = {
         "schema_version": "repopilot.independent_review_set/v1",
         "stage_id": STAGE_ID,
         "phase": "implementation",
         "activation": {
             "status": "active",
-            "activated_after_change": "test-activation",
+            "activated_after_change": "generalize-independent-review-provider",
             "authority": "pre_change_process_contract",
             "activation_ref": activation_ref,
-            "activation_ref_sha256": _sha256((root / activation_ref).read_bytes()),
+            "activation_ref_sha256": _sha256(activation_path.read_bytes()),
             "retroactive_plan_validation": False,
         },
         "external_gate_checks": {},
@@ -310,7 +329,7 @@ def _write_implementation_review(
             "packet_sha256": packet_sha256,
         },
         "review_history": [],
-        "receipts": [receipt],
+        "receipts": receipts,
     }
     _write_json(review_set_path, review_set)
     return {
@@ -319,15 +338,68 @@ def _write_implementation_review(
         "diff_path": diff_path,
         "review_set_path": review_set_path,
         "packet_sha256": packet_sha256,
+        "required_slots": required_slots,
     }
 
 
 def _review_inputs(review: dict[str, Any]) -> dict[str, Any]:
     return {
         "implementation_review_set": review["review_set_path"],
-        "required_review_slots": 1,
+        "required_review_slots": review["required_slots"],
         "expected_review_packet_sha256": review["packet_sha256"],
     }
+
+
+def _write_plan_review(
+    repo: dict[str, Any],
+    *,
+    required_slots: int,
+) -> dict[str, Any]:
+    review = _write_implementation_review(repo, required_slots=required_slots)
+    document = json.loads(review["review_set_path"].read_text(encoding="utf-8"))
+    document["phase"] = "plan"
+    for receipt in document["receipts"]:
+        receipt["phase"] = "plan"
+    path = (
+        repo["root"]
+        / ".harness"
+        / "reviews"
+        / STAGE_ID
+        / "plan"
+        / "review-set.json"
+    )
+    _write_json(path, document)
+    return {
+        "review_set_path": path,
+        "packet_sha256": review["packet_sha256"],
+        "required_slots": required_slots,
+    }
+
+
+def _plan_review_inputs(review: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "plan_review_set": review["review_set_path"],
+        "required_plan_review_slots": review["required_slots"],
+        "expected_plan_review_packet_sha256": review["packet_sha256"],
+    }
+
+
+def _bind_review_slots(
+    repo: dict[str, Any],
+    *,
+    plan: object,
+    implementation: object,
+    risk: str | None = None,
+) -> None:
+    scope = repo["record"]["scope"]
+    scope["review_slot_requirements"] = {
+        "plan": plan,
+        "implementation": implementation,
+    }
+    if risk is not None:
+        scope["risk"] = risk
+    repo["record"]["scope_sha256"] = _canonical_sha256(scope)
+    repo["record_path"] = _write_record(repo["root"], repo["record"])
 
 
 def _write_delivery_binding(
@@ -1028,6 +1100,318 @@ def test_archive_requires_actual_implementation_review_set(
     report = _validate(authority_repo, required_action="archive")
 
     _assert_fails_closed(report)
+
+
+def test_low_risk_bound_zero_archive_consumes_complete_empty_review_packet(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=0, implementation=0, risk="low")
+    review = _write_implementation_review(authority_repo, required_slots=0)
+
+    report = _validate(
+        authority_repo,
+        required_action="archive",
+        **_review_inputs(review),
+    )
+
+    assert report["status"] == "PASS"
+    assert report["errors"] == []
+
+
+def test_unbound_zero_archive_fails_closed(
+    authority_repo: dict[str, Any],
+) -> None:
+    review = _write_implementation_review(authority_repo, required_slots=0)
+
+    report = _validate(
+        authority_repo,
+        required_action="archive",
+        **_review_inputs(review),
+    )
+
+    _assert_fails_closed(report)
+    assert "ZERO_REVIEW_SLOTS_UNBOUND" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_high_risk_bound_zero_archive_fails_closed(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=2, implementation=0, risk="high")
+    review = _write_implementation_review(authority_repo, required_slots=0)
+
+    report = _validate(
+        authority_repo,
+        required_action="archive",
+        **_review_inputs(review),
+    )
+
+    _assert_fails_closed(report)
+    assert "ZERO_REVIEW_SLOTS_RISK_INVALID" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+@pytest.mark.parametrize(
+    ("plan_slots", "implementation_slots"),
+    [(0, 2), (2, 0)],
+)
+def test_high_risk_mixed_phase_zero_binding_fails_every_action_closed(
+    authority_repo: dict[str, Any],
+    plan_slots: int,
+    implementation_slots: int,
+) -> None:
+    _bind_review_slots(
+        authority_repo,
+        plan=plan_slots,
+        implementation=implementation_slots,
+        risk="high",
+    )
+
+    report = _validate(authority_repo)
+
+    _assert_fails_closed(report)
+    assert "ZERO_REVIEW_SLOTS_RISK_INVALID" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+@pytest.mark.parametrize("caller_slots", [1, 3])
+def test_bound_positive_implementation_count_must_match_caller(
+    authority_repo: dict[str, Any], caller_slots: int
+) -> None:
+    _bind_review_slots(authority_repo, plan=2, implementation=2)
+    review = _write_implementation_review(
+        authority_repo,
+        required_slots=caller_slots,
+    )
+
+    report = _validate(
+        authority_repo,
+        required_action="archive",
+        **_review_inputs(review),
+    )
+
+    _assert_fails_closed(report)
+    assert "REVIEW_SLOT_REQUIREMENT_MISMATCH" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_bound_future_implement_consumes_canonical_plan_review_set(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=2, implementation=1)
+    review = _write_plan_review(authority_repo, required_slots=2)
+
+    report = _validate(authority_repo, **_plan_review_inputs(review))
+
+    assert report["status"] == "PASS"
+    assert report["errors"] == []
+
+
+def test_bound_future_implement_rejects_missing_plan_review_set(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=2, implementation=1)
+
+    report = _validate(authority_repo)
+
+    _assert_fails_closed(report)
+    assert "PLAN_REVIEW_REQUIRED" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+@pytest.mark.parametrize("caller_slots", [1, 3])
+def test_bound_positive_plan_count_must_match_caller(
+    authority_repo: dict[str, Any], caller_slots: int
+) -> None:
+    _bind_review_slots(authority_repo, plan=2, implementation=1)
+    review = _write_plan_review(authority_repo, required_slots=caller_slots)
+
+    report = _validate(authority_repo, **_plan_review_inputs(review))
+
+    _assert_fails_closed(report)
+    assert "REVIEW_SLOT_REQUIREMENT_MISMATCH" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_bound_future_implement_rejects_implementation_phase_substitution(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=1, implementation=1)
+    review = _write_implementation_review(authority_repo)
+
+    report = _validate(
+        authority_repo,
+        plan_review_set=review["review_set_path"],
+        required_plan_review_slots=1,
+        expected_plan_review_packet_sha256=review["packet_sha256"],
+    )
+
+    _assert_fails_closed(report)
+    assert "PLAN_REVIEW_INVALID" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+@pytest.mark.parametrize(
+    "alias",
+    [
+        ".harness/reviews/{stage}/plan/../plan/review-set.json",
+        ".harness/reviews/{stage}/./plan/review-set.json",
+    ],
+)
+def test_bound_future_implement_rejects_lexical_plan_path_alias(
+    authority_repo: dict[str, Any], alias: str
+) -> None:
+    _bind_review_slots(authority_repo, plan=1, implementation=1)
+    review = _write_plan_review(authority_repo, required_slots=1)
+    inputs = _plan_review_inputs(review)
+    inputs["plan_review_set"] = alias.format(stage=STAGE_ID)
+
+    report = _validate(authority_repo, **inputs)
+
+    _assert_fails_closed(report)
+    assert "PLAN_REVIEW_INVALID" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_exact_review_path_spellings_support_native_windows_path_objects() -> None:
+    module = _load_validator_module()
+    root = PureWindowsPath("C:/repo")
+    expected = root / ".harness" / "reviews" / STAGE_ID / "plan" / "review-set.json"
+
+    spellings = module._exact_path_spellings(root, expected)
+
+    assert str(expected) in spellings
+    assert expected.as_posix() in spellings
+    assert str(expected.relative_to(root)) in spellings
+    assert expected.relative_to(root).as_posix() in spellings
+    assert str(expected.parent / ".." / "plan" / expected.name) not in spellings
+
+
+def test_bound_future_implement_rejects_wrong_plan_phase_at_canonical_path(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=1, implementation=1)
+    review = _write_plan_review(authority_repo, required_slots=1)
+    document = json.loads(review["review_set_path"].read_text(encoding="utf-8"))
+    document["phase"] = "implementation"
+    document["receipts"][0]["phase"] = "implementation"
+    _write_json(review["review_set_path"], document)
+
+    report = _validate(authority_repo, **_plan_review_inputs(review))
+
+    _assert_fails_closed(report)
+    assert "PLAN_REVIEW_INVALID" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_bound_future_implement_rejects_host_plan_packet_mismatch(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=1, implementation=1)
+    review = _write_plan_review(authority_repo, required_slots=1)
+    inputs = _plan_review_inputs(review)
+    inputs["expected_plan_review_packet_sha256"] = ONE_SHA256
+
+    report = _validate(authority_repo, **inputs)
+
+    _assert_fails_closed(report)
+    assert "REVIEW_PACKET_MISMATCH" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_bound_future_implement_rejects_reduced_plan_manifest_against_host_hash(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=1, implementation=1)
+    review = _write_plan_review(authority_repo, required_slots=1)
+    document = json.loads(review["review_set_path"].read_text(encoding="utf-8"))
+    reduced = document["baseline"]["artifacts"][1:]
+    reduced_packet = _canonical_sha256(reduced)
+    document["baseline"]["artifacts"] = reduced
+    document["baseline"]["packet_sha256"] = reduced_packet
+    document["baseline"]["immutable_ref"] = f"sha256:{reduced_packet}"
+    document["receipts"][0]["reviewed_artifacts"] = copy.deepcopy(reduced)
+    document["receipts"][0]["reviewed_packet_sha256"] = reduced_packet
+    _write_json(review["review_set_path"], document)
+
+    report = _validate(authority_repo, **_plan_review_inputs(review))
+
+    _assert_fails_closed(report)
+    assert "REVIEW_PACKET_MISMATCH" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_bound_future_implement_rejects_incomplete_plan_activation_evidence(
+    authority_repo: dict[str, Any],
+) -> None:
+    _bind_review_slots(authority_repo, plan=1, implementation=1)
+    review = _write_plan_review(authority_repo, required_slots=1)
+    document = json.loads(review["review_set_path"].read_text(encoding="utf-8"))
+    document["activation"].pop("activation_ref_sha256")
+    _write_json(review["review_set_path"], document)
+
+    report = _validate(authority_repo, **_plan_review_inputs(review))
+
+    _assert_fails_closed(report)
+    assert "PLAN_REVIEW_INVALID" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+@pytest.mark.parametrize(
+    "binding",
+    [
+        {"plan": True, "implementation": 1},
+        {"plan": 1.0, "implementation": 1},
+        {"plan": "1", "implementation": 1},
+        {"plan": -1, "implementation": 1},
+        {"plan": 1},
+        {"plan": 1, "implementation": 1, "extra": 0},
+    ],
+)
+def test_review_slot_binding_schema_fails_closed(
+    authority_repo: dict[str, Any], binding: dict[str, object]
+) -> None:
+    authority_repo["record"]["scope"]["review_slot_requirements"] = binding
+    authority_repo["record"]["scope_sha256"] = _canonical_sha256(
+        authority_repo["record"]["scope"]
+    )
+    authority_repo["record_path"] = _write_record(
+        authority_repo["root"], authority_repo["record"]
+    )
+
+    report = _validate(authority_repo)
+
+    _assert_fails_closed(report)
+    assert "REVIEW_SLOT_REQUIREMENTS_INVALID" in {
+        error["code"] for error in report["errors"]
+    }
+
+
+def test_legacy_positive_implementation_review_remains_compatible(
+    authority_repo: dict[str, Any],
+) -> None:
+    review = _write_implementation_review(authority_repo)
+
+    report = _validate(
+        authority_repo,
+        required_action="archive",
+        **_review_inputs(review),
+    )
+
+    assert report["status"] == "PASS"
+    assert report["errors"] == []
 
 
 def test_archive_rejects_review_packet_that_omits_subject_files(
@@ -2331,6 +2715,39 @@ def test_all_apply_and_archive_entrypoints_consume_shared_gate() -> None:
         assert "validate_stage_authority.py" in text
         assert f"--required-action {action}" in text
         assert "mechanical" in text.lower()
+
+
+def test_all_apply_entrypoints_document_bound_plan_review_inputs() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    paths = (
+        ".codex/skills/openspec-apply-change/SKILL.md",
+        ".opencode/commands/opsx-apply.md",
+        ".opencode/skills/openspec-apply-change/SKILL.md",
+    )
+    required_flags = (
+        "--plan-review-set",
+        "--required-plan-review-slots",
+        "--expected-plan-review-packet-sha256",
+    )
+
+    command_contract = (project_root / ".harness/test_commands.md").read_text(
+        encoding="utf-8"
+    )
+    for flag in required_flags:
+        assert flag in command_contract, flag
+    for relative in paths:
+        text = (project_root / relative).read_text(encoding="utf-8")
+        for flag in required_flags:
+            assert flag in text, (relative, flag)
+
+
+def test_zero_slot_rules_mark_reviewer_dispatch_not_applicable() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    for relative in (".harness/rules.md", "docs/AGENT_RULES.md"):
+        text = (project_root / relative).read_text(encoding="utf-8")
+        assert "positive-slot" in text, relative
+        assert "NOT_APPLICABLE" in text, relative
+        assert "activation sequence" in text, relative
 
 
 def test_archive_entrypoints_gate_before_any_sync_mutation_instruction() -> None:

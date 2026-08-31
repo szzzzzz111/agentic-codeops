@@ -49,8 +49,9 @@
 - 实际回执集固定写入 `.harness/reviews/<stage-id>/<phase>/review-set.json`，并运行
   `python scripts/validate_independent_review.py --project-root . --receipt-set <path> --expected-stage <stage-id> --expected-phase <plan|implementation> --required-slots <count>`。
   Receipt 缺失、命令未运行或非零退出时 review gate 保持打开。Validator 只给出
-  `mechanical_consistency_only`，固定 `gate_ready=false`；宿主控制器还必须直接核对 native dispatch
-  metadata，变更前流程 authority 必须核对 activation sequence。仓库内自填字段不能单独证明这两项事实。
+  `mechanical_consistency_only`，固定 `gate_ready=false`；positive-slot review 的宿主控制器还必须直接
+  核对 native dispatch metadata。authority-bound zero-slot 的 reviewer dispatch 为 `NOT_APPLICABLE`，不得
+  制造 reviewer evidence；两者仍必须核对 activation sequence。仓库内自填字段不能单独证明这些宿主事实。
 - OpenCode 首轮必须使用新的隔离 review session，或提供宿主证据证明候选 session 没有实现对话和
   其他 reviewer 结论；`opencode session list` 与 `opencode run --session <session_id> ...` 只用于
   same-slot remediation re-review 或恢复同一次 timeout。超时本身不是 verdict，必须检查 final
@@ -94,12 +95,13 @@ python -I scripts/verify.py
 - `docs/ARCHITECTURE.md`：稳定 runtime boundary 和 durable component relationships；不把 transient stage task 写成当前事实。
 - `docs/FEATURE_LIST.json`：acceptance-oriented capability inventory 和 `passes` 状态；不写路线图叙事。
 - `.harness/review_checklist.md`：过程步骤和 gate 证据。
-- `docs/PROGRESS.md`：长期能力、重要决策、验证和未清债务。
-- `HANDOFF_TO_NEXT_CHAT.md`：下一轮必须知道的当前上下文、阻塞和安全下一步。
+- `docs/PROGRESS.md`：durable status、重要决策、验证、未清债务、候选顺序和 archived stage 索引。
+- `HANDOFF_TO_NEXT_CHAT.md`：稳定恢复协议、阅读顺序和安全边界；不保存易变 repository state。
 - Git/OpenSpec 命令：实时 branch、HEAD、remote、active change 状态。
 
-不是每个 session 都必须修改 PROGRESS 和 HANDOFF。只有各自拥有的事实发生变化时才更新；
-archive、merge、push 和分支清理完成后合并为一次 final handoff，不在多份文档重复动态 hash。
+不是每个 session 都必须修改 PROGRESS。只有它拥有的 durable facts 发生变化时才更新；tracked HANDOFF
+不记录 active change、branch、HEAD、worktree、candidate、merge/push 或 remote parity。Archive、merge、push
+和分支清理后的实时结果只在 controller final handoff 中报告，不在多份文档重复动态 hash。
 Archived OpenSpec changes 和 `docs/PROGRESS.md` 历史段落可以保留当时真实的旧路线图措辞；
 current-state drift scan 只应针对当前事实文件和当前建议段。
 

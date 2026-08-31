@@ -1,0 +1,271 @@
+{
+  "schema_version": "repopilot.reviewed_change_manifest/v2",
+  "stage_id": "repair-documentation-information-architecture",
+  "planning_base": "1d6f45f734124d009fa72cc54cbb080c5caa6c44",
+  "excluded_metadata_paths": [
+    ".harness/authority/repair-documentation-information-architecture/delivery-binding.json",
+    ".harness/reviews/repair-documentation-information-architecture/implementation/review-set.json",
+    ".harness/reviews/repair-documentation-information-architecture/implementation/reviewed-change-manifest.json",
+    ".harness/reviews/repair-documentation-information-architecture/implementation/reviewed-change.diff"
+  ],
+  "changes": [
+    {
+      "path": ".codex/skills/openspec-apply-change/SKILL.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "21d0ec0cbec5286513c77f37f2ed053ba01144e794a1354a1e898fddb75d1924"
+    },
+    {
+      "path": ".codex/skills/openspec-stage-planner/SKILL.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "4a9d11e2dac091824d2d7b8b6290be483c492596fa4cbb9460ed4d1a91387270"
+    },
+    {
+      "path": ".harness/allowed_files.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "c255768c553c3272e513f700e467ab6dcc6b34fb496ec582f6ce5d24b55056fe"
+    },
+    {
+      "path": ".harness/authority/repair-documentation-information-architecture/epoch-0001.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "2beddbaea2a317400f2f29e30b196e66dccb3d2e9d9ce2042bfacb0af06ba4af"
+    },
+    {
+      "path": ".harness/authority/repair-documentation-information-architecture/epoch-0002.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b7ca5c80fccd1fb6154cd0ebd176294b268319a1b038cb4f83ada5a8bf9dbc27"
+    },
+    {
+      "path": ".harness/authority/repair-documentation-information-architecture/epoch-0003.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "643a814f443904196df18be7b770c3cd8e6c245680b02bcbb1e14749b23815ae"
+    },
+    {
+      "path": ".harness/authority/repair-documentation-information-architecture/epoch-0004.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "fce3c152c8d7eedba93cde1c27d72c41cb82ad221707e55e42feded0b8a880fd"
+    },
+    {
+      "path": ".harness/authority/repair-documentation-information-architecture/epoch-0005.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "913ab6a19c0b80f4ab3420d3281c70830289c83dab7e917562aa7d504eee7d6e"
+    },
+    {
+      "path": ".harness/authority/repair-documentation-information-architecture/epoch-0006.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "3c17eea3c944c566a13e7c53d20464be45419046282006a9dcbd05c09bcf4f55"
+    },
+    {
+      "path": ".harness/authority/repair-documentation-information-architecture/epoch-0007.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "d4d28abe60e6d224029645ee2b5be11eba449836dda9d542cb9104a274a4835b"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "08da23c2e8087f2ed3f87063d9ea411105b5df1bb66033d3ffd45682dfcf2b19"
+    },
+    {
+      "path": ".harness/reviews/repair-documentation-information-architecture/plan/review-set.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "57df484378d00693fa042a42ac6fc068ae61061d4fb831e7ff8b8e6d9be37a6f"
+    },
+    {
+      "path": ".harness/rules.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b4d6a8358fea4f0ffc27ea0a5e626e2cbce12782bc3ecb83737d024cea0cfe48"
+    },
+    {
+      "path": ".harness/templates/stage-authority-record.template.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "577a00f38fa8dbfefb3f104f81fab7bf5cec557001ffbb020d07c87474d73709"
+    },
+    {
+      "path": ".harness/templates/stage_planning.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "40f93f6447a6f2421b628e15f2c430299c78e8379e04c30b7baa11ebc5472021"
+    },
+    {
+      "path": ".harness/test_commands.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "658a2439bd765148ead9f33a25a6b8ed105a50d9dc6c3dc8f384287914b83d4e"
+    },
+    {
+      "path": ".opencode/commands/opsx-apply.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "093214adb980d6312d1162479abead824e855c4eeaddf18b030ef165d369633c"
+    },
+    {
+      "path": ".opencode/skills/openspec-apply-change/SKILL.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b26324562ada7f08b0f65c7caff34e873c02e7c24ad8bea969767f3e2c6c4fc5"
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "903b09be736e6344c706af1878494c05d64b3de4d5f4b622aeb24d9757a74ad1"
+    },
+    {
+      "path": "HANDOFF_TO_NEXT_CHAT.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "0e552fc9ac02d6270708c329c9d6b59852cea1c0ee46b107a4d9156873995715"
+    },
+    {
+      "path": "README.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "70e242e898295dffaeb9a9723c5536edb96b5b6429e94fea274925a4a8b4e64e"
+    },
+    {
+      "path": "docs/AGENT_RULES.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "f8159365117d42a724c001f10494a74a91b3188ee26849b2cac7dfed22c0d1d6"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e26ec5afd0824dd5ca71178efcac6b6989b8cad70c3135da021df6ccc4255b5a"
+    },
+    {
+      "path": "docs/FEATURE_LIST.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "84589d78791e2aaf5557d7366586c0280a41384f334291fd37fa5063bd17d38e"
+    },
+    {
+      "path": "docs/PROGRESS.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6fe5eb5d79594004f91d7e734332d2d6d9332d5865af780ba6bf13e49b8e32f7"
+    },
+    {
+      "path": "openspec/changes/README.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "d42d2ef3e2ea51be068bfc73dd4c152dbd8fe78dd07a826e6286d2b4ee263563"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-31-repair-documentation-information-architecture/.openspec.yaml",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "bd2504cb580ca73eeb2510481ca4665ee11e2127360fc0be12c104f347fb515f"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-31-repair-documentation-information-architecture/design.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "faef4d2538880edbce76a654678a5879c7a7ba844cf90e8c3ff60ab761301663"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-31-repair-documentation-information-architecture/proposal.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "2aac3d1acffaeeccff750d720e205fdbad08924eb122b8fe8cea68d074f02480"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-31-repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "1d5eb35b0a51660aaa1b5f01ca9411cc9ba2270c7d4099f8370a3f0d02baaedb"
+    },
+    {
+      "path": "openspec/changes/archive/2026-08-31-repair-documentation-information-architecture/tasks.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "cced0bae1883676f1b7ec761cdd3bec3914cbb035be30c52a3e595e34e73cbd6"
+    },
+    {
+      "path": "openspec/changes/archive/README.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "c26b900dc76808b8ae12770508b2feccb3f77829ec1cd7b48b2668e7b58d0838"
+    },
+    {
+      "path": "openspec/specs/README.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "1b9188fc88f830b4dbdd29864523142148659513494206eb3a050173f9775075"
+    },
+    {
+      "path": "openspec/specs/harness-development-workflow/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "599fd4f1510072f90c3a99ad1c938c07abdb33d8ff53f0d1ed521feb59e1d611"
+    },
+    {
+      "path": "openspec/specs/verified-patch-promotion/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "f4ef09026959b5179446dcadd1b151a56a5677e479050755a291a06e8bf0a2ee"
+    },
+    {
+      "path": "scripts/check_stage_docs.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e683a3f8c99394c6373f0f237e4119cedfe2b138a55a2659e1629b4c08ef391f"
+    },
+    {
+      "path": "scripts/validate_independent_review.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "73b230a753cbe62bd578a6e279217b4ccc67b46b32c81fbfa2334d40cab08083"
+    },
+    {
+      "path": "scripts/validate_stage_authority.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b0ef35fcfb9ecbdd5faa8d66237e0fd1cbeb2921c4c49a8c6b0698034e6323db"
+    },
+    {
+      "path": "tests/test_chat_api.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6799ff598b1ce415b9761fdc050278683fe7da6b40f3ef34aaf0a39fa614c802"
+    },
+    {
+      "path": "tests/test_cli.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "10989a5166c326939ea445d1074c8c2b02ffd78e60ca86efcbeda714d4efb887"
+    },
+    {
+      "path": "tests/test_independent_review_validation.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9d8621b59fb018d013956d6dae3d52344e924a1452e881dd223b4ba2581df968"
+    },
+    {
+      "path": "tests/test_stage_authority_validation.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "10c4a1cafc22a5c0b960ff80dfe6a471fea81a4ff410c88fe997b9a2e9839a06"
+    },
+    {
+      "path": "tests/test_verify_scripts.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "5932aed81b4b65cb281fc4555de23fa89566edab2ad1b56475a8637939a12875"
+    }
+  ]
+}

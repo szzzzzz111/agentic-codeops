@@ -1,32 +1,36 @@
 # 当前 Review 清单
 
-Active OpenSpec change：none。`clear-repository-ruff-baseline` 已归档；semantic subject 已冻结，后续只允许
-implementation `review-set.json` 与 `delivery-binding.json` 两个 evidence tail。
+Active OpenSpec change：none。repair-documentation-information-architecture 已归档；semantic subject 已冻结。
+后续只允许 implementation review-set.json 与 delivery-binding.json 两个 evidence tail。
 
-Risk：`medium`；behavior-neutral repository lint cleanup。Plan review 要求 internal + 1 个独立 slot；implementation review 要求 internal + 2 个互相隔离的独立 slots。Repo-local receipts 只证明 mechanical consistency。
+Risk：high；documentation information architecture + authority-sensitive review-gate 窄修。
+Repo-local receipts 只证明 mechanical consistency；用户 authority、host dispatch、archive、merge 和 push
+分别由外部事实对账。
 
-## Freeze
+## Freeze And Scope
 
-- [x] Planning base 为 `1743eed4694acd585d2a5ef40d090acf56e2969e`；live origin/main/authorized old tip 为 `2c0d0d4e749e16e43d867931c58c6a82be56cf13`。
-- [x] Ruff baseline 为 `92 errors / 53 files`；53-file exact inventory 已进入 allowlist。
-- [x] Non-goals：无 unsafe fixes、global/per-file ignore、blanket `noqa`、config/rule 降级、行为重构或 API/权限/依赖/持久化/网络变化；仅允许三处 frozen TRY004 与 14 处既有 fail-closed/fallback BLE001（其中一处同线 S110）精确行级 suppression。
+- [x] Planning base、authorized old remote tip 均为
+  1d6f45f734124d009fa72cc54cbb080c5caa6c44，target 为 origin/main。
+- [x] Epoch 7 绑定 exact scope、high risk、plan/implementation 各 2 slots 与 push ceiling。
+- [x] Non-goals 排除 app/**、runtime/public contract、依赖、权限、持久化、网络默认值和原脏 worktree。
+- [x] Plan 两槽绑定同一最终 plan packet，finding 已闭合，validator mechanical PASS。
 
-## Plan
+## Implementation And Verification
 
-- [x] 计划固定 safe autofix、逐规则 manual remediation、回归矩阵、完整门禁和 drift stop。
-- [x] 独立 plan reviewer 绑定同一 plan packet，P0/P1 关闭；plan review set mechanical PASS。
-- [x] Authority implement preflight 绑定 medium risk、scope、base、origin/main、endpoint 与 old tip。
+- [x] 文档职责、当前架构入口、durable progress、OpenSpec indexes 与 Purpose 偏差已修。
+- [x] Authority gate 保持 positive-slot 约束，并对 low-risk bound zero、mixed-phase zero、未来 implement
+  plan binding 和 malformed counts fail closed。
+- [x] HANDOFF scanner 覆盖中英文裸标签、半/全角冒号、Markdown list/emphasis/inline-code 与稳定
+  live-query guidance；focused 正反例 36 passed。
+- [x] Canonical verification 1052 passed；Ruff、stage-doc、skill-eval 全绿。
+- [x] OpenSpec strict 25/25、JSON/AST、manifest/inventory 与 git diff --check 通过。
+- [x] Final scanner remediation 已进入 verified semantic subject；post-archive review 仍由各 slot 独立给出结论。
 
-## Implementation
+## Archive And Delivery
 
-- [x] Ruff safe fixes 已应用并审阅；未使用 unsafe fixes。
-- [x] B023/RUF046/FURB162 等剩余规则以最小等价修改清零；三处 TRY004 与 14 处既有 boundary BLE001（其中一处同线 S110）只用授权的精确行级说明保留行为。
-- [x] 未修改 allowlist 外路径，未增加 ignore，未改变功能合同。
-- [x] Full pytest `971 passed`、full Ruff、canonical verify、stage-doc/skill-eval scanners、OpenSpec `25/25` 与 diff check 全绿。
-
-## Review And Delivery
-
-- [ ] Internal debt sweep 与两个 independent implementation slots 无 P0/P1，final receipts 绑定同一 post-archive packet。
-- [ ] Review-set、delivery-binding 与 exact staged-index preflight PASS；形成第二个 finite candidate commit。
-- [ ] 两阶段 commits 可从 old tip fast-forward；merge target 与 remote tip 未漂移。
-- [ ] 只使用 explicit refspec + exact-old-OID lease push；fresh same-endpoint query 证明 remote parity。
+- [x] Archive authority preflight PASS；OpenSpec change 已同步当前 spec 并归档到
+  2026-08-31-repair-documentation-information-architecture。
+- [ ] 两个既有 implementation slots refresh 同一 final post-archive packet，P0/P1/P2 清零。
+- [ ] Final review-set 与 delivery-binding mechanical PASS；staged index 与 reviewed packet 精确一致。
+- [ ] 创建单一 candidate，controller-only fast-forward main。
+- [ ] 使用 explicit refspec + exact-old-OID lease push，并从同 endpoint 查询 remote parity。

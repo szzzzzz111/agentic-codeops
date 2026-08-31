@@ -16,7 +16,7 @@ import subprocess
 import threading
 import time
 from collections.abc import Mapping, Sequence
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any
 
 try:
@@ -54,6 +54,8 @@ SCOPE_FIELDS = {
     "non_goals",
     "active_allowed_files_sha256",
 }
+SCOPE_FIELDS_WITH_REVIEW_SLOTS = SCOPE_FIELDS | {"review_slot_requirements"}
+REVIEW_SLOT_REQUIREMENT_FIELDS = {"plan", "implementation"}
 PATH_RULE_FIELDS = {"exact", "prefixes"}
 BASE_FIELDS = {"commit"}
 TARGET_FIELDS = {
@@ -225,6 +227,16 @@ def _canonical_branch(value: object) -> bool:
         component and not component.startswith(".") and not component.endswith(".lock")
         for component in value.split("/")
     )
+
+
+def _exact_path_spellings(root: PurePath, expected: PurePath) -> set[str]:
+    relative = expected.relative_to(root)
+    return {
+        os.fspath(expected),
+        expected.as_posix(),
+        os.fspath(relative),
+        relative.as_posix(),
+    }
 
 
 def _dormant_lineage_state(value: object) -> bool:
@@ -1943,7 +1955,14 @@ def _validate_record_shape(
     source = _strict_fields(
         record.get("authority_source"), SOURCE_FIELDS, errors, "authority_source"
     )
-    scope = _strict_fields(record.get("scope"), SCOPE_FIELDS, errors, "scope")
+    raw_scope = record.get("scope")
+    expected_scope_fields = (
+        SCOPE_FIELDS_WITH_REVIEW_SLOTS
+        if isinstance(raw_scope, dict)
+        and "review_slot_requirements" in raw_scope
+        else SCOPE_FIELDS
+    )
+    scope = _strict_fields(raw_scope, expected_scope_fields, errors, "scope")
     rules = _strict_fields(
         scope.get("allowed_path_rules"),
         PATH_RULE_FIELDS,
@@ -2018,6 +2037,31 @@ def _validate_record_shape(
         scope.get("active_allowed_files_sha256"), str
     ) or not SHA256.fullmatch(scope["active_allowed_files_sha256"]):
         _error(errors, "ALLOWED_FILES_HASH_INVALID", "allowed-files hash is invalid")
+    if "review_slot_requirements" in scope:
+        requirements = scope.get("review_slot_requirements")
+        requirements_invalid = (
+            not isinstance(requirements, dict)
+            or set(requirements) != REVIEW_SLOT_REQUIREMENT_FIELDS
+            or any(
+                type(requirements.get(phase)) is not int
+                or requirements.get(phase, -1) < 0
+                for phase in REVIEW_SLOT_REQUIREMENT_FIELDS
+            )
+        )
+        if requirements_invalid:
+            _error(
+                errors,
+                "REVIEW_SLOT_REQUIREMENTS_INVALID",
+                "review_slot_requirements must contain exact non-negative integer plan and implementation counts",
+            )
+        elif scope.get("risk") != "low" and any(
+            requirements[phase] == 0 for phase in REVIEW_SLOT_REQUIREMENT_FIELDS
+        ):
+            _error(
+                errors,
+                "ZERO_REVIEW_SLOTS_RISK_INVALID",
+                "every zero-bound review phase requires low-risk authority",
+            )
     if record.get("scope_sha256") != _canonical_sha256(scope):
         _error(errors, "SCOPE_HASH_MISMATCH", "scope digest does not match scope")
 
@@ -2106,55 +2150,61 @@ def _validate_review_set_input(
     *,
     root: Path,
     stage: str,
+    phase: str,
     review_set_path: str | Path | None,
     required_review_slots: int | None,
     expected_review_packet_sha256: str | None,
     current_manifest: Mapping[str, Any] | None,
     errors: list[dict[str, str]],
 ) -> None:
+    label = "PLAN" if phase == "plan" else "IMPLEMENTATION"
     if review_set_path is None or required_review_slots is None:
-        _error(errors, "IMPLEMENTATION_REVIEW_REQUIRED", "review set is required")
+        _error(errors, f"{label}_REVIEW_REQUIRED", "review set is required")
         return
     expected_path = (
-        root / ".harness" / "reviews" / stage / "implementation" / "review-set.json"
+        root / ".harness" / "reviews" / stage / phase / "review-set.json"
     )
-    path = Path(review_set_path)
+    supplied = os.fspath(review_set_path)
+    expected_relative = expected_path.relative_to(root).as_posix()
+    if supplied not in _exact_path_spellings(root, expected_path):
+        _error(errors, f"{label}_REVIEW_INVALID", "review set path is not exact")
+        return
+    path = Path(supplied)
     if not path.is_absolute():
         path = root / path
     try:
         resolved = path.resolve(strict=True)
     except OSError:
-        _error(errors, "IMPLEMENTATION_REVIEW_INVALID", "review set is unavailable")
+        _error(errors, f"{label}_REVIEW_INVALID", "review set is unavailable")
         return
-    expected_relative = expected_path.relative_to(root).as_posix()
     if (
         _path_traverses_symlink(root, expected_relative)
         or resolved != expected_path.resolve()
     ):
-        _error(errors, "IMPLEMENTATION_REVIEW_INVALID", "review set path is not exact")
+        _error(errors, f"{label}_REVIEW_INVALID", "review set path is not exact")
         return
     try:
         review_set = json.loads(resolved.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
-        _error(errors, "IMPLEMENTATION_REVIEW_INVALID", "review set is unreadable")
+        _error(errors, f"{label}_REVIEW_INVALID", "review set is unreadable")
         return
     try:
         report = validate_review_set(
             review_set,
             project_root=root,
             expected_stage=stage,
-            expected_phase="implementation",
+            expected_phase=phase,
             required_slots=required_review_slots,
         )
     except (OSError, TypeError, UnicodeError, ValueError):
         _error(
             errors,
-            "IMPLEMENTATION_REVIEW_INVALID",
+            f"{label}_REVIEW_INVALID",
             "review set contains an invalid path or value",
         )
         return
     if report["status"] != "PASS":
-        _error(errors, "IMPLEMENTATION_REVIEW_INVALID", "review set did not validate")
+        _error(errors, f"{label}_REVIEW_INVALID", "review set did not validate")
     if expected_review_packet_sha256 is None or (
         report.get("packet_sha256") != expected_review_packet_sha256
     ):
@@ -2197,6 +2247,53 @@ def _validate_review_set_input(
                 "REVIEW_SUBJECT_COVERAGE_MISMATCH",
                 "review packet does not exactly cover the current subject and metadata tail",
             )
+
+
+def _validate_bound_review_slots(
+    *,
+    scope: Mapping[str, Any],
+    phase: str,
+    caller_slots: object,
+    errors: list[dict[str, str]],
+) -> None:
+    requirements = scope.get("review_slot_requirements")
+    if requirements is None:
+        if caller_slots == 0 and type(caller_slots) is int:
+            _error(
+                errors,
+                "ZERO_REVIEW_SLOTS_UNBOUND",
+                "zero review slots require an authority-bound phase count",
+            )
+        return
+    if (
+        not isinstance(requirements, Mapping)
+        or set(requirements) != REVIEW_SLOT_REQUIREMENT_FIELDS
+        or any(
+            type(requirements.get(name)) is not int
+            or requirements.get(name, -1) < 0
+            for name in REVIEW_SLOT_REQUIREMENT_FIELDS
+        )
+    ):
+        return
+    bound_slots = requirements[phase]
+    if type(caller_slots) is not int or caller_slots < 0:
+        _error(
+            errors,
+            "REVIEW_SLOT_REQUIREMENT_MISMATCH",
+            f"caller {phase} review count is absent or invalid",
+        )
+    elif caller_slots != bound_slots:
+        _error(
+            errors,
+            "REVIEW_SLOT_REQUIREMENT_MISMATCH",
+            f"caller {phase} review count differs from authority binding",
+        )
+    if bound_slots == 0 and scope.get("risk") != "low":
+        _error(
+            errors,
+            "ZERO_REVIEW_SLOTS_RISK_INVALID",
+            "zero review slots are allowed only for low-risk authority",
+        )
 
 
 def _validate_current_manifest(
@@ -2282,6 +2379,9 @@ def validate_authority(
     expected_effective_push_url_sha256: str,
     expected_target_branch: str,
     expected_authorized_remote_tip: str,
+    plan_review_set: str | Path | None = None,
+    required_plan_review_slots: int | None = None,
+    expected_plan_review_packet_sha256: str | None = None,
     implementation_review_set: str | Path | None = None,
     required_review_slots: int | None = None,
     expected_review_packet_sha256: str | None = None,
@@ -2495,7 +2595,34 @@ def validate_authority(
 
     _validate_review_metadata(root, expected_stage, errors)
     current_manifest: Mapping[str, Any] | None = None
+    if (
+        action_valid
+        and required_action == "implement"
+        and "review_slot_requirements" in scope
+    ):
+        _validate_bound_review_slots(
+            scope=scope,
+            phase="plan",
+            caller_slots=required_plan_review_slots,
+            errors=errors,
+        )
+        _validate_review_set_input(
+            root=root,
+            stage=expected_stage,
+            phase="plan",
+            review_set_path=plan_review_set,
+            required_review_slots=required_plan_review_slots,
+            expected_review_packet_sha256=expected_plan_review_packet_sha256,
+            current_manifest=None,
+            errors=errors,
+        )
     if action_valid and required_action in {"commit", "archive", "merge", "push"}:
+        _validate_bound_review_slots(
+            scope=scope,
+            phase="implementation",
+            caller_slots=required_review_slots,
+            errors=errors,
+        )
         current_manifest = _validate_current_manifest(
             root=root,
             stage=expected_stage,
@@ -2505,6 +2632,7 @@ def validate_authority(
         _validate_review_set_input(
             root=root,
             stage=expected_stage,
+            phase="implementation",
             review_set_path=implementation_review_set,
             required_review_slots=required_review_slots,
             expected_review_packet_sha256=expected_review_packet_sha256,
@@ -2711,6 +2839,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--expected-effective-push-url-sha256", required=True)
     parser.add_argument("--expected-target-branch", required=True)
     parser.add_argument("--expected-authorized-remote-tip", required=True)
+    parser.add_argument("--plan-review-set")
+    parser.add_argument("--required-plan-review-slots", type=int)
+    parser.add_argument("--expected-plan-review-packet-sha256")
     parser.add_argument("--implementation-review-set")
     parser.add_argument("--required-review-slots", type=int)
     parser.add_argument("--expected-review-packet-sha256")

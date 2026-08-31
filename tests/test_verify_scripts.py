@@ -25,11 +25,20 @@ def _valid_stage_docs_fixture(root: Path) -> None:
     _write(root / "README.md", "# RepoPilot\n")
     _write(
         root / "HANDOFF_TO_NEXT_CHAT.md",
-        "Active OpenSpec change: example\n"
         "git status --short --branch\n"
         "git log -5 --oneline --decorate\n"
         "openspec list\n",
     )
+    _write(
+        root / "docs/ARCHITECTURE.md",
+        "# Architecture\n\n"
+        "## 系统上下文\n\nContext.\n\n"
+        "## 当前请求路由\n\nRoute.\n\n"
+        "## 模块与代码映射\n\nModules.\n\n"
+        "## 状态与信任边界\n\nState.\n\n"
+        "## 历史与规格入口\n\nHistory.\n",
+    )
+    _write(root / "docs/FEATURE_LIST.json", "[]\n")
     _write(
         root / "openspec/specs/harness-development-workflow/spec.md",
         "# workflow\n"
@@ -39,7 +48,19 @@ def _valid_stage_docs_fixture(root: Path) -> None:
         "External Review Seeks Independent Counterexamples\n"
         "Archive Freezes Reviewed Runtime\n",
     )
-    _write(root / "docs/PROGRESS.md", "# Progress\n\n## 下一步建议\n\nContinue.\n")
+    _write(
+        root / "docs/PROGRESS.md",
+        "# Progress\n\n"
+        "## 当前状态\n\nStable.\n\n"
+        "## 剩余债务\n\nNone.\n\n"
+        "## 候选顺序\n\nNone.\n\n"
+        "## 阶段索引\n\nNone.\n",
+    )
+    _write(
+        root / "openspec/specs/README.md",
+        "# Specs\n\n- [harness-development-workflow]"
+        "(harness-development-workflow/)\n",
+    )
 
 
 def _valid_skill_eval_fixture(root: Path) -> None:
@@ -231,7 +252,10 @@ def test_canonical_verify_real_fixture_blocks_ambient_shadow_and_collect_only(
         "current_fact_stale",
         "progress_heading",
         "progress_stale",
-        "progress_v24",
+        "architecture_heading",
+        "architecture_order",
+        "architecture_version",
+        "progress_order",
         "readme_heading",
     ],
 )
@@ -275,16 +299,46 @@ def test_stage_doc_scanner_covers_each_failure_family(
     elif case == "current_fact_stale":
         _write(tmp_path / "README.md", "# RepoPilot\narchive pending\n")
     elif case == "progress_heading":
-        _write(tmp_path / "docs/PROGRESS.md", "# Progress\n")
-    elif case == "progress_stale":
-        _write(
-            tmp_path / "docs/PROGRESS.md",
-            "# Progress\n\n## 下一步建议\n\nmerge pending\n",
+        progress = tmp_path / "docs/PROGRESS.md"
+        progress.write_text(
+            progress.read_text(encoding="utf-8").replace("## 当前状态", ""),
+            encoding="utf-8",
         )
-    elif case == "progress_v24":
-        _write(
-            tmp_path / "docs/PROGRESS.md",
-            "# Progress\n\n## 下一步建议\n\nV24 CLI surface\n",
+    elif case == "progress_stale":
+        progress = tmp_path / "docs/PROGRESS.md"
+        progress.write_text(
+            progress.read_text(encoding="utf-8") + "\nmerge pending\n",
+            encoding="utf-8",
+        )
+    elif case == "architecture_heading":
+        architecture = tmp_path / "docs/ARCHITECTURE.md"
+        architecture.write_text(
+            architecture.read_text(encoding="utf-8").replace("## 系统上下文", ""),
+            encoding="utf-8",
+        )
+    elif case == "architecture_order":
+        architecture = tmp_path / "docs/ARCHITECTURE.md"
+        content = architecture.read_text(encoding="utf-8")
+        architecture.write_text(
+            content.replace("## 系统上下文", "## 临时")
+            .replace("## 历史与规格入口", "## 系统上下文")
+            .replace("## 临时", "## 历史与规格入口"),
+            encoding="utf-8",
+        )
+    elif case == "architecture_version":
+        architecture = tmp_path / "docs/ARCHITECTURE.md"
+        architecture.write_text(
+            architecture.read_text(encoding="utf-8") + "\n## V1 History\n",
+            encoding="utf-8",
+        )
+    elif case == "progress_order":
+        progress = tmp_path / "docs/PROGRESS.md"
+        content = progress.read_text(encoding="utf-8")
+        progress.write_text(
+            content.replace("## 当前状态", "## 临时")
+            .replace("## 阶段索引", "## 当前状态")
+            .replace("## 临时", "## 阶段索引"),
+            encoding="utf-8",
         )
     else:
         _write(tmp_path / "README.md", "# RepoPilot\n\n## 当前能力\n")
@@ -297,6 +351,119 @@ def test_stage_doc_scanner_preserves_case_insensitive_placeholder_checks(
 ) -> None:
     _valid_stage_docs_fixture(tmp_path)
     _write(tmp_path / "openspec/specs/example/spec.md", "Purpose: tOdO\n")
+
+    assert check_stage_docs.scan(tmp_path)
+
+
+def test_stage_doc_scanner_rejects_volatile_tracked_handoff_claims(
+    tmp_path: Path,
+) -> None:
+    _valid_stage_docs_fixture(tmp_path)
+    handoff = tmp_path / "HANDOFF_TO_NEXT_CHAT.md"
+    handoff.write_text(
+        handoff.read_text(encoding="utf-8")
+        + "当前只剩 candidate commit、merge 和 push，这些尚未完成。\n",
+        encoding="utf-8",
+    )
+
+    assert check_stage_docs.scan(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "claim",
+    [
+        "当前 HEAD：abc1234\n",
+        "当前 HEAD 为 abc1234。\n",
+        "当前分支：feature/demo\n",
+        "当前分支是 feature/demo。\n",
+        "active OpenSpec change: demo\n",
+        "当前 OpenSpec change 为 demo。\n",
+        "- 当前分支：feature/demo\n",
+        "- **当前分支**：feature/demo\n",
+        "- 当前工作分支为 feature/demo。\n",
+        "- *当前分支*：feature/demo\n",
+        "1. _当前工作分支_ 为 feature/demo。\n",
+        "- **当前分支：feature/demo**\n",
+        "- *当前分支为 feature/demo*\n",
+        "当前合并：pending\n",
+        "当前 push：pending\n",
+        "Current OpenSpec change: demo\n",
+        "Branch: feature/demo\n",
+        "分支：feature/demo\n",
+        "HEAD: abc1234\n",
+        "Worktree: /tmp/demo\n",
+        "Candidate: abc1234\n",
+        "Remote parity: mismatched\n",
+        "Merge: pending\n",
+        "Push: pending\n",
+        "OpenSpec change: demo\n",
+        "当前 OpenSpec 变更：demo\n",
+        "- **Current branch**：feature/demo\n",
+        "- `当前分支`：feature/demo\n",
+    ],
+)
+def test_stage_doc_scanner_rejects_common_live_state_claim_forms(
+    tmp_path: Path,
+    claim: str,
+) -> None:
+    _valid_stage_docs_fixture(tmp_path)
+    handoff = tmp_path / "HANDOFF_TO_NEXT_CHAT.md"
+    handoff.write_text(
+        handoff.read_text(encoding="utf-8") + claim,
+        encoding="utf-8",
+    )
+
+    assert check_stage_docs.scan(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "guidance",
+    [
+        "当前 HEAD 是易变事实，必须通过 git log 现场查询。\n",
+        "当前分支是通过 git status --short --branch 现场查询的，不写入本文。\n",
+        "- **当前分支**是通过 git status --short --branch 现场查询的。\n",
+        "- *当前分支*是通过 git status --short --branch 现场查询的。\n",
+        "当前分支是通过命令现场查询的。\n",
+        "Current branch is queried live with git status.\n",
+        "Active OpenSpec change is queried live with openspec list.\n",
+        "Current branch is a volatile fact queried via git status.\n",
+    ],
+)
+def test_stage_doc_scanner_allows_live_state_query_guidance(
+    tmp_path: Path,
+    guidance: str,
+) -> None:
+    _valid_stage_docs_fixture(tmp_path)
+    handoff = tmp_path / "HANDOFF_TO_NEXT_CHAT.md"
+    handoff.write_text(
+        handoff.read_text(encoding="utf-8") + guidance,
+        encoding="utf-8",
+    )
+
+    assert check_stage_docs.scan(tmp_path) == []
+
+
+def test_stage_doc_scanner_rejects_feature_list_stage_narration(
+    tmp_path: Path,
+) -> None:
+    _valid_stage_docs_fixture(tmp_path)
+    _write(
+        tmp_path / "docs/FEATURE_LIST.json",
+        '[{"id":"example","passes":true,'
+        '"notes":"repository cleanup remains an active baseline stage"}]\n',
+    )
+
+    assert check_stage_docs.scan(tmp_path)
+
+
+def test_stage_doc_scanner_requires_complete_specs_index(tmp_path: Path) -> None:
+    _valid_stage_docs_fixture(tmp_path)
+    _write(tmp_path / "openspec/specs/example/spec.md", "# Example\n")
+    _write(
+        tmp_path / "openspec/specs/README.md",
+        "# Specs\n\n- [harness-development-workflow]"
+        "(harness-development-workflow/)\n",
+    )
 
     assert check_stage_docs.scan(tmp_path)
 

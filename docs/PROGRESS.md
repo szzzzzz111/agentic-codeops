@@ -1,5 +1,64 @@
 # 项目进度
 
+本文件顶部只记录可跨 session 复用的 durable status、未清债务和候选顺序。Branch、HEAD、worktree、
+active change、candidate、merge/push 与 remote parity 必须通过 live Git/OpenSpec/controller state 查询。
+下面的历史详细记录只保存当时证据，不是当前状态来源。
+
+## 当前状态
+
+- RepoPilot 的 V1–V25 runtime capability 已形成长期 OpenSpec specs；当前产品仍定位为本地、可控、
+  可审计的 Coding Agent Harness，而不是通用 AI IDE。
+- Runtime 主干包括 repo-local hybrid RAG、grounded answer、Memory、Long Task、Assistant Control Surface、
+  controlled patch proposal/apply、Verification Runner、persistent audit 和 retained worktree lifecycle。
+- 最近完成的 verification baseline 修复与 repository Ruff cleanup 已证明 full pytest、full Ruff、canonical
+  `python -I scripts/verify.py`、stage-doc/skill scanners 和 OpenSpec validation 可在同一受控解释器下全绿。
+- Stage-change replay 仍是 repository development workflow 中的 dormant、`mechanical_consistency_only`
+  接口；缺少 external host CAS/restart/dispatch evidence 时不激活 v2，也不成为 runtime capability。
+- OpenSpec、Harness、Codex/OpenCode skills、MCP 和 plugins 仍属于开发流程或外部协作面，不自动成为产品能力。
+
+## 剩余债务
+
+- Documentation drift 仍是持续维护风险：scanner 只证明明确的结构约束，不能替代对 runtime/docs 语义一致性
+  的 internal review；新增 capability 或 closeout 流程时必须同步检查 current architecture、acceptance inventory
+  和 OpenSpec index ownership。
+- `VerificationRunner` 的 process-tree containment 应作为独立安全阶段评估，不与文档或模型 patch authoring 混合。
+- Request-supplied `user_id` 和 context-only `ApprovalGate` 不能证明持久化 Operator authority；真实人工 authority
+  需要独立设计，不能从当前 repository records 或 runtime context 推导。
+- 外部 host CAS、durable/background execution、runtime subagents、connectors、notifications 和产品内自动
+  commit/merge/push 均没有进入当前 runtime contract。
+
+## 候选顺序
+
+以下是候选顺序，不表示已经 active 或获准实施；开始任何一项前重新运行 `openspec list` 并冻结新 stage：
+
+1. `enable-opt-in-model-patch-authoring`：仅显式 opt-in 生成 pending patch proposal，默认继续 fake/offline；
+   不自动 apply、verify、promote、commit、merge 或 push。
+2. `add-pending-patch-inspection-and-rejection`：允许查看、拒绝或继续处理 pending patch。
+3. 把既有 worktree lifecycle 暴露为前台 CLI 流程，同时保持当前权限、审计和明确确认边界。
+4. 独立评估 VerificationRunner process-tree containment。
+
+暂缓 replay v2 activation、持久化 Operator approval、background/durable/subagent/connectors 扩张，以及产品内
+自动 Git delivery。候选之间一次只启动一个 OpenSpec stage。
+
+## 阶段索引
+
+详细 proposal、design、tasks、spec deltas 和当时验证证据以
+[`openspec/changes/archive/`](../openspec/changes/archive/) 为准；长期合同以
+[`openspec/specs/`](../openspec/specs/) 为准。
+
+| 能力组 | 代表阶段 | 历史入口 |
+|---|---|---|
+| Agent/API/Tools | V1–V7 基础入口、工具和权限边界 | `2026-05-11-*` 至 `2026-05-19-*` archives |
+| Retrieval/Answering | V8–V12 repo RAG、Evidence Pack、provider boundary | `2026-05-20-*` 至 `2026-05-27-*` archives |
+| Memory/Long Task/Control | V13–V15 | `2026-05-28-*` 至 `2026-05-31-*` archives |
+| Patch/Verify/Audit | V16–V19 | `2026-05-31-*` 至 `2026-06-05-*` archives |
+| Worktree lifecycle | V20–V25 | `2026-06-07-*` 至 `2026-06-27-*` archives |
+| Workflow authority/replay | authority binding、independent review、stage replay | `2026-08-20-*` 至 `2026-08-21-*` archives |
+| Verification baseline | deterministic verification、repository Ruff cleanup | `2026-08-26-*` archives |
+
+<details>
+<summary>历史详细记录（只作当时证据，不作为 current guidance）</summary>
+
 ## Clear Repository Ruff Baseline（archived，2026-08-26）
 
 - 基于前序本地 candidate `1743eed4694acd585d2a5ef40d090acf56e2969e`，在同一干净 worktree 中清理
@@ -1729,3 +1788,5 @@ V9 补充 embedding provider 边界、轻量默认实现、repo-local embedding 
   仍只证明 mechanical consistency，宿主另行核对了 `fork_turns="none"` dispatch 与 activation sequence。
 - Implementation/archive commit `99ec132` 已 fast-forward 进入 `main` 并推送到 `agentic-codeops/main`；原
   `/Users/chelaile/agentic-codeops` 的 dirty `feature/bootstrap-refactor-harness` 工作树未被覆盖或带入。
+
+</details>

@@ -25,14 +25,31 @@
 7. 涉及 MCP、Skill、subagent、connector、runtime plugin、background worker 等容易误解为
    runtime 能力的主题时，先做轻量 Grilling Gate，明确术语、反例、non-goals 和安全边界。
 
+## 风险路由与升级
+
+- 先记录 change class：`read-only`、`mechanical`、`behavioral` 或 `authority-sensitive`，再映射
+  `low / medium / high`。文件数量只扩大验证范围，不能单独提高 semantic review 等级。
+- `read-only` 不产生 repository mutation；`mechanical` 默认 low；局部 runtime 行为默认 medium；
+  权限、持久化、公开 contract、产品 Git/subprocess 或不可逆状态变化默认 high。
+- Implementation lane 与 delivery action 分开记录。低风险实现以后即使获准 commit/push，也只增加对应
+  Git preflight，不自动继承 medium/high 的 independent semantic review。
+- 风险只允许向上升级。发现 unsafe automated fix、公共/runtime 行为、异常/失败合同变化、权限、持久化、
+  网络、Git/subprocess 语义、测试削弱或无法证明等价的修改时，立即停止并重新冻结风险与 scope。
+- Archive、durable docs 和其他 semantic subjects 应在 final review packet 前完成；packet 后只允许规范定义的
+  evidence tails，避免因可预见的收尾写入反复使 semantic review 失效。
+- Endpoint fingerprint 必须从 canonical effective URL 的精确无换行字节计算，并在任何 remote contact 前冻结；
+  不得对带 record separator 的命令展示文本直接求 hash。
+
 ## TDD 与验证
 
 - 行为变更遵循 RED-GREEN-REFACTOR；先看到测试因缺少目标行为而失败。
-- 优先运行最小相关测试，runtime/tests 最终变化后运行：
+- 优先运行最小相关测试，runtime/tests 最终变化后运行 canonical 入口：
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/verify.ps1
+```text
+python -I scripts/verify.py
 ```
+
+- PowerShell host 可使用 `scripts/verify.ps1` 薄包装；required checks 仍由上述 Python 入口定义。
 
 - 验证无法运行时，必须说明原因和未覆盖风险。
 - 测试通过只证明已执行断言，不证明 contract、风险判断或 review 正确。
@@ -69,9 +86,10 @@ python scripts/validate_independent_review.py \
 ```
 
 - 缺失 receipt set、跳过该命令或 validator 非零退出时，任何 independent slot 都不得计为完成。
-  Validator 只声明 `mechanical_consistency_only` 并保持 `gate_ready=false`；宿主控制器必须另外核对 native
-  dispatch provenance，变更前流程 authority 必须另外核对 activation sequence。仓库 receipt 自填字段不是
-  这两项事实的机器证明。
+  Validator 只声明 `mechanical_consistency_only` 并保持 `gate_ready=false`。positive-slot review 的宿主
+  控制器必须另外核对 native dispatch provenance；authority-bound zero-slot 将 reviewer dispatch 标为
+  `NOT_APPLICABLE`，不得制造 reviewer evidence。两种情况都必须另外核对 activation sequence；仓库 receipt
+  自填字段不是这些宿主事实的机器证明。
 - 新增 validator/gate 的 change 只能由变更前流程 authority 在实现、负样本与 workflow wiring 通过后激活；
   validator 只核对 activation record path/hash，不证明时序，也不得追溯声称它验证了自己实现前的 plan
   review。激活后从该 change 的 final review 和后续适用 review 生效。
@@ -169,8 +187,10 @@ python scripts/validate_independent_review.py \
 - Final archive/docs/review packet 完成后只允许写入规定的两文件 evidence tail；形成 exact candidate commit
   后不再写仓库文档。Push 后的 final handoff 只报告 live state，不产生会改变 candidate HEAD 的新提交。
 - `docs/PROGRESS.md` 记录长期能力、决策、验证和债务；
-  `HANDOFF_TO_NEXT_CHAT.md` 只记录下一轮安全行动所需上下文。
+  `HANDOFF_TO_NEXT_CHAT.md` 只记录稳定的恢复协议、阅读顺序和安全边界。
 - branch、HEAD、remote 和精确 hash 通过 Git 命令查询，不复制成多份会自失效的文档事实。
+- Tracked HANDOFF 不记录 active change、worktree、candidate、merge/push 或 remote parity；这些只由 live
+  Git/OpenSpec/controller state 在会话交接时报告。
 - closeout 不创建或暗示下一产品阶段。
 
 ## 完成前检查

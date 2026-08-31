@@ -1,0 +1,60 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "repair-documentation-information-architecture",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01ec2-user-direct-implement-2026-08-31"
+  },
+  "scope": {
+    "risk": "low",
+    "summary": "Repair documentation information architecture and deterministic drift checks.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/repair-documentation-information-architecture/epoch-0001.json",
+        ".harness/review_checklist.md",
+        ".harness/rules.md",
+        ".harness/templates/stage_planning.md",
+        "AGENTS.md",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "README.md",
+        "docs/AGENT_RULES.md",
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURE_LIST.json",
+        "docs/PROGRESS.md",
+        "openspec/changes/README.md",
+        "openspec/changes/archive/README.md",
+        "openspec/changes/repair-documentation-information-architecture/.openspec.yaml",
+        "openspec/changes/repair-documentation-information-architecture/design.md",
+        "openspec/changes/repair-documentation-information-architecture/proposal.md",
+        "openspec/changes/repair-documentation-information-architecture/specs/harness-development-workflow/spec.md",
+        "openspec/changes/repair-documentation-information-architecture/tasks.md",
+        "openspec/specs/README.md",
+        "scripts/check_stage_docs.py",
+        "tests/test_chat_api.py",
+        "tests/test_verify_scripts.py"
+      ],
+      "prefixes": []
+    },
+    "non_goals": [
+      "No app runtime or public contract changes.",
+      "No rewrite of archived OpenSpec history.",
+      "No new docs system, dependency, commit, merge, push, or archive."
+    ],
+    "active_allowed_files_sha256": "d94ec5e968af4052d2d378f29b0cff72166ba3778032d9b8945b7ccfb622b4d8"
+  },
+  "scope_sha256": "f7daec3e9dca8e177f6d09a2f09f47b05da345dff244da2ce8bdbce0e7e4c7ac",
+  "planning_baseline": {
+    "commit": "1d6f45f734124d009fa72cc54cbb080c5caa6c44"
+  },
+  "action_ceiling": "implement",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "1d6f45f734124d009fa72cc54cbb080c5caa6c44"
+  }
+}

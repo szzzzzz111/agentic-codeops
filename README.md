@@ -62,12 +62,12 @@ PowerShell host 可使用 `scripts/verify.ps1` 薄包装；实际检查顺序仍
 
 ## 文档入口
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：当前真实架构、边界和后续演进方向。
-- [docs/PROGRESS.md](docs/PROGRESS.md)：阶段历史、验证记录和剩余债务。
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：当前 runtime 架构、代码映射和稳定边界。
+- [docs/PROGRESS.md](docs/PROGRESS.md)：durable status、剩余债务、候选顺序和阶段索引。
 - [docs/AGENT_RULES.md](docs/AGENT_RULES.md)：分支、修改、验证、review、文档职责和交接规则。
 - [docs/FEATURE_LIST.json](docs/FEATURE_LIST.json)：可验收能力清单。
 - [openspec/specs/](openspec/specs/)：长期 capability specs。
-- [HANDOFF_TO_NEXT_CHAT.md](HANDOFF_TO_NEXT_CHAT.md)：下一轮 session 操作上下文。
+- [HANDOFF_TO_NEXT_CHAT.md](HANDOFF_TO_NEXT_CHAT.md)：稳定恢复协议；实时 Git/OpenSpec 状态需重新查询。
 
 ## CLI
 
@@ -142,9 +142,9 @@ curl -X POST http://127.0.0.1:8000/chat \
 
 ## 文档职责
 
-README 只保留项目门面、快速开始、CLI 入口、当前能力快照和文档导航。详细模块说明、阶段历史、
-验证 evidence、未清债务和长期规格分别由 `docs/ARCHITECTURE.md`、`docs/PROGRESS.md`、
-`docs/FEATURE_LIST.json` 和 `openspec/specs/` 承担。
+README 只保留项目门面、快速开始、CLI 入口、当前能力快照和文档导航。当前 runtime relationships、
+durable status/debt、acceptance inventory、长期规格与阶段历史分别由 `docs/ARCHITECTURE.md`、
+`docs/PROGRESS.md`、`docs/FEATURE_LIST.json`、`openspec/specs/` 与 archived OpenSpec changes 承担。
 
 OpenSpec、Harness、review checklist、Codex/OpenCode skills、Superpowers、MCP 和 plugin
 均是开发流程或外部协作范式，不是 RepoPilot runtime 能力。

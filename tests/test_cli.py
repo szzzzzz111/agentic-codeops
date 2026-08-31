@@ -306,7 +306,11 @@ def test_workflow_skills_define_plan_review_gates() -> None:
     assert "inherited or unknown context" in stage_planner
     assert "same final content-addressed baseline" in stage_planner
     assert "validate_independent_review.py" in stage_planner
-    assert "low-risk stage uses its explicit checklist-required slot count" in stage_planner
+    assert "low-risk stage uses its explicit authority-bound slot count" in stage_planner
+    assert "empty receipts and" in stage_planner
+    assert "empty review history" in stage_planner
+    assert "--required-action implement" in stage_planner
+    assert "host-retained plan packet hash" in stage_planner
     assert "plan-level review" in workflow
     assert "final implementation review" in workflow
     assert "development workflow" in workflow
@@ -316,6 +320,13 @@ def test_workflow_skills_define_plan_review_gates() -> None:
     assert "plan contract" in review_loop
     assert "same final content-addressed baseline" in review_loop
     assert "validate_independent_review.py" in review_loop
+
+
+def test_canonical_verification_command_is_consistent_in_entry_docs() -> None:
+    for path in (Path("AGENTS.md"), Path(".harness/rules.md")):
+        text = path.read_text(encoding="utf-8")
+        assert "python -I scripts/verify.py" in text
+        assert "thin wrapper" in text.lower() or "薄包装" in text
 
 
 def test_opencode_plan_review_skill_limits_session_reuse() -> None:

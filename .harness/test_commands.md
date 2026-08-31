@@ -81,6 +81,18 @@ python scripts/validate_stage_authority.py \
   --expected-authorized-remote-tip <remote-tip-oid>
 ```
 
+当 authority scope 含 `review_slot_requirements` 时，`implement` preflight 还必须传入宿主保留的
+plan-review inputs：
+
+```text
+  --plan-review-set .harness/reviews/<stage-id>/plan/review-set.json \
+  --required-plan-review-slots <bound-plan-slot-count> \
+  --expected-plan-review-packet-sha256 <host-retained-plan-packet-sha256>
+```
+
+这三个参数缺失或不匹配必须 fail closed。没有该 binding 的 legacy record 保持既有兼容路径，但不得
+声称 authority-bound slot count。
+
 Finite candidate `commit`、merge、push 还必须传入实际 implementation review set、required slot count、
 host-retained packet hash 与 delivery binding；archive 需要前三项 review inputs。Merge/push 另外需要
 exact candidate HEAD。对应 flags 为

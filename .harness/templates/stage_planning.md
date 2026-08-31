@@ -6,8 +6,11 @@
 
 - Name: `<Vx or process-only name>`
 - Branch/worktree: `<name>`
+- Change class: `<read-only / mechanical / behavioral / authority-sensitive>`
 - Risk: `<low / medium / high>`
 - Risk reason: `<blast radius, uncertainty, security or persistence boundary>`
+- Implementation lane: `<read-only / lightweight internal / focused independent / full adversarial>`
+- Delivery actions: `<none / commit / archive / merge / push; assessed separately from semantic risk>`
 - Previous baseline: `<completed stage>`
 
 ## Intent And Scope
@@ -17,6 +20,7 @@
 - In scope: `<small vertical slice>`
 - Non-goals: `<explicit exclusions>`
 - Public/runtime contract: `<unchanged or exact change>`
+- File-count note: `<why breadth changes verification scope but does or does not change semantic risk>`
 
 ## Boundaries And Failures
 
@@ -38,6 +42,7 @@
 - External review: `<required / optional / not requested>`
 - Independent counterexamples requested: `<failure modes>`
 - Stage Debt Sweep paths: `<changed and directly dependent older paths>`
+- Upward-only escalation triggers: `<unsafe fix, behavior, permission, persistence, network, Git/subprocess, weakened test>`
 
 ## Files And Durable Facts
 
@@ -45,6 +50,8 @@
 - Review checklist additions: `<gates>`
 - Durable docs whose owned facts change: `<paths or none>`
 - Facts intentionally queried live: `<branch / HEAD / remote / active change>`
+- Final semantic freeze point: `<after archive/docs and before evidence-tail-only state>`
+- Endpoint fingerprint bytes: `<canonical effective URL source and newline handling, or not applicable>`
 
 ## Human Confirmation
 
