@@ -266,5 +266,20 @@
     ],
     "passes": true,
     "notes": "Covered by tests/test_cli.py; implemented as a local console script entrypoint app.cli:main. V24 is CLI presentation/command mapping only; Verified Patch Promotion was intentionally excluded from V24 and implemented later in V25."
+  },
+  {
+    "id": "governed-run-contract",
+    "category": "agent",
+    "description": "Internal single-Agent governed run contract correlates a clean Git baseline, exact tracked-path scope, Codex completion claim, whitelisted verification receipt, and stable post-verification snapshot.",
+    "acceptance_criteria": [
+      "immutable run, snapshot, claim, receipt, and decision types fail closed on invalid field combinations",
+      "Codex JSON events distinguish open, failed, not-observed, invalid, and exact READY_FOR_REVIEW claims",
+      "Git snapshots resolve a repository-external system Git from code-owned roots, use sanitized fixed read-only commands, bind stage-0 index objects plus raw tracked bytes and modes, include all untracked paths, and require two stable samples",
+      "evaluation returns only continue, intervene, needs_human, or ready_for_review with deterministic conflict-first precedence",
+      "every outcome keeps task completion, product acceptance, and Git delivery authorization false with unverified provenance",
+      "no public API, CLI, ToolRegistry, persistence, Agent launcher, automatic repair, or Git delivery integration"
+    ],
+    "passes": false,
+    "notes": "Independent code-ready review and deterministic tests are current, but passes remains false because the internal kernel is not wired into runtime routes and has no product acceptance."
   }
 ]

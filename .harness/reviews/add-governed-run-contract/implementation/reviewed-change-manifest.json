@@ -1,0 +1,151 @@
+{
+  "schema_version": "repopilot.reviewed_change_manifest/v2",
+  "stage_id": "add-governed-run-contract",
+  "planning_base": "cf2679b9fc96e54cfb7a665ff7c0a4aaf05b9dd0",
+  "excluded_metadata_paths": [
+    ".harness/authority/add-governed-run-contract/delivery-binding.json",
+    ".harness/reviews/add-governed-run-contract/implementation/review-set.json",
+    ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+    ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff"
+  ],
+  "changes": [
+    {
+      "path": ".harness/allowed_files.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9004b2e101b6ca854874072d6ccbbaea575fcc10c66615ef4a931ba6bffb211a"
+    },
+    {
+      "path": ".harness/authority/add-governed-run-contract/epoch-0001.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6af4518fa341e9c34bea384b53ab9f8d1c856a88a9492a848729ab2c9c1e0a35"
+    },
+    {
+      "path": ".harness/authority/add-governed-run-contract/epoch-0002.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "91c9efc47f79d2e4fe208c4a23b39acda41606b66c0acd3d9d63d98545f3ffff"
+    },
+    {
+      "path": ".harness/authority/add-governed-run-contract/epoch-0003.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "828a1534a499cfe02c35552637dce8889edaa8dfc235e46cb1d9f2b034eb8fde"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "de359478a14c7b0a000515d27a9c487233e647adef6d3aec98977db8fb5d06d3"
+    },
+    {
+      "path": ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e663f7d26e87003f683be76c79d04551aa5579ae215c9a7d23232dde056688c1"
+    },
+    {
+      "path": "app/supervision/__init__.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "826556a72bfa57233b47cbdb09e6ac5e9ef12ca13f663a581d1d66cbabf3ddb5"
+    },
+    {
+      "path": "app/supervision/codex_events.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "20e4bc33947b9cbb243c116c460ee55a58d2728a4f0da464ca4c527ebae67756"
+    },
+    {
+      "path": "app/supervision/contracts.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9fc22f18c7338bf88de65ffaa5446d6a13d2d039d2cfa1f5eb68aca095528aa7"
+    },
+    {
+      "path": "app/supervision/evaluator.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "1c1480126c90b02a4766e10eb13b0fe0e1a683d27689a2a19f7da582da3b1677"
+    },
+    {
+      "path": "app/supervision/git_snapshot.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "4cedd5fe96d0677a49e66b3d2bc4148c5c5def1a5c29d75e742098863c8f25bb"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "83a53475b90e8ef3c3ea7e770b4a45c09a2025633e928ca81e84ae3a47d72204"
+    },
+    {
+      "path": "docs/FEATURE_LIST.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "82e3ae08d4d4b6bce36bd8e08cc96d1bc77e072f6446e95b335b5c3ec57d5e0a"
+    },
+    {
+      "path": "docs/PROGRESS.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "7e40b9c37db4e40f3e7fbc077831f976a238175f54e45294980c3653c5cdb1f4"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/.openspec.yaml",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/design.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9f16653482451ba2170592455ea32a72da5cc5f4f5d635b4ba086c8dce3af538"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/plan-review.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "679021dae42def518ffe46af3b42c8945db48148627696a66da7961a51edd152"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/proposal.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9d72cc86c061379ac5f11cee74e84fc667278880a64f1d18d50e64010c1c94c2"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/specs/governed-run-contract/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "851e808ea46a525fd1ac381b4b10545311ca6aa07b2ed10caae213c8b51c418e"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/tasks.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "af135d211b8346acb58894620bcd8a09ec0c6c25d616c8139d9a21154ad71fc7"
+    },
+    {
+      "path": "openspec/specs/README.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b79f07d6f6cdefab156ddc061cc91b4e4ddc4cb647b63c0e5cf042469a464c93"
+    },
+    {
+      "path": "openspec/specs/governed-run-contract/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "21003ecc0e42a83bc87ed8595ed1610950f46f0c8f1fd772f267bbd40c3f4152"
+    },
+    {
+      "path": "tests/test_governed_run_contract.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e7ac1589f0f654cc09ed40da490a8f569e595766d473c89bb3e0f4886e0f80d5"
+    }
+  ]
+}

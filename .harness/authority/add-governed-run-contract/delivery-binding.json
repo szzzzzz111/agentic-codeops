@@ -1,0 +1,29 @@
+{
+  "schema_version": "repopilot.stage_delivery_binding/v1",
+  "stage_id": "add-governed-run-contract",
+  "authority_epoch": 3,
+  "authority_record_sha256": "828a1534a499cfe02c35552637dce8889edaa8dfc235e46cb1d9f2b034eb8fde",
+  "reviewed_manifest": {
+    "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+    "sha256": "c99377d12a22d704ebd0166086f25f9338b8acaab20694abb1e655c5efdbc978"
+  },
+  "reviewed_diff": {
+    "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+    "sha256": "c497d4a7ac4ec1ec6c1d76677f88319fe4d2fe14fe0478b973c3b69a7110349c"
+  },
+  "implementation_review_set": {
+    "path": ".harness/reviews/add-governed-run-contract/implementation/review-set.json",
+    "sha256": "0f952857d35442b07dcf6fd4c810a29d46f05dd88a1569ee9cadb3927c69f0c5",
+    "packet_sha256": "f60c7859657b26f02692c8cabbf6b3af33a1a2fc49b15de73a5d76526064025d"
+  },
+  "final_harness_files": [
+    {
+      "path": ".harness/allowed_files.md",
+      "sha256": "9004b2e101b6ca854874072d6ccbbaea575fcc10c66615ef4a931ba6bffb211a"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "sha256": "de359478a14c7b0a000515d27a9c487233e647adef6d3aec98977db8fb5d06d3"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "add-governed-run-contract",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01908-user-entered-add-governed-run-contract-2026-09-01"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Add an internal single-agent governed-run contract that binds a real Codex completion claim and deterministic verification receipt to one read-only Git snapshot, ending only at a human review decision.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/add-governed-run-contract/epoch-0001.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/add-governed-run-contract/implementation/review-set.json",
+        ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+        ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+        "app/supervision/__init__.py",
+        "app/supervision/codex_events.py",
+        "app/supervision/contracts.py",
+        "app/supervision/evaluator.py",
+        "app/supervision/git_snapshot.py",
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURE_LIST.json",
+        "docs/PROGRESS.md",
+        "openspec/changes/add-governed-run-contract/.openspec.yaml",
+        "openspec/changes/add-governed-run-contract/design.md",
+        "openspec/changes/add-governed-run-contract/plan-review.md",
+        "openspec/changes/add-governed-run-contract/proposal.md",
+        "openspec/changes/add-governed-run-contract/specs/governed-run-contract/spec.md",
+        "openspec/changes/add-governed-run-contract/tasks.md",
+        "tests/test_governed_run_contract.py"
+      ],
+      "prefixes": []
+    },
+    "non_goals": [
+      "No public API, CLI command, response schema, ToolRegistry route, or default provider change.",
+      "No persistent operator identity, approval authority, daemon, background worker, runtime subagent, notification, or retry loop.",
+      "No Agent launcher and no synthetic event may count as real completion evidence.",
+      "No automatic apply, repair, rollback, branch, pull request, commit, merge, push, or Agent-worktree mutation.",
+      "No product completion, semantic correctness, or release-readiness claim; READY_FOR_REVIEW only opens human review.",
+      "No modification of the prior qualification validator, existing qualification tests, or long-term qualification spec.",
+      "No modification of the original dirty worktree.",
+      "No archive, commit, merge, or push in this authority epoch."
+    ],
+    "active_allowed_files_sha256": "b40b4fdef91465fdb38302fb946ccfe34c8eef22822c089fe14721579b5c09fa",
+    "review_slot_requirements": {
+      "plan": 2,
+      "implementation": 2
+    }
+  },
+  "scope_sha256": "4b0978f351b87a3309f8b3ebc335f53e637c433c46c83b00f29ad82b05bb485a",
+  "planning_baseline": {
+    "commit": "cf2679b9fc96e54cfb7a665ff7c0a4aaf05b9dd0"
+  },
+  "action_ceiling": "implement",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "cf2679b9fc96e54cfb7a665ff7c0a4aaf05b9dd0"
+  }
+}

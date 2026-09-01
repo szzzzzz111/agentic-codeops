@@ -74,6 +74,7 @@ Public response 继续只返回 `trace_id`、`answer`、`related_files`、`tool_
 | Verification | `app/verification/runner.py` | 固定 `pytest`、`ruff`、`verify` labels，禁止任意 shell |
 | Worktree lifecycle | `app/worktrees/manager.py` 与 `app/worktrees/` | create、inspect、reverify、dispose、promotion preflight |
 | Mutation serialization | `app/locks/repo_mutation.py` | 同 repo 的 RepoPilot-owned 写风险路径串行化 |
+| Governed run contract | `app/supervision/` | 内部单 Agent 合同、Codex event adapter、只读 Git snapshot 与纯决策；未接入公开路由 |
 | Memory/Long Task | `app/memory/`、`app/longtask/` | repo-local scoped state；不替代 repository evidence |
 | Audit/trace | `app/audit/`、`app/observability/` | redacted persistent summary 与 request-local trace |
 | Local CLI | `app/cli.py` | 映射到既有 ChatService，不创建第二套 runtime |
@@ -96,6 +97,35 @@ provider output、API key 或本机绝对路径。
 写风险工具统一经过 `ToolRegistry -> PermissionPolicy -> ApprovalGate -> ToolExecutor`。当前 `ApprovalGate`
 只消费 request context 内的确定性决策，不证明持久化 Operator authority；request-supplied `user_id` 也不能
 单独证明真实人工身份。
+
+## 内部 Governed Run Contract
+
+`app/supervision/` 提供一个尚未接入 `/chat`、CLI、ToolRegistry 或持久化存储的内部监督 kernel：
+
+```text
+RunContract(clean baseline + exact tracked-path allowlist + verification argv digest)
+  + GitSnapshot(two stable read-only samples)
+  + AgentClaim(Codex run/thread/event/snapshot identity)
+  + optional VerificationReceipt(result + post-verification snapshot)
+  -> continue | intervene | needs_human | ready_for_review
+```
+
+- Codex adapter 只在 closed stream 中接受唯一 `thread.started -> turn.started`、唯一末尾 terminal，以及 terminal
+  前最后一个 Agent message 的精确 `READY_FOR_REVIEW`；缺失、失败、未知格式、重复或乱序都有稳定 fail-closed
+  状态。
+- Git collector 要求无 symlink traversal 的 exact repository root；先检查 index/worktree tracked symlink、gitlink 与所有
+  effective repository scopes 的 clean/process filter，再以 child-env allowlist、固定只读 argv、helper 禁用、
+  code-owned system Git resolution、no-follow raw bytes/mode binding、closed stdin、`shell=False`、timeout/output cap/
+  POSIX process-group cleanup 连续采集两个完整 sample。tracked diff、stage-0 index identity、raw tracked file state、tracked paths 与包括 ignored
+  在内的 all-untracked inventory 任一漂移都会拒绝结果；无法证明 whole-tree containment 的平台在 spawn 前失败。
+- Evaluator 把 Git diff、raw worktree 和 stage-0 index 的 baseline/current delta path 一并纳入 exact scope，再处理
+  baseline/repository/HEAD/event/correlation/command/snapshot 冲突与进度；只有同一
+  completion snapshot 的现有白名单 verification 成功时才输出 `ready_for_review`。
+- 每个决策都固定 `task_complete=false`、`product_acceptance=false`、`git_delivery_authorized=false`、
+  `source_provenance=unverified`。双稳定采样只证明两个端点一致，不证明验证全过程隔离，也不能替代人工审批。
+
+该 kernel 不启动或控制 Coding Agent，不自动验证、修复、apply、commit、merge 或 push；真实 source provenance、
+持久 Operator authority、跨进程恢复和持续 repository writer isolation 仍属于后续独立能力。
 
 ## 写入与验证闭环
 

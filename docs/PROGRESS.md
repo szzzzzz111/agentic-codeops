@@ -18,6 +18,9 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
 - Coding Agent Governance Harness 是近期产品主线；已归档的一次窄资格 spike 从真实 Codex CLI 观察到唯一
   `turn.completed`、`READY_FOR_REVIEW` claim 和实际代码变化，并让独立 verification receipt 绑定验证前后
   同一 Git snapshot。该结论仅为 `QUALIFIED_OBSERVABILITY`，不等于 supervisor runtime、语义正确或产品验收。
+- 已归档的 `add-governed-run-contract` 实现了未接线的内部监督 kernel：不可变单 run 合同、fail-closed
+  Codex event adapter、只读双稳定 Git snapshot collector 和四态纯 evaluator。它只把证据充分的结果送入人工
+  review；所有决策仍明确否认任务完成、产品验收、Git 交付授权和已验证 source provenance。
 - 模型写代码能力保留但后移：默认仍为 fake/offline，真实 provider 仅 explicit opt-in，且最多生成 pending
   proposal；不得因本次可观察性资格通过而提前开放自动 apply 或 Git delivery。
 
@@ -33,14 +36,19 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
   commit/merge/push 均没有进入当前 runtime contract。
 - 当前资格只覆盖一个 Codex CLI、一个临时干净 fixture 和一次同快照验证；真实 source attestation 仍依赖
   controller evidence，尚未证明跨 provider、重启恢复、长期 event compatibility 或持久化 human authority。
+- Governed run kernel 的 snapshot continuity 只覆盖 completion/post-verification 的稳定端点；完美 ABA、验证期间
+  的瞬时外部 writer、不可伪造 receipt provenance 与真实任务语义正确性均未证明。
+- Governed run snapshot 已同时绑定 stage-0 index path/mode/object、Git diff 和 raw worktree bytes/mode；masked staged
+  blob 的 delta path 会进入 exact scope，但这仍不构成持续 writer isolation。
+- 当前 Git collector 只在能证明 POSIX process-group cleanup 与 no-follow raw file traversal 的平台工作；Windows
+  Job Object 支持尚未实现，因此在 spawn 前 fail closed，不宣称 Windows collector capability。
 
 ## 候选顺序
 
 以下是候选顺序，不表示已经 active 或获准实施；开始任何一项前重新运行 `openspec list` 并冻结新 stage：
 
-1. 另起 stage 规划最小 governed run contract：
-   只接一个真实 Agent、一个 Git snapshot、一个 completion claim 和一个 snapshot-bound receipt；
-   `READY_FOR_REVIEW` 只进入人工审批，不代表任务完成。
+1. 基于已归档 kernel，用外部 controller 运行 5–10 个真实、单 Agent、干净隔离任务 cohort，
+   只记录 reason codes、事件兼容性和人工 review friction；不得把 cohort fixture 或归档事件写成 runtime provenance。
 2. 单独设计并验证持久化 Operator approval/拒绝/失效边界；不能把 request-supplied `user_id` 或聊天确认
    直接升级为产品 authority。
 3. `enable-opt-in-model-patch-authoring` 后移保留：仅显式 opt-in 生成 pending patch proposal，默认继续
@@ -67,9 +75,25 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
 | Workflow authority/replay | authority binding、independent review、stage replay | `2026-08-20-*` 至 `2026-08-21-*` archives |
 | Verification baseline | deterministic verification、repository Ruff cleanup | `2026-08-26-*` archives |
 | Agent governance qualification | real Agent terminal/claim 与同快照 verification receipt | `2026-09-01-qualify-real-agent-observability` |
+| Governed run kernel | 单 Agent contract、Git snapshot、claim/receipt 与有界人工 review 决策 | `2026-09-01-add-governed-run-contract` archive |
 
 <details>
 <summary>历史详细记录（只作当时证据，不作为 current guidance）</summary>
+
+## Governed Run Contract（archived，2026-09-01）
+
+- OpenSpec change 已归档到 `openspec/changes/archive/2026-09-01-add-governed-run-contract/`，并新增长期
+  `governed-run-contract` spec；实现保持在内部 `app/supervision/`，未接入 `/chat`、CLI、ToolRegistry、
+  provider、持久化或 Agent launcher。
+- Kernel 绑定不可变 `RunContract`、唯一 Codex run/thread/event claim、只读双稳定 `GitSnapshot` 与
+  snapshot-bound `VerificationReceipt`，只输出 `continue`、`intervene`、`needs_human` 或
+  `ready_for_review`。任何结果都保持 task completion、product acceptance 与 Git delivery authorization 为 false。
+- Git collector 使用 code-owned Git resolution、child-env allowlist、固定只读 argv、POSIX process-group cleanup、
+  stage-0 index identity、tracked raw bytes/mode 与 all-untracked inventory；无法证明 containment 的平台在 spawn 前
+  fail closed。稳定端点不排除完美 ABA，source provenance 仍为 unverified。
+- Pre-archive 最终实现 packet 经原 A/B 两席 remediation re-review 清零 P0/P1；focused + qualification regression
+  为 `90 passed`，canonical full verification 为 `1142 passed`，full Ruff、stage-doc、skill-eval、OpenSpec strict
+  与 `git diff --check` 均通过。以上只证明内部 kernel 的 code-ready acceptance，不是产品验收或发布就绪。
 
 ## Real Agent Observability Qualification（archived，2026-09-01）
 

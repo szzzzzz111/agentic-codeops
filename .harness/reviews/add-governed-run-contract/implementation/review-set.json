@@ -1,0 +1,758 @@
+{
+  "schema_version": "repopilot.independent_review_set/v1",
+  "stage_id": "add-governed-run-contract",
+  "phase": "implementation",
+  "activation": {
+    "status": "active",
+    "activated_after_change": "generalize-independent-review-provider",
+    "authority": "pre_change_process_contract",
+    "activation_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md",
+    "activation_ref_sha256": "4b7155e4648dd2f12914213a866040ab6c68f537fcbdecccf072a90841085c8f",
+    "retroactive_plan_validation": false
+  },
+  "external_gate_checks": {
+    "host_dispatch_provenance": {
+      "status": "observed-by-host-controller",
+      "evidence_ref": "collaboration.spawn_agent:/root/governed_plan_a,/root/governed_plan_b;fork_turns=none"
+    },
+    "activation_sequence": {
+      "status": "observed-from-frozen-activation-record",
+      "evidence_ref": "openspec/changes/archive/2026-08-20-generalize-independent-review-provider/activation-record.md"
+    }
+  },
+  "implementer": {
+    "instance_id": "/root"
+  },
+  "baseline": {
+    "kind": "packet_manifest",
+    "immutable_ref": "sha256:f60c7859657b26f02692c8cabbf6b3af33a1a2fc49b15de73a5d76526064025d",
+    "artifacts": [
+      {
+        "path": ".harness/allowed_files.md",
+        "sha256": "9004b2e101b6ca854874072d6ccbbaea575fcc10c66615ef4a931ba6bffb211a"
+      },
+      {
+        "path": ".harness/authority/add-governed-run-contract/epoch-0001.json",
+        "sha256": "6af4518fa341e9c34bea384b53ab9f8d1c856a88a9492a848729ab2c9c1e0a35"
+      },
+      {
+        "path": ".harness/authority/add-governed-run-contract/epoch-0002.json",
+        "sha256": "91c9efc47f79d2e4fe208c4a23b39acda41606b66c0acd3d9d63d98545f3ffff"
+      },
+      {
+        "path": ".harness/authority/add-governed-run-contract/epoch-0003.json",
+        "sha256": "828a1534a499cfe02c35552637dce8889edaa8dfc235e46cb1d9f2b034eb8fde"
+      },
+      {
+        "path": ".harness/review_checklist.md",
+        "sha256": "de359478a14c7b0a000515d27a9c487233e647adef6d3aec98977db8fb5d06d3"
+      },
+      {
+        "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+        "sha256": "c99377d12a22d704ebd0166086f25f9338b8acaab20694abb1e655c5efdbc978"
+      },
+      {
+        "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+        "sha256": "c497d4a7ac4ec1ec6c1d76677f88319fe4d2fe14fe0478b973c3b69a7110349c"
+      },
+      {
+        "path": ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+        "sha256": "e663f7d26e87003f683be76c79d04551aa5579ae215c9a7d23232dde056688c1"
+      },
+      {
+        "path": "app/supervision/__init__.py",
+        "sha256": "826556a72bfa57233b47cbdb09e6ac5e9ef12ca13f663a581d1d66cbabf3ddb5"
+      },
+      {
+        "path": "app/supervision/codex_events.py",
+        "sha256": "20e4bc33947b9cbb243c116c460ee55a58d2728a4f0da464ca4c527ebae67756"
+      },
+      {
+        "path": "app/supervision/contracts.py",
+        "sha256": "9fc22f18c7338bf88de65ffaa5446d6a13d2d039d2cfa1f5eb68aca095528aa7"
+      },
+      {
+        "path": "app/supervision/evaluator.py",
+        "sha256": "1c1480126c90b02a4766e10eb13b0fe0e1a683d27689a2a19f7da582da3b1677"
+      },
+      {
+        "path": "app/supervision/git_snapshot.py",
+        "sha256": "4cedd5fe96d0677a49e66b3d2bc4148c5c5def1a5c29d75e742098863c8f25bb"
+      },
+      {
+        "path": "docs/ARCHITECTURE.md",
+        "sha256": "83a53475b90e8ef3c3ea7e770b4a45c09a2025633e928ca81e84ae3a47d72204"
+      },
+      {
+        "path": "docs/FEATURE_LIST.json",
+        "sha256": "82e3ae08d4d4b6bce36bd8e08cc96d1bc77e072f6446e95b335b5c3ec57d5e0a"
+      },
+      {
+        "path": "docs/PROGRESS.md",
+        "sha256": "7e40b9c37db4e40f3e7fbc077831f976a238175f54e45294980c3653c5cdb1f4"
+      },
+      {
+        "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/.openspec.yaml",
+        "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+      },
+      {
+        "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/design.md",
+        "sha256": "9f16653482451ba2170592455ea32a72da5cc5f4f5d635b4ba086c8dce3af538"
+      },
+      {
+        "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/plan-review.md",
+        "sha256": "679021dae42def518ffe46af3b42c8945db48148627696a66da7961a51edd152"
+      },
+      {
+        "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/proposal.md",
+        "sha256": "9d72cc86c061379ac5f11cee74e84fc667278880a64f1d18d50e64010c1c94c2"
+      },
+      {
+        "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/specs/governed-run-contract/spec.md",
+        "sha256": "851e808ea46a525fd1ac381b4b10545311ca6aa07b2ed10caae213c8b51c418e"
+      },
+      {
+        "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/tasks.md",
+        "sha256": "af135d211b8346acb58894620bcd8a09ec0c6c25d616c8139d9a21154ad71fc7"
+      },
+      {
+        "path": "openspec/specs/README.md",
+        "sha256": "b79f07d6f6cdefab156ddc061cc91b4e4ddc4cb647b63c0e5cf042469a464c93"
+      },
+      {
+        "path": "openspec/specs/governed-run-contract/spec.md",
+        "sha256": "21003ecc0e42a83bc87ed8595ed1610950f46f0c8f1fd772f267bbd40c3f4152"
+      },
+      {
+        "path": "tests/test_governed_run_contract.py",
+        "sha256": "e7ac1589f0f654cc09ed40da490a8f569e595766d473c89bb3e0f4886e0f80d5"
+      }
+    ],
+    "packet_sha256": "f60c7859657b26f02692c8cabbf6b3af33a1a2fc49b15de73a5d76526064025d"
+  },
+  "review_history": [
+    {
+      "review_ref": "host-review:/root/governed_plan_a#implementation-first-round",
+      "receipt_sha256": "7bd6a2bbf93e6e163cfb3e9703de3942cd6b61d0dfe977e33f9406f2eca613d9",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "add-governed-run-contract",
+        "phase": "implementation",
+        "slot_id": "governed-implementation-a",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI Codex",
+          "model": "inherited parent model",
+          "instance_id": "/root/governed_plan_a"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "f751ce8b45b15c467e6f90468c941252f2ca44b726b8bb7ace72f71a501266d1",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "b40b4fdef91465fdb38302fb946ccfe34c8eef22822c089fe14721579b5c09fa"
+          },
+          {
+            "path": ".harness/authority/add-governed-run-contract/epoch-0001.json",
+            "sha256": "6af4518fa341e9c34bea384b53ab9f8d1c856a88a9492a848729ab2c9c1e0a35"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "c35b0211353db1b979a18c9ae9ec9e0c1ea4c0f482e8611cb05b74c36bed3837"
+          },
+          {
+            "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+            "sha256": "c9ac845037fe2e9c59c55599c5dc7ba452bb87d635050a17aedf91c44768b744"
+          },
+          {
+            "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+            "sha256": "f17b1a2a03a740b31baf7ecd09108a2de05e34000d333ded196f343bdcfae47a"
+          },
+          {
+            "path": ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+            "sha256": "e663f7d26e87003f683be76c79d04551aa5579ae215c9a7d23232dde056688c1"
+          },
+          {
+            "path": "app/supervision/__init__.py",
+            "sha256": "840a919ea8c9387c37613279c8cfea7cea103303fd7667c1e78b7c16846342a4"
+          },
+          {
+            "path": "app/supervision/codex_events.py",
+            "sha256": "20e4bc33947b9cbb243c116c460ee55a58d2728a4f0da464ca4c527ebae67756"
+          },
+          {
+            "path": "app/supervision/contracts.py",
+            "sha256": "85a6568c5e6b2f50efc2428d59842b88c91985e1a1402d161506ced4f73cfab5"
+          },
+          {
+            "path": "app/supervision/evaluator.py",
+            "sha256": "9c98cede84359624df3c700a1982f14f0ae853401f1d0aa9400db124edc2e848"
+          },
+          {
+            "path": "app/supervision/git_snapshot.py",
+            "sha256": "9f1e42996967670df2765285f180b527010dfdaadc1384ec2280e5a337f728b9"
+          },
+          {
+            "path": "docs/ARCHITECTURE.md",
+            "sha256": "05c9361c949221a8fb9cb596e699838b82690fa1c874244443eae40d3c7c0a56"
+          },
+          {
+            "path": "docs/FEATURE_LIST.json",
+            "sha256": "dbd986ef5a9192e69c028aebca35eb965443a6cc5cc95b65896680baed79b0a2"
+          },
+          {
+            "path": "docs/PROGRESS.md",
+            "sha256": "434e8e33594608e1367ab51d642f977236e0f1984b44574380328d8eb0111833"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/.openspec.yaml",
+            "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/design.md",
+            "sha256": "02cc669355f217c1dd6537acf51dad9ec01355a1940e77a39d336dec1abe344f"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/plan-review.md",
+            "sha256": "679021dae42def518ffe46af3b42c8945db48148627696a66da7961a51edd152"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/proposal.md",
+            "sha256": "9d72cc86c061379ac5f11cee74e84fc667278880a64f1d18d50e64010c1c94c2"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/specs/governed-run-contract/spec.md",
+            "sha256": "22aaa75cf4a8875593e7a9e5900e7369f48dc23cd02c6999bd33d601bf5a0f78"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/tasks.md",
+            "sha256": "6df9b25d5348b78acbe3cc1b0a30c12b6a2a41600bde82fc5bfb0193b5fcd856"
+          },
+          {
+            "path": "tests/test_governed_run_contract.py",
+            "sha256": "060fe6217b9c6bf7dd2f822062a3e058c46d85a2f94aebc13ab1401014194c25"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "GRI-A-P1-001",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "GRI-A-P1-002",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "GRI-A-P1-003",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "GRI-A-P2-004",
+              "severity": "P2",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "GRI-A-P2-005",
+              "severity": "P2",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "First implementation round only; later remediation, validation, archive, commit, merge, push, and remote parity were not observed."
+        },
+        "lineage": null
+      }
+    },
+    {
+      "review_ref": "host-review:/root/governed_plan_b#implementation-first-round",
+      "receipt_sha256": "242d1fc3633e75ce7cd09aee015dc020b5156b72cdeba17b2b4851268ef88c8a",
+      "receipt": {
+        "schema_version": "repopilot.independent_review_receipt/v1",
+        "stage_id": "add-governed-run-contract",
+        "phase": "implementation",
+        "slot_id": "governed-implementation-b",
+        "implementer_instance_id": "/root",
+        "reviewer": {
+          "provider": "OpenAI Codex",
+          "model": "inherited parent model",
+          "instance_id": "/root/governed_plan_b"
+        },
+        "context_evidence": {
+          "evidence_source": "host_tool_metadata",
+          "parent_context_inheritance": "none",
+          "other_first_round_conclusions_visible": false
+        },
+        "review_round": "first_round",
+        "reviewed_packet_sha256": "f751ce8b45b15c467e6f90468c941252f2ca44b726b8bb7ace72f71a501266d1",
+        "reviewed_artifacts": [
+          {
+            "path": ".harness/allowed_files.md",
+            "sha256": "b40b4fdef91465fdb38302fb946ccfe34c8eef22822c089fe14721579b5c09fa"
+          },
+          {
+            "path": ".harness/authority/add-governed-run-contract/epoch-0001.json",
+            "sha256": "6af4518fa341e9c34bea384b53ab9f8d1c856a88a9492a848729ab2c9c1e0a35"
+          },
+          {
+            "path": ".harness/review_checklist.md",
+            "sha256": "c35b0211353db1b979a18c9ae9ec9e0c1ea4c0f482e8611cb05b74c36bed3837"
+          },
+          {
+            "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+            "sha256": "c9ac845037fe2e9c59c55599c5dc7ba452bb87d635050a17aedf91c44768b744"
+          },
+          {
+            "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+            "sha256": "f17b1a2a03a740b31baf7ecd09108a2de05e34000d333ded196f343bdcfae47a"
+          },
+          {
+            "path": ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+            "sha256": "e663f7d26e87003f683be76c79d04551aa5579ae215c9a7d23232dde056688c1"
+          },
+          {
+            "path": "app/supervision/__init__.py",
+            "sha256": "840a919ea8c9387c37613279c8cfea7cea103303fd7667c1e78b7c16846342a4"
+          },
+          {
+            "path": "app/supervision/codex_events.py",
+            "sha256": "20e4bc33947b9cbb243c116c460ee55a58d2728a4f0da464ca4c527ebae67756"
+          },
+          {
+            "path": "app/supervision/contracts.py",
+            "sha256": "85a6568c5e6b2f50efc2428d59842b88c91985e1a1402d161506ced4f73cfab5"
+          },
+          {
+            "path": "app/supervision/evaluator.py",
+            "sha256": "9c98cede84359624df3c700a1982f14f0ae853401f1d0aa9400db124edc2e848"
+          },
+          {
+            "path": "app/supervision/git_snapshot.py",
+            "sha256": "9f1e42996967670df2765285f180b527010dfdaadc1384ec2280e5a337f728b9"
+          },
+          {
+            "path": "docs/ARCHITECTURE.md",
+            "sha256": "05c9361c949221a8fb9cb596e699838b82690fa1c874244443eae40d3c7c0a56"
+          },
+          {
+            "path": "docs/FEATURE_LIST.json",
+            "sha256": "dbd986ef5a9192e69c028aebca35eb965443a6cc5cc95b65896680baed79b0a2"
+          },
+          {
+            "path": "docs/PROGRESS.md",
+            "sha256": "434e8e33594608e1367ab51d642f977236e0f1984b44574380328d8eb0111833"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/.openspec.yaml",
+            "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/design.md",
+            "sha256": "02cc669355f217c1dd6537acf51dad9ec01355a1940e77a39d336dec1abe344f"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/plan-review.md",
+            "sha256": "679021dae42def518ffe46af3b42c8945db48148627696a66da7961a51edd152"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/proposal.md",
+            "sha256": "9d72cc86c061379ac5f11cee74e84fc667278880a64f1d18d50e64010c1c94c2"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/specs/governed-run-contract/spec.md",
+            "sha256": "22aaa75cf4a8875593e7a9e5900e7369f48dc23cd02c6999bd33d601bf5a0f78"
+          },
+          {
+            "path": "openspec/changes/add-governed-run-contract/tasks.md",
+            "sha256": "6df9b25d5348b78acbe3cc1b0a30c12b6a2a41600bde82fc5bfb0193b5fcd856"
+          },
+          {
+            "path": "tests/test_governed_run_contract.py",
+            "sha256": "060fe6217b9c6bf7dd2f822062a3e058c46d85a2f94aebc13ab1401014194c25"
+          }
+        ],
+        "conclusion": {
+          "status": "findings",
+          "findings": [
+            {
+              "id": "GRC-IMPL-B-001",
+              "severity": "P1",
+              "disposition": "fix",
+              "closure_status": "open"
+            },
+            {
+              "id": "GRC-IMPL-B-002",
+              "severity": "P2",
+              "disposition": "fix",
+              "closure_status": "open"
+            }
+          ],
+          "gate_verdict": "blocked",
+          "residual_uncertainty": "First implementation round only; later remediation, validation, archive, commit, merge, push, and remote parity were not observed."
+        },
+        "lineage": null
+      }
+    }
+  ],
+  "receipts": [
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "add-governed-run-contract",
+      "phase": "implementation",
+      "slot_id": "governed-implementation-a",
+      "implementer_instance_id": "/root",
+      "reviewer": {
+        "provider": "OpenAI Codex",
+        "model": "inherited parent model",
+        "instance_id": "/root/governed_plan_a"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "f60c7859657b26f02692c8cabbf6b3af33a1a2fc49b15de73a5d76526064025d",
+      "reviewed_artifacts": [
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "9004b2e101b6ca854874072d6ccbbaea575fcc10c66615ef4a931ba6bffb211a"
+        },
+        {
+          "path": ".harness/authority/add-governed-run-contract/epoch-0001.json",
+          "sha256": "6af4518fa341e9c34bea384b53ab9f8d1c856a88a9492a848729ab2c9c1e0a35"
+        },
+        {
+          "path": ".harness/authority/add-governed-run-contract/epoch-0002.json",
+          "sha256": "91c9efc47f79d2e4fe208c4a23b39acda41606b66c0acd3d9d63d98545f3ffff"
+        },
+        {
+          "path": ".harness/authority/add-governed-run-contract/epoch-0003.json",
+          "sha256": "828a1534a499cfe02c35552637dce8889edaa8dfc235e46cb1d9f2b034eb8fde"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "de359478a14c7b0a000515d27a9c487233e647adef6d3aec98977db8fb5d06d3"
+        },
+        {
+          "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+          "sha256": "c99377d12a22d704ebd0166086f25f9338b8acaab20694abb1e655c5efdbc978"
+        },
+        {
+          "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+          "sha256": "c497d4a7ac4ec1ec6c1d76677f88319fe4d2fe14fe0478b973c3b69a7110349c"
+        },
+        {
+          "path": ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+          "sha256": "e663f7d26e87003f683be76c79d04551aa5579ae215c9a7d23232dde056688c1"
+        },
+        {
+          "path": "app/supervision/__init__.py",
+          "sha256": "826556a72bfa57233b47cbdb09e6ac5e9ef12ca13f663a581d1d66cbabf3ddb5"
+        },
+        {
+          "path": "app/supervision/codex_events.py",
+          "sha256": "20e4bc33947b9cbb243c116c460ee55a58d2728a4f0da464ca4c527ebae67756"
+        },
+        {
+          "path": "app/supervision/contracts.py",
+          "sha256": "9fc22f18c7338bf88de65ffaa5446d6a13d2d039d2cfa1f5eb68aca095528aa7"
+        },
+        {
+          "path": "app/supervision/evaluator.py",
+          "sha256": "1c1480126c90b02a4766e10eb13b0fe0e1a683d27689a2a19f7da582da3b1677"
+        },
+        {
+          "path": "app/supervision/git_snapshot.py",
+          "sha256": "4cedd5fe96d0677a49e66b3d2bc4148c5c5def1a5c29d75e742098863c8f25bb"
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "sha256": "83a53475b90e8ef3c3ea7e770b4a45c09a2025633e928ca81e84ae3a47d72204"
+        },
+        {
+          "path": "docs/FEATURE_LIST.json",
+          "sha256": "82e3ae08d4d4b6bce36bd8e08cc96d1bc77e072f6446e95b335b5c3ec57d5e0a"
+        },
+        {
+          "path": "docs/PROGRESS.md",
+          "sha256": "7e40b9c37db4e40f3e7fbc077831f976a238175f54e45294980c3653c5cdb1f4"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/.openspec.yaml",
+          "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/design.md",
+          "sha256": "9f16653482451ba2170592455ea32a72da5cc5f4f5d635b4ba086c8dce3af538"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/plan-review.md",
+          "sha256": "679021dae42def518ffe46af3b42c8945db48148627696a66da7961a51edd152"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/proposal.md",
+          "sha256": "9d72cc86c061379ac5f11cee74e84fc667278880a64f1d18d50e64010c1c94c2"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/specs/governed-run-contract/spec.md",
+          "sha256": "851e808ea46a525fd1ac381b4b10545311ca6aa07b2ed10caae213c8b51c418e"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/tasks.md",
+          "sha256": "af135d211b8346acb58894620bcd8a09ec0c6c25d616c8139d9a21154ad71fc7"
+        },
+        {
+          "path": "openspec/specs/README.md",
+          "sha256": "b79f07d6f6cdefab156ddc061cc91b4e4ddc4cb647b63c0e5cf042469a464c93"
+        },
+        {
+          "path": "openspec/specs/governed-run-contract/spec.md",
+          "sha256": "21003ecc0e42a83bc87ed8595ed1610950f46f0c8f1fd772f267bbd40c3f4152"
+        },
+        {
+          "path": "tests/test_governed_run_contract.py",
+          "sha256": "e7ac1589f0f654cc09ed40da490a8f569e595766d473c89bb3e0f4886e0f80d5"
+        }
+      ],
+      "conclusion": {
+        "status": "findings",
+        "findings": [
+          {
+            "id": "GRI-A-P1-001",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRI-A-P1-002",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRI-A-P1-003",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRI-A-P2-004",
+            "severity": "P2",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRI-A-P2-005",
+            "severity": "P2",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRI-A-RR-P1-001",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRI-A-PREARCHIVE-P1-001",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRI-A-POSTARCHIVE-P1-001",
+            "severity": "P1",
+            "disposition": "clarify",
+            "closure_status": "closed"
+          }
+        ],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Final post-archive packet only. Both A/B slots are READY with no open P0/P1; the controller count was corrected to 23 semantic subjects and 25 packet artifacts. Product acceptance, runtime-route integration, candidate, merge, push, and remote parity remain unproved."
+      },
+      "lineage": {
+        "original_slot_id": "governed-implementation-a",
+        "original_reviewer_instance_id": "/root/governed_plan_a",
+        "original_review_ref": "host-review:/root/governed_plan_a#implementation-first-round",
+        "original_receipt_sha256": "7bd6a2bbf93e6e163cfb3e9703de3942cd6b61d0dfe977e33f9406f2eca613d9",
+        "closed_finding_ids": [
+          "GRI-A-P1-001",
+          "GRI-A-P1-002",
+          "GRI-A-P1-003",
+          "GRI-A-P2-004",
+          "GRI-A-P2-005"
+        ]
+      }
+    },
+    {
+      "schema_version": "repopilot.independent_review_receipt/v1",
+      "stage_id": "add-governed-run-contract",
+      "phase": "implementation",
+      "slot_id": "governed-implementation-b",
+      "implementer_instance_id": "/root",
+      "reviewer": {
+        "provider": "OpenAI Codex",
+        "model": "inherited parent model",
+        "instance_id": "/root/governed_plan_b"
+      },
+      "context_evidence": {
+        "evidence_source": "host_tool_metadata",
+        "parent_context_inheritance": "none",
+        "other_first_round_conclusions_visible": false
+      },
+      "review_round": "remediation_re_review",
+      "reviewed_packet_sha256": "f60c7859657b26f02692c8cabbf6b3af33a1a2fc49b15de73a5d76526064025d",
+      "reviewed_artifacts": [
+        {
+          "path": ".harness/allowed_files.md",
+          "sha256": "9004b2e101b6ca854874072d6ccbbaea575fcc10c66615ef4a931ba6bffb211a"
+        },
+        {
+          "path": ".harness/authority/add-governed-run-contract/epoch-0001.json",
+          "sha256": "6af4518fa341e9c34bea384b53ab9f8d1c856a88a9492a848729ab2c9c1e0a35"
+        },
+        {
+          "path": ".harness/authority/add-governed-run-contract/epoch-0002.json",
+          "sha256": "91c9efc47f79d2e4fe208c4a23b39acda41606b66c0acd3d9d63d98545f3ffff"
+        },
+        {
+          "path": ".harness/authority/add-governed-run-contract/epoch-0003.json",
+          "sha256": "828a1534a499cfe02c35552637dce8889edaa8dfc235e46cb1d9f2b034eb8fde"
+        },
+        {
+          "path": ".harness/review_checklist.md",
+          "sha256": "de359478a14c7b0a000515d27a9c487233e647adef6d3aec98977db8fb5d06d3"
+        },
+        {
+          "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+          "sha256": "c99377d12a22d704ebd0166086f25f9338b8acaab20694abb1e655c5efdbc978"
+        },
+        {
+          "path": ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+          "sha256": "c497d4a7ac4ec1ec6c1d76677f88319fe4d2fe14fe0478b973c3b69a7110349c"
+        },
+        {
+          "path": ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+          "sha256": "e663f7d26e87003f683be76c79d04551aa5579ae215c9a7d23232dde056688c1"
+        },
+        {
+          "path": "app/supervision/__init__.py",
+          "sha256": "826556a72bfa57233b47cbdb09e6ac5e9ef12ca13f663a581d1d66cbabf3ddb5"
+        },
+        {
+          "path": "app/supervision/codex_events.py",
+          "sha256": "20e4bc33947b9cbb243c116c460ee55a58d2728a4f0da464ca4c527ebae67756"
+        },
+        {
+          "path": "app/supervision/contracts.py",
+          "sha256": "9fc22f18c7338bf88de65ffaa5446d6a13d2d039d2cfa1f5eb68aca095528aa7"
+        },
+        {
+          "path": "app/supervision/evaluator.py",
+          "sha256": "1c1480126c90b02a4766e10eb13b0fe0e1a683d27689a2a19f7da582da3b1677"
+        },
+        {
+          "path": "app/supervision/git_snapshot.py",
+          "sha256": "4cedd5fe96d0677a49e66b3d2bc4148c5c5def1a5c29d75e742098863c8f25bb"
+        },
+        {
+          "path": "docs/ARCHITECTURE.md",
+          "sha256": "83a53475b90e8ef3c3ea7e770b4a45c09a2025633e928ca81e84ae3a47d72204"
+        },
+        {
+          "path": "docs/FEATURE_LIST.json",
+          "sha256": "82e3ae08d4d4b6bce36bd8e08cc96d1bc77e072f6446e95b335b5c3ec57d5e0a"
+        },
+        {
+          "path": "docs/PROGRESS.md",
+          "sha256": "7e40b9c37db4e40f3e7fbc077831f976a238175f54e45294980c3653c5cdb1f4"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/.openspec.yaml",
+          "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/design.md",
+          "sha256": "9f16653482451ba2170592455ea32a72da5cc5f4f5d635b4ba086c8dce3af538"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/plan-review.md",
+          "sha256": "679021dae42def518ffe46af3b42c8945db48148627696a66da7961a51edd152"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/proposal.md",
+          "sha256": "9d72cc86c061379ac5f11cee74e84fc667278880a64f1d18d50e64010c1c94c2"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/specs/governed-run-contract/spec.md",
+          "sha256": "851e808ea46a525fd1ac381b4b10545311ca6aa07b2ed10caae213c8b51c418e"
+        },
+        {
+          "path": "openspec/changes/archive/2026-09-01-add-governed-run-contract/tasks.md",
+          "sha256": "af135d211b8346acb58894620bcd8a09ec0c6c25d616c8139d9a21154ad71fc7"
+        },
+        {
+          "path": "openspec/specs/README.md",
+          "sha256": "b79f07d6f6cdefab156ddc061cc91b4e4ddc4cb647b63c0e5cf042469a464c93"
+        },
+        {
+          "path": "openspec/specs/governed-run-contract/spec.md",
+          "sha256": "21003ecc0e42a83bc87ed8595ed1610950f46f0c8f1fd772f267bbd40c3f4152"
+        },
+        {
+          "path": "tests/test_governed_run_contract.py",
+          "sha256": "e7ac1589f0f654cc09ed40da490a8f569e595766d473c89bb3e0f4886e0f80d5"
+        }
+      ],
+      "conclusion": {
+        "status": "findings",
+        "findings": [
+          {
+            "id": "GRC-IMPL-B-001",
+            "severity": "P1",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRC-IMPL-B-002",
+            "severity": "P2",
+            "disposition": "fix",
+            "closure_status": "closed"
+          },
+          {
+            "id": "GRC-IMPL-B-R1-001",
+            "severity": "P2",
+            "disposition": "fix",
+            "closure_status": "closed"
+          }
+        ],
+        "gate_verdict": "ready",
+        "residual_uncertainty": "Final post-archive packet only. No new P0/P1 was found and runtime/test bytes remain unchanged. Product acceptance, runtime-route integration, delivery binding, candidate, merge, push, and remote parity remain unproved."
+      },
+      "lineage": {
+        "original_slot_id": "governed-implementation-b",
+        "original_reviewer_instance_id": "/root/governed_plan_b",
+        "original_review_ref": "host-review:/root/governed_plan_b#implementation-first-round",
+        "original_receipt_sha256": "242d1fc3633e75ce7cd09aee015dc020b5156b72cdeba17b2b4851268ef88c8a",
+        "closed_finding_ids": [
+          "GRC-IMPL-B-001",
+          "GRC-IMPL-B-002"
+        ]
+      }
+    }
+  ]
+}

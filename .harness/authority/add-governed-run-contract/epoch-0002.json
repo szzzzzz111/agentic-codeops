@@ -1,0 +1,73 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "add-governed-run-contract",
+  "authority_epoch": 2,
+  "supersedes_record_sha256": "6af4518fa341e9c34bea384b53ab9f8d1c856a88a9492a848729ab2c9c1e0a35",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01908-user-authorized-governed-run-closeout-push-2026-09-01"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Close out the reviewed internal governed-run contract with OpenSpec archive, one finite candidate, ff-only merge, and exact-lease push without extending runtime or product scope.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/add-governed-run-contract/delivery-binding.json",
+        ".harness/authority/add-governed-run-contract/epoch-0001.json",
+        ".harness/authority/add-governed-run-contract/epoch-0002.json",
+        ".harness/authority/add-governed-run-contract/epoch-0003.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/add-governed-run-contract/implementation/review-set.json",
+        ".harness/reviews/add-governed-run-contract/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/add-governed-run-contract/implementation/reviewed-change.diff",
+        ".harness/reviews/add-governed-run-contract/plan/review-set.json",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "app/supervision/__init__.py",
+        "app/supervision/codex_events.py",
+        "app/supervision/contracts.py",
+        "app/supervision/evaluator.py",
+        "app/supervision/git_snapshot.py",
+        "docs/ARCHITECTURE.md",
+        "docs/FEATURE_LIST.json",
+        "docs/PROGRESS.md",
+        "openspec/changes/add-governed-run-contract/.openspec.yaml",
+        "openspec/changes/add-governed-run-contract/design.md",
+        "openspec/changes/add-governed-run-contract/plan-review.md",
+        "openspec/changes/add-governed-run-contract/proposal.md",
+        "openspec/changes/add-governed-run-contract/specs/governed-run-contract/spec.md",
+        "openspec/changes/add-governed-run-contract/tasks.md",
+        "openspec/specs/README.md",
+        "openspec/specs/governed-run-contract/spec.md",
+        "tests/test_governed_run_contract.py"
+      ],
+      "prefixes": [
+        "openspec/changes/archive/2026-09-01-add-governed-run-contract/"
+      ]
+    },
+    "non_goals": [
+      "No public API, CLI, ToolRegistry route, default provider, persistent authority, Agent launcher, daemon, notification, or retry behavior.",
+      "No automatic apply, repair, rollback, branch, pull request, commit, merge, push, or Agent-worktree mutation as a RepoPilot runtime capability.",
+      "No completion, semantic correctness, product acceptance, release readiness, source provenance, continuous isolation, or Git delivery authorization claim from READY_FOR_REVIEW.",
+      "No modification of the prior observability qualification assets or the original dirty worktree.",
+      "No next product stage and no merge other than ff-only or push outside origin/main with the exact authorized lease."
+    ],
+    "active_allowed_files_sha256": "03fb73163b7fa129d4165fb9ee6039e87739cb26a2098bf2adcd779a7a3660a8",
+    "review_slot_requirements": {
+      "plan": 2,
+      "implementation": 2
+    }
+  },
+  "scope_sha256": "91be32e033dc913238143f4e64471941bf940d9c1910e4565a6d929319eddda5",
+  "planning_baseline": {
+    "commit": "cf2679b9fc96e54cfb7a665ff7c0a4aaf05b9dd0"
+  },
+  "action_ceiling": "push",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "cf2679b9fc96e54cfb7a665ff7c0a4aaf05b9dd0"
+  }
+}
