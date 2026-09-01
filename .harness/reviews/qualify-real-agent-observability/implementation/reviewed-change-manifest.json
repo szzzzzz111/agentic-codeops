@@ -1,0 +1,133 @@
+{
+  "schema_version": "repopilot.reviewed_change_manifest/v2",
+  "stage_id": "qualify-real-agent-observability",
+  "planning_base": "3e884a9725b0ca715d236fb2431ca058db51912b",
+  "excluded_metadata_paths": [
+    ".harness/authority/qualify-real-agent-observability/delivery-binding.json",
+    ".harness/reviews/qualify-real-agent-observability/implementation/review-set.json",
+    ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change-manifest.json",
+    ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change.diff"
+  ],
+  "changes": [
+    {
+      "path": ".harness/allowed_files.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e212b40f6932ec7eefe77738eadb2c0f484e25ae4b7689e05027730d67d61496"
+    },
+    {
+      "path": ".harness/authority/qualify-real-agent-observability/epoch-0001.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "0c54854045aa9433d8408f87fcd5e113a84a817fcfc6fbe2f0ae70d0095276dc"
+    },
+    {
+      "path": ".harness/authority/qualify-real-agent-observability/epoch-0002.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "8e1187b44f4ca58d013bf66328978ce003bca3eb75a9116e8c9d044797756eb3"
+    },
+    {
+      "path": ".harness/authority/qualify-real-agent-observability/epoch-0003.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6bf73fdf14d32c1c61754f7727e3631d7858c84a6b037d13e57a9491a39b661e"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "4d0baaa35814191cc1767e0ab409e19351cbc291bb03a64a86df9d319cd8babd"
+    },
+    {
+      "path": ".harness/reviews/qualify-real-agent-observability/plan/review-set.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "fe80a20d5e350b4908fc2526865211364ca9ec5237207064b0fd2dd7da6ee61d"
+    },
+    {
+      "path": "HANDOFF_TO_NEXT_CHAT.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "e9b1447ae73b4f4b5b7408de6af6644c0c2921279003e25aa705f22dd7afefc2"
+    },
+    {
+      "path": "docs/PROGRESS.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "5736e7fb32e0c347c29b32c25a109129abb0258dc897971186a9720373b4bc95"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/.openspec.yaml",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/design.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "2ad1d345ac223f221dc819f35b22ef5598fa3358da06190c0afa22931dbc498c"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/plan-review.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "5ed37ce5facbe680ab544c9bd04fb9e8afe6c0a40c1430bc50a771e43ecc3913"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/proposal.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "3c91210155356a44683149b66baee4bb7c08d94a1bd90ffb00258b4b1193bbff"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/qualification-observation.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "a00c251280eb99d4f08fab097326b478d7929f826f4c015412ae3abf44ab88ba"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/qualification-report.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "dffd90db6c00061a76fc18e805e84fc2d4524b58cf45c8eaac4587abed612b96"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/specs/real-agent-observability-qualification/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "65ff103d0380be07a3db7cdb64560c1f50d37df57cdcae70d06ab44f1588eeed"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/tasks.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "cd6843ef337ffb3013c5610201e1a5f0e70a648a793d069ae000de80b3717864"
+    },
+    {
+      "path": "openspec/specs/README.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9dddc75c36e1da039b6e5442b5e32a43514427d701d651d855e2cd89132edf84"
+    },
+    {
+      "path": "openspec/specs/real-agent-observability-qualification/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "2f57de5265deb27dd3248d77a4d40ba8df0426be6c69fdf187473563aa188a32"
+    },
+    {
+      "path": "scripts/validate_real_agent_observability.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "ee21bc501ebd0234a97cd704cd0e1b35b8b4a704cb8ab1365babf77c4d4cfff0"
+    },
+    {
+      "path": "tests/test_real_agent_observability_qualification.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "5c92a6e90e2bf9345377a4db7ce94cc98978bb59c989e900df14711761461b04"
+    }
+  ]
+}

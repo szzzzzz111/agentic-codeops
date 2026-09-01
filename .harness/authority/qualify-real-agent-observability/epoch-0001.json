@@ -1,0 +1,59 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "qualify-real-agent-observability",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01ec2-user-authorized-qualify-real-agent-observability-2026-09-01"
+  },
+  "scope": {
+    "risk": "low",
+    "summary": "Qualify one real Coding Agent completion event and a verification receipt bound to the same Git snapshot without adding runtime supervisor behavior.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/qualify-real-agent-observability/epoch-0001.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/qualify-real-agent-observability/plan/review-set.json",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "docs/PROGRESS.md",
+        "openspec/changes/qualify-real-agent-observability/.openspec.yaml",
+        "openspec/changes/qualify-real-agent-observability/design.md",
+        "openspec/changes/qualify-real-agent-observability/plan-review.md",
+        "openspec/changes/qualify-real-agent-observability/proposal.md",
+        "openspec/changes/qualify-real-agent-observability/qualification-observation.json",
+        "openspec/changes/qualify-real-agent-observability/qualification-report.json",
+        "openspec/changes/qualify-real-agent-observability/specs/real-agent-observability-qualification/spec.md",
+        "openspec/changes/qualify-real-agent-observability/tasks.md",
+        "scripts/validate_real_agent_observability.py",
+        "tests/test_real_agent_observability_qualification.py"
+      ],
+      "prefixes": []
+    },
+    "non_goals": [
+      "No app runtime, public API, default provider, dependency, permission, persistence, or default network behavior changes.",
+      "No synthetic event may count as real qualification evidence.",
+      "No UI, daemon, multi-agent, notification, automatic correction, apply, commit, merge, or push behavior.",
+      "No modification of the original dirty worktree.",
+      "No archive, commit, merge, or push in this authority epoch."
+    ],
+    "active_allowed_files_sha256": "7ab27664af965d25c5b46dbf5727fa13fd38dfbf024153e6c7c8a32a2c59f261",
+    "review_slot_requirements": {
+      "plan": 0,
+      "implementation": 0
+    }
+  },
+  "scope_sha256": "3b84c9484ee286ffaff0c3761587502e91161193185f8fc24cad575256b5b750",
+  "planning_baseline": {
+    "commit": "3e884a9725b0ca715d236fb2431ca058db51912b"
+  },
+  "action_ceiling": "implement",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "3e884a9725b0ca715d236fb2431ca058db51912b"
+  }
+}

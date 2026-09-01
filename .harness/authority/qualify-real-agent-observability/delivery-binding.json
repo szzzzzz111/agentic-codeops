@@ -1,0 +1,29 @@
+{
+  "schema_version": "repopilot.stage_delivery_binding/v1",
+  "stage_id": "qualify-real-agent-observability",
+  "authority_epoch": 3,
+  "authority_record_sha256": "6bf73fdf14d32c1c61754f7727e3631d7858c84a6b037d13e57a9491a39b661e",
+  "reviewed_manifest": {
+    "path": ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change-manifest.json",
+    "sha256": "7da5f3da81dbe033341d41f1f4a8a73c1c5097fb3c3e99893108c8ebd913adfd"
+  },
+  "reviewed_diff": {
+    "path": ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change.diff",
+    "sha256": "61b6195c0e1d7d3f70d8157fecc66b4f4932ef6dcf8c5e86f7e8fcddd5883c82"
+  },
+  "implementation_review_set": {
+    "path": ".harness/reviews/qualify-real-agent-observability/implementation/review-set.json",
+    "sha256": "c4f9badfee5145013f29014ef6cafeb383e8e12f5d8b11e8f70c5fc86c86974e",
+    "packet_sha256": "95204959d59aa113bcd8edc8662f0df31d11fe330e2dabf583343f1a6bbe6edf"
+  },
+  "final_harness_files": [
+    {
+      "path": ".harness/allowed_files.md",
+      "sha256": "e212b40f6932ec7eefe77738eadb2c0f484e25ae4b7689e05027730d67d61496"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "sha256": "4d0baaa35814191cc1767e0ab409e19351cbc291bb03a64a86df9d319cd8babd"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "qualify-real-agent-observability",
+  "authority_epoch": 3,
+  "supersedes_record_sha256": "8e1187b44f4ca58d013bf66328978ce003bca3eb75a9116e8c9d044797756eb3",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01ec2-user-authorized-qualification-closeout-push-2026-09-01"
+  },
+  "scope": {
+    "risk": "low",
+    "summary": "Freeze the archived real-Agent observability qualification, create one finite candidate, ff-only merge it, and exact-lease push it without adding runtime supervisor behavior.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/qualify-real-agent-observability/delivery-binding.json",
+        ".harness/authority/qualify-real-agent-observability/epoch-0001.json",
+        ".harness/authority/qualify-real-agent-observability/epoch-0002.json",
+        ".harness/authority/qualify-real-agent-observability/epoch-0003.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/qualify-real-agent-observability/implementation/review-set.json",
+        ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change.diff",
+        ".harness/reviews/qualify-real-agent-observability/plan/review-set.json",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "docs/PROGRESS.md",
+        "openspec/specs/README.md",
+        "openspec/specs/real-agent-observability-qualification/spec.md",
+        "scripts/validate_real_agent_observability.py",
+        "tests/test_real_agent_observability_qualification.py"
+      ],
+      "prefixes": [
+        "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/"
+      ]
+    },
+    "non_goals": [
+      "No app runtime, public API, default provider, dependency, permission, persistence, or default network behavior changes.",
+      "No synthetic event may count as real qualification evidence.",
+      "No UI, daemon, multi-agent, notification, automatic correction, or runtime apply, commit, merge, or push behavior.",
+      "No governed run contract or other next-stage implementation.",
+      "No modification of the original dirty worktree.",
+      "No merge other than ff-only and no push outside origin/main with the exact authorized lease."
+    ],
+    "active_allowed_files_sha256": "e212b40f6932ec7eefe77738eadb2c0f484e25ae4b7689e05027730d67d61496",
+    "review_slot_requirements": {
+      "plan": 0,
+      "implementation": 0
+    }
+  },
+  "scope_sha256": "2b53799fe96ea07ef650890fd3d7ce1348faca8b9589f21642a1137f46caa742",
+  "planning_baseline": {
+    "commit": "3e884a9725b0ca715d236fb2431ca058db51912b"
+  },
+  "action_ceiling": "push",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "3e884a9725b0ca715d236fb2431ca058db51912b"
+  }
+}

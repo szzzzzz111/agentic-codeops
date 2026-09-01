@@ -1,0 +1,16 @@
+{
+  "claim_level": "mechanical_observability_only",
+  "completion_claim": "READY_FOR_REVIEW",
+  "completion_snapshot_sha256": "77d44ac5b194eb11a36327f30dbea41a8d0c75bc22f0e88973de5c2b655e5c34",
+  "errors": [],
+  "event_stream_sha256": "de17bac60c9f59bf477f2b150060d172c4e79a98c46d1d8a9bb48a321188f5b1",
+  "git_delivery": "not_authorized",
+  "post_verification_snapshot_sha256": "77d44ac5b194eb11a36327f30dbea41a8d0c75bc22f0e88973de5c2b655e5c34",
+  "product_acceptance": false,
+  "real_source_attestation": "external_controller_evidence_required",
+  "schema_version": "repopilot.real_agent_observability_qualification/v1",
+  "semantic_completion": false,
+  "status": "QUALIFIED_OBSERVABILITY",
+  "supervisor_runtime": false,
+  "verification_snapshot_bound": true
+}

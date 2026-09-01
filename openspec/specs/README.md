@@ -37,5 +37,6 @@
 ## Repository Development Workflow
 
 - [harness-development-workflow](harness-development-workflow/)
+- [real-agent-observability-qualification](real-agent-observability-qualification/)
 - [stage-authority-binding](stage-authority-binding/)
 - [stage-change-replay](stage-change-replay/)

@@ -6,8 +6,8 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
 
 ## 当前状态
 
-- RepoPilot 的 V1–V25 runtime capability 已形成长期 OpenSpec specs；当前产品仍定位为本地、可控、
-  可审计的 Coding Agent Harness，而不是通用 AI IDE。
+- RepoPilot 的 V1–V25 runtime capability 与真实 Agent 可观察性资格合同已形成长期 OpenSpec specs；当前产品
+  仍定位为本地、可控、可审计的 Coding Agent Harness，而不是通用 AI IDE。
 - Runtime 主干包括 repo-local hybrid RAG、grounded answer、Memory、Long Task、Assistant Control Surface、
   controlled patch proposal/apply、Verification Runner、persistent audit 和 retained worktree lifecycle。
 - 最近完成的 verification baseline 修复与 repository Ruff cleanup 已证明 full pytest、full Ruff、canonical
@@ -15,6 +15,11 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
 - Stage-change replay 仍是 repository development workflow 中的 dormant、`mechanical_consistency_only`
   接口；缺少 external host CAS/restart/dispatch evidence 时不激活 v2，也不成为 runtime capability。
 - OpenSpec、Harness、Codex/OpenCode skills、MCP 和 plugins 仍属于开发流程或外部协作面，不自动成为产品能力。
+- Coding Agent Governance Harness 是近期产品主线；已归档的一次窄资格 spike 从真实 Codex CLI 观察到唯一
+  `turn.completed`、`READY_FOR_REVIEW` claim 和实际代码变化，并让独立 verification receipt 绑定验证前后
+  同一 Git snapshot。该结论仅为 `QUALIFIED_OBSERVABILITY`，不等于 supervisor runtime、语义正确或产品验收。
+- 模型写代码能力保留但后移：默认仍为 fake/offline，真实 provider 仅 explicit opt-in，且最多生成 pending
+  proposal；不得因本次可观察性资格通过而提前开放自动 apply 或 Git delivery。
 
 ## 剩余债务
 
@@ -26,19 +31,25 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
   需要独立设计，不能从当前 repository records 或 runtime context 推导。
 - 外部 host CAS、durable/background execution、runtime subagents、connectors、notifications 和产品内自动
   commit/merge/push 均没有进入当前 runtime contract。
+- 当前资格只覆盖一个 Codex CLI、一个临时干净 fixture 和一次同快照验证；真实 source attestation 仍依赖
+  controller evidence，尚未证明跨 provider、重启恢复、长期 event compatibility 或持久化 human authority。
 
 ## 候选顺序
 
 以下是候选顺序，不表示已经 active 或获准实施；开始任何一项前重新运行 `openspec list` 并冻结新 stage：
 
-1. `enable-opt-in-model-patch-authoring`：仅显式 opt-in 生成 pending patch proposal，默认继续 fake/offline；
-   不自动 apply、verify、promote、commit、merge 或 push。
-2. `add-pending-patch-inspection-and-rejection`：允许查看、拒绝或继续处理 pending patch。
-3. 把既有 worktree lifecycle 暴露为前台 CLI 流程，同时保持当前权限、审计和明确确认边界。
-4. 独立评估 VerificationRunner process-tree containment。
+1. 另起 stage 规划最小 governed run contract：
+   只接一个真实 Agent、一个 Git snapshot、一个 completion claim 和一个 snapshot-bound receipt；
+   `READY_FOR_REVIEW` 只进入人工审批，不代表任务完成。
+2. 单独设计并验证持久化 Operator approval/拒绝/失效边界；不能把 request-supplied `user_id` 或聊天确认
+   直接升级为产品 authority。
+3. `enable-opt-in-model-patch-authoring` 后移保留：仅显式 opt-in 生成 pending patch proposal，默认继续
+   fake/offline；不自动 apply、verify、promote、commit、merge 或 push。
+4. `add-pending-patch-inspection-and-rejection`：允许查看、拒绝或继续处理 pending patch。
+5. 独立评估 VerificationRunner process-tree containment。
 
-暂缓 replay v2 activation、持久化 Operator approval、background/durable/subagent/connectors 扩张，以及产品内
-自动 Git delivery。候选之间一次只启动一个 OpenSpec stage。
+暂缓 replay v2 activation、background/durable/subagent/connectors 扩张、UI/daemon/notifications、自动纠偏，
+以及产品内自动 Git delivery。候选之间一次只启动一个 OpenSpec stage。
 
 ## 阶段索引
 
@@ -55,9 +66,25 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
 | Worktree lifecycle | V20–V25 | `2026-06-07-*` 至 `2026-06-27-*` archives |
 | Workflow authority/replay | authority binding、independent review、stage replay | `2026-08-20-*` 至 `2026-08-21-*` archives |
 | Verification baseline | deterministic verification、repository Ruff cleanup | `2026-08-26-*` archives |
+| Agent governance qualification | real Agent terminal/claim 与同快照 verification receipt | `2026-09-01-qualify-real-agent-observability` |
 
 <details>
 <summary>历史详细记录（只作当时证据，不作为 current guidance）</summary>
+
+## Real Agent Observability Qualification（archived，2026-09-01）
+
+- OpenSpec change 已归档到
+  `openspec/changes/archive/2026-09-01-qualify-real-agent-observability/`，并新增长期
+  `real-agent-observability-qualification` spec；未修改 `app/**` 或 RepoPilot runtime 行为。
+- 真实 Codex CLI `0.149.0-alpha.4` 在临时干净 Git fixture 中产生唯一 `turn.completed`、终态前精确
+  `READY_FOR_REVIEW` claim 和实际 tracked diff。Controller 在终态后执行独立 verifier，并让 receipt 绑定
+  verification 前后同一完整 Git snapshot；completion/post-verification snapshot identity 均为
+  `77d44ac5b194eb11a36327f30dbea41a8d0c75bc22f0e88973de5c2b655e5c34`。
+- Validator 对缺终态、缺 claim、事件歧义/乱序、dirty baseline、verification nonzero 和 receipt/snapshot
+  mismatch 确定性 fail closed；focused tests `10 passed`。最终 canonical verification 为 `1062 passed`，
+  full Ruff、stage-doc、skill-eval、OpenSpec strict 与 `git diff --check` 均通过。
+- Claim ceiling 仅为 `QUALIFIED_OBSERVABILITY` / `mechanical_observability_only`：不证明 Agent 语义完成、
+  supervisor runtime、产品验收、跨 provider 兼容、持久化人工 authority 或任何自动 Git delivery。
 
 ## Clear Repository Ruff Baseline（archived，2026-08-26）
 

@@ -1,0 +1,116 @@
+{
+  "schema_version": "repopilot.real_agent_observation/v1",
+  "source": {
+    "kind": "real_codex_cli",
+    "provider": "codex",
+    "provider_version": "codex-cli 0.149.0-alpha.4",
+    "invocation": [
+      "/Applications/ChatGPT.app/Contents/Resources/codex",
+      "exec",
+      "--json",
+      "--ephemeral",
+      "--ignore-user-config",
+      "--sandbox",
+      "workspace-write",
+      "-C",
+      "/private/tmp/repopilot-real-agent-fixture.01a01908",
+      "Edit only result.txt, replacing PENDING with OBSERVED. Do not commit. After the edit, reply with exactly READY_FOR_REVIEW and nothing else."
+    ],
+    "fixture_is_temporary": true
+  },
+  "event_stream": [
+    {
+      "type": "thread.started",
+      "thread_id": "01a05b24-a25e-7322-8a86-e83e28b819f3"
+    },
+    {
+      "type": "turn.started"
+    },
+    {
+      "type": "item.started",
+      "item": {
+        "id": "item_0",
+        "type": "file_change",
+        "changes": [
+          {
+            "path": "/private/tmp/repopilot-real-agent-fixture.01a01908/result.txt",
+            "kind": "update"
+          }
+        ],
+        "status": "in_progress"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_0",
+        "type": "file_change",
+        "changes": [
+          {
+            "path": "/private/tmp/repopilot-real-agent-fixture.01a01908/result.txt",
+            "kind": "update"
+          }
+        ],
+        "status": "completed"
+      }
+    },
+    {
+      "type": "item.completed",
+      "item": {
+        "id": "item_1",
+        "type": "agent_message",
+        "text": "READY_FOR_REVIEW"
+      }
+    },
+    {
+      "type": "turn.completed",
+      "usage": {
+        "input_tokens": 28841,
+        "cached_input_tokens": 24064,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 93,
+        "reasoning_output_tokens": 38
+      }
+    }
+  ],
+  "baseline_snapshot": {
+    "schema_version": "repopilot.git_snapshot/v1",
+    "repository_id": "45ee0bd88456c810c8a08985a7862c9017f246c62aea10be9b4fe6ffffaf1103",
+    "head": "cec58a27751081e2d5ce7744cc08072be0f0aa29",
+    "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "untracked_paths_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "clean": true
+  },
+  "completion_snapshot": {
+    "schema_version": "repopilot.git_snapshot/v1",
+    "repository_id": "45ee0bd88456c810c8a08985a7862c9017f246c62aea10be9b4fe6ffffaf1103",
+    "head": "cec58a27751081e2d5ce7744cc08072be0f0aa29",
+    "status_sha256": "e62dce1a963fa53938841864107cdd67e07bfec8b5acfc3ef1c91a875abf149e",
+    "tracked_diff_sha256": "633eac3fae0bea4f32419d8714f79c9c841481aead0d369dde84f8d87f239050",
+    "untracked_paths_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "clean": false
+  },
+  "verification_receipt": {
+    "schema_version": "repopilot.snapshot_verification_receipt/v1",
+    "verification_command": [
+      "python3",
+      "-I",
+      "-c",
+      "from pathlib import Path; assert Path('result.txt').read_text(encoding='utf-8') == 'OBSERVED\\n'"
+    ],
+    "exit_code": 0,
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bound_snapshot_sha256": "77d44ac5b194eb11a36327f30dbea41a8d0c75bc22f0e88973de5c2b655e5c34",
+    "post_verification_snapshot": {
+      "schema_version": "repopilot.git_snapshot/v1",
+      "repository_id": "45ee0bd88456c810c8a08985a7862c9017f246c62aea10be9b4fe6ffffaf1103",
+      "head": "cec58a27751081e2d5ce7744cc08072be0f0aa29",
+      "status_sha256": "e62dce1a963fa53938841864107cdd67e07bfec8b5acfc3ef1c91a875abf149e",
+      "tracked_diff_sha256": "633eac3fae0bea4f32419d8714f79c9c841481aead0d369dde84f8d87f239050",
+      "untracked_paths_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "clean": false
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "qualify-real-agent-observability",
+  "authority_epoch": 2,
+  "supersedes_record_sha256": "0c54854045aa9433d8408f87fcd5e113a84a817fcfc6fbe2f0ae70d0095276dc",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01ec2-user-authorized-qualification-closeout-push-2026-09-01"
+  },
+  "scope": {
+    "risk": "low",
+    "summary": "Close out the real Coding Agent observability qualification with OpenSpec archive, one finite candidate, ff-only merge, and exact-lease push without adding runtime supervisor behavior.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/qualify-real-agent-observability/delivery-binding.json",
+        ".harness/authority/qualify-real-agent-observability/epoch-0001.json",
+        ".harness/authority/qualify-real-agent-observability/epoch-0002.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/qualify-real-agent-observability/implementation/review-set.json",
+        ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/qualify-real-agent-observability/implementation/reviewed-change.diff",
+        ".harness/reviews/qualify-real-agent-observability/plan/review-set.json",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "docs/PROGRESS.md",
+        "openspec/changes/qualify-real-agent-observability/.openspec.yaml",
+        "openspec/changes/qualify-real-agent-observability/design.md",
+        "openspec/changes/qualify-real-agent-observability/plan-review.md",
+        "openspec/changes/qualify-real-agent-observability/proposal.md",
+        "openspec/changes/qualify-real-agent-observability/qualification-observation.json",
+        "openspec/changes/qualify-real-agent-observability/qualification-report.json",
+        "openspec/changes/qualify-real-agent-observability/specs/real-agent-observability-qualification/spec.md",
+        "openspec/changes/qualify-real-agent-observability/tasks.md",
+        "openspec/specs/README.md",
+        "openspec/specs/real-agent-observability-qualification/spec.md",
+        "scripts/validate_real_agent_observability.py",
+        "tests/test_real_agent_observability_qualification.py"
+      ],
+      "prefixes": [
+        "openspec/changes/archive/2026-09-01-qualify-real-agent-observability/"
+      ]
+    },
+    "non_goals": [
+      "No app runtime, public API, default provider, dependency, permission, persistence, or default network behavior changes.",
+      "No synthetic event may count as real qualification evidence.",
+      "No UI, daemon, multi-agent, notification, automatic correction, or runtime apply, commit, merge, or push behavior.",
+      "No governed run contract or other next-stage implementation.",
+      "No modification of the original dirty worktree.",
+      "No merge other than ff-only and no push outside origin/main with the exact authorized lease."
+    ],
+    "active_allowed_files_sha256": "18bd74922547aaae71c9d8a2ecc4aa2a14da6c2fd54c59c645a00ee64792f0d0",
+    "review_slot_requirements": {
+      "plan": 0,
+      "implementation": 0
+    }
+  },
+  "scope_sha256": "3dd28876e9bc412f7f337f143571fc6609d7bece608f9d501565fcb87d27f897",
+  "planning_baseline": {
+    "commit": "3e884a9725b0ca715d236fb2431ca058db51912b"
+  },
+  "action_ceiling": "push",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "3e884a9725b0ca715d236fb2431ca058db51912b"
+  }
+}

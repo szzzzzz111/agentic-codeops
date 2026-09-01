@@ -44,6 +44,9 @@ python -I scripts/verify.py
 - `technical_ready`、`human_authorized` 与 `vcs_pushed` 分开判断。Push outcome 不确定时只做同 endpoint
   read-only reconciliation，不自动 retry、rebase 或 force push。
 - Final user handoff 报告 live state，但不把易变 delivery facts 回写到这个 tracked file。
+- 开始 Coding Agent supervisor 类阶段前，先证明真实 Agent terminal/completion claim 与 verification receipt
+  绑定同一 Git snapshot；任一缺失都写 `NOT_OBSERVED` 并停止扩展，不得以 fake/mock 事件替代真实接入。
+- `READY_FOR_REVIEW` 只进入人工审批，不表示语义完成、产品验收、archive、merge 或 release。
 
 ## 本文件明确不保存
 
