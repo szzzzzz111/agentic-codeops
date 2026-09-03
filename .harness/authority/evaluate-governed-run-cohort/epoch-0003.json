@@ -1,0 +1,57 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "evaluate-governed-run-cohort",
+  "authority_epoch": 3,
+  "supersedes_record_sha256": "aa70ff684807a14cb206d5f45d82334c08917096770a12310f0284281250383b",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01908-user-chose-simplified-experiment-2026-09-02-bounded-plan-review-clarification"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Plan one fixed one-shot real Codex experiment that composes native events, one clean fixture snapshot, one verification receipt, and the existing governed-run kernel without cohort or platform machinery.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0001.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0002.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0003.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/evaluate-governed-run-cohort/plan/review-set.json",
+        "openspec/changes/evaluate-governed-run-cohort/.openspec.yaml",
+        "openspec/changes/evaluate-governed-run-cohort/design.md",
+        "openspec/changes/evaluate-governed-run-cohort/plan-review.md",
+        "openspec/changes/evaluate-governed-run-cohort/proposal.md",
+        "openspec/changes/evaluate-governed-run-cohort/specs/governed-run-cohort-evaluation/spec.md",
+        "openspec/changes/evaluate-governed-run-cohort/tasks.md"
+      ],
+      "prefixes": []
+    },
+    "non_goals": [
+      "No five-run cohort, rates, denominator, human-friction measurement, tracked observation/report, or durable raw retention.",
+      "No concurrency, retry, resume, crash recovery, cross-process deduplication, global registry, supervisor service, or transactional multi-file publication.",
+      "No modification or integration of app runtime, public API, CLI, ToolRegistry, provider defaults, persistence, existing supervision kernel, or archived qualification.",
+      "No fake, synthetic, archived, subagent, or reviewer output may count as the one real observation or as human input.",
+      "No Agent access to RepoPilot or a user project as the target repository, no extra write root, dynamic controller argv, arbitrary shell text, danger bypass, or Agent Git delivery.",
+      "No product completion, semantic correctness, verified provenance, security isolation, provider-wide compatibility, human approval, product acceptance, release readiness, or Git delivery claim.",
+      "No real Agent launch, implementation, archive, commit, merge, or push in this authority epoch."
+    ],
+    "active_allowed_files_sha256": "b2a608df28ef2777ca92cb819d083d3176389a3b742f6cfaa5a6be044b4b3826",
+    "review_slot_requirements": {
+      "plan": 2,
+      "implementation": 2
+    }
+  },
+  "scope_sha256": "bd0c3681573f27c8dc9336437cedabc5eec6c99cb098ea418498f27a18a58cb8",
+  "planning_baseline": {
+    "commit": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  },
+  "action_ceiling": "plan",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "evaluate-governed-run-cohort",
+  "authority_epoch": 1,
+  "supersedes_record_sha256": null,
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01908-user-started-governed-run-cohort-planning-2026-09-01"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Plan a development-time five-run real Codex single-Agent cohort that measures native event compatibility, governed reason codes, and actually observed human review friction without adding RepoPilot runtime integration.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0001.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/evaluate-governed-run-cohort/plan/review-set.json",
+        "openspec/changes/evaluate-governed-run-cohort/.openspec.yaml",
+        "openspec/changes/evaluate-governed-run-cohort/design.md",
+        "openspec/changes/evaluate-governed-run-cohort/plan-review.md",
+        "openspec/changes/evaluate-governed-run-cohort/proposal.md",
+        "openspec/changes/evaluate-governed-run-cohort/specs/governed-run-cohort-evaluation/spec.md",
+        "openspec/changes/evaluate-governed-run-cohort/tasks.md"
+      ],
+      "prefixes": []
+    },
+    "non_goals": [
+      "No modification or integration of app runtime, public API, CLI, ToolRegistry, provider defaults, persistence, or existing supervision kernel.",
+      "No fake, synthetic, archived, subagent, or reviewer output may count as a real cohort run or human review input.",
+      "No durable operator identity, AI-authored human decision, daemon, background worker, runtime subagent, multi-Agent flow, notification, retry, or automatic repair.",
+      "No Agent access to RepoPilot or user-project roots, task secrets/provider credentials; no task-side network, arbitrary controller argv, danger bypass, add-dir, or Agent Git delivery.",
+      "No product completion, semantic correctness, verified provenance, provider-wide compatibility, product acceptance, release readiness, or Git delivery claim.",
+      "No modification of archived qualification artifacts, the qualification validator, long-term specs, or the original dirty worktree.",
+      "No real run may launch under workspace-write alone; host-owned fixture-only read/write and whole-process-tree containment evidence is required.",
+      "No real Agent launch, controller implementation, cohort result, archive, commit, merge, or push in this authority epoch."
+    ],
+    "active_allowed_files_sha256": "79fc751c3241aed5ba4ef51cf47beeb38a29761d9a93f3437b18f4b5f0613d81",
+    "review_slot_requirements": {
+      "plan": 2,
+      "implementation": 2
+    }
+  },
+  "scope_sha256": "911cd92e9f10476220612fd868e2fe4c10ca81e2f1504b9173e7afa52b6516d9",
+  "planning_baseline": {
+    "commit": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  },
+  "action_ceiling": "plan",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  }
+}

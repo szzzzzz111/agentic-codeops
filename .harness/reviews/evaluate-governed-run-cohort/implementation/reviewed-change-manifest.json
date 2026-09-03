@@ -1,0 +1,145 @@
+{
+  "schema_version": "repopilot.reviewed_change_manifest/v2",
+  "stage_id": "evaluate-governed-run-cohort",
+  "planning_base": "b7a8439fac9013f5ad59c308c4b16d333d466ddb",
+  "excluded_metadata_paths": [
+    ".harness/authority/evaluate-governed-run-cohort/delivery-binding.json",
+    ".harness/reviews/evaluate-governed-run-cohort/implementation/review-set.json",
+    ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change-manifest.json",
+    ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change.diff"
+  ],
+  "changes": [
+    {
+      "path": ".harness/allowed_files.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "83c59ffcc08119936d5eae77917250f96dcd47c0a92732cde18773c778a47f6a"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0001.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b76e0f73817d9e8747ce6ce94f881154dcc1534362bde10be1081e6aa1774872"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0002.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "aa70ff684807a14cb206d5f45d82334c08917096770a12310f0284281250383b"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0003.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "71feebe2eace02e72dc9f7263ef5a2b142c9ab7783d41914c16fe53fa32f12f9"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0004.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "817e63ad5139d1f877dff6bea179354248cd52ad74acbcddb62a523c2b1e4ccb"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0005.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "d3de1370f02be21443f7b82cc673f4b3fbe7371e3915c2d79d6de27aff830a52"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0006.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "46948bf162f52e91ace0b7293ee4d886e0626023b8823e510a124a186709298b"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0007.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "c174635f05cbaa81195bf4509eddae3c33d744fca41bfb947d068d4e0f197a64"
+    },
+    {
+      "path": ".harness/authority/evaluate-governed-run-cohort/epoch-0008.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "ebf6741f9359c7b62c9d4b9a240b06f413bf73b1d131439d9115d6a9700e53a0"
+    },
+    {
+      "path": ".harness/review_checklist.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "cd8882cb1f3ca4c34980536ca0785fec5a8bf36c953ca6290ad8039b4a828cb1"
+    },
+    {
+      "path": ".harness/reviews/evaluate-governed-run-cohort/plan/review-set.json",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "1096cdcafd76041a49594e375e38b73cd551001bfd37a1d8fff59b29a8b98c56"
+    },
+    {
+      "path": "docs/PROGRESS.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "549a9c478cb7bd1ce1f50e63f42d8795765f0c1c142730ab274e3c9cfd00f26b"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/.openspec.yaml",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/design.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "8cdd0fd8a537ce90ab8e2b86c2e33bb8a3f07b3ffabab9cb5a5bd89aebcfaf81"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/plan-review.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "550b21c979758d6cc34e1e9ce3d8de060fca2820e7ed751b01046c3a13999078"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/proposal.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "6e8b5eed9cdae495057df4f70bb0b8b0de78cc1327b574d7a86c0a309b0a2509"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/specs/governed-run-cohort-evaluation/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "81366496473b6362627a0eed598ce16c9de49f979b2cec6ab01b8ba749a2d78d"
+    },
+    {
+      "path": "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/tasks.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "09cd3a2f17a237ff293df682383af0a56c830c20bda5e1f5a69fd68f6d195479"
+    },
+    {
+      "path": "openspec/specs/README.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "abcb7378dd865a757be0278038c5ec714d4ce4a20107f32c55d6a3ce6b341eab"
+    },
+    {
+      "path": "openspec/specs/governed-run-cohort-evaluation/spec.md",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "b337e911ccb1f7cc7dbe1e8b246df4ea4e26d1823589fd574a74fa519741a5c4"
+    },
+    {
+      "path": "scripts/evaluate_single_governed_run.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "58900bfe8db1d55c6eb99859e5d62c6ec5a9fb046b405da3629bde5498a152c4"
+    },
+    {
+      "path": "tests/test_single_governed_run_evaluation.py",
+      "kind": "file",
+      "mode": "100644",
+      "sha256": "9427f605925ef34a24b652c9119aa775e12767ce385f7592bb1e2789480902fd"
+    }
+  ]
+}

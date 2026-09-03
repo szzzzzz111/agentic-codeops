@@ -1,0 +1,75 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "evaluate-governed-run-cohort",
+  "authority_epoch": 7,
+  "supersedes_record_sha256": "46948bf162f52e91ace0b7293ee4d886e0626023b8823e510a124a186709298b",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01908-user-conditionally-authorized-completed-stage-delivery-2026-09-03"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Synchronize the archived one-shot Codex App experiment into durable progress, the OpenSpec index, and final Harness state; rerun post-archive validation without performing Git delivery.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/evaluate-governed-run-cohort/delivery-binding.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0001.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0002.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0003.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0004.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0005.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0006.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0007.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0008.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/review-set.json",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change.diff",
+        ".harness/reviews/evaluate-governed-run-cohort/plan/review-set.json",
+        "HANDOFF_TO_NEXT_CHAT.md",
+        "docs/PROGRESS.md",
+        "openspec/changes/evaluate-governed-run-cohort/.openspec.yaml",
+        "openspec/changes/evaluate-governed-run-cohort/design.md",
+        "openspec/changes/evaluate-governed-run-cohort/plan-review.md",
+        "openspec/changes/evaluate-governed-run-cohort/proposal.md",
+        "openspec/changes/evaluate-governed-run-cohort/specs/governed-run-cohort-evaluation/spec.md",
+        "openspec/changes/evaluate-governed-run-cohort/tasks.md",
+        "openspec/specs/README.md",
+        "openspec/specs/governed-run-cohort-evaluation/spec.md",
+        "scripts/evaluate_single_governed_run.py",
+        "tests/fixtures/single_governed_run/pytest.ini",
+        "tests/fixtures/single_governed_run/result.txt",
+        "tests/fixtures/single_governed_run/test_result.py",
+        "tests/test_single_governed_run_evaluation.py"
+      ],
+      "prefixes": [
+        "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/"
+      ]
+    },
+    "non_goals": [
+      "No modification or integration of app runtime, public API, CLI, ToolRegistry, provider defaults, persistence, existing supervision kernel, or other product behavior.",
+      "No second Agent task, coding turn, retry, resume, replacement experiment, local Codex process, or provider process.",
+      "No elevation from host_observed_unverified ready_for_review to semantic completion, human approval, product acceptance, authenticated provenance, runtime integration, or Git delivery capability.",
+      "No modification of the original dirty worktree or cleanup, deletion, commit, or automatic archive of the retained Codex App task worktree.",
+      "No candidate commit, merge, push, next product stage, UI, daemon, notification, multi-Agent, or automatic correction in this authority epoch."
+    ],
+    "active_allowed_files_sha256": "b6c80a88d4f26da1c1673812e596a0dc290bf7657f8b9618eb1aa77e4c478ce9",
+    "review_slot_requirements": {
+      "plan": 2,
+      "implementation": 2
+    }
+  },
+  "scope_sha256": "35dc1064622037c8950e0d45886e8cfaef960cd63e8ea5450ed82ef3e5221588",
+  "planning_baseline": {
+    "commit": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  },
+  "action_ceiling": "archive",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  }
+}

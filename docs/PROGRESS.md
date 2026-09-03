@@ -21,6 +21,10 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
 - 已归档的 `add-governed-run-contract` 实现了未接线的内部监督 kernel：不可变单 run 合同、fail-closed
   Codex event adapter、只读双稳定 Git snapshot collector 和四态纯 evaluator。它只把证据充分的结果送入人工
   review；所有决策仍明确否认任务完成、产品验收、Git 交付授权和已验证 source provenance。
+- 已归档的 `evaluate-governed-run-cohort` 用一个 Codex App 空上下文 task 和独立 worktree 完成了最小 one-shot
+  实验：握手后唯一 coding turn 只修改冻结的 README 第一行，host terminal claim 为 `READY_FOR_REVIEW`，
+  verification receipt 与 completion/post snapshot 相同。仓库输出仍固定为 `status=not_observed`、
+  `source_provenance=host_observed_unverified`，不把 host metadata 冒充仓库可认证 provenance。
 - 模型写代码能力保留但后移：默认仍为 fake/offline，真实 provider 仅 explicit opt-in，且最多生成 pending
   proposal；不得因本次可观察性资格通过而提前开放自动 apply 或 Git delivery。
 
@@ -42,15 +46,17 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
   blob 的 delta path 会进入 exact scope，但这仍不构成持续 writer isolation。
 - 当前 Git collector 只在能证明 POSIX process-group cleanup 与 no-follow raw file traversal 的平台工作；Windows
   Job Object 支持尚未实现，因此在 spawn 前 fail closed，不宣称 Windows collector capability。
+- Codex App one-shot 只证明单次真实 task 的 host-observed terminal、精确 mutation 与同快照 verification 能被
+  现有 kernel 机械关联；尚未取得仓库可认证的 native provenance、真实人工 review receipt 或多任务统计证据。
 
 ## 候选顺序
 
 以下是候选顺序，不表示已经 active 或获准实施；开始任何一项前重新运行 `openspec list` 并冻结新 stage：
 
-1. 基于已归档 kernel，用外部 controller 运行 5–10 个真实、单 Agent、干净隔离任务 cohort，
-   只记录 reason codes、事件兼容性和人工 review friction；不得把 cohort fixture 或归档事件写成 runtime provenance。
-2. 单独设计并验证持久化 Operator approval/拒绝/失效边界；不能把 request-supplied `user_id` 或聊天确认
+1. 单独设计并验证持久化 Operator approval/拒绝/失效边界；不能把 request-supplied `user_id` 或聊天确认
    直接升级为产品 authority。
+2. 如需统计性证据，再基于已归档 one-shot boundary 运行 5–10 个真实、单 Agent、干净隔离任务 cohort；
+   只记录 reason codes、事件兼容性和实际人工 review friction，不把 fixture 或 host 自报写成 runtime provenance。
 3. `enable-opt-in-model-patch-authoring` 后移保留：仅显式 opt-in 生成 pending patch proposal，默认继续
    fake/offline；不自动 apply、verify、promote、commit、merge 或 push。
 4. `add-pending-patch-inspection-and-rejection`：允许查看、拒绝或继续处理 pending patch。
@@ -76,9 +82,24 @@ active change、candidate、merge/push 与 remote parity 必须通过 live Git/O
 | Verification baseline | deterministic verification、repository Ruff cleanup | `2026-08-26-*` archives |
 | Agent governance qualification | real Agent terminal/claim 与同快照 verification receipt | `2026-09-01-qualify-real-agent-observability` |
 | Governed run kernel | 单 Agent contract、Git snapshot、claim/receipt 与有界人工 review 决策 | `2026-09-01-add-governed-run-contract` archive |
+| Governed run one-shot | Codex App fresh task、精确 mutation 与同快照 receipt 的开发时实验 | `2026-09-03-evaluate-governed-run-cohort` archive |
 
 <details>
 <summary>历史详细记录（只作当时证据，不作为 current guidance）</summary>
+
+## Governed Run One-Shot Evaluation（archived，2026-09-03）
+
+- OpenSpec change 已归档到 `openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/`，并新增长期
+  `governed-run-cohort-evaluation` spec；未修改 `app/**`、公开 API、CLI、ToolRegistry、provider 或持久化。
+- 外部 controller 创建一个 Codex App fresh task；handshake 精确返回 `READY_FOR_TASK` 且 baseline clean，随后唯一
+  coding turn 只把 README 第一行从 `# RepoPilot` 改为 `# RepoPilot Agent Probe`，终态精确返回
+  `READY_FOR_REVIEW`，没有 retry、额外 turn 或 commit。
+- Reviewed bridge 得到 `ready_for_review/VERIFICATION_PASSED`，completion、runner-before 与 post snapshot 完全相同；
+  但 repository summary 仍为 `not_observed/host_observed_unverified`，task completion、semantic completion、human
+  approval、product acceptance、runtime integration 与 Git-delivery claim 全部保持 false/NOT_OBSERVED。
+- Focused tests 为 `27 passed`；归档后 canonical verification 为 `1169 passed`、1 个既有 warning，full Ruff、
+  stage-doc、skill-eval、OpenSpec strict/all 与 `git diff --check` 均通过。该证据只支持一次开发时 one-shot
+  qualification，不支持跨 provider 兼容、产品 supervisor MVP 或自动 Git delivery。
 
 ## Governed Run Contract（archived，2026-09-01）
 

@@ -37,6 +37,7 @@
 ## Repository Development Workflow
 
 - [governed-run-contract](governed-run-contract/)
+- [governed-run-cohort-evaluation](governed-run-cohort-evaluation/)
 - [harness-development-workflow](harness-development-workflow/)
 - [real-agent-observability-qualification](real-agent-observability-qualification/)
 - [stage-authority-binding](stage-authority-binding/)

@@ -1,0 +1,69 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "evaluate-governed-run-cohort",
+  "authority_epoch": 6,
+  "supersedes_record_sha256": "d3de1370f02be21443f7b82cc673f4b3fbe7371e3915c2d79d6de27aff830a52",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01908-user-conditionally-authorized-completed-stage-delivery-2026-09-03"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Freeze the completed one-shot Codex App experiment, refresh the same two implementation review slots, and archive the OpenSpec change with its long-term specification without extending runtime or performing Git delivery.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0001.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0002.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0003.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0004.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0005.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0006.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/review-set.json",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change.diff",
+        ".harness/reviews/evaluate-governed-run-cohort/plan/review-set.json",
+        "openspec/changes/evaluate-governed-run-cohort/.openspec.yaml",
+        "openspec/changes/evaluate-governed-run-cohort/design.md",
+        "openspec/changes/evaluate-governed-run-cohort/plan-review.md",
+        "openspec/changes/evaluate-governed-run-cohort/proposal.md",
+        "openspec/changes/evaluate-governed-run-cohort/specs/governed-run-cohort-evaluation/spec.md",
+        "openspec/changes/evaluate-governed-run-cohort/tasks.md",
+        "openspec/specs/governed-run-cohort-evaluation/spec.md",
+        "scripts/evaluate_single_governed_run.py",
+        "tests/fixtures/single_governed_run/pytest.ini",
+        "tests/fixtures/single_governed_run/result.txt",
+        "tests/fixtures/single_governed_run/test_result.py",
+        "tests/test_single_governed_run_evaluation.py"
+      ],
+      "prefixes": [
+        "openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/"
+      ]
+    },
+    "non_goals": [
+      "No modification or integration of app runtime, public API, CLI, ToolRegistry, provider defaults, persistence, existing supervision kernel, or other product behavior.",
+      "No second Agent task, coding turn, retry, resume, replacement experiment, local Codex process, or provider process.",
+      "No elevation from host_observed_unverified ready_for_review to semantic completion, human approval, product acceptance, authenticated provenance, runtime integration, or Git delivery capability.",
+      "No modification of the original dirty worktree or cleanup, deletion, commit, or automatic archive of the retained Codex App task worktree.",
+      "No candidate commit, merge, push, next product stage, UI, daemon, notification, multi-Agent, or automatic correction in this authority epoch."
+    ],
+    "active_allowed_files_sha256": "b230f042a756912a46631619e28f9cb16eaeed9e6a469e19bb94bb085f276783",
+    "review_slot_requirements": {
+      "plan": 2,
+      "implementation": 2
+    }
+  },
+  "scope_sha256": "c566ba9f49cabcbe708b1ca1e158fe8463e31db12dc8021123d85a3fc8068216",
+  "planning_baseline": {
+    "commit": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  },
+  "action_ceiling": "archive",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  }
+}

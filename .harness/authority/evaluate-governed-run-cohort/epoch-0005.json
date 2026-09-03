@@ -1,0 +1,67 @@
+{
+  "schema_version": "repopilot.stage_authority/v1",
+  "stage_id": "evaluate-governed-run-cohort",
+  "authority_epoch": 5,
+  "supersedes_record_sha256": "817e63ad5139d1f877dff6bea179354248cd52ad74acbcddb62a523c2b1e4ccb",
+  "authority_source": {
+    "kind": "host_direct_user_instruction",
+    "host_reference": "thread-01a01908-user-authorized-codex-app-fresh-task-worktree-plan-implementation-review-and-one-experiment-2026-09-02"
+  },
+  "scope": {
+    "risk": "high",
+    "summary": "Plan, implement, review, and run one Codex App fresh-task worktree experiment. Stage path rules exclude README.md. Only the correlated task worktree may transform README.md SHA256 70e242e898295dffaeb9a9723c5536edb96b5b6429e94fea274925a4a8b4e64e to d7844da1d65cabe3307959c6ac9a510e483bcdb99ad5070b280bdea0c33d575c, without commit. The bridge forces RUFF_NO_CACHE=true. No local Codex process or runtime integration.",
+    "allowed_path_rules": {
+      "exact": [
+        ".harness/allowed_files.md",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0001.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0002.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0003.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0004.json",
+        ".harness/authority/evaluate-governed-run-cohort/epoch-0005.json",
+        ".harness/review_checklist.md",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/review-set.json",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change-manifest.json",
+        ".harness/reviews/evaluate-governed-run-cohort/implementation/reviewed-change.diff",
+        ".harness/reviews/evaluate-governed-run-cohort/plan/review-set.json",
+        "openspec/changes/evaluate-governed-run-cohort/.openspec.yaml",
+        "openspec/changes/evaluate-governed-run-cohort/design.md",
+        "openspec/changes/evaluate-governed-run-cohort/plan-review.md",
+        "openspec/changes/evaluate-governed-run-cohort/proposal.md",
+        "openspec/changes/evaluate-governed-run-cohort/specs/governed-run-cohort-evaluation/spec.md",
+        "openspec/changes/evaluate-governed-run-cohort/tasks.md",
+        "scripts/evaluate_single_governed_run.py",
+        "tests/fixtures/single_governed_run/pytest.ini",
+        "tests/fixtures/single_governed_run/result.txt",
+        "tests/fixtures/single_governed_run/test_result.py",
+        "tests/test_single_governed_run_evaluation.py"
+      ],
+      "prefixes": []
+    },
+    "non_goals": [
+      "No modification or integration of app runtime, public API, product CLI, ToolRegistry, provider defaults, persistence, or the existing supervision kernel.",
+      "No local codex executable metadata probe, codex exec, provider subprocess, binary chmod or installation, inherited CODEX_HOME, credential proxy, VM, or container.",
+      "No RepoPilot runtime subagent or Codex App API/plugin/MCP implementation; the task tools remain an external development-workflow host channel.",
+      "No second task, second coding turn, retry, resume, replacement prompt, cohort rate, multi-Agent orchestration, background supervisor, or durable raw observation storage.",
+      "No stage-worktree README.md mutation; the task-worktree mutation permission is role-bound, exact-digest-bound, and does not widen stage-worktree allowed paths.",
+      "No semantic completion, authenticated source provenance, OS-level isolation, human approval, product acceptance, runtime integration, or Git delivery claim.",
+      "No modification of the original dirty worktree, archive, commit, merge, push, automatic task archive, or worktree deletion."
+    ],
+    "active_allowed_files_sha256": "c0f2182ad884646ad0e70c8af08ba82c34dfbdca7349fc00f21e66d4e1120e15",
+    "review_slot_requirements": {
+      "plan": 2,
+      "implementation": 2
+    }
+  },
+  "scope_sha256": "a3006eb68abd282f29b9a4d607bb61ca7a7f4b142ba51291d7185769380f455a",
+  "planning_baseline": {
+    "commit": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  },
+  "action_ceiling": "implement",
+  "vcs_target": {
+    "remote_name": "origin",
+    "effective_fetch_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "effective_push_url_sha256": "4cf5d61205314c796fdefe387908a1dc07bf185991d6c08d30314c4bcc6fea1e",
+    "target_branch": "main",
+    "authorized_remote_tip": "b7a8439fac9013f5ad59c308c4b16d333d466ddb"
+  }
+}

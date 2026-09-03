@@ -1,0 +1,25 @@
+# RepoPilot reviewed-change inventory v2
+# planning-base b7a8439fac9013f5ad59c308c4b16d333d466ddb
+# Every line binds the current file bytes; deletions use DELETE without a hash.
+FILE	100644	83c59ffcc08119936d5eae77917250f96dcd47c0a92732cde18773c778a47f6a	.harness/allowed_files.md
+FILE	100644	b76e0f73817d9e8747ce6ce94f881154dcc1534362bde10be1081e6aa1774872	.harness/authority/evaluate-governed-run-cohort/epoch-0001.json
+FILE	100644	aa70ff684807a14cb206d5f45d82334c08917096770a12310f0284281250383b	.harness/authority/evaluate-governed-run-cohort/epoch-0002.json
+FILE	100644	71feebe2eace02e72dc9f7263ef5a2b142c9ab7783d41914c16fe53fa32f12f9	.harness/authority/evaluate-governed-run-cohort/epoch-0003.json
+FILE	100644	817e63ad5139d1f877dff6bea179354248cd52ad74acbcddb62a523c2b1e4ccb	.harness/authority/evaluate-governed-run-cohort/epoch-0004.json
+FILE	100644	d3de1370f02be21443f7b82cc673f4b3fbe7371e3915c2d79d6de27aff830a52	.harness/authority/evaluate-governed-run-cohort/epoch-0005.json
+FILE	100644	46948bf162f52e91ace0b7293ee4d886e0626023b8823e510a124a186709298b	.harness/authority/evaluate-governed-run-cohort/epoch-0006.json
+FILE	100644	c174635f05cbaa81195bf4509eddae3c33d744fca41bfb947d068d4e0f197a64	.harness/authority/evaluate-governed-run-cohort/epoch-0007.json
+FILE	100644	ebf6741f9359c7b62c9d4b9a240b06f413bf73b1d131439d9115d6a9700e53a0	.harness/authority/evaluate-governed-run-cohort/epoch-0008.json
+FILE	100644	cd8882cb1f3ca4c34980536ca0785fec5a8bf36c953ca6290ad8039b4a828cb1	.harness/review_checklist.md
+FILE	100644	1096cdcafd76041a49594e375e38b73cd551001bfd37a1d8fff59b29a8b98c56	.harness/reviews/evaluate-governed-run-cohort/plan/review-set.json
+FILE	100644	549a9c478cb7bd1ce1f50e63f42d8795765f0c1c142730ab274e3c9cfd00f26b	docs/PROGRESS.md
+FILE	100644	123704eda50e1fc552335a14db07f418115ade304ccf6206583dc9d8bd0b1745	openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/.openspec.yaml
+FILE	100644	8cdd0fd8a537ce90ab8e2b86c2e33bb8a3f07b3ffabab9cb5a5bd89aebcfaf81	openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/design.md
+FILE	100644	550b21c979758d6cc34e1e9ce3d8de060fca2820e7ed751b01046c3a13999078	openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/plan-review.md
+FILE	100644	6e8b5eed9cdae495057df4f70bb0b8b0de78cc1327b574d7a86c0a309b0a2509	openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/proposal.md
+FILE	100644	81366496473b6362627a0eed598ce16c9de49f979b2cec6ab01b8ba749a2d78d	openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/specs/governed-run-cohort-evaluation/spec.md
+FILE	100644	09cd3a2f17a237ff293df682383af0a56c830c20bda5e1f5a69fd68f6d195479	openspec/changes/archive/2026-09-03-evaluate-governed-run-cohort/tasks.md
+FILE	100644	abcb7378dd865a757be0278038c5ec714d4ce4a20107f32c55d6a3ce6b341eab	openspec/specs/README.md
+FILE	100644	b337e911ccb1f7cc7dbe1e8b246df4ea4e26d1823589fd574a74fa519741a5c4	openspec/specs/governed-run-cohort-evaluation/spec.md
+FILE	100644	58900bfe8db1d55c6eb99859e5d62c6ec5a9fb046b405da3629bde5498a152c4	scripts/evaluate_single_governed_run.py
+FILE	100644	9427f605925ef34a24b652c9119aa775e12767ce385f7592bb1e2789480902fd	tests/test_single_governed_run_evaluation.py
